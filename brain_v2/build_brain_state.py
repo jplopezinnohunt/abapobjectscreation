@@ -104,6 +104,72 @@ LEGACY_TO_AXES = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Los stores de descubrimiento que se cuelgan de objects[]. `at` es la ruta dentro del JSON
+# donde vive el mapa o la lista; `name_field` el campo que nombra al objeto cuando es una lista.
+# Anadir uno aqui es lo unico que hace falta para que su conocimiento sea RECORRIBLE.
+STORES_AL_GRAFO = [
+    {"file": "log_reality.json", "key": "log_reality", "at": "classified"},
+    {"file": "comprehension_index.json", "key": "comprehension", "at": "by_object"},
+    {"file": "domain_composition.json", "key": "domain_composition", "at": "domains"},
+    {"file": "interface_boundary.json", "key": "boundary", "at": "destinations",
+     "name_field": "artifact"},
+    {"file": "satellites.json", "key": "satellite", "at": "satellites",
+     "name_field": "satellite"},
+    {"file": "process_flows.json", "key": "process_flow", "at": "flows", "name_field": "name"},
+    {"file": "payroll_discovery.json", "key": "payroll", "at": "objects"},
+    {"file": "custom_fields.json", "key": "custom_field", "at": "fields", "name_field": "owner"},
+    {"file": "Zagentexecution/sap_data_extraction/sqlite/job_classification.json",
+     "key": "job", "at": "programs"},
+    {"file": "code_interpretation.json", "key": "interpretation", "at": "objects"},
+    {"file": "drift_profile.json", "key": "drift", "at": "domains"},
+    {"file": "case_spine.json", "key": "case_spine", "at": "cases"},
+    {"file": "br_impact.json", "key": "budget_rate", "at": "objects"},
+    {"file": "hierarchy_traversal.json", "key": "hierarchy", "at": "sets"},
+    {"file": "bank_model_findings.json", "key": "bank_model", "at": "findings",
+     "name_field": "probe"},
+    {"file": "Zagentexecution/sap_data_extraction/process_discovery/p2p_conformance.json",
+     "key": "conformance_p2p", "at": "deviations"},
+]
+
+
+def _pares_nombre_hechos(data, at=None, name_field=None, tope=4000):
+    """Saca (nombre, hechos) de la forma que tenga el store, sin exigirle un esquema.
+
+    Los stores crecieron cada uno a su manera y pedirles ahora un formato comun seria rehacer
+    dieciseis generadores. Se acepta lo que hay: un diccionario indexado por nombre, o una lista
+    de registros con un campo que nombra. Si no se reconoce la forma, se devuelve vacio Y EL
+    LLAMANTE LO REPORTA -- callarse es lo que dejo estos stores fuera del grafo durante meses.
+    """
+    nodo = data
+    if at:
+        for parte in str(at).split("."):
+            if isinstance(nodo, dict) and parte in nodo:
+                nodo = nodo[parte]
+            else:
+                nodo = None
+                break
+    if nodo is None:
+        nodo = data
+    out = []
+    if isinstance(nodo, dict):
+        for k, v in list(nodo.items())[:tope]:
+            if str(k).startswith("_"):
+                continue
+            out.append((k, v if isinstance(v, (dict, list)) else {"valor": v}))
+    elif isinstance(nodo, list):
+        campos = ([name_field] if name_field else []) + [
+            "artifact", "object", "name", "table", "tcode", "program", "id", "actor"]
+        for it in nodo[:tope]:
+            if not isinstance(it, dict):
+                continue
+            for f in campos:
+                if f and it.get(f):
+                    out.append((it[f], it))
+                    break
+    return out
+
+
 def derive_domain_axes(legacy: str, object_name: str = "", domain_registry: dict = None) -> dict:
     """Translate legacy objects[X].domain string into 3-axis dict.
 
@@ -447,6 +513,99 @@ def main():
             nm, claims, incidents_pre, annotations, domains_registry_preload)
         synth_count += 1
     print(f"  {synth_count} objects SYNTHESIZED from structured records (no graph node)")
+
+    # ------------------------------------------------------------------
+    # EL INVENTARIO DE INTERFACES ENTRA AL GRAFO (2026-08-25)
+    #
+    # Las 656 interfaces vivian en su JSON con dominio, naturaleza y marca de SoD, y NADA de eso
+    # llegaba a objects[]. MULESOFT, UBO-RFC o MP_ANCUTA estaban en el grafo como NOMBRES -- los
+    # sintetizaba algun claim -- pero sin lo que se sabe de ellos, asi que preguntarle al grafo
+    # "quien escribe datos maestros en este dominio" no devolvia nada. Guardado no es
+    # relacionado: si no se puede recorrer, el process mining no puede actuar sobre ello.
+    inv_path = BRAIN_V2 / "interface_inventory.json"
+    canales = 0
+    try:
+        inv = json.loads(inv_path.read_text(encoding="utf-8")).get("interfaces") or []
+    except Exception:
+        inv = []
+    for it in inv:
+        nm = str(it.get("artifact") or "").strip()
+        if not nm or nm.startswith("("):
+            continue
+        if nm not in objects:
+            objects[nm] = synthesize_object_from_records(
+                nm, claims, incidents_pre, annotations, domains_registry_preload)
+        o = objects[nm]
+        o["interface"] = {
+            "channel": it.get("channel"),
+            "direction": it.get("direction"),
+            "domain": it.get("domain"),
+            "domain_basis": it.get("domain_basis"),
+            "nature": it.get("nature"),
+            "nature_basis": it.get("nature_basis"),
+            "calls": it.get("calls"),
+            "user_type": it.get("user_type"),
+            "sod_flag": it.get("sod_flag"),
+            "sod_flag_confianza": it.get("sod_flag_confianza"),
+        }
+        # el dominio del canal es dominio del objeto cuando el objeto no tenia ninguno: es lo
+        # que permite preguntar por area y que aparezcan los canales de esa area.
+        if it.get("domain") and not o.get("domain"):
+            o["domain"] = it["domain"]
+            o.setdefault("domain_axes", {})
+            if isinstance(o["domain_axes"], dict) and not o["domain_axes"].get("functional"):
+                o["domain_axes"]["functional"] = it["domain"]
+        canales += 1
+    print(f"  {canales} interfaces wired into objects[] (channel/domain/nature/SoD)")
+
+    # ------------------------------------------------------------------
+    # TODO STORE DE DESCUBRIMIENTO ENTRA AL GRAFO (2026-08-25)
+    #
+    # El caso del inventario de interfaces no era una excepcion: era el patron. Medido con
+    # graph_landing_check.py, 19 de 31 stores registrados en `lands_in` no llegaban a objects[]
+    # -- log_reality, job_classification, payroll_discovery, satellites, interface_boundary...
+    # Cada algoritmo dejaba su hallazgo en un JSON y ahi se quedaba. Se descubria y no se podia
+    # RECORRER, que es como decir que el process mining no podia actuar sobre su propio trabajo.
+    #
+    # En vez de cablear diecinueve veces, esto lee CUALQUIER store con una forma reconocible
+    # -- un diccionario indexado por nombre, o una lista de registros con un campo que nombra --
+    # y cuelga sus hechos del objeto correspondiente. Un store del que no aterriza NADA se
+    # reporta: el silencio es lo que dejo pasar esto durante meses.
+    stores_ingeridos, sin_aterrizar = {}, []
+    for st in STORES_AL_GRAFO:
+        p = BRAIN_V2 / st["file"]
+        if not p.exists():
+            p = PROJECT_ROOT / st["file"]
+        if not p.exists():
+            cand = list(PROJECT_ROOT.glob(f"*/{st['file']}")) + \
+                list(PROJECT_ROOT.glob(f"*/*/{st['file']}"))
+            if not cand:
+                sin_aterrizar.append(st["file"] + " (no existe)")
+                continue
+            p = cand[0]
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        pares = _pares_nombre_hechos(data, st.get("at"), st.get("name_field"))
+        n = 0
+        for nm, hechos in pares:
+            nm = str(nm).strip()
+            if not nm or nm.startswith("_") or len(nm) > 60:
+                continue
+            if nm not in objects:
+                objects[nm] = synthesize_object_from_records(
+                    nm, claims, incidents_pre, annotations, domains_registry_preload)
+            objects[nm].setdefault("discovery", {})[st["key"]] = hechos
+            n += 1
+        stores_ingeridos[st["key"]] = n
+        if n == 0:
+            sin_aterrizar.append(st["file"])
+    print(f"  {sum(stores_ingeridos.values())} hechos de {len(stores_ingeridos)} stores de "
+          f"descubrimiento colgados de objects[]")
+    if sin_aterrizar:
+        print(f"  AVISO: {len(sin_aterrizar)} store(s) no aterrizaron NADA: "
+              f"{', '.join(sin_aterrizar)}")
 
     # Detect blind spots: names we keep TALKING about but don't classify.
     blind_spots = detect_blind_spots(referenced_names, graph_node_names, objects)

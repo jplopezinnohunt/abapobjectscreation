@@ -689,7 +689,70 @@ def code_gaps(brain, _=None):
             "undomained_sample": inv["_undomained"][:40]}
 
 
+def channels(brain, arg=None):
+    """POR DONDE ENTRA EL TRABAJO en un dominio, y que le hace al sistema.
+
+    Sin esto habia que abrir interface_inventory.json a mano: el conocimiento estaba guardado y
+    no se podia RECORRER, asi que el grafo no sabia contestar 'quien escribe datos maestros en
+    Procurement'. Con dos ejes -- dominio y naturaleza -- y quien entra (USR02-USTYP).
+
+    Uso:  channels                  reparto global
+          channels <dominio>        los canales de ese dominio
+          channels writers          solo los que ESCRIBEN, ordenados por volumen
+          channels master_data      solo los que tocan datos maestros
+          channels sod              cuentas de PERSONA usadas como canal de escritura (H71)
+    """
+    ifs = [(n, o["interface"]) for n, o in (brain.get("objects") or {}).items()
+           if isinstance(o.get("interface"), dict)]
+    if not ifs:
+        return {"error": "ninguna interfaz en el grafo -- corre brain_v2/rebuild_all.py",
+                "_por_que": "interface_inventory.json se ingiere en build_brain_state.py"}
+
+    a = (arg or "").strip().lower()
+    if a == "sod":
+        sel = [(n, i) for n, i in ifs
+               if i.get("sod_flag") == "PERSONA_USADA_COMO_CANAL_DE_ESCRITURA"]
+        titulo = ("cuentas de PERSONA (USR02-USTYP=A) usadas como canal de ESCRITURA, "
+                  "confirmadas por terminal. Hallazgo H71: la autorizacion se comprueba contra "
+                  "la persona, asi que la aplicacion hereda todo lo que ella pueda hacer")
+    elif a in ("writers", "escritores"):
+        sel = [(n, i) for n, i in ifs
+               if i.get("nature") and i["nature"] not in ("LECTURA", "NO_MEDIBLE")]
+        titulo = "canales que ESCRIBEN (transaccional o datos maestros)"
+    elif a in ("master_data", "maestros"):
+        sel = [(n, i) for n, i in ifs if "MASTER_DATA" in str(i.get("nature"))]
+        titulo = ("canales que escriben DATOS MAESTROS -- la clase que corrompe todo lo que "
+                  "venga detras, y en silencio")
+    elif a:
+        sel = [(n, i) for n, i in ifs if str(i.get("domain", "")).lower() == a]
+        titulo = f"canales del dominio {arg}"
+    else:
+        from collections import Counter
+        por_dom, por_nat = Counter(), Counter()
+        for _, i in ifs:
+            por_dom[i.get("domain") or "sin dominio"] += 1
+            por_nat[i.get("nature") or "sin naturaleza"] += 1
+        return {"_que_es": ("por donde entra el trabajo. UNESCO se opera por satelite: 10,3 "
+                            "llamadas RFC por cada arranque de transaccion de dialogo"),
+                "interfaces": len(ifs),
+                "por_dominio": dict(por_dom.most_common()),
+                "por_naturaleza": dict(por_nat.most_common()),
+                "_siguiente": "channels <dominio> | writers | master_data | sod"}
+
+    sel.sort(key=lambda t: -(t[1].get("calls") or 0))
+    return {"_que_es": titulo, "encontrados": len(sel),
+            "canales": [{"artefacto": n, "canal": i.get("channel"),
+                         "dominio": i.get("domain"), "naturaleza": i.get("nature"),
+                         "llamadas": i.get("calls"),
+                         "quien_entra": {"A": "PERSONA", "B": "tecnico", "C": "comunicacion",
+                                         "S": "servicio"}.get(i.get("user_type")),
+                         "por_que": i.get("nature_basis") or i.get("domain_basis"),
+                         "sod": i.get("sod_flag_confianza")}
+                        for n, i in sel[:40]]}
+
+
 COMMANDS = {
+    "channels": lambda b, args: channels(b, args[0] if args else None),
     "what_reads": lambda b, args: what_reads(b, args[0]),
     "what_depends_on": lambda b, args: what_depends_on(b, args[0]),
     "incident": lambda b, args: incident_trace(b, args[0]),

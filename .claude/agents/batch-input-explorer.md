@@ -164,18 +164,48 @@ Para cada cambio de `cdhdr_history` (usuario, tcode, fecha), el canal se decide 
 | Canal | Señal en el log | Confirmación |
 |---|---|---|
 | **DIÁLOGO** | hay `Transaction Start` de ESE tcode por ESE usuario | ratio arranques/cambios ≥ 1 |
-| **RFC** | `RFC Function Call` + `RFC/CPIC Logon` ≫ `Dialog Logon` | si el FM es `Z*`/`Y*`, es código propio |
+| **RFC** | `RFC Function Call` desde un **terminal compartido por ≥5 cuentas** (= servidor) | `USR02-USTYP` dice quién entra; si el FM es `Z*`/`Y*`, es código propio |
 | **JOB** | sin tcode + `SM37` + `Report Start` masivos | el programa aparece en `TBTCP` |
 | **BATCH INPUT** | **con tcode pero SIN arranque de transacción NI llamada RFC** | es el RESIDUO: se deduce por descarte |
 
 **El batch input no tiene señal propia — se identifica por lo que NO deja.** Esa es toda la
 dificultad, y por eso hay que descartar los otros tres primero.
 
-### Y la señal de que un usuario NO es una persona
+### Quién entra: pregúntaselo a SAP, no al log
 
-**`RFC/CPIC Logon` ≫ `Dialog Logon`.** Medido: `E_SILVA` tiene 11.767 logons RFC frente a 603
-de diálogo; `A_BARONE`, 1.828 frente a 137. Son **canal**, no gente — aunque su nombre parezca
-el de una persona y aparezcan como autor del cambio.
+**`USR02-USTYP` lo declara. No lo deduzcas.** (Corregido 2026-08-25 — lo que había aquí antes
+era una heurística y era falsa.)
+
+| USTYP | qué es |
+|---|---|
+| **A** | Diálogo — una **persona** |
+| **B** | Sistema — técnico, no puede entrar por diálogo |
+| **C** | Comunicación — CPIC/RFC entre sistemas |
+| **S** | Servicio — diálogo compartido, sin dueño |
+| **L** | Referencia — sólo hereda permisos, no entra |
+
+Si `USR02` no está en el Gold DB, tráela: `python scripts/extraction/extract_usr02_user_types.py`
+(P01, lectura, 6.755 filas de una vez).
+
+**Lo que decía esta sección antes — "logons RFC ≫ diálogo, luego no es una persona" — falla por
+los dos lados.** `BRIDGE-RFC`, `JOBBATCH`, `MULESOFT` y `WF-BATCH` tienen logons de diálogo y
+son tipo **B**: técnicos. Y al revés, y esto es lo importante: **`E_SILVA` y `A_BARONE` son tipo
+`A`, o sea PERSONAS.** No es que "no sean gente": es que **la cuenta de una persona está siendo
+conducida por una aplicación**. Esa diferencia es todo el asunto — la autorización se comprueba
+contra la persona, así que la aplicación hereda todo lo que esa persona pueda hacer. Es el
+hallazgo **H71** (portal-as-user), y decir "es un canal, no una persona" lo hace desaparecer.
+
+**Cómo distinguir a la persona trabajando de la aplicación que usa su cuenta:** por el
+**TERMINAL**. Un usuario de diálogo genera eventos `RFC Function Call` de las dos maneras, así
+que el tipo de usuario sólo da la sospecha. Lo que la confirma es que las llamadas salgan de una
+máquina que usan **≥5 cuentas** — un servidor, no un PC. Medido así: de 216 cuentas tipo A con
+escritura por RFC, **160 confirmadas** como canal. Está mecanizado en
+`brain_v2/build_interface_inventory.py` (campos `user_type`, `sod_flag`, `sod_flag_confianza`)
+y cada registro dice si está CONFIRMADO o SIN CONFIRMAR.
+
+**Y saca tu propio tráfico antes de contar.** `JP_LOPEZ` salía cuarto en esa lista: son nuestras
+extracciones. Medirnos a nosotros y presentarlo como hallazgo sobre UNESCO es contaminar la
+medida con el medidor.
 
 ### El caso que lo enseñó
 

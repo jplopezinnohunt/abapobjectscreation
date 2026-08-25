@@ -133,7 +133,14 @@ def main():
         h.append({"gravedad": "SIN_ENGANCHE", "donde": "claims.json", "campo": "related_objects",
                   "ids": sorted(x for x in sin_obj if x is not None)[:20],
                   "que_pasa": (f"{len(sin_obj)} claim(s) no nombran ningun objeto: no entran en "
-                               "el grafo y solo se encuentran leyendo los 580 de arriba abajo")})
+                               f"el grafo y solo se encuentran leyendo los {len(C)} de arriba "
+                               "abajo"),
+                  "como_se_arregla": (
+                      "python brain_v2/anchor_claims.py         (simula) "
+                      "y luego --apply. Extrae del propio texto del claim los nombres QUE EL "
+                      "BRAIN YA CONOCE -- nada inventado -- y los pone en related_objects. Lo "
+                      "que quede sin ancla es que el objeto no esta en el vocabulario todavia, "
+                      "y eso es un hallazgo, no un fallo del script")})
     sin_dom = [c.get("id") for c in C if not (c.get("domain") or c.get("domains"))]
     if sin_dom:
         h.append({"gravedad": "SIN_DOMINIO", "donde": "claims.json", "campo": "domain",
@@ -190,6 +197,8 @@ def main():
         print(f"      {x['que_pasa']}")
         if x.get("ids"):
             print(f"      -> {', '.join(str(i) for i in x['ids'])}")
+        if x.get("como_se_arregla"):
+            print(f"      ARREGLO: {x['como_se_arregla']}")
     return 1 if h else 0
 
 

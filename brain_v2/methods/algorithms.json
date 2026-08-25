@@ -1034,6 +1034,19 @@
       "improve": "50 interfaces sin naturaleza porque su nombre no lleva verbo (Y_BAPI_WBS_FINANCIAL_DATA_1, Y_BAPI_YPS8). Se resolveria leyendo el codigo del modulo, no su nombre. Y los 239 destinos salientes solo se miden en el otro extremo",
       "lands_in": "brain_v2/interface_inventory.json (campos domain/domain_basis/nature/nature_basis)",
       "_por_que_importa": "las tres naturalezas no cuestan lo mismo cuando fallan: una LECTURA rota cuesta un informe, una TRANSACCIONAL cuesta dinero, y una de MASTER_DATA corrompe todo lo que venga detras y en silencio. Un inventario que solo dice el dominio dice donde pasa algo, no que pasa"
+    },
+    "A28_graph_landing": {
+      "operates_on": "los stores de descubrimiento, el registro de algoritmos y los agentes",
+      "origin": "OURS",
+      "state": "WORKS",
+      "does": "comprobar que lo generado llegue al GRAFO -- no a un JSON al lado --, que cada algoritmo tenga quien lo llame, y que cada agente ejecute o encadene Y ademas deposite lo que descubre",
+      "bound_in": [
+        "Zagentexecution/quality_checks/graph_landing_check.py"
+      ],
+      "failure_mode": "CASI EMPIEZA GRITANDO EN FALSO DE SI MISMO. Primera version: exigia que build_brain_state ingiriera el store, y marcaba en rojo code_inventory.json, que se recorre perfectamente por su propio comando de graph_queries. Segunda: contaba muerto todo algoritmo cuyo script nadie NOMBRA -- y las puertas de quality_checks las descubre run_all.py por glob, asi que salian todas muertas, A26 y el mismo incluidos. Tercera: exigia a cada agente un .py, y authority-doc-reader LEE PDFs, no ejecuta nada; estaba coordinado y salia aislado. Las tres veces el gate estaba midiendo la forma en vez del efecto. | Riesgo que queda: un store cuya forma no se reconoce aterriza CERO y hay que verlo en el AVISO -- si alguien lo silencia, vuelve el problema entero",
+      "improve": "los 3 stores que quedan fuera son agregados sin nombres de objeto (drift_signals, p2p_ocel2_summary, reality_filter): o se les da una clave por objeto o se declara con motivo que son agregados. Y quedan 11 algoritmos registrados sin llamador, entre ellos toda la familia B de process mining",
+      "lands_in": "n/a - gate: su salida es el veredicto y quality_checks_state.json",
+      "_nace_de": "2026-08-25. interface_inventory.json tenia 656 interfaces con dominio, naturaleza y marca de segregacion de funciones, y build_brain_state.py ni lo abria: se podia preguntar 'quien escribe datos maestros en este dominio' y el grafo contestaba vacio teniendo la respuesta a un fichero de distancia. Al medirlo resulto que no era una excepcion: 19 de 31 stores estaban igual. Se mecanizo la ingesta generica y bajaron a 3"
     }
   },
   "_portfolio": {

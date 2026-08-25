@@ -97,3 +97,30 @@ formulario con respuestas distintas.
 
 Procedimiento de referencia para paneles:
 `knowledge/domains/Treasury/bcm_signatory_change_procedure.md`
+
+
+---
+
+## Con qué se combina, y dónde aterriza lo que saco
+
+**No trabajo solo.** Lo que extraigo es la mitad de una comparación a tres bandas; la otra
+mitad la pone quien lee SAP en vivo:
+
+| Después de mí | Para qué |
+|---|---|
+| `bcm-signatory-panel` | cruza lo que el documento AUTORIZA contra lo que SAP TIENE |
+| `master-data-sync` | si el documento da de alta una cuenta o un maestro |
+| `incident-analyst` | si esto llegó como incidencia, el documento es la sección 2 de su Track B |
+
+**Dónde dejo lo que descubro** — y esto no es opcional, porque un hecho que sólo vive en mi
+respuesta se pierde con la conversación:
+
+- el documento parseado → la sección **AUTORIDAD DE RECORD** del doc de incidencia en
+  `knowledge/incidents/INC-<id>_<slug>.md`
+- si el hecho es **durable** (un panel, una condición, una regla del banco) → un claim en
+  `brain_v2/claims/claims.json` con el esquema del store (copia los campos canónicos del
+  fichero, no los de memoria) y el PDF en `evidence_for`
+- si el documento **contradice** algo que el brain daba por cierto → marca el claim viejo como
+  superseded, nunca lo borres
+
+**Lo que NO leo:** SAP. Sólo convierto documentos en hechos comparables.

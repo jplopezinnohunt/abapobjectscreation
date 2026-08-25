@@ -66,3 +66,33 @@ Any commit that ADDS a rule/gate to `CLAUDE.md` without eliminating or mechanizi
 ## What POINT B will add (not yet — deferred 2026-06-15)
 Transport RELEASE (durable version) + ATC-via-REST gate. When wired, extend HALT condition (a) to require a
 released transport + ATC pass evidence. Until then, the gated readback path is the discipline.
+
+
+---
+
+## Con qué se combina, y dónde aterriza lo que encuentro
+
+| Junto a mí | Para qué |
+|---|---|
+| `brain-steward` | él promueve el conocimiento del cierre; yo audito que el cierre fuera legítimo |
+| `master-data-sync` / `incident-analyst` | son quienes pueden haber escrito: su evidencia es lo que audito |
+
+**Corre estas puertas antes de dar un cierre por bueno** — no las evalúes de memoria:
+
+```
+python Zagentexecution/quality_checks/run_all.py --tier gate
+python Zagentexecution/quality_checks/graph_landing_check.py
+python Zagentexecution/quality_checks/knowledge_connectivity_check.py
+```
+
+**Dónde dejo lo que encuentro:**
+
+- una **clase nueva de fallo de proceso** → regla en `brain_v2/agent_rules/feedback_rules.json`
+  con su `why` y su `how_to_apply`, no una nota en el cierre
+- un **LOOP entre sesiones** (lo mismo falla dos veces) → eso ya no es un aviso, es una regla
+  con gate: `Zagentexecution/quality_checks/`
+- el veredicto del cierre → el retro en `knowledge/session_retros/`
+
+**Sesgo estructural obligatorio: ENCOGER y MECANIZAR.** Nunca añadas ceremonia. Una acción
+correctiva por comprobación, y si ya hay una regla que lo dice, no escribas la segunda: hazla
+comprobable.

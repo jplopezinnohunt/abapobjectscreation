@@ -112,6 +112,22 @@ and run the rebuild (CLAUDE.md "One writer at a time").
    project's cross-reference rule: grep the entity name across ALL companions +
    reports and fix every stale reference, not just the one file.
 
+   **4a. COPY THE STORE'S SCHEMA — MEASURE IT, DON'T RECALL IT (2026-08-25).**
+   A record written into the field the store does NOT read is stored and
+   **illegible**: nothing finds it, and it looks done. Measured: claims written
+   that day used `evidence`, `domains`, `tier` and `session` when the store reads
+   `evidence_for`, `domain`, `confidence` and `created_session` — 32 fields across
+   the file. Before appending, derive the canonical field set from the file itself
+   (the fields populated in ≥90% of records) and **assert your new record carries
+   every one of them**; that assertion is what caught the missing `domain_axes`.
+   Never delete the variant you replace — copy across and keep the original
+   (CP-002); the damage is the empty canonical field, not the extra one.
+
+   **4b. A CORRECTION IS NOT A FIX UNTIL IT SWEEPS.** The same day, ALLOS was
+   corrected from `BusinessPartner` to `HCM` in the field being looked at — and
+   the old label survived in the time series of **the same file**. Grep the old
+   value repo-wide after every correction, and record in the store that you did.
+
 5. **VERIFY LANDING** — re-read each store to confirm the record is there, then
    run the rebuild as the LAST step: `python brain_v2/curate.py` (preferred — it
    rebuilds + reports drift) or `python brain_v2/rebuild_all.py`. Confirm

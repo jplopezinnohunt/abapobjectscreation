@@ -132,6 +132,29 @@ Nunca lo pliegues dentro de OBJECT para que cuadre. **El resto sin clasificar es
 en la primera corrida de A19 sus 44 nombres delataron una gramática entera que el autor no
 conocía. Un resto visible vale más que un 100% que miente.
 
+### 4b. QUIÉN ENTRA LO DICE `USR02`, NO EL LOG (2026-08-25)
+El log dice cómo se comporta una cuenta; **no dice qué es**. Son dos preguntas distintas y
+contestar la primera creyendo contestar la segunda produce una conclusión confiada y falsa.
+Se hicieron dos heurísticas —"tiene logons de diálogo, luego es persona" y la proporción
+RFC/diálogo— y **las dos** metieron `BRIDGE-RFC`, `JOBBATCH`, `MULESOFT` y `WF-BATCH` entre las
+personas. SAP lo declara: `USR02-USTYP` (A=persona, B=sistema, C=comunicación, S=servicio,
+L=referencia). Si falta en el Gold DB: `python scripts/extraction/extract_usr02_user_types.py`.
+
+Y el matiz que importa: **una cuenta tipo A por la que entra escritura RFC no es "un canal, no
+una persona"** — es la cuenta de una persona conducida por una aplicación, que hereda todos sus
+permisos. Es H71. Lo confirma el **terminal**: máquina usada por ≥5 cuentas = servidor, no PC.
+
+### 4c. LA FONTANERÍA FALSEA CUALQUIER VOTO POR VOLUMEN (2026-08-25)
+`RFCPING`, `RFC_READ_TABLE`, `RFC_SYSTEM_INFO`, `BAPI_TRANSACTION_COMMIT` los llama **todo el
+mundo**: lo que todos mueven no dice para qué sirve *este* canal. Sin filtrarlos, `UBO-RFC`
+salía 63% "sustrato técnico" cuando es 100% `Treasury_EBS`, y `MULESOFT` 59,6% `PS` en vez de
+89,9%. **Excluye la fontanería y deja que el sustrato gane sólo cuando no haya ninguna llamada
+de negocio** — y entonces créetelo: `EPAM-RFC` no tiene ni una, es un ETL que sólo lee tablas.
+
+Lo mismo vale para el eje que falta en casi todo inventario: **qué le hace al sistema**
+(LECTURA / TRANSACCIONAL / MASTER_DATA / NO_MEDIBLE). El dominio dice dónde pasa algo; la
+naturaleza dice qué pasa, y no cuestan lo mismo cuando fallan.
+
 ### 5. NO CONFUNDAS DENOMINADORES
 Dos cifras ciertas del mismo día: inflación **×3,6** en el corpus entero y **×19,9** entre los
 nombres nuevos de julio. Citar una como la otra fabrica un hallazgo. **Di siempre sobre qué

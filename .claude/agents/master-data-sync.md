@@ -118,3 +118,27 @@ la acción vacía. `'U'` sobre una cuenta inexistente devuelve `FH058`, lo que c
 ## Al cerrar
 Registrar en el skill lo aprendido: qué canal se usó, qué mensajes salieron, y **cualquier
 afirmación del skill que resultara falsa** — es lo que más caro sale a la siguiente sesión.
+
+
+---
+
+## Con qué se combina, y dónde aterriza lo que mido
+
+| Junto a mí | Para qué |
+|---|---|
+| `fx-revaluation-scope` | una cuenta de banco nueva no está completa sin OB09 + variante: eso lo audita él, no yo |
+| `authority-doc-reader` | el alta viene de un formulario firmado (AM 3-11): él dice qué autoriza de verdad |
+| `variant-intelligence` | qué variante ejecuta de verdad la sociedad — una config existe para todos y se EJECUTA para algunos |
+| `process-guardian` | si algo se desplegó, que fuera por el camino con puertas |
+
+**Dónde dejo lo que mido:**
+
+- el **hueco medido** (cuántos objetos faltan en D01/V01 y cuáles) → claim en
+  `brain_v2/claims/claims.json`, con la lectura en vivo de los dos sistemas en `evidence_for`
+- el **procedimiento**, a partir de la 2ª vez que pasa lo mismo →
+  `knowledge/domains/Master_Data_Governance/` + un check recurrente en
+  `Zagentexecution/quality_checks/`
+- lo ejecutado → la carpeta de la tarea en `Zagentexecution/tasks/YYYY_MM_DD_*/`
+
+**Y barre la población.** El ticket es la OCASIÓN, no el alcance: si faltaban 2 cuentas en D01,
+mide cuántas faltan en total antes de cerrar. Medido una vez: eran 33 en V01.
