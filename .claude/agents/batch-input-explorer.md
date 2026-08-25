@@ -67,6 +67,40 @@ funcionando, la otra es un canal de escritura sin gobierno.
 Medido 2026-08-24: 55.087 de 57.998 sesiones son `SAPMSSY1`. Las propias son pocas y
 pequeñas — `RFBIKR00` 1.933, `ZHR_RETIRE_COPY_SPI` 222, `RFBIBL01` 146, LSMW 42.
 
+### DEL PROGRAMA SE DERIVA LA TRANSACCIÓN — y esto cierra el camino que `VARDATA` bloquea
+
+`VARDATA` no se lee por RFC, pero **no hace falta**: `TSTC` mapea transacción → programa, así
+que **buscando por `PGMNA` salen las transacciones que ese programa sirve**. Es el paso que
+convierte un `PROGID` en algo accionable, y hay que darlo siempre.
+
+```sql
+SELECT TCODE FROM TSTC WHERE PGMNA = '<el PROGID>'
+```
+
+Medido 2026-08-24 sobre los 17 generadores:
+
+| `PROGID` | transacción derivada |
+|---|---|
+| `ZHR_UPDATE_IT0021` | `YPA0021` — custom, infotipo de familia |
+| `ZHR_UPDATE_IT0167` | `YPA0167` — custom, planes de salud |
+| `ZHR_RETIRE_COPY_SPI` | `YHR_SPI_REALLETTERS`, `YHR_SPI_SIMULLETTERS` |
+| `YEBUET01` | `YSC1` |
+| `SAPF100` | `F04N`, `F05N`, `F06N` |
+| `HUNUPSR0` | `PC00_MUN_PSR` |
+| `SAPMSBDT` | `SHDB` — el grabador BDC |
+| `RFBIKR00` | `OMSV`, `OT39`, `OV/3` |
+| **`SAPMSSY1`** | **ninguna: es el despachador RFC** |
+
+**Y ojo con dos cosas al derivar:**
+
+- **Un `PROGID` sin transacción no es un fallo**: `RFBIBL01`, `RFEBBU00`, `SAPF180` y LSMW son
+  **reports**, se lanzan por `SE38` o por job y no tienen tcode. Decir "no se encontró" es
+  correcto; inventarle una, no.
+- **El campo `TCODE` de `cdhdr` puede contener un PROGRAMA, no una transacción.** Medido:
+  `RE_RHAKTI00` aparece 79.342 veces en `TCODE` y **es una transacción cuyo programa es
+  `RHAKTI00`** — pero otros valores de ese campo son reports directos. Comprueba en `TSTC`
+  antes de tratar el valor como transacción.
+
 ### Y dentro de lo externo, separa HERRAMIENTA de HERRAMIENTA
 
 `SAPMSSY1` dice "vino de fuera", no *de qué*. Para distinguir una herramienta de otra, usa
@@ -95,10 +129,19 @@ las que fallaron o nunca corrieron. Cualquier reparto que midas describe *lo que
 **2. `VARDATA` no se puede leer por RFC.** Es `LCHR(7902)`. No insistas: no es un fallo de la
 llamada, es el canal. La transacción se infiere por el log, no se lee de la sesión.
 
-**3. Una sesión de batch input EJECUTA la transacción, así que GRABA su código.** Por tanto
-**no aparece como "sin tcode"**. Confundir batch input con job de fondo por esa vía es un
-error que ya se cometió: las líneas sin tcode son jobs; las que llevan tcode pueden ser batch
-input y por `TCODE` son indistinguibles del diálogo.
+**3. `TCODE` VACÍO NO DISTINGUE batch input de job de fondo.** Se afirmó lo contrario —que la
+sesión graba su código— y **es falso, medido**: de los cambios que hacen los usuarios que
+crean sesiones, **el 61% tiene `TCODE` vacío**. Así que un cambio sin tcode puede ser un job
+**o** una sesión de batch input, y ese campo no los separa.
+
+Lo que sí separa, y hay que usar en su lugar:
+- **`APQI`** dice quién creó sesiones (con el sesgo de cola del límite 1).
+- **`SM35`/`SM35P` en el log** dice quién las EJECUTA. Medido: `G_COMAR` 190, `I_WETTIE` 101,
+  `K_TOUFFAHI` 67. Frente a **`SM37`**, que es el monitor de JOBS — `F_DERAKHSHAN` 577.
+  **Quien corre SM37 y no SM35 está haciendo jobs, no batch input.**
+- **El log NO tiene clase de evento para batch input.** Las ocho clases son RFC Function Call,
+  Report Start, RFC/CPIC Logon, Dialog Logon, Transaction Start, Other Events, User Master
+  Changes y System Events. No hay forma de ver la ejecución de una sesión como tal.
 
 **4. `CREATOR` NO es una identidad: es un parámetro.** Lo fija quien llama a `BDC_OPEN_GROUP`
 y **SAP no comprueba que el usuario exista**. Medido: de 14 grafías `*-RFC`, **nueve existen
