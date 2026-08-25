@@ -40,6 +40,34 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 SALIDA = REPO / "process_mining" / "discovery_delta.json"
+BASE = REPO / "process_mining" / "baseline_objects.json"
+
+
+def tomar_foto_de_base():
+    """Los nombres que el grafo YA tenia ANTES de correr la cadena.
+
+    Sin esto el cruce final es CIRCULAR y no puede descubrir nada: compara lo que los mineros
+    acaban de escribir contra un brain_state que ya ingirio esos mismos stores en el rebuild
+    anterior. Medido en su estrena -- 17 fuentes, 0 NUEVOS en todas salvo learned_rules, que es
+    justo el unico store que no se ingiere. Parecia que no habia nada nuevo y lo que pasaba es
+    que la pregunta estaba mal hecha.
+
+    La foto se guarda en disco con su fecha para que una corrida parcial (--desde) siga
+    comparando contra el estado PREVIO a la cadena, no contra el de hace un minuto.
+    """
+    try:
+        estado = json.loads((REPO / "brain_v2" / "brain_state.json").read_text(encoding="utf-8"))
+        nombres = sorted({str(k).upper() for k in (estado.get("objects") or {})})
+    except Exception:
+        return None
+    BASE.write_text(json.dumps({
+        "_que_es": ("los nombres que el grafo tenia ANTES de esta corrida. El cruce final compara "
+                    "contra esto, no contra el grafo de despues, que ya contiene lo recien "
+                    "escrito"),
+        "tomada": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "objetos": len(nombres), "nombres": nombres,
+    }, ensure_ascii=False), encoding="utf-8")
+    return len(nombres)
 
 FASES = [
     {
@@ -54,7 +82,10 @@ FASES = [
                     "Contar antes de esto infla cualquier cifra"),
         "pasos": [("A19 filtro de realidad", "process_mining/log_reality_filter.py", []),
                   ("A3 clasificador RFC", "process_mining/rfc_process_classifier.py", []),
-                  ("A4 escalera de dominio", "process_mining/executed_objects_domain_map.py", [])],
+                  ("A4 escalera de dominio", "process_mining/executed_objects_domain_map.py", []),
+                  # POR DONDE entra el trabajo que NO pasa por una transaccion de dialogo.
+                  # Este es el metodo que encontro ALLOS y que vivio un dia solo como prompt.
+                  ("A31 canal batch input", "process_mining/bdc_channel_mining.py", [])],
     },
     {
         "id": 2, "nombre": "COLUMNA VERTEBRAL DE CASOS", "opcional": False,
@@ -117,8 +148,17 @@ def cruzar_con_lo_conocido():
         except Exception:
             return {}
 
-    estado = carga("brain_v2", "brain_state.json")
-    conocidos = {str(k).upper() for k in (estado.get("objects") or {})}
+    # Contra la FOTO DE BASE, no contra el grafo de ahora. Si no hay foto se avisa y se usa el
+    # grafo actual, diciendo claramente que en ese caso el resultado es circular y no vale.
+    base = carga("process_mining", "baseline_objects.json")
+    if base.get("nombres"):
+        conocidos = {str(n).upper() for n in base["nombres"]}
+        fecha_base = base.get("tomada")
+        circular = False
+    else:
+        estado = carga("brain_v2", "brain_state.json")
+        conocidos = {str(k).upper() for k in (estado.get("objects") or {})}
+        fecha_base, circular = None, True
     claims = carga("brain_v2", "claims", "claims.json")
     texto_claims = json.dumps(claims, ensure_ascii=False).upper() if claims else ""
 
@@ -176,7 +216,11 @@ def cruzar_con_lo_conocido():
         "_como_se_lee": ("NUEVOS no significa 'importante': significa 'no lo teniamos'. El "
                          "trabajo es decidir cual de ellos merece un claim, y los que no, por que"),
         "_siguiente": "python brain_v2/rebuild_all.py  (lleva todo al grafo)",
-        "objetos_en_el_grafo": len(conocidos),
+        "_base_de_comparacion": (
+            f"foto tomada {fecha_base}, antes de correr la cadena" if not circular else
+            "SIN FOTO DE BASE: se comparo contra el grafo ACTUAL, que ya contiene lo que los "
+            "mineros acaban de escribir. El resultado es circular y no vale como descubrimiento"),
+        "objetos_en_la_base": len(conocidos),
         "resumen": resumen,
         "nuevos_por_fuente": nuevos,
     }
@@ -196,6 +240,16 @@ def main():
     print("CADENA DE DESCUBRIMIENTO -- el orden lo imponen las dependencias")
     print("=" * 78)
     bitacora, t0 = [], time.time()
+    # La foto SOLO se renueva si de verdad se va a minar. En una corrida de solo-cruce
+    # (--desde 5) retomarla aqui la dejaria identica al grafo de ahora y volveria a ser
+    # circular: hay que seguir comparando contra el estado previo a la ULTIMA mineria.
+    va_a_minar = any(not f["opcional"] and f["id"] >= a.desde and f["id"] < 5 for f in FASES)
+    if not a.dry and va_a_minar:
+        n = tomar_foto_de_base()
+        print(f"\nfoto de base: {n:,} objetos en el grafo ANTES de empezar" if n else
+              "\nAVISO: no se pudo tomar foto de base -- el cruce final sera circular")
+    elif not a.dry:
+        print("\nfoto de base: se conserva la anterior (esta corrida no mina, solo cruza)")
     for f in FASES:
         if f["opcional"] and not a.con_ingesta:
             print(f"\n[{f['id']}] {f['nombre']}  -- SALTADA (pasa --con-ingesta)")

@@ -1,0 +1,209 @@
+"""GATE: un script que MINA y no esta registrado es una capacidad que se pierde al cerrar sesion.
+
+POR QUE EXISTE
+    El censo anterior solo miraba `process_mining/`, y los mineros estan repartidos por todo el
+    repo: `Zagentexecution/sap_data_extraction/scripts/`, `brain_v2/`, `scripts/`. Con esa
+    ventana estrecha, un script que lee el log de auditoria y descubre como trabaja la casa
+    podia existir durante meses sin figurar en ningun sitio.
+
+    Y el caso que lo prueba: el metodo que encontro ALLOS -- una herramienta que llevaba mas de
+    un ano sin identificar -- vivio como PROMPT de un agente, sin algoritmo. Un metodo que solo
+    vive en un prompt no se puede repetir, ni programar, ni gatear, ni comparar con la corrida
+    del mes pasado. El hallazgo se guardo; la forma de encontrarlo, no.
+
+QUE CUENTA COMO MINAR
+    Leer datos de EVENTO -- el log de auditoria, el log de cambios, la cola de batch input, la
+    tabla de jobs -- para descubrir COMO SE TRABAJA. No cuenta leer una tabla de configuracion
+    ni de maestros: eso es consultar el estado, no observar el comportamiento.
+
+Uso:  python Zagentexecution/quality_checks/mining_capability_census.py [--json]
+Salida: exit 0 limpio · exit 1 si hay mineros sin registrar
+"""
+QUALITY_CHECK = {
+    "tier": "gate",
+    "needs": "files",
+    "what": ("scripts que leen datos de evento para descubrir como se trabaja y no estan "
+             "registrados como algoritmo: capacidad de mineria que se pierde al cerrar"),
+}
+# ----------------------------------------------------------------------------
+import glob
+import json
+import os
+import re
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ALGOS = os.path.join(ROOT, "brain_v2", "methods", "algorithms.json")
+
+# Tablas de EVENTO: guardan que PASO, con su momento y su actor.
+EVENTO = ["rsau_audit_history", "cdhdr_history", "cdhdr", "cdpos", "apqi", "apqd",
+          "tbtco", "tbtcp", "rsau", "sm20", "edidc", "srt_monilog", "balhdr", "balm"]
+# Verbos de DESCUBRIMIENTO: no basta con leer el evento, hay que sacar un patron de el.
+DESCUBRE = ["group by", "counter(", "defaultdict", "most_common", "discover", "descubr",
+            "classif", "clasific", "pattern", "patron", "variant", "dfg", "conform",
+            "distinct", "correlat", "agrupa"]
+
+# Revisados y deliberadamente FUERA, con motivo. Una exclusion sin motivo es un hueco
+# disfrazado, asi que el motivo es obligatorio para estar aqui.
+FUERA = {
+    "accumulate_logs.py": "es el grifo: trae el evento, no descubre patrones en el",
+    "gold_refresh.py": "refresco de tablas, no observa comportamiento",
+    "load_wide_tables.py": "carga",
+    "p01_massive_extractor.py": "extraccion",
+    "accumulate_problems.py": "acumulador",
+    "build_p2p_log.py": "construye el log de eventos para que otros lo minen",
+    "parse_syslog.py": "parser",
+    "gold_ref.py": "helper de rutas",
+}
+
+
+def _kind_probable(texto, eventos):
+    """Que TIPO de mineria parece hacer, para que la propuesta llegue medio rellena.
+
+    Es una pista, no un veredicto: quien registre el algoritmo la confirma. Proponer un tipo
+    ahorra trabajo; afirmarlo sin mirar el codigo seria inventar clasificacion.
+    """
+    t = texto
+    if any(k in t for k in ("slguser", "terminal", "logon", "rfcdes", "destino", "canal")):
+        return "CANAL_Y_ACTOR"
+    if any(k in t for k in ("variant", "dfg", "secuencia", "transicion", "activity")):
+        return "FLUJO_DE_CONTROL"
+    if any(k in t for k in ("conform", "desviacion", "deviation", "estandar")):
+        return "CONFORMIDAD"
+    if "apqi" in eventos or "apqd" in eventos:
+        return "CANAL_Y_ACTOR"
+    if any(k in t for k in ("drift", "deriva", "tendencia", "por_mes")):
+        return "DERIVA"
+    if any(k in t for k in ("clasific", "classif", "es_objeto", "generado")):
+        return "REALIDAD"
+    return None
+
+
+def _propuesta(c):
+    """Borrador de alta. Deliberadamente SIN failure_mode: ese campo es el valioso y exige
+    saber COMO se rompe, que no se deduce leyendo imports. Un modo de fallo inventado es peor
+    que ninguno, porque parece que alguien lo penso."""
+    base = os.path.basename(c["script"])[:-3]
+    return {
+        "id": f"A??_{base}",
+        "operates_on": ", ".join(c["tablas_de_evento"]),
+        "origin": "OURS",
+        "state": "REVISAR",
+        "mining_kind": c.get("mining_kind_probable"),
+        "does": "COMPLETAR: que descubre, en una frase que sirva a quien no lo escribio",
+        "bound_in": [c["script"]],
+        "failure_mode": ("COMPLETAR -- ES EL CAMPO QUE IMPORTA. Como puede este algoritmo dar "
+                         "una respuesta VEROSIMIL Y FALSA? Si no lo sabes, correlo y averigualo "
+                         "antes de registrarlo"),
+        "lands_in": "COMPLETAR: en que store aterriza, o 'n/a - tecnica'",
+    }
+
+
+def main():
+    try:
+        algos = json.load(open(ALGOS, encoding="utf-8")).get("algorithms") or {}
+    except Exception:
+        algos = {}
+    registrados = set()
+    for a in algos.values():
+        for b in (a.get("bound_in") or []):
+            registrados.add(os.path.basename(str(b)).lower())
+
+    # Rutas que NO son capacidad viva. Sin este filtro el censo daba 55 candidatos e incluia un
+    # lexer de pygments dentro de un venv, carpetas archivadas y su propio codigo: un gate que
+    # grita en falso deja de leerse, y lo que se pierde con el son los hallazgos de verdad.
+    MUERTAS = ("__pycache__", os.sep + "venv" + os.sep, "site-packages",
+               os.sep + "_obsolete" + os.sep, os.sep + "_applied" + os.sep,
+               os.sep + "tasks" + os.sep, os.sep + "incidents" + os.sep,
+               os.sep + "node_modules" + os.sep, os.sep + ".git" + os.sep,
+               # El servidor MCP NUNCA se ha conectado -- no corrio una sola vez -- y ademas
+               # guarda 68 escritores de SAP sin ninguna puerta, la clase de herramienta que
+               # causo INC-CLASS-LOSS. Lo que hay ahi no es capacidad viva: es un archivo que
+               # no queremos resucitar por la puerta de atras de un censo de mineria.
+               os.sep + "mcp-backend-server-python" + os.sep)
+    YO = os.path.abspath(__file__)
+
+    candidatos, revisados = [], 0
+    for pat in ("process_mining/**/*.py", "brain_v2/**/*.py", "scripts/**/*.py",
+                "Zagentexecution/**/*.py"):
+        for p in glob.glob(os.path.join(ROOT, pat), recursive=True):
+            nom = os.path.basename(p)
+            if nom in FUERA or any(m in p for m in MUERTAS) or os.path.abspath(p) == YO:
+                continue
+            revisados += 1
+            try:
+                t = open(p, encoding="utf-8", errors="ignore").read().lower()
+            except Exception:
+                continue
+            ev = [e for e in EVENTO if e in t]
+            if not ev:
+                continue
+            desc = [v for v in DESCUBRE if v in t]
+            if not desc:
+                continue                 # lee el evento pero no saca patron: no es minero
+            if nom.lower() in registrados:
+                continue
+            # Leer una tabla de evento de pasada no es minar. Se pide o VARIAS tablas de evento,
+            # o varias senales de descubrimiento sobre una: la diferencia entre un script que
+            # menciona cdhdr y uno que lo agrupa por actor para ver quien cambia que.
+            if len(set(ev)) < 2 and len(set(desc)) < 3:
+                continue
+            candidatos.append({
+                "script": os.path.relpath(p, ROOT).replace(os.sep, "/"),
+                "tablas_de_evento": sorted(set(ev))[:4],
+                "senales_de_descubrimiento": sorted(set(desc))[:4],
+                "lineas": t.count("\n"),
+                "mining_kind_probable": _kind_probable(t, ev),
+            })
+
+    candidatos.sort(key=lambda c: -len(c["tablas_de_evento"]) * 100 - c["lineas"])
+    rep = {
+        "_que_comprueba": ("scripts que leen datos de EVENTO y sacan patrones de ellos sin estar "
+                           "registrados como algoritmo"),
+        "_por_que": ("una capacidad de mineria sin registrar no se puede repetir, ni programar, "
+                     "ni gatear, ni comparar con la corrida anterior. El metodo que encontro "
+                     "ALLOS vivio un dia solo como prompt de un agente"),
+        "_no_es_una_sentencia": ("algunos seran helpers de un algoritmo ya registrado. Lo que se "
+                                 "pide es MIRARLOS, y que el que se quede fuera lo haga con "
+                                 "motivo escrito en FUERA, no por silencio"),
+        "scripts_revisados": revisados,
+        "algoritmos_registrados": len(algos),
+        "mineros_sin_registrar": candidatos,
+    }
+    if "--proponer" in sys.argv:
+        # LA MECANIZACION DEL ALTA: emite el borrador de cada minero para que pase al grupo de
+        # mineria y lo pueda usar todo el mundo. Deja el failure_mode a COMPLETAR a proposito.
+        prop = {"_que_es": ("borradores de alta para los mineros sin registrar. Completa `does`, "
+                            "`failure_mode` y `lands_in` y pegalos en algorithms.json"),
+                "_regla": ("el failure_mode no se inventa: se averigua CORRIENDO el algoritmo. "
+                           "Un modo de fallo fabricado es peor que ninguno porque parece pensado"),
+                "propuestas": [_propuesta(c) for c in candidatos]}
+        salida = os.path.join(ROOT, "brain_v2", "methods", "mining_candidates.json")
+        with open(salida, "w", encoding="utf-8") as fh:
+            json.dump(prop, fh, indent=2, ensure_ascii=False)
+        print(f"{len(candidatos)} borrador(es) -> {salida}")
+        return 1 if candidatos else 0
+
+    if "--json" in sys.argv:
+        print(json.dumps(rep, ensure_ascii=False, indent=2))
+        return 1 if candidatos else 0
+
+    print(f"[censo de mineria] {revisados} scripts revisados · {len(algos)} algoritmos "
+          f"registrados")
+    if not candidatos:
+        print("  OK - todo lo que mina esta registrado")
+        return 0
+    print(f"  {len(candidatos)} script(s) leen EVENTOS y sacan patrones sin estar registrados:\n")
+    for c in candidatos:
+        print(f"  {c['script']}")
+        print(f"      eventos: {', '.join(c['tablas_de_evento'])}")
+        print(f"      descubre: {', '.join(c['senales_de_descubrimiento'])}  "
+              f"({c['lineas']} lineas)")
+    print("\n  Cada uno: o se registra como algoritmo con su modo de fallo, o entra en FUERA")
+    print("  con el motivo. Dejarlo asi es perder la capacidad al cerrar la sesion.")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.exit(main())

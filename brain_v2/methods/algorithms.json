@@ -1097,6 +1097,34 @@
       "improve": "los choques se SACAN pero no los arbitra nadie. Los de hoy se resuelven solos por autoridad; el dia que choquen dos medidas del mismo peso hace falta juicio, y eso es un agente, no una regla",
       "lands_in": "process_mining/mining_findings.json",
       "_por_que_importa": "el hallazgo grande del 2026-08-25 no lo produjo ningun minero: lo produjo el CHOQUE entre dos. A23 concluyo que E_SILVA era un canal; USR02-USTYP dice tipo A, una PERSONA. Los dos tenian razon, y lo que los reconcilia -- la cuenta de una persona conducida por una aplicacion, que hereda todos sus permisos -- es H71. Sin un sitio comun, ese choque solo ocurre si la misma conversacion casualmente mira las dos cosas a la vez, y eso no es un metodo: es suerte"
+    },
+    "A31_bdc_channel_mining": {
+      "operates_on": "apqi -- la cola de batch input, que es un log de eventos",
+      "origin": "OURS",
+      "state": "WORKS",
+      "mining_kind": "CANAL_Y_ACTOR",
+      "does": "descubrir quien genera sesiones de batch input, de donde vienen y a que dominio pertenecen: por PROGID el programa generador, y para las externas por RFC (SAPMSSY1) abriendo el GROUPID, que es lo unico que la sesion externa trae",
+      "bound_in": [
+        "process_mining/bdc_channel_mining.py"
+      ],
+      "failure_mode": "APQI ES UNA COLA, NO UN ARCHIVO: LAS SESIONES QUE SE PROCESAN BIEN SE BORRAN. Lo que queda es lo que fallo, lo que nadie corrio y lo reciente, asi que ninguna cifra de aqui es 'cuanto batch input se hace' sino 'cuanto QUEDA VISIBLE'. Confundir las dos produjo una conclusion falsa el 2026-08-24 -- se concluyo que el batch input era sobre todo viajes, cuando lo que pasa es que las de viajes fallan mas. | Segundo: PROGID dice el PROGRAMA, no la transaccion, y SAPMSSY1 solo significa 'vino de fuera por RFC': no identifica la herramienta. | Tercero: la gramatica de acreedor sobre GROUPID solo casa si el numero se RELLENA A 10 CON CEROS, que es como SAP guarda LIFNR; sin eso casaba 0 de 400 y parecia que la gramatica estaba mal",
+      "improve": "cruzar contra rsau para saber que sesiones se EJECUTARON de verdad y por quien; y extraer el codigo de los 4 generadores propios, que escriben en produccion por BDC y no se pueden auditar",
+      "lands_in": "brain_v2/bdc_channel.json",
+      "_nace_de": "2026-08-25. Este metodo encontro ALLOS -- una herramienta Excel que genera sesiones por RFC y que se llevaba MAS DE UN ANO buscando -- y despues se quedo viviendo solo como prompt en .claude/agents/batch-input-explorer.md. Un metodo que solo vive en un prompt no se puede repetir, ni programar, ni gatear, ni comparar con la corrida del mes pasado: el hallazgo se guardo y la forma de encontrarlo no. Mecanizado, reproduce el hallazgo solo: 857 sesiones de ALLOS en 503 grupos por 9 creadores desde 2025"
+    },
+    "A32_mining_capability_census": {
+      "operates_on": "el repositorio entero contra el registro de algoritmos",
+      "origin": "OURS",
+      "state": "WORKS",
+      "mining_kind": "COLABORACION",
+      "does": "encontrar scripts que leen datos de EVENTO y sacan patrones de ellos sin estar registrados como algoritmo, y emitir el borrador de alta para que pasen al grupo de mineria y los pueda usar todo el mundo (--proponer)",
+      "bound_in": [
+        "Zagentexecution/quality_checks/mining_capability_census.py"
+      ],
+      "failure_mode": "UN CENSO CON LA VENTANA MAL PUESTA MIENTE EN LOS DOS SENTIDOS. Con la ventana estrecha -- solo process_mining/ -- no veia a la mayoria de los mineros, que viven repartidos. Con la ventana ancha y sin filtro dio 55 candidatos e incluia un lexer de pygments dentro de un venv, carpetas archivadas, scripts de incidencia de un solo uso y SU PROPIO CODIGO detectandose. Un gate que grita en falso deja de leerse y con el se pierden los hallazgos de verdad. Filtrado: 23. | Y el limite de fondo: detecta por sintaxis -- que tablas nombra y que verbos usa -- asi que no puede distinguir un minero de un helper que casualmente agrupa. Por eso PROPONE y no sentencia",
+      "improve": "mirar tambien los otros repos del ecosistema: los mineros de FINCLOSSING y unesco-sap-brain no los ve nadie desde aqui",
+      "lands_in": "brain_v2/methods/mining_candidates.json",
+      "_medido": "2026-08-25: 23 mineros vivos sin registrar, con tipo probable propuesto para 20 -- 11 de CANAL_Y_ACTOR, 6 de FLUJO_DE_CONTROL, 2 de REALIDAD, 1 de DERIVA"
     }
   },
   "_portfolio": {
