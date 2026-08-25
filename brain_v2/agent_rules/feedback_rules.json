@@ -5321,5 +5321,61 @@
     "rule": "LA REGLA DE UN SOLO ESCRITOR TIENE QUE SER UN LOCK, NO UN RECUERDO. Medido 2026-08-22: un `rebuild_all.py` arrancado a las 23:17 SOBREVIVIO AL SUSPEND del PC y seguia vivo nueve horas despues; al reanudar arranco otro por `curate.py`. Dos escritores concurrentes sobre brain_state.json durante horas, y el fichero quedo en 5.337.221 bytes cuando la version verificada de la noche anterior tenia 5.639.898. NADIE lanzo dos a sabiendas: uno resucito. Mecanizado en `brain_v2/rebuild_lock.py`, cableado en `rebuild_all.py` con heartbeat entre pasos: HELD se niega, ORPHAN se reclama solo, HUNG (vivo pero sin latir >15 min, o corriendo >45) se niega y NO mata nada. Probado en los tres estados.",
     "why": "Una regla escrita depende de que el operador se acuerde, y no cubre el caso en que el SISTEMA se acuerda por el: un proceso que sobrevive a un suspend, un scheduler que relanza, un hook de arranque. El dano no es teorico -- el 2026-08-21 se commiteo un brain_state a medio construir por la misma causa, y el estado en disco quedo mas pequeno que el que estaba en git. Y matar un escritor a medias es peor que el problema, por eso el lock informa y deja decidir en vez de matar.",
     "how_to_apply": "1) Todo generador de estado compartido adquiere lock antes de escribir y late entre pasos; sin latido no se distingue lento de colgado. 2) Antes de commitear artefactos GENERADOS, pregunta `rebuild_lock.is_rebuild_running()` -- si es True, no los anadas. 3) Si el lock dice HUNG, decide tu: mata el PID o relanza con --force. El lock nunca mata. 4) Y prueba el lock en los tres estados: un check que nunca ha fallado no es un check."
+  },
+  {
+    "id": "feedback_do_not_heuristic_what_the_system_already_declares",
+    "severity": "CRITICAL",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Security",
+      "process": "P2D"
+    },
+    "rule": "NO INVENTES UNA HEURISTICA PARA ALGO QUE EL SISTEMA YA DECLARA EN UN CAMPO. Medido 2026-08-25: para separar cuentas tecnicas de personas se hicieron DOS heuristicas sobre el log de auditoria -- 'tiene logons de dialogo, luego es persona' y despues 'la proporcion RFC contra dialogo' -- y las dos colocaron BRIDGE-RFC, JOBBATCH, MULESOFT y WF-BATCH entre las personas. SAP lo dice en USR02-USTYP: los cuatro son tipo B (Sistema). Se perdieron dos iteraciones adivinando un dato de un campo. La senal de alarma es cuando te oigas decir 'lo mas probable es que' sobre una propiedad ESTABLE de un objeto de negocio: eso casi siempre esta en una tabla.",
+    "why": "una heuristica sobre comportamiento observado responde 'como se comporta', no 'que es'. Las dos preguntas se parecen y no son la misma, y contestar la primera creyendo contestar la segunda produce una conclusion confiada y falsa. Ademas cada heuristica hay que defenderla luego contra cada contraejemplo; el campo no.",
+    "how_to_apply": "antes de derivar una propiedad del comportamiento, busca la tabla que la declara (usuario -> USR02-USTYP; autoria -> TADIR; paquete -> TDEVC; tipo de cuenta -> SKA1/SKB1). Si no esta en el Gold DB, TRAELA de P01 por RFC en lugar de adivinar: USR02 entera son 6.755 filas y una lectura. Deja la heuristica solo para lo que de verdad no esta declarado en ningun sitio, y ETIQUETALA como inferida.",
+    "related_objects": [
+      "USR02",
+      "USTYP",
+      "BRIDGE-RFC",
+      "JOBBATCH",
+      "MULESOFT",
+      "WF-BATCH",
+      "rsau_audit_history"
+    ]
+  },
+  {
+    "id": "feedback_a_swallowed_exception_reports_success",
+    "severity": "CRITICAL",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "UN except SILENCIOSO CONVIERTE UN FALLO EN UN EXITO REPORTADO. Medido 2026-08-25: el clasificador de dominio del inventario de interfaces se cargaba dentro de un `try/except Exception: return (lambda: None)`. Fallaba con ModuleNotFoundError -- faltaba un sys.path -- y el generador asignaba None a los 655 registros, escribia el fichero y terminaba con codigo 0. Sin la comprobacion aparte, el inventario publicado habria dicho '0% con dominio' sin que nada avisara. Es hermano de la regla #180 (un replace que no encaja y reporta exito): la familia es 'el paso central no ocurrio y el programa no se entero'.",
+    "why": "el fallback silencioso esta pensado para degradar con elegancia, pero degrada TAMBIEN cuando lo que falla es lo esencial. Un artefacto vacio y bien formado pasa cualquier revision visual: parece que corrio.",
+    "how_to_apply": "un componente del que depende el resultado se carga SIN try/except: que reviente. Y si el resultado admite un 'no se pudo', ASEVERA el minimo -- `if resueltos == 0: raise SystemExit(...)` -- porque cero de seiscientos no es degradacion, es fallo. Reserva el except silencioso para lo verdaderamente opcional, y cuando lo uses, cuenta e imprime cuantas veces salto.",
+    "related_objects": [
+      "brain_v2/build_interface_inventory.py",
+      "process_mining/executed_objects_domain_map.py"
+    ]
+  },
+  {
+    "id": "feedback_a_composite_label_must_be_canonical",
+    "severity": "HIGH",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-002",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "UNA ETIQUETA COMPUESTA SE EMITE EN ORDEN CANONICO, NUNCA EN EL ORDEN EN QUE SALIO EL RECUENTO. Medido 2026-08-25: la naturaleza de una interfaz se componia como 'el que gano' + '+' + 'los demas', y produjo 'TRANSACCIONAL+MASTER_DATA' (11) y 'MASTER_DATA+TRANSACCIONAL' (1) como si fueran dos categorias distintas: ninguna busqueda encontraba las dos mitades. Es la MISMA familia que los campos con dos nombres (evidence/evidence_for, domain/domains) y que Substrate_Technical contra Technical_Substrate -- cuatro casos el mismo dia, tres de ellos en codigo escrito esa tarde.",
+    "why": "el conocimiento se recupera por igualdad exacta de cadena. Dos formas de escribir lo mismo parten el conjunto en dos y ninguna de las dos mitades se encuentra entera. Y a diferencia de un dato mal, esto no se ve mirando el registro: solo aparece al contar.",
+    "how_to_apply": "ordena las partes ('+'.join(sorted(...))) y toma el nombre de la etiqueta del componente que YA lo define -- si el clasificador dice Technical_Substrate, no escribas otra variante en el consumidor. Y al terminar cualquier generador, cuenta los valores distintos del campo que acabas de emitir: dos etiquetas parecidas en esa lista son el sintoma.",
+    "related_objects": [
+      "brain_v2/build_interface_inventory.py",
+      "Zagentexecution/quality_checks/knowledge_connectivity_check.py"
+    ]
   }
 ]
