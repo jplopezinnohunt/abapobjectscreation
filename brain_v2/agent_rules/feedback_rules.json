@@ -5490,5 +5490,41 @@
       "build_interface_inventory.py",
       "log-process-discovery"
     ]
+  },
+  {
+    "id": "feedback_a_workflow_that_returns_text_lands_nothing",
+    "severity": "CRITICAL",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-001",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "UN WORKFLOW QUE DEVUELVE TEXTO NO ATERRIZA NADA, Y SU SALIDA CADUCA CON LA SESION. Medido 2026-08-25: el workflow de alta de mineros corrio 22 agentes, gasto 2,5 M de tokens en 85 minutos, produjo 12 fichas con el metodo COMPLETO y 10 verificaciones adversariales donde otro agente REPRODUJO cada defecto corriendo el instrumento -- y encontro cuatro defectos vivos, uno de ellos contaminando dos claims TIER_1. Todo eso quedo en un journal.jsonl temporal. algorithms.json seguia con 64 entradas y A39 no existia. El workflow no fallo: hizo su trabajo y devolvio el resultado a una conversacion, que es el sitio donde el conocimiento se muere.",
+    "why": "un agente devuelve texto por diseno; el orquestador es quien tiene que escribirlo en el store. Si el orquestador se limita a leer el resumen, el coste se pago entero y el conocimiento dura lo que dure el contexto. Y es el peor caso posible: mas caro que no haberlo hecho, porque ademas parece hecho.",
+    "how_to_apply": "antes de lanzar un workflow, decide EN QUE FICHERO aterriza su salida y con que esquema. Al terminar, lo primero es escribirlo -- copiando el esquema del store, no inventandolo. Si la salida no cabe en ningun store existente, esa es la señal de que falta el store, no de que valga con leerla. Y comprueba: si el store no crecio, no aterrizo nada.",
+    "related_objects": [
+      "algorithms.json",
+      "mining_candidates.json",
+      "A39_fx_revaluation_scope_by_nature",
+      "A48_semantic_activity_map"
+    ]
+  },
+  {
+    "id": "feedback_pair_pipeline_stages_by_order_not_by_text",
+    "severity": "MEDIUM",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "PARA RECUPERAR LA SALIDA DE UN WORKFLOW, EMPAREJA SUS FASES POR EL ORDEN DEL JOURNAL, NO POR EL TEXTO. Las claves del journal son hashes y las lineas 'started' no llevan etiqueta, asi que la tentacion es emparejar ficha con verificacion buscando que fichero citan las dos. Medido 2026-08-25: eso dio 4 emparejamientos correctos, 4 AMBIGUOS y 4 sin emparejar, porque una verificacion cita tambien los ficheros VECINOS. Lo que si ata es el orden: en un pipeline, cuando la etapa 1 de un item resuelve, arranca su etapa 2. Se reconstruye por agentId y sale exacto.",
+    "why": "pegarle a un artefacto el veredicto de otro es peor que no registrarlo: queda escrito, con aspecto de verificado, y nadie lo vuelve a mirar.",
+    "how_to_apply": "lee el journal EN ORDEN; para cada RESULT de etapa 1, su etapa 2 es el siguiente STARTED antes del proximo RESULT de etapa 1. Y ASEVERA que el reparto cuadra con algo que sepas por otra via -- aqui, que los 2 sin verificador fueran exactamente los 2 declarados helper. Si no cuadra, PARA.",
+    "related_objects": [
+      "journal.jsonl",
+      "algorithms.json"
+    ]
   }
 ]
