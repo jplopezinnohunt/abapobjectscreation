@@ -876,3 +876,15 @@ porque el siguiente analisis vuelve a derivarlo sin saber que ya lo sabiamos. Re
 `drift_signals.json` · `p2p_ocel2_summary.json` · `reality_filter.json` — son agregados sin
 nombre de objeto: o se les da una clave por objeto, o se declaran agregados **con motivo** en
 `graph_landing_check.FUERA`. Dejarlo en silencio es lo que dejo 19 stores fuera durante meses.
+
+
+### Aparcado por JP durante la reparacion (sesion 103) — decidir despues
+- **MIN-COMO-SKILL** — el INDICE DE CAPACIDADES (`process_mining/ask.py`: que se puede preguntar
+  y que minero lo contesta, con la llamada exacta, lo que NO puede y su trampa) es *parte
+  fundamental del brain*. Queda por decidir **si debe ser un SKILL** en vez de un script, para
+  que se cargue solo cuando alguien necesita minar algo.
+- **MIN-LLAMABLE** — cada minero es una CAPACIDAD invocable desde otro descubrimiento o desde el
+  analisis de una incidencia: si un minero sabe leer variantes, eso vale para el alcance de una
+  revaluacion, para el formato DMEE de una corrida y para saber si una cuenta se procesa alguna
+  vez. `ask.py` da el enrutado y el `como_se_importa`; falta que los AGENTES lo usen por defecto
+  en vez de re-derivar.

@@ -5400,5 +5400,95 @@
       "SKA1",
       "SKB1"
     ]
+  },
+  {
+    "id": "feedback_mechanizing_a_method_keeps_the_counting_and_drops_the_criterion",
+    "severity": "CRITICAL",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-001",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "AL MECANIZAR UN METODO SE CONSERVA LA PARTE CONTABLE Y SE TIRA LA INTERPRETATIVA, Y LA INTERPRETATIVA ES EL CONOCIMIENTO. Medido 2026-08-25 con una auditoria de fidelidad sobre cuatro mineros mecanizados el mismo dia: 65 perdidas, 27 graves, veredicto PIERDE_MUCHO en los cuatro. El minero que heredo el metodo que encontro ALLOS conservo 'agrupa APQI por PROGID' y perdio la derivacion programa->transaccion, los tres ejes que separan una herramienta de otra, la vuelta por el log y el aviso de que QSTATE no es una tasa. El de variantes empezo siendo un volcado de pares campo/valor sin las tres clases de parametro, que es donde vive todo el criterio.",
+    "why": "el codigo capta bien lo que se cuenta y mal lo que se juzga, asi que la mecanizacion parece exitosa: produce cifras. Lo que desaparece son las trampas, los limites del instrumento y las conclusiones falsas ya cometidas -- justo lo que hace falta para no repetirlas. Un metodo mecanizado a medias es peor que un prompt, porque corre solo y nadie vuelve a leerlo.",
+    "how_to_apply": "al mecanizar, la fuente se lee ENTERA y por cada trampa, normalizacion, derivacion o advertencia se comprueba si el script la implementa o al menos la DECLARA en su salida. Lo que no este, va en `improve` NOMBRADO. Y despues se audita el script contra su fuente: escribirlo no es conservarlo. Las cuatro capas son leer, INTERPRETAR, AGRUPAR y decir donde se uso; si solo tienes la primera, has registrado un fichero, no una capacidad.",
+    "related_objects": [
+      "bdc_channel_mining.py",
+      "variant_content_mining.py",
+      "batch-input-explorer",
+      "variant-intelligence",
+      "miner-onboarding"
+    ]
+  },
+  {
+    "id": "feedback_a_fallback_that_always_finds_something_turns_a_key_error_into_a_fact",
+    "severity": "CRITICAL",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "UN FALLBACK QUE SIEMPRE ENCUENTRA ALGO CONVIERTE UN ERROR DE CLAVE EN UN DATO CREIBLE. Medido 2026-08-25: la fase de cruce pedia la clave `classified` en log_reality.json -- que no existe -- y el extractor caia en un fallback al fichero ENTERO, devolvia las 4 claves de primer nivel (rows, programs, actors, delta_vs_model), las conto como 4 nombres, todos 'ya conocidos', y publico 0 NUEVOS. El fichero llevaba unexplained=1318 y 80 nombres concretos. El aviso de 'forma no reconocida' NO salto, porque el fallback siempre encuentra algo. Con el fallback retirado y las rutas comprobadas una a una: de 0 a ~330 nombres nuevos.",
+    "why": "es peor que una excepcion tragada. Una excepcion deja el resultado vacio y alguien lo nota; un fallback lo deja PLAUSIBLE. Y como el numero es pequeno y no absurdo, se lee como 'no hay nada nuevo', que es exactamente la conclusion que impide buscar.",
+    "how_to_apply": "si se pidio una ruta concreta y no resuelve, devuelve VACIO y avisa con el nombre de la fuente -- nunca el objeto entero. Y comprueba cada ruta contra el fichero real antes de escribirla: las cinco rutas equivocadas de STORES_AL_GRAFO se habian escrito de memoria.",
+    "related_objects": [
+      "build_brain_state.py",
+      "run_discovery_pipeline.py",
+      "log_reality.json"
+    ]
+  },
+  {
+    "id": "feedback_a_gate_implemented_as_an_order_is_not_a_gate",
+    "severity": "HIGH",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "UNA PUERTA IMPLEMENTADA COMO ORDEN NO ES UNA PUERTA. A21 (columna vertebral de casos) declara en su propio lands_in que es el insumo de B1-B5, y la cadena la corria ANTES pero nadie leia su resultado: la familia B arrancaba igual si A21 fallaba, agotaba el timeout o concluia que ninguna clase alcanza documento. Eso permite exactamente lo que A21 documenta en su modo de fallo: un DFG, unas variantes y unos cuellos PLAUSIBLES de un proceso que no existe, presentados como resultado OK.",
+    "why": "poner algo primero no obliga a nada. Sin leer su salida y decidir, el orden es decorativo y la dependencia sigue sin cumplirse -- pero ahora parece cumplida.",
+    "how_to_apply": "si un paso es precondicion de otro, el segundo LEE el artefacto del primero y se NIEGA a correr cuando no sirve, diciendo por que. Y toda precondicion documentada en un failure_mode deberia ser una comprobacion, no una nota.",
+    "related_objects": [
+      "A21_case_spine",
+      "run_discovery_pipeline.py",
+      "case_spine.json"
+    ]
+  },
+  {
+    "id": "feedback_a_threshold_that_hides_what_it_dropped_turns_truncation_into_coverage",
+    "severity": "HIGH",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "UN CORTE QUE NO PUBLICA LO QUE TIRO CONVIERTE UNA POBLACION TRUNCADA EN UNA COBERTURA. Medido 2026-08-25: el corte de '>=1000 llamadas' descartaba 1.843 de 2.098 cuentas RFC sin dejar rastro, y el corte de top-12 en batch input tiraba ZMM_BI_MM01_PLANT, que es uno de los cinco generadores propios sin fuente extraida. El 'dominio asignado a X de N' se publicaba sobre lo que quedaba. Y cortar por arriba es como se concluyo 'el batch input es de viajes': debajo del 86,4% de TRIP_* habia 1.806 grupos sin mirar, y ahi estaba ALLOS.",
+    "why": "el resto sin clasificar es el SENSOR. Un resto visible vale mas que un 100% que miente, y el hallazgo esta casi siempre en la cola, no en la cabeza.",
+    "how_to_apply": "todo umbral publica vistos, conservados y descartados, con el criterio escrito. Y si el denominador esta incompleto, no publiques la metrica.",
+    "related_objects": [
+      "build_interface_inventory.py",
+      "bdc_channel_mining.py"
+    ]
+  },
+  {
+    "id": "feedback_weight_the_index_by_traffic_not_by_records",
+    "severity": "HIGH",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "PONDERAR POR REGISTROS HACE SUBIR UN INDICE MIENTRAS BAJA LO ENTENDIDO. Un destino RFC muerto pesa igual que Y_BAPI_WBS_FINANCIAL_DATA_1 con 1.861.107 llamadas. Medido 2026-08-25 al ponderar por trafico: los 72 registros sin dominio son el 11% de los REGISTROS y el 0,2% del TRAFICO, y el grado 3 pasa a ser el 50,1% de lo que de verdad corre. Y sin DERIVADA respecto a la corrida anterior nadie nota que la frontera dejo de moverse -- eso ya duro 75 dias sin que nadie lo viera.",
+    "why": "un indice sin derivada no dice si avanzamos, y un indice sin ponderar dice que avanzamos contando cosas que no pasan.",
+    "how_to_apply": "pondera por ejecuciones/llamadas, publica AMBAS cifras -- por registros y por trafico -- y guarda la derivada contra la corrida anterior. Un hallazgo es una DIFERENCIA.",
+    "related_objects": [
+      "build_interface_inventory.py",
+      "log-process-discovery"
+    ]
   }
 ]

@@ -276,6 +276,82 @@ def _ventana_del_log(con):
                              "estas sin decirlo")}
 
 
+def _perfil_temporal(con):
+    """CUANDO corre cada canal. Un pico entre el 1 y el 5 es CIERRE; uno a las 03:00 es BATCH;
+    actividad fuera de horario es un riesgo, no una curiosidad.
+
+    Sin esto ningun registro puede pasar de grado 1 (SITUADO) a grado 2 (DESCRITO): el perfil
+    horario es literalmente la prueba que exige ese grado.
+    """
+    out = {}
+    try:
+        for u, hora, dia, n in con.execute("""
+                SELECT SLGUSER, SUBSTR(SAL_TIME,1,2), SUBSTR(SAL_DATE,7,2), COUNT(*)
+                FROM rsau_audit_history
+                WHERE TXSUBCLSID='RFC Function Call' AND SLGUSER <> ''
+                GROUP BY 1,2,3"""):
+            d = out.setdefault((u or "").strip().upper(),
+                               {"por_hora": Counter(), "por_dia_del_mes": Counter()})
+            d["por_hora"][hora] += n
+            d["por_dia_del_mes"][dia] += n
+    except sqlite3.Error:
+        return {}
+    for u, d in out.items():
+        h = d["por_hora"]
+        tot = sum(h.values()) or 1
+        noche = sum(v for k, v in h.items() if k and (k < "07" or k >= "20"))
+        dm = d["por_dia_del_mes"]
+        cierre = sum(v for k, v in dm.items() if k and k <= "05")
+        d["pico_horario"] = h.most_common(1)[0][0] if h else None
+        d["pct_fuera_de_horario"] = round(100.0 * noche / tot, 1)
+        d["pct_primeros_5_dias"] = round(100.0 * cierre / (sum(dm.values()) or 1), 1)
+        d["forma"] = ("CIERRE (se concentra al principio de mes)" if d["pct_primeros_5_dias"] > 45
+                      else "BATCH NOCTURNO" if d["pct_fuera_de_horario"] > 60
+                      else "CONTINUO")
+        d["por_hora"] = dict(sorted(h.items()))
+        d["por_dia_del_mes"] = None      # el detalle no aporta; la forma si
+    return out
+
+
+def _variantes_por_programa():
+    """El programa dice lo que se PUEDE hacer; la VARIANTE, lo que SE HACE.
+
+    Registrar SAPF100 o RFEBBU00 sin su variante permite afirmar el alcance de un canal -- que
+    sociedades, que rangos, que rutas -- que el programa por si solo no determina. Es la misma
+    clase de error que costo una medida entera: FS10 contra FS11 por BILAVERS.
+    """
+    p = REPO / "brain_v2" / "variant_content.json"
+    if not p.exists():
+        return {}
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    out = {}
+    for v in d.get("variantes", []):
+        out.setdefault(str(v.get("programa", "")).upper(), []).append({
+            "variante": v.get("variante"),
+            "mecanismo": v.get("mecanismo_de_seleccion"),
+            "rutas": v.get("rutas_de_fichero") or None})
+    return out
+
+
+def _actores_normalizados():
+    """A19 primero: normalizar antes de contar. La misma persona con dos grafias cuenta como dos
+    canales -- medido en ALLOS: BILLAULT-RFC y BILLAULT_RFC."""
+    p = REPO / "brain_v2" / "log_reality.json"
+    if not p.exists():
+        return {}
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    acts = d.get("actors")
+    if isinstance(acts, dict):
+        return {str(k).upper(): v for k, v in acts.items() if isinstance(v, str)}
+    return {}
+
+
 def _tipos_de_usuario(con):
     """Lo que SAP DECLARA de cada cuenta (USR02-USTYP), no lo que parece por su nombre.
 
@@ -742,7 +818,10 @@ def main():
     _desde = _desde_donde_llama(_con2)
     _cambia = _lo_que_cambia_de_verdad(_con2)
     _ventana = _ventana_del_log(_con2)
+    _perfil = _perfil_temporal(_con2)
     _con2.close()
+    _variantes = _variantes_por_programa()
+    _norm = _actores_normalizados()
     _riesgo = []
     _contradicciones = []
 
@@ -925,6 +1004,33 @@ def main():
         if _it.get("channel") in ("RFC_INBOUND_OBSERVED", "RFC_CUSTOM_FM"):
             _it["_ventana_del_instrumento"] = _ventana.get("desde") and \
                 f"{_ventana['desde']}..{_ventana['hasta']}"
+            # CUANDO corre: sin perfil temporal nada pasa de SITUADO a DESCRITO
+            _p = _perfil.get(_a.upper())
+            if _p:
+                _it["cuando_corre"] = {
+                    "forma": _p["forma"], "pico_horario": _p["pico_horario"],
+                    "pct_fuera_de_horario": _p["pct_fuera_de_horario"],
+                    "pct_primeros_5_dias": _p["pct_primeros_5_dias"]}
+                if _p["pct_fuera_de_horario"] > 80 and _it.get("user_type") == "A":
+                    _it["_actividad_fuera_de_horario"] = (
+                        "una cuenta de PERSONA con mas del 80% de su trafico fuera de horario: "
+                        "o la conduce una aplicacion, o es actividad que nadie mira")
+            # La NORMALIZACION de A19: la misma persona con dos grafias son dos canales
+            _n = _norm.get(_a.upper())
+            if _n and _n.upper() != _a.upper():
+                _it["actor_normalizado"] = _n
+                _it["_ojo"] = ("dos grafias del mismo actor se cuentan como dos canales si no "
+                               "se normaliza antes: medido en ALLOS con BILLAULT-RFC / "
+                               "BILLAULT_RFC")
+
+        # LA VARIANTE: el programa dice lo que se puede hacer; la variante, lo que se hace
+        if _it.get("channel") in ("BATCH_INPUT", "FILE") and _a:
+            _v = _variantes.get(_a.upper())
+            if _v:
+                _it["variantes"] = _v[:6]
+                _it["_la_variante_es_el_alcance"] = (
+                    "el programa no determina que sociedades, rangos o rutas cubre: eso lo dice "
+                    "la variante con la que corre")
 
         _it["domain"] = _d
         _it["domain_basis"] = _b
