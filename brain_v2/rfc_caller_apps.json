@@ -116,5 +116,68 @@
       "superseded_by": "JP (2026-08-24): todo MuleSoft es Core Manager",
       "why_kept": "se conserva porque una correccion sin su version anterior no se puede auditar. Lo MEDIDO no cambia con la correccion: el actor sigue siendo MULESOFT al 100% y los volumenes son los mismos. Lo que cambia es el NOMBRE de la aplicacion, que nunca fue medido -- no esta en el sistema -- sino afirmado"
     }
-  ]
+  ],
+  "channels": {
+    "ALLOS_BATCH_INPUT": {
+      "nombre": "ALLOS Batch Input",
+      "que_es": "herramienta de escritorio basada en EXCEL que genera sesiones de batch input en P01 por RFC. El usuario las corre despues a mano en SM35",
+      "source": "user_knowledge (JP) + firma MEDIDA en apqi 2026-08-24",
+      "_se_llevaba_buscando": "mas de un ano sin encontrarla (JP, 2026-08-24)",
+      "como_se_identifica": [
+        "APQI.PROGID = 'SAPMSSY1' -- la sesion la creo algo EXTERNO por RFC, no un programa ABAP de la casa",
+        "GROUPID = <acreedor 8 digitos><sufijo 4>, p.ej. 63154754U101. Los 8 digitos casaron 60 de 60 contra LFA1.LIFNR",
+        "CREATOR = una CUENTA RFC NOMINAL POR PERSONA: VASAS-RFC, BILLAULT_RFC, MOYLAN-RFC, BOSZORME-RFC, SIFFRE_RFC, COLLOCA_RFC, VONTHRON-RFC. Cada usuario del Excel tiene la suya, y coexiste con su usuario de dialogo (T_COLLOCA / COLLOCA_RFC)"
+      ],
+      "medido": {
+        "sesiones": 4921,
+        "grupos": 1806,
+        "creadores": 41,
+        "acreedores_distintos": 1729,
+        "activo_desde": "2016-11-07",
+        "ultima": "2026-07-31",
+        "por_ano": {
+          "2016": 74,
+          "2017": 192,
+          "2018": 480,
+          "2019": 442,
+          "2020": 469,
+          "2021": 480,
+          "2022": 732,
+          "2023": 437,
+          "2024": 755,
+          "2025": 325,
+          "2026": 535
+        },
+        "quien_mas": {
+          "K_TOUFFAHI": 664,
+          "S_MEKONNEN": 485,
+          "V_GAMA-BERNA": 406,
+          "L_AMALLAH": 334,
+          "F_OREBIYI": 302,
+          "T_COLLOCA": 267
+        },
+        "sufijos": {
+          "U101": 1627,
+          "XA04": 987,
+          "U701": 703,
+          "V901": 511,
+          "XA01": 394,
+          "V404": 234
+        },
+        "estado": {
+          "E_con_error": 4558,
+          "F_finalizada": 342,
+          "R_en_proceso": 21
+        }
+      },
+      "_cuidado_con_el_92_por_ciento": "el 92,6% de las sesiones que quedan estan en estado E (error), y seria FALSO leer eso como una tasa de fallo del 92,6%. APQI es una COLA: una sesion procesada con exito SE BORRA. Lo que sobrevive esta sesgado hacia lo que fallo. La tasa real de error NO se puede medir con este instrumento",
+      "lo_que_no_se_puede_saber": "QUE TRANSACCION ejecuta cada sesion. Esta en APQD.VARDATA, que es LCHR(7902), y RFC_READ_TABLE lo rechaza con OPTION_NOT_VALID. No es un fallo de la llamada: es el canal. La via que queda es correlacionar creador y fecha contra el log de auditoria, que da correlacion temporal y no causalidad",
+      "por_que_importa": [
+        "Es un canal de ESCRITURA en produccion que no estaba en ninguno de los 300 registros del inventario de interfaces, y lleva casi DIEZ ANOS activo.",
+        "Usa cuentas RFC NOMINALES por persona: eso es una superficie de autorizacion que el modelo de roles no describe, porque la cuenta tecnica puede tener permisos distintos de los de su dueno.",
+        "Toca 1.729 acreedores distintos, o sea datos maestros de proveedor y/o pagos."
+      ],
+      "explorador": ".claude/agents/batch-input-explorer.md"
+    }
+  }
 }
