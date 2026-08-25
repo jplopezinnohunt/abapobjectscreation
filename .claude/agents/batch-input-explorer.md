@@ -50,7 +50,42 @@ APQI          cabecera de sesion: QID · GROUPID · PROGID · CREATOR · CREDATE
               bajo su usuario y SI quedan en el log de auditoria
 ```
 
-## LOS TRES LÍMITES DEL INSTRUMENTO — léelos antes de concluir
+## LO PRIMERO SIEMPRE: DE DÓNDE VIENE CADA SESIÓN
+
+**No todo batch input es una herramienta externa.** Buena parte de SAP usa BDC internamente:
+transacciones estándar que cargan datos lo hacen generando una sesión. Mezclarlas con lo que
+mete una herramienta de escritorio confunde dos cosas que no tienen nada que ver — una es SAP
+funcionando, la otra es un canal de escritura sin gobierno.
+
+**El campo que los separa es `APQI.PROGID`, y separa por sí solo:**
+
+| `PROGID` | Qué es | Qué significa |
+|---|---|---|
+| un **programa ABAP real** (`RFBIKR00`, `RFBIBL01`, `SAPF100`, `RFEBBU00`, `/SAPDMC/SAP_LSMW_BI_RECORDING`, `Z*`, `Y*`) | **SAP cargando datos con su propia tecnología** | normal, esperado, tiene dueño |
+| **`SAPMSSY1`** | el **despachador RFC**: la sesión la creó algo de FUERA | **canal externo — aquí están las herramientas** |
+
+Medido 2026-08-24: 55.087 de 57.998 sesiones son `SAPMSSY1`. Las propias son pocas y
+pequeñas — `RFBIKR00` 1.933, `ZHR_RETIRE_COPY_SPI` 222, `RFBIBL01` 146, LSMW 42.
+
+### Y dentro de lo externo, separa HERRAMIENTA de HERRAMIENTA
+
+`SAPMSSY1` dice "vino de fuera", no *de qué*. Para distinguir una herramienta de otra, usa
+**tres ejes juntos** — ninguno basta solo:
+
+1. **La FORMA del `GROUPID`.** Normaliza (dígitos→9, letras→A) y cuenta. Una herramienta emite
+   con una plantilla: si 1.346 grupos comparten `99999999A999`, eso es una plantilla. Un nombre
+   de proceso (`TRIP_MODIFY`) es una convención humana o de un módulo.
+2. **El patrón del `CREATOR`.** Un sufijo repetido —`*-RFC`, `*_RFC`— señala una herramienta
+   que escribe su propio nombre de sesión o licencia. **Contrástalo contra `USR02`**: puede no
+   existir como usuario (ver límite 4).
+3. **La cadencia y los años.** Una herramienta emite de forma sostenida durante años; una carga
+   puntual deja un pico y se acaba.
+
+**Concluye la herramienta solo cuando los tres coinciden.** Y aun así, el nombre comercial no
+sale del dato: lo pone quien conoce el montaje. Tú entregas la firma; el nombre lo confirma una
+persona.
+
+## LOS CUATRO LÍMITES DEL INSTRUMENTO — léelos antes de concluir
 
 **1. `APQI` es una COLA, no un histórico.** 50.334 de 57.998 sesiones tienen `QSTATE` vacío y
 solo 413 están finalizadas: **una sesión procesada con éxito se BORRA**. Lo que sobrevive son
@@ -64,6 +99,16 @@ llamada, es el canal. La transacción se infiere por el log, no se lee de la ses
 **no aparece como "sin tcode"**. Confundir batch input con job de fondo por esa vía es un
 error que ya se cometió: las líneas sin tcode son jobs; las que llevan tcode pueden ser batch
 input y por `TCODE` son indistinguibles del diálogo.
+
+**4. `CREATOR` NO es una identidad: es un parámetro.** Lo fija quien llama a `BDC_OPEN_GROUP`
+y **SAP no comprueba que el usuario exista**. Medido: de 14 grafías `*-RFC`, **nueve existen
+en `USR02` como usuarios de tipo SISTEMA y cinco no existen** — y son justo las que llevan
+guión bajo, mientras su gemela con guión sí existe (`BILLAULT_RFC` no, `BILLAULT-RFC` sí).
+
+O sea que ese campo puede llevar el nombre de una **licencia de la herramienta**, no de un
+usuario. **Contrasta siempre contra `USR02`** antes de construir nada encima, y mira también
+`USERID` — que es el usuario bajo el que la sesión se EJECUTA, y es el que acaba en el log
+cuando alguien la corre. Son campos distintos y responden preguntas distintas.
 
 ## PROTOCOLO
 
