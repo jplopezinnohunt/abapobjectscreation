@@ -27431,5 +27431,90 @@
     "tier": "TIER_1",
     "session": 103,
     "_superseded_text": "EL CANAL BATCH INPUT TOCA SEIS DOMINIOS DE NEGOCIO, Y LOS CINCO PROGRAMAS CUSTOM QUE LO USAN NO TIENEN SU CODIGO EXTRAIDO (medido 2026-08-24). APQI.PROGID dice quien genero cada sesion, y pasandolo por A4 sale el dominio: SAPMSSY1 55.087 (externo por RFC = Allos + viajes), RFBIKR00 1.933 (BusinessPartner, maestro de acreedores), RFBIBL01 146 y SAPF100 143 y RFSZIS00 31 y SAPF180 16 (FI), HUNUPSR0 129 y RPIPSR00 3 (HCM), YEBUET01 110 (PS), RFEBBU00 57 (Treasury_EBS, extractos bancarios), LSMW 42 (Basis). CINCO son CUSTOM y de NINGUNO se tiene el fuente: ZHR_RETIRE_COPY_SPI (222, HCM), YEBUET01 (110, PS), ZHR_UPDATE_IT0167 (44, HCM), ZHR_UPDATE_IT0021 (20, HCM) y ZMM_BI_MM01_PLANT (2, Procurement). Es codigo propio que ESCRIBE en produccion por BDC y no se puede auditar. Dos tocan datos personales sensibles: el infotipo 0021 es FAMILIA y el 0167 son PLANES DE SALUD."
+  },
+  {
+    "id": 580,
+    "claim": "LAS MODIFICACIONES DE RESERVA MANUAL SON 121.875, NO 7,25 MILLONES, Y LLEGAN POR CUATRO CANALES DISTINTOS (medido y corregido 2026-08-24). Separando FMRESERV por tipo de documento contra KBLK: 7.127.484 cambios son documentos 91/92 (motor PBC de puestos) y 121.875 son 12/13/14/15/FB (reservas manuales). QUIEN: Y_GUO el 27,5% (33.495), con perfil de BLOQUEO -- FMW2 13.134 y FMW1 12.667. COMO: FMX2 65.345, FMX1 23.236, FMW2 14.813, FMW1 12.750, y 2.903 sin transaccion. CORRECCION: dije que los cambios sin tcode eran nomina por job y eso solo vale para F_DERAKHSHAN, que corre SM37 y ejecuta HUNCALC0. Los de A_BARONE (1.585) y E_SILVA (1.209) son un CANAL RFC: llaman ZRFC_FMR_CREATE -- crear reserva de fondos -- desde los servidores HQ-ORION-EAI01/03/04, y son canal y no personas (E_SILVA tiene 11.767 logons RFC frente a 603 de dialogo).",
+    "claim_type": "verified_fact",
+    "confidence": "MEASURED",
+    "evidence_for": null,
+    "evidence_against": null,
+    "related_objects": [
+      "FMRESERV",
+      "KBLK",
+      "FMX1",
+      "FMX2",
+      "FMW1",
+      "FMW2",
+      "FMMC",
+      "Y_GUO",
+      "W_NORTON",
+      "F_DERAKHSHAN",
+      "SM35",
+      "SM37",
+      "ZPBC_PERIOD_CLS_EXEC",
+      "ZRFC_FMR_CREATE",
+      "A_BARONE",
+      "E_SILVA",
+      "HQ-ORION-EAI01",
+      "ORION"
+    ],
+    "domain": null,
+    "created_session": null,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": null,
+    "evidence_legacy_text_for": null,
+    "domain_axes": null,
+    "evidence": [
+      "cdhdr_history FMRESERV filtrado contra KBLK.BLART",
+      "rsau_audit_history PARAM3='ZRFC_FMR_CREATE' por usuario y terminal",
+      "logons de dialogo vs RFC por usuario"
+    ],
+    "domains": [
+      "PSM_FM",
+      "PBC"
+    ],
+    "tier": "TIER_1",
+    "session": 103,
+    "_superseded_text": "LAS MODIFICACIONES DE RESERVA MANUAL SON 121.875, NO 7,25 MILLONES: EL RESTO ES NOMINA (medido 2026-08-24). Mirar la clase de cambio FMRESERV en bloque mezcla dos cosas que no tienen que ver. Separando por tipo de documento contra KBLK: 7.127.484 cambios son documentos 91/92 -- el motor PBC de puestos -- y solo 121.875 son documentos 12/13/14/15/FB, las reservas manuales. QUIEN: Y_GUO hace el 27,5% el solo (33.495) y con un perfil distinto de todos -- FMW2 13.134 y FMW1 12.667, que son BLOQUEO, mas FMX2 4.020. El resto va por debajo del 4%. COMO: FMX2 65.345 (53,6%), FMX1 23.236 (19,1%), FMW2 14.813 (12,2%), FMW1 12.750 (10,5%) y solo 2.903 (2,4%) SIN transaccion. O sea el 97,6% lleva transaccion de dialogo. Y los que cambian sin tcode -- F_DERAKHSHAN, EZ_MOYO, W_NORTON, A_BARONE, E_SILVA -- NO corren SM35: F_DERAKHSHAN corre SM37, que es el monitor de JOBS, y ejecuta HUNCALC0 y RHHCP_DC_EMPLOYEE, o sea nomina."
+  },
+  {
+    "id": 581,
+    "claim": "ORION ESCRIBE RESERVAS DE FONDOS POR RFC CON MODULOS CUSTOM, Y NO ESTABA EN NINGUN INVENTARIO (medido 2026-08-24). Desde los servidores HQ-ORION-EAI01/03/04 se llama ZRFC_FMR_CREATE -- crear reserva de fondos -- 817 veces por E_SILVA (481), A_BARONE (335) y B_LOPES (1), que son CANAL y no personas: E_SILVA tiene 11.767 logons RFC frente a 603 de dialogo. Y hay uno setenta veces mayor: Y_RFC_FMRP_RFFMEP1FX_FI_POST con 59.167 llamadas de un solo usuario, que contabiliza en FI sobre partidas de FM. Ademas ZBAPI_FUNDSCENTER_GETLIST (198) y los /SAPPSPRO/PD_GM_FMR2_READ_KBLE/KBLP/KBLK que leen las tablas de reserva directamente. Usan tambien BAPI_PO_CREATE1, BAPI_GOODSMVT_CREATE y BAPI_INCOMINGINVOICE_CREATE1. NO es batch input ni dialogo: es RFC directo con codigo propio.",
+    "claim_type": "verified_fact",
+    "confidence": "MEASURED",
+    "evidence_for": null,
+    "evidence_against": null,
+    "related_objects": [
+      "ZRFC_FMR_CREATE",
+      "Y_RFC_FMRP_RFFMEP1FX_FI_POST",
+      "ZBAPI_FUNDSCENTER_GETLIST",
+      "/SAPPSPRO/PD_GM_FMR2_READ_KBLE",
+      "BAPI_PO_CREATE1",
+      "E_SILVA",
+      "A_BARONE",
+      "ORION",
+      "HQ-ORION-EAI01",
+      "FMRESERV",
+      "KBLK"
+    ],
+    "domain": null,
+    "created_session": null,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": null,
+    "evidence_legacy_text_for": null,
+    "domain_axes": null,
+    "evidence": [
+      "rsau_audit_history por PARAM3 y SLGLTRM2, Gold DB 2026-08-24"
+    ],
+    "domains": [
+      "Integration",
+      "PSM_FM",
+      "FI"
+    ],
+    "tier": "TIER_1",
+    "session": 103
   }
 ]

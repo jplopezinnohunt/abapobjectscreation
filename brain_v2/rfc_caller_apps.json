@@ -522,6 +522,59 @@
         "la_operacion_de_junio_julio_2026": "los tres canales que tocan ACREEDORES crecen a la vez: ALLOS x9, RFBIKR00 x2 y SAP_FI x5 (de 1-9 al mes a 45 en julio). No es cadencia normal, es una carga en curso. QUE es, no se puede leer: VARDATA es LCHR y el canal RFC lo rechaza. Lo que si se sabe es que la operacion V901 -- la que domina el pico -- tiene 84,4% de exito frente al 9% de las demas",
         "_cuidado_con_la_tendencia": "la caida de viajes en 2026 puede ser SESGO DE LA COLA: las sesiones antiguas que salieron bien ya se borraron, asi que la serie es mas fiable hacia el presente que hacia atras. No leer la pendiente como si fuera actividad"
       }
+    },
+    "ORION_FM_RFC": {
+      "nombre": "ORION -> FM por RFC",
+      "que_es": "canal de ESCRITURA sobre reservas de fondos y contabilidad por RFC con modulos CUSTOM, desde los servidores de integracion ORION. No es batch input ni dialogo",
+      "servidores": [
+        "HQ-ORION-EAI01.hq.int",
+        "HQ-ORION-EAI03.hq.int",
+        "HQ-ORION-EAI04.hq.int"
+      ],
+      "usuarios": {
+        "E_SILVA": {
+          "llamadas_ZRFC_FMR_CREATE": 481,
+          "logon_rfc": 11767,
+          "logon_dialogo": 603
+        },
+        "A_BARONE": {
+          "llamadas_ZRFC_FMR_CREATE": 335,
+          "logon_rfc": 1828,
+          "logon_dialogo": 137
+        },
+        "B_LOPES": {
+          "llamadas_ZRFC_FMR_CREATE": 1
+        }
+      },
+      "modulos_custom": {
+        "Y_RFC_FMRP_RFFMEP1FX_FI_POST": {
+          "llamadas": 59167,
+          "usuarios": 1,
+          "que_hace": "contabilizacion FI sobre partidas de FM"
+        },
+        "ZRFC_FMR_CREATE": {
+          "llamadas": 817,
+          "usuarios": 3,
+          "que_hace": "CREAR RESERVA DE FONDOS"
+        },
+        "ZBAPI_FUNDSCENTER_GETLIST": {
+          "llamadas": 198,
+          "que_hace": "lectura de centros gestores"
+        },
+        "/SAPPSPRO/PD_GM_FMR2_READ_KBLE": {
+          "llamadas": 32,
+          "que_hace": "lee las tablas de reserva"
+        }
+      },
+      "bapis_estandar_que_usan": [
+        "BAPI_PO_CREATE1",
+        "BAPI_GOODSMVT_CREATE",
+        "BAPI_INCOMINGINVOICE_CREATE1",
+        "BAPI_TRANSACTION_COMMIT"
+      ],
+      "_por_que_no_se_veia": "se estaba buscando BATCH INPUT, porque es lo que el operador recordaba, y el batch input de FM no se puede ver: APQI es una cola y las sesiones que corren bien SE BORRAN. El canal que si deja rastro completo es este, y llevaba todo el rato delante -- ZRFC_FMR_CREATE significa literalmente crear reserva de fondos",
+      "_no_esta_en_el_inventario": true,
+      "source": "medido 2026-08-24 en rsau_audit_history"
     }
   }
 }

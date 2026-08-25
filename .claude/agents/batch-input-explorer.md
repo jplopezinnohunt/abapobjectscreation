@@ -153,6 +153,46 @@ usuario. **Contrasta siempre contra `USR02`** antes de construir nada encima, y 
 `USERID` — que es el usuario bajo el que la sesión se EJECUTA, y es el que acaba en el log
 cuando alguien la corre. Son campos distintos y responden preguntas distintas.
 
+## EL DISCRIMINADOR DE CANAL — cómo saber por dónde entró un cambio
+
+Este es el método central, y nace de que **`APQI` no puede contestar la pregunta**: las
+sesiones que corren bien se borran, así que el batch input exitoso es invisible allí. Hay que
+deducirlo por **combinación**, cruzando el cambio contra el log del mismo usuario.
+
+Para cada cambio de `cdhdr_history` (usuario, tcode, fecha), el canal se decide así:
+
+| Canal | Señal en el log | Confirmación |
+|---|---|---|
+| **DIÁLOGO** | hay `Transaction Start` de ESE tcode por ESE usuario | ratio arranques/cambios ≥ 1 |
+| **RFC** | `RFC Function Call` + `RFC/CPIC Logon` ≫ `Dialog Logon` | si el FM es `Z*`/`Y*`, es código propio |
+| **JOB** | sin tcode + `SM37` + `Report Start` masivos | el programa aparece en `TBTCP` |
+| **BATCH INPUT** | **con tcode pero SIN arranque de transacción NI llamada RFC** | es el RESIDUO: se deduce por descarte |
+
+**El batch input no tiene señal propia — se identifica por lo que NO deja.** Esa es toda la
+dificultad, y por eso hay que descartar los otros tres primero.
+
+### Y la señal de que un usuario NO es una persona
+
+**`RFC/CPIC Logon` ≫ `Dialog Logon`.** Medido: `E_SILVA` tiene 11.767 logons RFC frente a 603
+de diálogo; `A_BARONE`, 1.828 frente a 137. Son **canal**, no gente — aunque su nombre parezca
+el de una persona y aparezcan como autor del cambio.
+
+### El caso que lo enseñó
+
+Se buscaba batch input sobre reservas de fondos y no aparecía. La combinación lo resolvió:
+cambios de `FMRESERV` sin tcode + usuario con logons RFC dominantes + un módulo **`Z`** en sus
+llamadas = **`ZRFC_FMR_CREATE`**, "crear reserva de fondos", llamado 817 veces desde
+`HQ-ORION-EAI01/03/04`. No era batch input: era **RFC con código propio desde un servidor de
+integración**, y llevaba todo el rato en el log.
+
+Junto a él, uno setenta veces mayor y del mismo tipo: `Y_RFC_FMRP_RFFMEP1FX_FI_POST`, 59.167
+llamadas.
+
+**Regla que sale de ahí:** un módulo de función que empieza por `Z` o `Y` y cuyo nombre
+contiene el objeto de negocio (`FMR`, `FI_POST`, `KBL`) **es un canal de escritura propio**, y
+casi nunca está en el inventario de interfaces. Búscalos por nombre antes de concluir que un
+cambio "no tiene canal".
+
 ## PROTOCOLO
 
 ### 0. CARGA EL DOMINIO. Antes de medir nada.
