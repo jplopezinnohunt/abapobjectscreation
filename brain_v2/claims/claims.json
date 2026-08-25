@@ -10451,7 +10451,10 @@
       "PSM_FM"
     ],
     "resolved_session": null,
-    "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101)."
+    "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101).",
+    "needs_review": "SOSPECHOSO DESDE 2026-08-25: la cifra de este claim se derivo de process_mining/semantic_activity_map.py, que agrupa por SLGTC -- el tcode de CONTEXTO desde el que se lanzo -- cuando el tcode ARRANCADO vive en PARAM1. Coinciden en 8 de 1.235.225 filas. Ver claim 596. NO CITAR esta cifra hasta re-medir por PARAM1; la correcta se DESCONOCE.",
+    "_suspect_since": "2026-08-25",
+    "_suspect_by_claim": 596
   },
   {
     "id": 217,
@@ -10537,7 +10540,10 @@
     "domain": "Cross_Domain",
     "created_session": 84,
     "resolved_session": null,
-    "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101)."
+    "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101).",
+    "needs_review": "SOSPECHOSO DESDE 2026-08-25: la cifra de este claim se derivo de process_mining/semantic_activity_map.py, que agrupa por SLGTC -- el tcode de CONTEXTO desde el que se lanzo -- cuando el tcode ARRANCADO vive en PARAM1. Coinciden en 8 de 1.235.225 filas. Ver claim 596. NO CITAR esta cifra hasta re-medir por PARAM1; la correcta se DESCONOCE.",
+    "_suspect_since": "2026-08-25",
+    "_suspect_by_claim": 596
   },
   {
     "id": 219,
@@ -28061,6 +28067,112 @@
       "functional": "Data_Quality",
       "module": "BASIS",
       "process": "P2D"
+    }
+  },
+  {
+    "id": 596,
+    "claim": "EL MAPA DE ACTIVIDAD SEMANTICA HISTOGRAMA EL LANZADOR, NO LO LANZADO (medido 2026-08-25, verificacion adversarial contra el Gold). En rsau_audit_history con TXSUBCLSID='Transaction Start' (MSG='AU3', 'Transaction &A started'), el tcode ARRANCADO vive en PARAM1; SLGTC es el tcode de CONTEXTO desde el que se lanzo. De 1.235.225 arranques, SLGTC coincide con PARAM1 en 8 filas (0,0%). Los pares dominantes lo enseñan: SLGTC='SESSION_MANAGER' -> PARAM1='FBL1N' (54.362), 'MIRO' (39.367), 'F-53' (33.757), 'FMX3' (28.885); SLGTC='S000' -> PARAM1='SESSION_MANAGER' (238.933). process_mining/semantic_activity_map.py:65-66 agrupa por SLGTC. Ademas su filtro SLGTC<>'' descarta 108.375 arranques (8,8%) que NO son basura: 108.168 llevan un tcode real de d01_tstc, y descartados y conservados comparten MSG='AU3', SUBID=3, SUBCLASID=4, o sea que no son arranques fallidos. CONSECUENCIA: los claims 216 y 218, ambos TIER_1, citan '97% of volume' derivado de esta agrupacion y hay que revisarlos. La cifra correcta se DESCONOCE hasta re-medir por PARAM1.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "rsau_audit_history, Gold DB: 8 de 1.235.225 coincidencias SLGTC=PARAM1",
+      "process_mining/semantic_activity_map.py:65-66",
+      "verificacion adversarial del workflow de alta de mineros, 2026-08-25"
+    ],
+    "domain": "Process_Mining",
+    "related_objects": [
+      "RSAU_AUDIT_HISTORY",
+      "SLGTC",
+      "PARAM1",
+      "TSTC",
+      "A48_semantic_activity_map"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Process_Mining",
+      "module": "BASIS",
+      "process": "P2D"
+    }
+  },
+  {
+    "id": 597,
+    "claim": "UN SID INEXISTENTE SE CONECTA A D01 EN SILENCIO Y SE CERTIFICA ALINEADO (medido 2026-08-25, reproducido extremo a extremo). rfc_helpers._build_connection_params (Zagentexecution/mcp-backend-server-python/rfc_helpers.py:31) resuelve SAP_<SID>_<CLAVE> y, si no existe, CAE al bloque generico SAP_<CLAVE> del .env -- que ES D01 (ASHOST=172.16.4.66, SNC_PARTNERNAME=p:CN=D01) y ademas lleva password. Asi que la conexion NO falla: tiene EXITO contra el sistema equivocado. Probado: _build_connection_params('VO1') y ('ZZZ') devuelven parametros identicos a ('D01'); RFC_SYSTEM_INFO confirma pedido=VO1 -> SID REAL=D01 (host HQ-SAP-D), frente a pedido=V01 -> SID REAL=V01. fsv_alignment_check.py (l.120,130-133) acepta --systems sin validarlo y rotula la salida con la cadena del usuario, asi que un TYPO certifica alineado un sistema que nadie ha leido. CONSECUENCIA: afecta a TODO script que acepte un SID por parametro, no solo a este. REGLA: confirmar con RFC_SYSTEM_INFO contra que sistema se hablo de verdad ANTES de rotular ninguna salida.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "Zagentexecution/mcp-backend-server-python/rfc_helpers.py:31",
+      "RFC_SYSTEM_INFO: VO1->D01, ZZZ->D01, V01->V01, medido 2026-08-25",
+      "Zagentexecution/quality_checks/fsv_alignment_check.py:120,130-133"
+    ],
+    "domain": "Landscape",
+    "related_objects": [
+      "RFC_SYSTEM_INFO",
+      "D01",
+      "V01",
+      "A43_fsv_alignment_check"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Landscape",
+      "module": "BASIS",
+      "process": "P2D"
+    }
+  },
+  {
+    "id": 598,
+    "claim": "EL CHECK DE TRANSPORTE APRUEBA JUSTO EL OBJETO QUE SE LIBERA (medido 2026-08-25 corriendolo). Las claves de customizing viven en E071K de la TAREA, no de la orden padre. Con D01K9B0FXE -- la orden de Egipto, TRFUNCTION=W, 'INC-000016101 EGYP Payment Reasons' -- config_transport_prerelease_check.py imprime 'El transporte no lleva claves de tabla (E071K vacio). Puede ser una tarea padre: mira sus tareas hijas (E070.STRKORR)' y hace return 0 (linea 149). Su tarea hija D01K9B0FXF, corrida aparte, da EXIT 1 con '[INTRUSA] 350/ID/USTRD/O/01' -- la clave de Indonesia. Mismo dia, misma herramienta, veredictos opuestos, y el objeto que se libera es el que dice OK. El propio codigo nombra el remedio (E070.STRKORR) en las lineas 147-149 y no lo aplica. Segundo defecto medido: en DD03L de D01, T015L tiene clave (MANDT, LZBKZ) y NO tiene campo de pais, asi que --entity-field no salva nada. ARREGLO: si E071K esta vacio, resolver las hijas por E070.STRKORR y analizar la UNION; si no hay hijas, salir 2 (no analizable), NUNCA 0 -- un exit 0 sobre algo que no se pudo mirar se lee como aprobado.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "corrida real D01K9B0FXE (exit 0) frente a D01K9B0FXF (exit 1), 2026-08-25",
+      "Zagentexecution/quality_checks/config_transport_prerelease_check.py:147-149",
+      "DD03L en D01: T015L clave (MANDT, LZBKZ), sin campo de pais"
+    ],
+    "domain": "Transport_Management",
+    "related_objects": [
+      "E071K",
+      "E070",
+      "STRKORR",
+      "T015L",
+      "D01K9B0FXE",
+      "D01K9B0FXF",
+      "A40_config_transport_prerelease_check"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Transport",
+      "module": "BASIS",
+      "process": "P2D"
+    }
+  },
+  {
+    "id": 599,
+    "claim": "EL CHECK DE OB09 RESUELVE CON SU PROPIA FUNCION LEGADO Y DA 34 FALSOS POSITIVOS (medido 2026-08-25 en vivo contra P01). ob09_vs_variant_check.py:221 llama a covered(), que mezcla SKONTO con AKONTO y no aplica la regla de solo-exclusiones, teniendo en el MISMO fichero variant_selection() (l.88) y covered_in() (l.118) escritas para arreglar justo eso (commit 8da7910); el docstring de covered() en las lineas 147-148 dice literalmente 'Prefiere variant_selection() + covered_in()'. main() solo lee SKB1-XSPEB (l.189-191), no MITKZ, asi que la eleccion de campo por cuenta ni siquiera esta implementada en el camino que corre. Medido sobre las 780 cuentas de T030H/KTOPL=UNES/CURTP=10: covered() reporta 273 fuera de toda variante, covered_in() por MITKZ reporta 239. Son 34 falsos positivos, todos MITKZ=D/K (20110xx, 20210xx, 20220xx, 20290xx), que la variante UNES_OI_AR/AP SI selecciona por AKONTO (inclusiones 0, exclusiones 27: 'todas menos esas 27'). AGRAVANTE: el vecino fx_revaluation_peer_check.py:65 importa la logica CORRECTA del mismo fichero y la usa bien (l.132 elige 'AKONTO' if MITKZ else 'SKONTO'), asi que el fichero EXPORTA lo correcto y CONSUME lo legado.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "Zagentexecution/quality_checks/ob09_vs_variant_check.py:88,118,147-148,189,221",
+      "P01 en vivo 2026-08-25: covered() 273 frente a covered_in() 239 sobre 780 cuentas",
+      "Zagentexecution/quality_checks/fx_revaluation_peer_check.py:65,132"
+    ],
+    "domain": "FI",
+    "related_objects": [
+      "T030H",
+      "SKB1",
+      "MITKZ",
+      "SAPF100",
+      "UNES_OI_AR/AP",
+      "A47_ob09_vs_variant_check"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "FI",
+      "module": "FI-GL",
+      "process": "R2R"
     }
   }
 ]
