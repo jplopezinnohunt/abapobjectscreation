@@ -111,16 +111,26 @@ def disenadas(con, tope_variantes=20, min_pasos=20):
 
 def uso_de(con, prog, var):
     """DONDE SE USO. Una variante rica que no corre desde hace anos es un fosil, no el proceso."""
+    # La columna de fecha de tbtco es SDLSTRTDT, no SDLDATE. Con el nombre equivocado la
+    # consulta fallaba, el except devolvia {} y `uso` salia VACIO en las 115 variantes -- pero
+    # el algoritmo quedo registrado diciendo que cruzaba tbtcp x tbtco "cuantas veces, primera
+    # y ultima, cuantos usuarios". Afirmar en el registro lo que el codigo no hace es peor que
+    # no tener la capa: nadie va a volver a mirarla.
     try:
         r = con.execute("""SELECT COUNT(DISTINCT p.JOBNAME), COUNT(*),
-                                  MIN(o.SDLDATE), MAX(o.SDLDATE),
-                                  COUNT(DISTINCT p.AUTHCKNAM)
+                                  MIN(o.SDLSTRTDT), MAX(o.SDLSTRTDT),
+                                  COUNT(DISTINCT p.AUTHCKNAM),
+                                  SUM(CASE WHEN o.STATUS='A' THEN 1 ELSE 0 END)
                            FROM tbtcp p LEFT JOIN tbtco o
                              ON o.JOBNAME = p.JOBNAME AND o.JOBCOUNT = p.JOBCOUNT
                            WHERE p.PROGNAME = ? AND p.VARIANT = ?""", (prog, var)).fetchone()
-    except sqlite3.Error:
-        return {}
-    return {"jobs": r[0], "pasos": r[1], "primera": r[2], "ultima": r[3], "usuarios": r[4]}
+    except sqlite3.Error as e:
+        return {"_no_medible": f"tbtcp x tbtco: {str(e)[:70]}"}
+    if not r or not r[1]:
+        return {"_no_medible": "esta variante no aparece en ningun paso de job"}
+    return {"jobs": r[0], "pasos": r[1], "primera": r[2], "ultima": r[3],
+            "usuarios": r[4], "corridas_abortadas": r[5],
+            "_es_un_fosil": (bool(r[3]) and str(r[3])[:4] < "2025")}
 
 
 def del_gold(con, programa, variante):
@@ -136,7 +146,8 @@ def del_gold(con, programa, variante):
         try:
             filas = con.execute(
                 f"SELECT SELNAME, KIND, SIGN, OPTION, LOW, HIGH FROM [{tabla}] "
-                f"WHERE UPPER(REPORT)=? AND UPPER(VARIANT)=?",
+                f"WHERE UPPER(REPORT)=? AND UPPER(TRIM(VARIANT))=? "
+                f"AND TRIM(COALESCE(SELNAME,'')) <> ''",
                 (programa.upper(), variante.upper())).fetchall()
         except sqlite3.Error:
             continue
@@ -146,8 +157,40 @@ def del_gold(con, programa, variante):
     return None
 
 
+def gold_sirve(con):
+    """¿El Gold tiene CONTENIDO de variante, o solo la cascara?
+
+    Medido 2026-08-25: `sapf100_varid` existe con las columnas correctas y sus 21 filas estan
+    VACIAS -- REPORT='SAPF100' y todo lo demas en blanco. `varid_content` y `variant_values` no
+    existen. Asi que "el Gold primero" no ha evitado ni una lectura de SAP: 115 de 115 se
+    leyeron por RFC.
+
+    Una tabla que existe y esta vacia es peor que una que falta: parece cobertura. Por eso esto
+    se comprueba y se DECLARA en la salida, en vez de dejar la regla como un adorno.
+    """
+    for tabla in ("sapf100_varid", "varid_content", "variant_values"):
+        try:
+            n = con.execute(f"SELECT COUNT(*) FROM [{tabla}] "
+                            f"WHERE TRIM(COALESCE(SELNAME,'')) <> ''").fetchone()[0]
+        except sqlite3.Error:
+            continue
+        if n:
+            return {"sirve": True, "tabla": tabla, "filas_con_contenido": n}
+    return {"sirve": False,
+            "_por_que": ("las tablas de variante del Gold existen pero estan VACIAS: 21 filas "
+                         "de sapf100_varid sin SELNAME. Una tabla vacia parece cobertura y no "
+                         "lo es, asi que todo se lee por RFC"),
+            "_que_falta": ("extraer VARI/VARID con contenido para las 127 variantes disenadas; "
+                           "hasta entonces la regla del Gold-primero es correcta y ociosa")}
+
+
 def contenido(conn, programa, variante):
     """255 primero: las rutas son largas y la version corta las TRUNCA SIN AVISAR."""
+    # `err` inicializado: si las dos llamadas tienen EXITO y devuelven cero filas -- una
+    # variante que existe y no tiene valores -- nunca entraba en el except, y el return final
+    # reventaba con UnboundLocalError. Eso no fallaba una variante: tiraba la corrida entera
+    # sin escribir el fichero, perdiendo todo lo leido hasta ahi.
+    err = None
     for fm in ("RS_VARIANT_CONTENTS_255_RFC", "RS_VARIANT_CONTENTS_RFC"):
         try:
             r = conn.call(fm, REPORT=programa, VARIANT=variante, VALUTAB=[])
@@ -161,6 +204,7 @@ def contenido(conn, programa, variante):
                     filas.append({k: str(v).strip() for k, v in x.items()})
         if filas:
             return filas, fm, None
+        err = err or f"{fm} respondio sin filas: la variante existe y no tiene valores"
     return None, None, err
 
 
@@ -221,6 +265,9 @@ def main():
         return 0
 
     con = gold()
+    gold_util = gold_sirve(con)
+    if not gold_util["sirve"]:
+        print(f"  el Gold NO tiene contenido de variante: {gold_util['_por_que'][:90]}")
     dis, total_pares = disenadas(con)
     print(f"pares (programa, variante) en tbtcp: {total_pares:,}")
     print(f"programas con variante DISENADA: {len(dis)} "
@@ -235,11 +282,12 @@ def main():
     except Exception as e:
         print(f"  P01 no disponible ({str(e)[:60]}) -- se mina SOLO lo que ya esta en el Gold\n")
 
-    registros, fallos = [], []
+    registros, fallos, saltadas = [], [], []
     for prog, variantes, pasos in dis[:a.max_programas]:
         # VARID dice cuales son de SAP (prefijo SAP&) y cuales de sistema: esas no son el proceso
         for v in variantes:
             if v.upper().startswith(("SAP&", "CUS&")):
+                saltadas.append(f"{prog}/{v}")     # entregadas por SAP: no son el proceso
                 continue
             # EL GOLD PRIMERO. Solo si no esta ahi se abre P01.
             filas, fm = del_gold(con, prog, v), "gold_db"
@@ -278,6 +326,7 @@ def main():
     # corpus de 115 variantes con 8: el fichero quedo bien formado y decia mucho menos, que es
     # la peor forma de perder datos porque no parece un fallo. Se FUSIONA por (programa,
     # variante) y lo nuevo gana solo sobre su propia clave.
+    nuevos_de_esta_corrida = list(registros)
     if SALIDA.exists():
         try:
             previo = json.loads(SALIDA.read_text(encoding="utf-8")).get("variantes", [])
@@ -323,6 +372,26 @@ def main():
         "_las_rutas_son_interfaces_no_declaradas": (
             "un job que escribe en una carpeta compartida ES una interfaz y no figura en rfcdes "
             "ni en el inventario de servicios"),
+        # UN SOLO DENOMINADOR, DECLARADO. `variantes_leidas` mide el corpus FUSIONADO de varias
+        # corridas y `no_legibles` medía solo la ultima: dos denominadores en el mismo fichero.
+        # Y 127 no es el universo -- es lo que queda tras dos umbrales sobre 29.190 pares.
+        "cobertura": {
+            "pares_programa_variante_en_tbtcp": total_pares,
+            "disenadas_tras_los_umbrales": sum(len(v) for _p, v, _n in dis),
+            "_los_umbrales": "<=20 variantes por programa y >=20 pasos de job",
+            "leidas_en_esta_corrida": len(nuevos_de_esta_corrida),
+            "en_el_corpus_acumulado": len(registros),
+            "no_legibles_en_esta_corrida": len(fallos),
+            "saltadas_por_ser_de_SAP": len(saltadas),
+            "cuales_saltadas": saltadas[:10],
+            "_la_suma_cierra": (len(nuevos_de_esta_corrida) + len(fallos) + len(saltadas)
+                                == sum(len(v) for _p, v, _n in dis)),
+            "_por_que_importa_que_cierre": ("una suma que no cierra esconde un tercer grupo sin "
+                                            "nombrar. Aqui eran las variantes entregadas por "
+                                            "SAP (prefijo SAP&/CUS&), que se saltan a proposito "
+                                            "porque no son el proceso de esta casa"),
+        },
+        "el_gold_sirve": gold_util,
         "variantes_leidas": len(registros), "no_legibles": len(fallos),
         "rutas_por_programa": {k: sorted(v) for k, v in sorted(rutas_por_prog.items())},
         "formas_de_trabajar": grupos[:40],
@@ -333,11 +402,17 @@ def main():
 
     try:
         from mining_bus import publicar
+        # La evidencia dice de donde salio DE VERDAD, no una constante. Publicar
+        # "RS_VARIANT_CONTENTS_255_RFC" en duro mientras el registro dice `leido_con: gold_db`
+        # es una evidencia que el propio fichero puede desmentir.
         for prog, rutas in rutas_por_prog.items():
+            fuentes_usadas = sorted({r.get("leido_con") for r in registros
+                                     if r.get("programa") == prog and r.get("leido_con")})
             publicar("A33_variant_content_mining", "REALIDAD", prog,
                      f"su variante de job toca ficheros: {', '.join(sorted(rutas)[:4])}. "
                      "Es una interfaz que no figura en ningun inventario",
-                     evidencia="RS_VARIANT_CONTENTS_255_RFC sobre P01",
+                     evidencia=f"contenido de variante leido con {'/'.join(fuentes_usadas)} "
+                               f"sobre P01",
                      aspecto="rutas_de_fichero")
         for g in grupos[:12]:
             publicar("A33_variant_content_mining", "REALIDAD",
