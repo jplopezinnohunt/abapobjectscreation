@@ -28174,5 +28174,33 @@
       "module": "FI-GL",
       "process": "R2R"
     }
+  },
+  {
+    "id": 600,
+    "claim": "CINCO MINEROS ESCRIBIAN EL IMPORT DE LA MEMORIA DE METODO Y RECIBIAN CERO, CON LA PUERTA EN VERDE (medido 2026-08-26, un subproceso aislado por fichero). Los cinco: Zagentexecution/quality_checks/fsv_coverage_check.py y, en Zagentexecution/sap_data_extraction/scripts/, accumulate_logs.py, ocel_build_p2p.py, p2p_stdref_xray.py y sap_process_discovery.py. MECANISMO: el bloque calculaba la ruta a process_mining contando dirname() -- dos niveles desde quality_checks/ dan Zagentexecution/process_mining, que NO EXISTE, y desde sap_data_extraction/scripts/ faltan dos mas -- y un `except Exception` se tragaba el ImportError en silencio, dejando `_aprendido = None`. La puerta method_memory_applied_check daba verde porque grepeaba la CADENA 'from metodo import': medía la FORMA. AGRAVANTE: fsv_coverage_check.py se estaba usando como ejemplo bueno para enchufar a los demas mineros, asi que copiarlo propagaba el defecto. OJO CON LA MEDIDA: una primera sonda que cargaba los 35 modulos en el MISMO proceso dijo '31 leen, 4 ciegos' -- falso, porque cada modulo hace sys.path.insert al importarse y los que calculan bien la ruta la dejaban puesta para los rotos. Solo aislando en subprocesos sale la cifra real.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "sonda aislada, un subproceso por fichero, 2026-08-26",
+      "Zagentexecution/quality_checks/fsv_coverage_check.py:50-56 (antes del arreglo)",
+      "Zagentexecution/quality_checks/method_memory_applied_check.py:84-85 (antes)"
+    ],
+    "domain": "Brain_Architecture",
+    "related_objects": [
+      "method_memory_applied_check.py",
+      "fsv_coverage_check.py",
+      "accumulate_logs.py",
+      "ocel_build_p2p.py",
+      "p2p_stdref_xray.py",
+      "sap_process_discovery.py",
+      "A37_method_memory_applied"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "module": "BASIS",
+      "process": "P2D"
+    }
   }
 ]

@@ -27,12 +27,23 @@ import pm4py
 # Se lee ANTES de minar. `algorithm_memory.json` guarda, por cada memoria, su `implication`:
 # que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no leerlas es
 # aprender y no aprender a la vez -- y el error queda MECANIZADO, corriendo solo cada semana.
+# La ruta se BUSCA subiendo hasta el directorio que CONTIENE process_mining; no se cuenta con
+# dirname(). Contarla mal es como este bloque quedo ciego: dos dirname desde quality_checks/
+# apuntan a Zagentexecution/process_mining, que no existe, el import fallaba en SILENCIO y el
+# gate lo daba por bueno porque greppeaba la CADENA, no el efecto.
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while _d != _os.path.dirname(_d):
+    if _os.path.isdir(_os.path.join(_d, "process_mining")):
+        _sys.path.insert(0, _os.path.join(_d, "process_mining"))
+        break
+    _d = _os.path.dirname(_d)
 try:
-    import sys as _sys, os as _os
-    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(
-        _os.path.abspath(__file__))), "process_mining"))
+    # ImportError y no Exception: cubre "metodo.py no esta" sin tragarse un fallo REAL dentro
+    # de metodo.py. Y AVISA: un minero que corre sin memoria tiene que decirlo, no callarlo.
     from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
-except Exception:
+except ImportError as _e:
+    print("  AVISO: corriendo SIN memoria de metodo (%s)" % _e)
     _aprendido = None
 
 ROOT = r"c:\Users\jp_lopez\projects\abapobjectscreation"

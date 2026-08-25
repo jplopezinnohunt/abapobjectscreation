@@ -54,8 +54,23 @@ import collections
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "..", "mcp-backend-server-python"))
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
+
+sys.path.insert(0, os.path.join(HERE, "..", "mcp-backend-server-python"))
+
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. `brain_v2/methods/algorithm_memory.json` guarda, por cada memoria,
+# su `implication`: que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y
+# no leerlas es aprender y no aprender a la vez -- y peor, el error queda MECANIZADO.
+# Para ESTE check hay una memoria que le apunta directamente: las claves de customizing viven
+# en E071K de la TAREA, no de la orden padre -- la orden de Egipto D01K9B0FXE sale exit 0 con
+# analisis vacio mientras su hija D01K9B0FXF sale exit 1 con la clave intrusa de Indonesia.
+sys.path.insert(0, os.path.join(REPO, "process_mining"))
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido  # noqa: E402
+except Exception:
+    _aprendido = None
 
 
 def read_table(conn, table, fields, where=""):
@@ -108,6 +123,9 @@ def value_of(row, fields):
 
 
 def main(argv):
+    if _aprendido:
+        _aprendido("transporte", "e071k", "customizing", "tarea").avisar()
+        print()
     if not argv or argv[0].startswith("-"):
         print(__doc__)
         return 2

@@ -30,6 +30,10 @@ import executed_objects_domain_map as eom  # noqa: E402  (the shared classifier)
 
 REPO = HERE.parent
 from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
+try:  # lo aprendido de nuestros propios instrumentos (HERE ya esta en sys.path, linea 26)
+    from metodo import lo_que_ya_aprendimos as _aprendido  # noqa: E402
+except Exception:
+    _aprendido = None
 OUTDIR = REPO / "brain_v2" / "domain_footprints"
 
 CHANNELS = [  # (label, rsau TXSUBCLSID, name-field, resolve-tcode?)
@@ -148,6 +152,13 @@ def emit(foot):
 
 
 def main(argv):
+    # ANTES de leer nada: lo que este proyecto ya midio sobre ESTOS instrumentos. Este minero
+    # vive de rsau_audit_history y del clasificador de dominios, y las trampas ya estan escritas
+    # (el tcode arrancado vive en PARAM1 y no en SLGTC; SLGREPNA es el tubo, no la funcion RFC;
+    # AQ*/!QGY* son nombres GENERADOS y no objetos; la grafia de SLGUSER sobre-cuenta actores;
+    # y la ventana de rsau es RETENCION, no historia).
+    if _aprendido:
+        _aprendido("rsau", "tcode", "actor", "clasific", "ventana").avisar()
     con = sqlite3.connect(GOLD)
     domain_of, ctx = eom.make_classifier(con)
     print("Mining executed objects (rsau + tbtcp) and rolling up by domain ...")

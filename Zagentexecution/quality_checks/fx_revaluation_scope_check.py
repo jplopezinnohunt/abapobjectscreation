@@ -68,6 +68,18 @@ from rfc_helpers import get_connection                                    # noqa
 from ob09_vs_variant_check import parse, rd, variant_accounts, covered, PROGRAM  # noqa: E402
 from fsv_coverage_check import versions_in_use, pad                       # noqa: E402
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. `brain_v2/methods/algorithm_memory.json` guarda, por cada memoria, su
+# `implication`: que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no
+# leerlas es aprender y no aprender a la vez -- y peor, el error queda MECANIZADO: este check
+# corre solo, asi que un criterio equivocado se repite cada semana sin que nadie lo relea.
+# El try/except es a proposito: si `metodo` no esta, el check sigue corriendo.
+sys.path.insert(0, os.path.join(REPO, "process_mining"))
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido                 # noqa: E402
+except ImportError:
+    _aprendido = None
+
 # Medidas en FS10/UNES el 2026-08-21. Explicitas para que se puedan discutir.
 DEFAULT_POSITIONS = ["1.1.1.1", "1.1.1.2", "1.1.2.1", "1.1.2.3", "1.2.1.1"]
 
@@ -81,6 +93,13 @@ def main():
                                                   "sociedad ejecuta segun las variantes")
     ap.add_argument("--positions", default=",".join(DEFAULT_POSITIONS))
     a = ap.parse_args()
+
+    # ANTES de leer nada: que sabe ya este proyecto de balance / variante / alcance. La trampa
+    # registrada de este check es la ILUSION DE ALCANCE — con las 5 posiciones por defecto ve
+    # una fraccion de la poblacion — y hay memoria escrita justo sobre eso.
+    if _aprendido:
+        _aprendido("revaluacion", "balance", "variante", "bilavers", "alcance").avisar()
+
     pos = [p.strip() for p in a.positions.split(",") if p.strip()]
 
     print("ALCANCE DE LA REVALUACION FX — %s · sociedad %s\n" % (a.system, a.bukrs))

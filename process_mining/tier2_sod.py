@@ -13,6 +13,10 @@ from collections import defaultdict
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
+try:  # lo ya aprendido sobre ESTE instrumento, antes de minar (no despues)
+    from metodo import lo_que_ya_aprendimos as _aprendido
+except Exception:
+    _aprendido = None
 
 # SoD ruleset (ACTION level) — standard Finance/P2P conflicting function pairs.
 # Each rule: name, function A tcodes, function B tcodes. A user doing BOTH = a conflict.
@@ -38,6 +42,8 @@ TECH = ("SAPSYS", "JOBBATCH", "WF-BATCH", "MULESOFT", "BRIDGE-RFC", "SMTMSBP", "
 
 
 def main():
+    if _aprendido:
+        _aprendido("rsau_audit_history", "slgtc", "slguser", "usr02", "sod", "ventana").avisar()
     c = sqlite3.connect(GOLD, timeout=10)
     c.execute("PRAGMA busy_timeout=10000")
     # user -> {tcode: count}  from real Transaction Start events

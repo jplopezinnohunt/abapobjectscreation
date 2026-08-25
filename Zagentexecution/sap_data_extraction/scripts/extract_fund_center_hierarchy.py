@@ -48,6 +48,15 @@ PROJECT_ROOT = r"c:\Users\jp_lopez\projects\abapobjectscreation"
 GOLD_DB = os.path.join(PROJECT_ROOT, "Zagentexecution", "sap_data_extraction", "sqlite", "p01_gold_master_data.db")
 SUMMARY = os.path.join(HERE, "fund_center_hierarchy_summary.json")
 
+# Lo que este proyecto YA aprendio de sus propios instrumentos, leido ANTES de minar.
+# A12_traverse_hierarchy ya midio que los centros gestores viven en SETCLASS 0312 (y una
+# segunda agrupacion numerica en 0303), no en el 0306 que este minero trae por defecto.
+sys.path.insert(0, os.path.join(PROJECT_ROOT, "process_mining"))
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido  # noqa: E402
+except Exception:
+    _aprendido = None
+
 # FM areas requested: UNES + the 8 institute FM areas
 FM_AREAS = ["UNES", "ICTP", "UIS", "IIEP", "IBE", "UIL", "ICBA", "MGIE", "UBO"]
 
@@ -157,6 +166,10 @@ def leaf_coverage(db, set_class):
 
 
 def main():
+    if _aprendido:
+        _aprendido("setclass", "fund centre", "fund_center", "hierarch",
+                   "rfc_read_table").avisar()
+
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"=== FM fund-center hierarchy extraction | P01 | {ts} ===\n")
 

@@ -5526,5 +5526,24 @@
       "journal.jsonl",
       "algorithms.json"
     ]
+  },
+  {
+    "id": "feedback_a_gate_must_measure_the_effect_not_the_form",
+    "severity": "CRITICAL",
+    "created_session": 103,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "UNA PUERTA QUE COMPRUEBA QUE LA LLAMADA ESTA ESCRITA NO COMPRUEBA QUE LLEGUE. Medido 2026-08-26: method_memory_applied_check daba VERDE grepeando la cadena 'from metodo import'. CINCO mineros la tenian escrita y recibian None -- cero memorias -- porque la ruta a process_mining se calculaba CONTANDO dirname() y se quedaba corta (Zagentexecution/process_mining, que no existe), y un `except Exception` se tragaba el ImportError en silencio. El peor de los cinco era fsv_coverage_check.py, que se estaba usando como EJEMPLO BUENO para enchufar a los demas: copiar el ejemplo propagaba el defecto. Ninguna corrida lo noto, porque la puerta medía la FORMA.",
+    "why": "el error no fue poner la puerta: fue que la puerta comprobara lo barato en vez de lo verdadero. Un gate que mide la forma no solo deja pasar el defecto: lo CERTIFICA, y ese sello es lo que impide que nadie vuelva a mirar. Es peor que no tener puerta.",
+    "how_to_apply": "cada puerta se pregunta: ¿estoy midiendo que el efecto OCURRE, o que el codigo que deberia producirlo esta escrito? Si es lo segundo, EJECUTALO. Cargar un modulo aislado, correr la funcion, leer el valor que sale. Y despues PRUEBA EL DETECTOR con un caso roto a proposito: un detector nuevo que nunca dispara deja la puerta igual de ciega y ademas parece arreglada.",
+    "related_objects": [
+      "method_memory_applied_check.py",
+      "fsv_coverage_check.py",
+      "metodo.py",
+      "A37_method_memory_applied"
+    ]
   }
 ]

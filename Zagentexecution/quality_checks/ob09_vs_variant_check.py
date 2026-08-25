@@ -38,6 +38,23 @@ REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(REPO, "Zagentexecution", "mcp-backend-server-python"))
 from rfc_helpers import get_connection  # noqa: E402
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. `brain_v2/methods/algorithm_memory.json` guarda, por cada memoria, su
+# `implication`: que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no
+# leerlas es aprender y no aprender a la vez -- y el error queda MECANIZADO, corriendo solo.
+# Para ESTE check los temas no son decorativos: "variante" trae la memoria de que una version/
+# variante EXISTE para todas y se EJECUTA para algunas; "table_without_data" trae la que dice que
+# ese error NO significa tabla vacia (y aqui `rd()` y `exposure()` lo tragan como si lo
+# significara); "ceros a la izquierda" trae la del relleno de claves numericas que sostiene todo
+# el zfill(10) de la comparacion de rangos; "exclusion" trae la de un check que reporta
+# candidatos y no sabe registrar "revisado, excluido"; y "balance" trae la peor de todas: el
+# mismo defecto reaparece en la COMPROBACION que deberia delatarlo.
+sys.path.insert(0, os.path.join(REPO, "process_mining"))
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
+
 KTOPL = "UNES"
 BUKRS = "UNES"
 PROGRAM = "SAPF100"
@@ -156,6 +173,9 @@ def covered(saknr, sets):
 
 
 def main():
+    if _aprendido:
+        _aprendido("variante", "cuenta", "balance", "table_without_data",
+                   "ceros a la izquierda", "exclusion").avisar()
     ap = argparse.ArgumentParser()
     ap.add_argument("--systems", default="P01")
     ap.add_argument("--accounts", default="", help="prefijo de cuenta para acotar, p.ej. 40410")

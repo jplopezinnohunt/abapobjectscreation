@@ -34,6 +34,18 @@ REPO = BRAIN.parent
 GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
 OUT = BRAIN / "security_posture.json"
 
+# Lo que este proyecto ya aprendio de ESTE instrumento, leido ANTES de minar. Cada memoria lleva
+# su `implication`: que debe hacer distinto este algoritmo por su culpa. Las que aplican aqui son
+# exactamente las trampas de este script: la grafia del id (SLGUSER llega como L.MACEWEN y
+# L_MACEWEN, y un separador distinto parte una cuenta en dos), CREATOR/`user=` no es una identidad
+# mientras no se contraste contra USR02, nuestras propias lecturas RFC ensucian el mismo log que
+# medimos, y la consulta dentro del bucle son 25 barridos completos de 28,5M filas.
+sys.path.insert(0, str(REPO / "process_mining"))
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido
+except Exception:
+    _aprendido = None
+
 # component -> (question, gold table it needs, what it would answer once present)
 COMPONENTS = [
     ("identity_inventory", "who has an account, when did they last use it, who is locked?",
@@ -145,6 +157,9 @@ def derive_attribution(gold):
 
 
 def main():
+    if _aprendido:
+        _aprendido("rsau_audit_history", "usr02", "slguser", "separador", "creator").avisar()
+
     have = set()
     if GOLD.exists():
         con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)

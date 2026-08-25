@@ -51,6 +51,25 @@ REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(REPO, "Zagentexecution", "mcp-backend-server-python"))
 from rfc_helpers import get_connection  # noqa: E402
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de comparar nada. `brain_v2/methods/algorithm_memory.json` guarda, por cada
+# memoria, su `implication`: que debe hacer DISTINTO otro algoritmo por su culpa. Escribirlas y
+# no leerlas es aprender y no aprender a la vez -- y peor: el error queda MECANIZADO, corriendo
+# solo cada semana.
+# La que mas duele aqui la aprendio ESTE script: un SID inexistente conecta a D01 EN SILENCIO
+# (rfc_helpers._build_connection_params cae al bloque generico del .env, que ES D01 y lleva
+# password), asi que un typo en --systems certifica ALINEADO un sistema que nadie leyo.
+sys.path.insert(0, os.path.join(REPO, "process_mining"))
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido  # noqa: E402
+except Exception:
+    _aprendido = None
+
+# Temas: lo que ESTE minero toca de verdad -- el SID que le llega por parametro, la version de
+# balance, el canal de customizing por el que viaja (o no) y la mecanica de RFC_READ_TABLE.
+TEMAS_APRENDIDOS = ("sid inexistente", "fsv", "version de balance", "customizing",
+                    "rfc_read_table")
+
 KTOPL = "UNES"
 SOURCE = "P01"
 
@@ -111,6 +130,10 @@ def snapshot(sysid, versn):
 
 
 def main():
+    if _aprendido:
+        _aprendido(*TEMAS_APRENDIDOS).avisar()
+        print("")
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--systems", default="D01,V01")
     ap.add_argument("--versn", default="", help="limita a una version, p.ej. FS10")

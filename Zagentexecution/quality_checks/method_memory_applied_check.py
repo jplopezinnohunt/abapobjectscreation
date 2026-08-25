@@ -38,6 +38,7 @@ QUALITY_CHECK = {
 import json
 import os
 import re
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -57,6 +58,49 @@ FUERA = {
 }
 
 
+_YA_MEDIDO = {}
+
+
+def _de_verdad_recibe(ruta):
+    """¿Este fichero RECIBE la memoria, o solo escribe el import?
+
+    Se carga el modulo en un SUBPROCESO y se mira si `_aprendido` quedo en None. Tiene que ser
+    un subproceso aislado: la primera sonda que escribi cargo los 35 modulos en el mismo
+    proceso y dijo '31 leen, 4 ciegos'. Falso -- cada modulo hace sys.path.insert al
+    importarse, asi que los que calculan bien la ruta la dejaban puesta y los rotos importaban
+    de rebote. La sonda se contaminaba a si misma y hacia parecer sano justo el fichero que
+    estaba roto. Aislar no es una precaucion: es lo que hace que la medida signifique algo.
+
+    Si el modulo no carga suelto (necesita que su llamador prepare sys.path) NO se le llama
+    ciego: no se pudo medir, y eso es distinto. Un gate que confunde 'no lo pude ver' con 'esta
+    mal' grita en falso, y un gate que grita en falso deja de leerse.
+    """
+    if ruta in _YA_MEDIDO:
+        return _YA_MEDIDO[ruta]
+    codigo = (
+        "import importlib.util,io,sys\n"
+        "from contextlib import redirect_stdout,redirect_stderr\n"
+        "s=importlib.util.spec_from_file_location('probe',sys.argv[1])\n"
+        "m=importlib.util.module_from_spec(s)\n"
+        "b=io.StringIO()\n"
+        "try:\n"
+        "    with redirect_stdout(b),redirect_stderr(b): s.loader.exec_module(m)\n"
+        "except SystemExit: pass\n"
+        "except Exception: print('NO_MEDIBLE'); raise SystemExit(0)\n"
+        "v=getattr(m,'_aprendido','NO_MEDIBLE')\n"
+        "print('CIEGO' if v is None else 'NO_MEDIBLE' if v=='NO_MEDIBLE' else 'LEE')\n")
+    try:
+        r = subprocess.run([sys.executable, "-c", codigo, ruta], cwd=ROOT,
+                           capture_output=True, text=True, timeout=60,
+                           encoding="utf-8", errors="replace")
+        out = (r.stdout or "").strip().splitlines()
+        veredicto = out[-1] if out else "NO_MEDIBLE"
+    except Exception:
+        veredicto = "NO_MEDIBLE"
+    _YA_MEDIDO[ruta] = veredicto != "CIEGO"     # NO_MEDIBLE no cuenta como ciego
+    return _YA_MEDIDO[ruta]
+
+
 def main():
     try:
         A = json.load(open(ALGOS, encoding="utf-8")).get("algorithms") or {}
@@ -68,7 +112,7 @@ def main():
     h = []
 
     # ---- 1. mineros que corren a ciegas ----
-    ciegos = []
+    ciegos, ciegos_falsos = [], []
     for aid, a in A.items():
         if not a.get("mining_kind") or aid in FUERA:
             continue
@@ -77,6 +121,11 @@ def main():
             p = os.path.join(ROOT, str(b).replace("/", os.sep))
             if not os.path.isfile(p):
                 continue
+            if p in _YA_MEDIDO:
+                if not _YA_MEDIDO[p]:
+                    ciegos_falsos.append((aid, p))
+                lee = True
+                break
             try:
                 t = open(p, encoding="utf-8", errors="ignore").read()
             except Exception:
@@ -84,6 +133,20 @@ def main():
             if ("from metodo import" in t or "import metodo" in t
                     or "algorithm_memory" in t or "lo_que_ya_aprendimos" in t):
                 lee = True
+                # ⛔ ESCRIBIR EL IMPORT NO ES RECIBIR LA MEMORIA.
+                #
+                # Esta puerta media la FORMA -- que la cadena estuviera en el fichero -- y daba
+                # verde a CINCO mineros que recibian None. El caso que lo destapo:
+                # fsv_coverage_check.py calculaba la ruta CONTANDO dirname(), se quedaba un
+                # nivel corto (Zagentexecution/process_mining, que no existe), el import fallaba
+                # y un `except Exception` se lo tragaba en silencio. Lo peor: ese fichero se
+                # estaba usando como EJEMPLO BUENO para enchufar a los demas.
+                #
+                # Medir la forma en vez del efecto es el defecto que este proyecto lleva toda la
+                # sesion cazando, y estaba dentro de la propia puerta que lo vigila. Ahora se
+                # COMPRUEBA que el import resuelve de verdad, cargando el modulo AISLADO.
+                if not _de_verdad_recibe(p):
+                    ciegos_falsos.append((aid, p))
                 break
         if not lee:
             ciegos.append(aid)
@@ -94,6 +157,18 @@ def main():
                                "mecanizado corre solo cada semana"),
                   "como_se_arregla": ("from metodo import lo_que_ya_aprendimos; "
                                       "m = lo_que_ya_aprendimos('<tema>', ...); m.avisar()")})
+    if ciegos_falsos:
+        h.append({"gravedad": "ESCRIBE_EL_IMPORT_Y_RECIBE_NADA",
+                  "cuantos": len(ciegos_falsos),
+                  "ids": sorted(f"{a} :: {os.path.relpath(p, ROOT)}" for a, p in ciegos_falsos),
+                  "que_pasa": ("tienen el import escrito y `_aprendido` queda en None: reciben "
+                               "CERO memorias. Es peor que no tenerlo, porque la puerta daba "
+                               "verde. Causa medida: la ruta a process_mining se calculaba "
+                               "CONTANDO dirname() y se quedaba corta, y un `except Exception` "
+                               "se tragaba el fallo en silencio"),
+                  "como_se_arregla": ("BUSCA el directorio que contiene process_mining subiendo "
+                                      "desde __file__ en vez de contar niveles; usa `except "
+                                      "ImportError` y AVISA por pantalla cuando no llegue")})
 
     # ---- 1b. ¿LA SALIDA OBEDECE? Leer no es obedecer, y hasta ahora esta puerta media el
     # import -- o sea la FORMA. Ahora corre las comprobaciones ejecutables de `metodo` contra

@@ -13,6 +13,10 @@ from collections import defaultdict
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
+try:  # lo que este proyecto ya aprendio de ESTE instrumento; si falta, el minero sigue corriendo
+    from metodo import lo_que_ya_aprendimos as _aprendido
+except Exception:
+    _aprendido = None
 
 # tcode -> (business activity, process, control-risk-class)   [LLM-generated from SAP knowledge]
 SEMANTIC = {
@@ -61,6 +65,10 @@ SEMANTIC = {
 
 
 def main():
+    # ANTES de minar: lo ya aprendido de este mismo instrumento. La critica aqui es que en
+    # TXSUBCLSID='Transaction Start' el tcode ARRANCADO vive en PARAM1, no en SLGTC.
+    if _aprendido:
+        _aprendido("rsau_audit_history", "slgtc", "param1", "tcode", "cobertura").avisar()
     c = sqlite3.connect(GOLD, timeout=10)
     rows = c.execute("SELECT SLGTC, COUNT(*) FROM rsau_audit_history WHERE TXSUBCLSID='Transaction Start' "
                      "AND SLGTC<>'' GROUP BY SLGTC").fetchall()

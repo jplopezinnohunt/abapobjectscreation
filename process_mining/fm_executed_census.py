@@ -22,11 +22,23 @@ Run: python process_mining/fm_executed_census.py
 import re
 import json
 import sqlite3
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 OUT = REPO / "brain_v2" / "fm_executed_census.json"
+
+# Lo que este proyecto ya aprendio de ESTE instrumento (el log de auditoria) antes de minarlo.
+# No es ceremonia: las memorias que salen aqui son literalmente sobre las columnas que este
+# censo lee -- PARAM1 vs SLGTC, que SLGREPNA no lleva el modulo de funcion de una llamada RFC
+# sino SAPMSSY1, que el log no distingue batch input de job de fondo, y que nuestras propias
+# lecturas por RFC entran en el mismo log que estamos contando.
+sys.path.insert(0, str(REPO / "process_mining"))
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido
+except Exception:
+    _aprendido = None
 
 # FM / PSM-FM object-name matcher (tcodes, reports, FMs, BAPIs).
 FM_RE = re.compile(
@@ -71,6 +83,10 @@ def enrich_top_users(c, where, obj_field, objs, k=5):
 
 
 def main():
+    if _aprendido:
+        _aprendido("rsau_audit_history", "txsubclsid", "slgrepna", "tcode",
+                   "ventana", "actores").avisar()
+
     con = sqlite3.connect(GOLD)
     c = con.cursor()
 
