@@ -69,6 +69,12 @@ def tomar_foto_de_base():
     }, ensure_ascii=False), encoding="utf-8")
     return len(nombres)
 
+# El ORDEN y sus invariantes viven ademas como CONOCIMIENTO en
+# brain_v2/methods/orchestration.json: que produce cada fase, que necesita, y que pasa si se
+# salta. Aqui esta la ejecucion; alli el porque, que es lo que se puede consultar, mejorar y
+# replicar en otra instalacion sin tocar este fichero.
+ORQUESTACION = REPO / "brain_v2" / "methods" / "orchestration.json"
+
 FASES = [
     {
         "id": 0, "nombre": "ingesta (grifo, periodica)", "opcional": True,
@@ -322,6 +328,16 @@ def main():
     print("=" * 78)
     print("CADENA DE DESCUBRIMIENTO -- el orden lo imponen las dependencias")
     print("=" * 78)
+    # Las invariantes se IMPRIMEN al arrancar. Un orden que solo vive en el codigo se cumple y
+    # no se entiende, y el que venga detras no sabe cual puede tocar.
+    try:
+        _o = json.loads(ORQUESTACION.read_text(encoding="utf-8"))
+        print("\nlas reglas que este orden respeta:")
+        for _i in _o.get("invariantes", []):
+            print(f"  · {_i['regla']}")
+            print(f"      {_i['por_que'][:104]}")
+    except Exception:
+        pass
     bitacora, t0 = [], time.time()
     # La foto SOLO se renueva si de verdad se va a minar. En una corrida de solo-cruce
     # (--desde 5) retomarla aqui la dejaria identica al grafo de ahora y volveria a ser

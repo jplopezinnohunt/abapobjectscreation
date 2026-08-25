@@ -1,0 +1,140 @@
+{
+  "_que_es": "COMO SE ORQUESTAN LOS MINEROS, como conocimiento y no como codigo.",
+  "_por_que_existe": [
+    "El orden de la cadena vivia dentro de run_discovery_pipeline.py: una lista de fases en",
+    "Python. Eso funciona y no se puede consultar, ni mejorar sin tocar el script, ni replicar",
+    "en otra instalacion, ni comparar con la corrida del mes pasado. Es exactamente la forma en",
+    "que este proyecto ha perdido metodo toda la sesion: conocimiento atrapado dentro de un",
+    "artefacto que lo usa.",
+    "",
+    "Y no es un detalle: el orden es de las cosas mas caras de aprender aqui. Se descubrio",
+    "midiendo, no disenando -- A21 declara en su lands_in que es insumo de B1-B5, y correr la",
+    "familia B sin columna vertebral no da cero: da un mapa PLAUSIBLE de un proceso que no",
+    "existe."
+  ],
+  "_como_se_lee": "cada fase dice QUE produce, QUE necesita y QUE pasa si se salta",
+  "_quien_lo_usa": [
+    "process_mining/run_discovery_pipeline.py -- lo ejecuta",
+    "brain_v2/methods/run_analysis_cycle.py -- lo dispara semanalmente",
+    "el agente miner-onboarding -- para saber donde encaja un minero nuevo"
+  ],
+
+  "invariantes": [
+    {
+      "regla": "LA INGESTA ES UN GRIFO, NO UN DESCUBRIMIENTO",
+      "por_que": "traer log de P01 es caro, lento y periodico. Cruzar conocimiento no debe pagar una extraccion",
+      "consecuencia": "la fase 0 es opt-in (--con-ingesta), pensada para la tarea semanal"
+    },
+    {
+      "regla": "CLASIFICAR ANTES DE CONTAR",
+      "por_que": "576 'programas nuevos' eran 95% instancias generadas. Contar antes de saber que es cada nombre infla cualquier cifra",
+      "consecuencia": "la fase de REALIDAD va antes que todo lo que cuente algo"
+    },
+    {
+      "regla": "SIN NOCION DE CASO NO HAY FLUJO",
+      "por_que": "un DFG sobre la nocion de caso equivocada produce un mapa PLAUSIBLE de un proceso que no existe -- no da cero, da algo verosimil y falso",
+      "consecuencia": "A21 es una PUERTA que se LEE, no un paso que se pone antes. La familia B no corre si no abre"
+    },
+    {
+      "regla": "EL CRUCE VA AL FINAL Y CONTRA UNA FOTO PREVIA",
+      "por_que": "comparar contra el grafo de despues es circular: solo encuentra lo que el ultimo rebuild no vio",
+      "consecuencia": "se toma foto de base ANTES de minar, y una corrida de solo-cruce conserva la anterior"
+    },
+    {
+      "regla": "LOS CHOQUES SE SACAN CUANDO ESTAN FRESCOS",
+      "por_que": "el final de la cadena es el unico instante en que todos los mineros acaban de opinar sobre los mismos sujetos",
+      "consecuencia": "la fase de cruce consulta el bus y publica los desacuerdos"
+    }
+  ],
+
+  "fases": [
+    {
+      "id": 0,
+      "nombre": "ingesta",
+      "opcional": true,
+      "produce": "log nuevo en el Gold DB",
+      "necesita": "conexion a P01",
+      "si_se_salta": "se mina sobre la ventana que ya hay -- valido, y hay que DECLARAR la ventana",
+      "algoritmos": ["A1_chunked_temporal_read", "A2_rolling_window_accumulation"]
+    },
+    {
+      "id": 1,
+      "nombre": "realidad",
+      "opcional": false,
+      "produce": "que nombre es un OBJETO, de quien es, y por donde entra el trabajo",
+      "necesita": "log en el Gold",
+      "si_se_salta": "toda cifra posterior cuenta instancias generadas como si fueran objetos",
+      "algoritmos": ["A19_log_reality_filter", "A3_two_axis_classification",
+                     "A4_ordered_classifier_ladder", "A31_bdc_channel_mining",
+                     "A13_custom_field_harvest", "A19_wbs_model"]
+    },
+    {
+      "id": 2,
+      "nombre": "columna vertebral de casos",
+      "opcional": false,
+      "es_una_puerta": true,
+      "produce": "que clases de documento alcanzan su tabla -- la nocion de CASO",
+      "necesita": "la fase 1",
+      "si_se_salta": "la familia B produce un mapa plausible de un proceso que no existe",
+      "algoritmos": ["A21_case_spine"]
+    },
+    {
+      "id": 3,
+      "nombre": "mineria de flujo",
+      "opcional": false,
+      "bloqueada_por": "la puerta de la fase 2",
+      "produce": "que sigue a que, cuantas variantes, donde espera, cuanto se aparta de la norma",
+      "necesita": "case_spine.json con al menos una clase que combine",
+      "si_se_salta": "no hay modelo de proceso: solo objetos y actores",
+      "algoritmos": ["B1_dfg_discovery", "B2_variant_analysis", "B3_performance_bottleneck",
+                     "B4_declarative_conformance", "B5_ocel2_object_centric"]
+    },
+    {
+      "id": 4,
+      "nombre": "ciclo de vida y aprendizaje",
+      "opcional": false,
+      "produce": "como vive un documento, y el RESTO que no sabemos nombrar",
+      "necesita": "las fases 1 y 2",
+      "si_se_salta": "el resto sin explicar deja de medirse, y es el SENSOR de la cadena",
+      "algoritmos": ["A22_domain_composition", "A24_document_lifecycle",
+                     "A5_adaptive_learning_loop"]
+    },
+    {
+      "id": 5,
+      "nombre": "cruce con lo que ya sabemos",
+      "opcional": false,
+      "no_ejecuta_mineros": true,
+      "produce": "lo NUEVO separado de lo repetido, y los choques entre mineros",
+      "necesita": "la foto de base tomada antes de la fase 1",
+      "si_se_salta": "cada corrida vuelve a informar de lo mismo y el hallazgo se ahoga",
+      "algoritmos": ["A29_discovery_chain", "A30_mining_bus", "A38_claim_resolution"]
+    }
+  ],
+
+  "lo_que_se_aprendio_orquestando": [
+    {
+      "leccion": "una PUERTA implementada como ORDEN no es una puerta",
+      "medido": "la familia B corria igual si A21 fallaba o agotaba el timeout: poner algo primero no obliga a nada"
+    },
+    {
+      "leccion": "delegar un tramo entero es mejor que copiar sus pasos",
+      "medido": "el ciclo semanal llama a la cadena con --desde 1 en vez de repetir su lista: el orden vive en UN sitio"
+    },
+    {
+      "leccion": "un --desde por FASE puede dejar mineros sin llamador",
+      "medido": "--desde 2 saltaba la fase 1 entera y dejaba a A3 y A31 sin correr nunca en el ciclo programado"
+    },
+    {
+      "leccion": "capturar la salida de cada paso hace que un paso largo parezca colgado",
+      "medido": "B5 tarda 249s y A21 301s sin emitir nada; hace falta un latido"
+    }
+  ],
+
+  "_replicable": [
+    "En otra instalacion esto se lee y se adapta sin tocar codigo: las fases dicen que necesitan",
+    "y que pasa si se saltan, asi que se puede decidir cual aplica sin volver a descubrir el",
+    "orden midiendo. Es la parte del conocimiento que no estaba en ningun sitio consultable."
+  ],
+  "_medido_utc": "2026-08-25",
+  "_generado_por": "escrito a mano desde run_discovery_pipeline.py y verificado contra su corrida"
+}
