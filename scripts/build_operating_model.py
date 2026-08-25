@@ -23,6 +23,7 @@ LO QUE NO HACE
     tiene el dato, la seccion dice que falta en vez de rellenarlo.
 """
 import json, os, sys, datetime
+from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "companions", "how_unesco_works.html")
@@ -64,6 +65,30 @@ def main():
                       f"<td class=n>{t.get('BUSINESS',0)}%</td>"
                       f"<td class=n>{t.get('OBSERVER',0)}%</td>"
                       f"<td class=n style='color:var(--org)'>{t.get('UNCLASSIFIED',0)}%</td></tr>")
+
+    # --- POR DONDE ENTRA EL TRABAJO: satelites, no SAP GUI ---
+    # Es la pieza que faltaba en esta pagina: contaba QUE se ejecuta y en QUE dominio, y no por
+    # DONDE entra. Y por donde entra es lo que mas define como trabaja la casa -- 10,3 llamadas
+    # RFC por cada arranque de transaccion de dialogo.
+    inv = (load("brain_v2", "interface_inventory.json").get("interfaces") or [])
+    nat = Counter(i.get("nature") or "sin clasificar" for i in inv)
+    entrantes = [i for i in inv if i.get("channel") in ("RFC_INBOUND_OBSERVED", "RFC_CUSTOM_FM")]
+    canal_rows = ""
+    for i in sorted(entrantes, key=lambda x: -(x.get("calls") or 0))[:14]:
+        quien = {"A": "PERSONA", "B": "tecnico", "C": "comunicacion",
+                 "S": "servicio"}.get(i.get("user_type"), "modulo")
+        marca = ("<span style='color:var(--org)'>&#9679; cuenta de persona usada como canal"
+                 "</span>"
+                 if i.get("sod_flag") == "PERSONA_USADA_COMO_CANAL_DE_ESCRITURA" else "")
+        canal_rows += (f"<tr><td><code>{esc(str(i.get('artifact')))}</code></td>"
+                       f"<td class=n>{(i.get('calls') or 0):,}</td>"
+                       f"<td>{esc(quien)}</td>"
+                       f"<td>{esc(str(i.get('nature') or ''))}</td>"
+                       f"<td>{esc(str(i.get('domain') or ''))}</td>"
+                       f"<td>{marca}</td></tr>")
+    sod = [i for i in inv
+           if i.get("sod_flag") == "PERSONA_USADA_COMO_CANAL_DE_ESCRITURA"]
+    nat_txt = ", ".join(f"<b>{esc(k)}</b> {v}" for k, v in nat.most_common())
 
     # --- dominios: lee o modifica, y quien los conduce ---
     dom_rows = ""
@@ -183,6 +208,29 @@ footer{{border-top:1px solid var(--b);padding:22px 40px;color:var(--mu);font-siz
   {explained}% de las ejecuciones de negocio llega a grado 3, o sea alguien lo escribió con
   evidencia. Ese salto no lo da ningún algoritmo.</p>
   </div>
+</section>
+
+<section>
+  <h2><span class="n">02b</span>¿Por dónde entra el trabajo?</h2>
+  <p class="lead">UNESCO no se opera desde SAP GUI: se opera desde aplicaciones satélite. El log
+  tiene <b>10,3 llamadas RFC por cada arranque de transacción</b> de diálogo (12.734.604 contra
+  1.235.225), y <b>524.708</b> de esas llamadas ESCRIBEN. Un inventario que sólo diga el dominio
+  cuenta dónde pasa algo; la <b>naturaleza</b> cuenta qué pasa — y las tres no cuestan lo mismo
+  cuando fallan: una lectura rota cuesta un informe, una transaccional cuesta dinero, y una de
+  datos maestros corrompe todo lo que venga detrás, en silencio.</p>
+  <p class="lead"><b>{len(sod)} cuentas de PERSONA son en realidad canales de escritura</b>,
+  confirmado por terminal: más de la mitad de sus llamadas salen de una máquina que usan cinco
+  cuentas o más — un servidor, no un PC. La autorización se comprueba contra la persona, así que
+  la aplicación hereda todo lo que esa persona pueda hacer. Es el hallazgo H71, aquí con nombre
+  y volumen.</p>
+  <p class="mu">Naturaleza de las {len(inv)} interfaces: {nat_txt}. <b>NO_MEDIBLE</b> son
+  destinos salientes: no dejan en nuestro log qué hacen del otro lado, y eso es un estado con
+  nombre, no un hueco.</p>
+  <div class="card"><table>
+    <tr><th>canal entrante</th><th class=n>llamadas</th><th>quién entra</th>
+        <th>naturaleza</th><th>dominio</th><th></th></tr>
+    {canal_rows}
+  </table></div>
 </section>
 
 <section>
