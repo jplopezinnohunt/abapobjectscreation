@@ -85,7 +85,13 @@ FASES = [
                   ("A4 escalera de dominio", "process_mining/executed_objects_domain_map.py", []),
                   # POR DONDE entra el trabajo que NO pasa por una transaccion de dialogo.
                   # Este es el metodo que encontro ALLOS y que vivio un dia solo como prompt.
-                  ("A31 canal batch input", "process_mining/bdc_channel_mining.py", [])],
+                  ("A31 canal batch input", "process_mining/bdc_channel_mining.py", []),
+                  # QUE le anadimos nosotros al modelo estandar. Estaban registrados y sin
+                  # llamador: un algoritmo que no corre no es capacidad, es documentacion.
+                  ("A13 campos custom del modelo", "process_mining/harvest_custom_fields.py",
+                   []),
+                  ("A19 campos custom de un maestro, en 3 ejes", "process_mining/wbs_model.py",
+                   [])],
     },
     {
         "id": 2, "nombre": "COLUMNA VERTEBRAL DE CASOS", "opcional": False,
@@ -108,7 +114,8 @@ FASES = [
         "id": 4, "nombre": "ciclo de vida y aprendizaje", "opcional": False,
         "por_que": ("A24 mide como vive un documento; A5 aprende del RESTO sin resolver, que es "
                     "donde esta lo que todavia no sabemos nombrar"),
-        "pasos": [("A24 ciclo de vida documental", "process_mining/document_lifecycle.py", []),
+        "pasos": [("A22 composicion de dominio", "brain_v2/domain_composition.py", []),
+                  ("A24 ciclo de vida documental", "process_mining/document_lifecycle.py", []),
                   ("A5 descubrimiento adaptativo", "process_mining/adaptive_discovery.py", []),
                   ("hallazgos sin aterrizar", "brain_v2/methods/unlanded_discoveries.py", [])],
     },

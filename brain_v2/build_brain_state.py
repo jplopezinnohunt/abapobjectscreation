@@ -133,6 +133,29 @@ STORES_AL_GRAFO = [
     # vive en su propio subdirectorio, y `flows` es un DICCIONARIO indexado por flujo (P2P,
     # B2C2A...), no una lista con campo `name`. Declarado mal, no aterrizaba nada y nadie lo veia.
     {"file": "process_flows/process_flows.json", "key": "process_flow", "at": "flows"},
+    # Los tres que quedaban fuera. NO eran "agregados sin nombre de objeto": tenian nombre y la
+    # ruta estaba mal. drift_signals cuelga del DOMINIO que deriva, ocel2 de los TIPOS DE OBJETO
+    # que descubrio, y reality_filter de la TABLA que sondeo. Llamarlos agregados y excluirlos
+    # habria sido cerrar el hallazgo con una excusa.
+    {"file": "drift_signals.json", "key": "drift_signal", "at": "signals",
+     "name_field": "domain"},
+    {"file": "Zagentexecution/sap_data_extraction/process_discovery/p2p_ocel2_summary.json",
+     "key": "ocel_tipos", "at": "objects_per_type"},
+    {"file": "Zagentexecution/sap_data_extraction/process_discovery/p2p_ocel2_summary.json",
+     "key": "ocel_actividades", "at": "activities"},
+    {"file": "reality_filter.json", "key": "reality_dormant", "at": "forward",
+     "name_field": "config"},
+    {"file": "reality_filter.json", "key": "reality_backward", "at": "backward",
+     "name_field": "unit"},
+    # Y los que aparecieron AL ARREGLAR los anteriores: son los mineros escritos hoy, que
+    # produjeron su store y no lo enchufaron. Cada arreglo abre visibilidad a lo siguiente --
+    # por eso una exclusion "con motivo" es cara: cierra la cadena en el punto donde estaba.
+    {"file": "bdc_channel.json", "key": "bdc_generador", "at": "generadores",
+     "name_field": "progid"},
+    {"file": "variant_content.json", "key": "variante", "at": "variantes",
+     "name_field": "programa"},
+    {"file": "methods/mining_candidates.json", "key": "minero_candidato", "at": "propuestas",
+     "name_field": "bound_in"},
     {"file": "payroll_discovery.json", "key": "payroll", "at": None},
     {"file": "custom_fields.json", "key": "custom_field", "at": "fields", "name_field": "owner"},
     {"file": "Zagentexecution/sap_data_extraction/sqlite/job_classification.json",
