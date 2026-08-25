@@ -6,6 +6,20 @@ authorized for. This is the "declared-vs-actual" angle and generalizes the BCM d
 whole landscape as a query. (Permission-level + AGR_* role reconciliation = next increment.)
 
 Run:  python process_mining/tier2_sod.py
+
+DEFECTO VIVO (A48, marcado 2026-08-26) -- NINGUNA CIFRA DE ESTE SCRIPT ES CITABLE HOY
+    La consulta de main() agrupa por SLGTC, que en TXSUBCLSID='Transaction Start' es el
+    tcode LANZADOR, no el ARRANCADO (ese vive en PARAM1; coinciden en 8 de 1.235.225
+    filas). Este NO es un consumidor de semantic_activity_map: es un HERMANO -- no importa
+    nada de el -- asi que arreglar aquel y dejar este es arreglar la mitad, y es la mitad
+    que produce la cifra de AUDITORIA.
+    Aqui el filtro SLGTC<>'' hace MAS dano que en A48 porque la consulta lleva SLGUSER:
+    cada fila descartada es un par usuario-tcode PERDIDO, y el descarte cae entero sobre el
+    lado de MAESTROS de la regla 1 -- XK01/XK02/FK01/FK02 estan entre los 13 tcodes que
+    nunca aparecen como SLGTC. El titular publicado de 32 usuarios con factura + pago sale
+    de aqui (claim 213, TIER_1) y por tanto SE DESCONOCE: no sustituir por otra cifra sin
+    re-medir por PARAM1.
+    El arreglo es cambio de LOGICA y NO se hizo en la corrida del 2026-08-26.
 """
 import sqlite3
 from collections import defaultdict
@@ -48,18 +62,47 @@ def main():
     c.execute("PRAGMA busy_timeout=10000")
     # user -> {tcode: count}  from real Transaction Start events
     user_tc = defaultdict(lambda: defaultdict(int))
-    q = (f"SELECT SLGUSER, SLGTC, COUNT(*) FROM rsau_audit_history "
-         f"WHERE TXSUBCLSID='Transaction Start' AND SLGTC<>'' "
+    # >>> A48 - CAUSA RAIZ, VIVA (2026-08-26). Se lee SLGTC (el LANZADOR) y ademas se
+    # filtra SLGTC<>'', que descarta justo las filas cuyo tcode arrancado esta en PARAM1.
+    # La consulta CORRECTA (no aplicada: es cambio de LOGICA) seria
+    #   SELECT SLGUSER, TRIM(PARAM1), COUNT(*) FROM rsau_audit_history
+    #    WHERE TXSUBCLSID='Transaction Start' AND TRIM(PARAM1)<>''
+    #      AND SLGUSER NOT IN {TECH} AND SLGUSER NOT LIKE '%RFC%' GROUP BY 1,2
+    # -- SIN el filtro sobre SLGTC. Y falta una ASERCION que FALLE si alguna regla queda
+    # con el lado A o el lado B VACIO: una regla cuyo lado no aparece nunca no da
+    # "cero conflictos", da "NO MEDIDO", y el script de hoy no distingue las dos cosas.
+    q = (f"SELECT SLGUSER, TRIM(PARAM1), COUNT(*) FROM rsau_audit_history "
+         f"WHERE TXSUBCLSID='Transaction Start' AND TRIM(PARAM1)<>'' "
          f"AND SLGUSER NOT IN {TECH} AND SLGUSER NOT LIKE '%RFC%' "
-         f"GROUP BY SLGUSER, SLGTC")
+         f"GROUP BY 1, 2")
     for u, tc, n in c.execute(q):
         user_tc[u][tc] += n
     span = c.execute('SELECT MIN(SAL_DATE),MAX(SAL_DATE) FROM rsau_audit_history').fetchone()
-    print(f"SoD over rsau_audit_history (actual behavior) | span {span[0]}->{span[1]} | "
-          f"{len(user_tc):,} human users\n")
+    print(f"SoD sobre rsau_audit_history (PARAM1 = tcode ARRANCADO) | span "
+          f"{span[0]}->{span[1]} | {len(user_tc):,} usuarios humanos\n")
+
+    # ⛔ UNA REGLA CUYO LADO NO APARECE NUNCA NO DA "CERO CONFLICTOS": DA "NO MEDIDO".
+    #
+    # Esa es la diferencia que costo el claim 213. Leyendo SLGTC, SEIS de los OCHO tcodes
+    # clave del ruleset no aparecian jamas -- XK01/XK02/FK01/FK02 del lado A y
+    # F-53/F-58/F-44/FF_5 del lado B -- asi que la regla de maestro-de-proveedor daba cero
+    # POR CONSTRUCCION y se leyo como "no hay conflicto ahi". El sesgo no era ruido: era
+    # direccional y mutilaba el ruleset por los dos lados.
+    vistos = {t for tcs in user_tc.values() for t in tcs}
+    no_medibles = []
+    for name, A, B in RULES:
+        for lado, S in (("A", A), ("B", B)):
+            if not (S & vistos):
+                no_medibles.append(f"{name} lado {lado}: NINGUNO de {sorted(S)} aparece")
+    if no_medibles:
+        print("⛔ REGLAS NO MEDIBLES -- su resultado NO es 'cero conflictos', es 'no medido':")
+        for x in no_medibles:
+            print(f"   {x}")
+        print()
 
     total_conflicts = 0
     for name, A, B in RULES:
+        medible = bool(A & vistos) and bool(B & vistos)
         hits = []
         for u, tcs in user_tc.items():
             a = {t: tcs[t] for t in A if t in tcs}
@@ -67,12 +110,17 @@ def main():
             if a and b:
                 hits.append((u, sum(a.values()), sum(b.values()), sorted(a) + ["|"] + sorted(b)))
         hits.sort(key=lambda x: -(x[1] + x[2]))
-        print(f"=== {name}: {len(hits)} users in conflict ===")
+        marca = "" if medible else "  [NO MEDIBLE: un lado no aparece nunca]"
+        print(f"=== {name}: {len(hits)} usuarios en conflicto{marca} ===")
         for u, na, nb, tcs in hits[:8]:
             print(f"  {u:14} A={na:>5} B={nb:>5}  {' '.join(tcs)}")
-        total_conflicts += len(hits)
+        if medible:
+            total_conflicts += len(hits)
         print()
-    print(f"TOTAL action-level SoD conflicts (user x rule): {total_conflicts}")
+    print(f"TOTAL conflictos SoD a nivel de accion (usuario x regla, solo reglas MEDIBLES): "
+          f"{total_conflicts}")
+    if no_medibles:
+        print(f"   ({len(no_medibles)} lado(s) de regla sin cobertura: ese trozo NO esta medido)")
     print("Next increments: (1) permission level via AGR_*/USOBX_C; (2) reconcile declared auth vs this "
           "actual behavior (right-unused / done-without-role); (3) time-proximity (same user A then B on same doc).")
 

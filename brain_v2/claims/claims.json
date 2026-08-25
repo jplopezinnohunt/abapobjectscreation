@@ -10327,8 +10327,9 @@
     "superseded_date": "2026-08-26",
     "superseded_reason": "tier2_sod.py comete el mismo error de columna de forma independiente, y con sesgo direccional: 6 de los 8 tcodes del ruleset no pueden aparecer nunca",
     "superseded_by_claim_id": 596,
-    "_para_re_medir": "re-correr tier2_sod agrupando por TRIM(PARAM1) y SLGUSER sin filtro SLGTC<>'', y comprobar primero que los 8 tcodes del ruleset SI aparecen antes de contar nada",
-    "_lo_que_sobrevive": "los NOMBRES: T_ENG e I_MARQUAND, corroborados por claim 6 (log de pagos) y por AGR_1251 (claims 237-240)"
+    "_para_re_medir": "HECHO 2026-08-26 -> claim 601: son 308, no 32",
+    "_lo_que_sobrevive": "los NOMBRES: T_ENG e I_MARQUAND, corroborados por claim 6 (log de pagos) y por AGR_1251 (claims 237-240)",
+    "_re_medido_por_claim": 601
   },
   {
     "id": 214,
@@ -10406,7 +10407,7 @@
   },
   {
     "id": 216,
-    "claim": "RETIRADO 2026-08-26. LA ACTIVIDAD AS-RUN POR DOMINIO SE DESCONOCE. Las cifras publicadas (Procurement_P2P 5.556 eventos/139 usuarios · PSM_FM 4.697/238 · FI 4.385/185 · Treasury_EBS 1.970/24 · FI-AP 1.899/110 · Payment_BCM 646/13, y '29 tcodes cubren el 95% del volumen') tienen DOS defectos independientes. (1) COLUMNA: se apoyan en un histograma de SLGTC -- el tcode LANZADOR -- cuando el arrancado vive en PARAM1, asi que el trabajo TERMINAL, el que no lanza nada desde dentro, no puede aparecer. (2) PROVENIENCIA, que es peor: el evidence_path apunta a process_mining/semantic_activity_map.py, que NO LEE SLGUSER en NINGUNA version de su historia (comprobado sobre HEAD, 27452c2 y 62b5a9e), asi que los recuentos '/N usuarios' no pueden proceder de la fuente citada; ademas el dict SEMANTIC del script no contiene las etiquetas 'Procurement_P2P', 'PSM_FM' ni 'Payment_BCM' -- esos nombres son del capability_model, no del script. La corrida que produjo las cifras no se conservo. NO se sustituyen por cifras nuevas.",
+    "claim": "RETIRADO Y RE-MEDIDO EN PARTE, 2026-08-26. LAS CIFRAS PUBLICADAS ERAN FALSAS por dos defectos independientes. (1) COLUMNA: el reparto se apoya en un GROUP BY SLGTC -- el tcode LANZADOR -- cuando el arrancado vive en PARAM1, asi que el trabajo TERMINAL, el que no lanza nada desde dentro, no puede aparecer. (2) PROVENIENCIA: el evidence_path apunta a process_mining/semantic_activity_map.py, que NO LEE SLGUSER en NINGUNA version de su historia (comprobado sobre HEAD, 27452c2 y 62b5a9e), asi que los recuentos '/N usuarios' no pueden proceder de la fuente citada; ademas el dict SEMANTIC del script no contiene las etiquetas 'Procurement_P2P', 'PSM_FM' ni 'Payment_BCM' -- son nombres del capability_model. La corrida que produjo las cifras no se conservo. LO QUE SI ESTA RE-MEDIDO leyendo PARAM1 contra el Gold, y el orden de magnitud del error: el proceso MDM completo pasa de 35 eventos a 55.024 (FACTOR 1.572x; solo el mantenimiento de proveedor XK01+XK02 son 54.126); FI de 14.022 a 127.592; FI-AP de 4.538 a 82.695; Payment de 3.213 a 35.610. LO QUE SIGUE DESCONOCIDO, y es mas estrecho: los RECUENTOS DE USUARIOS por dominio (la fuente citada nunca leyo SLGUSER) y la correspondencia exacta entre los buckets del script (P2P/PSM/Payment) y las etiquetas del capability_model que el claim usaba. ⛔ Y EL RIESGO QUE ESTO CREO: la salida defectuosa decia 'casi no hay mantenimiento de proveedores en dialogo', que encaja con H71 -- write-channel SoD, 'las escrituras entran por el canal RFC/portal' -- una hipotesis VIVA del brain. Leer esa salida parecia CONFIRMAR H71 y no confirmaba nada: era un artefacto de leer la columna del lanzador. Todo apoyo a H71 que venga de actividad de dialogo por tcode hay que re-verificarlo por PARAM1.",
     "status": "superseded",
     "confidence_tier": "TIER_3",
     "evidence": "rsau_audit_history analyzed 2026-06-21 via process_mining/semantic_activity_map.py. 8.5M total rows; filtered to Dialog Logon + Transaction Start = ~876K human events. Per-domain split by tcode-to-domain mapping (LLM-generated map commit 62b5a9e).",
@@ -10414,9 +10415,14 @@
     "evidence_tier": "TIER_3",
     "related_objects": [
       "C_LOPEZ",
+      "H71",
+      "PARAM1",
       "PROCUREMENT_P2P",
       "PSM_FM",
+      "SLGTC",
       "T_ENG",
+      "XK01",
+      "XK02",
       "YFM1",
       "YKBLP_N",
       "ZICTP_COCKPIT",
@@ -10466,7 +10472,9 @@
     "superseded_date": "2026-08-26",
     "superseded_reason": "el reparto sale de un GROUP BY SLGTC (lanzador, no arrancado) Y su evidence_path no puede haber producido los recuentos de usuario: el script nunca leyo SLGUSER",
     "superseded_by_claim_id": 596,
-    "_para_re_medir": "un script VERSIONADO que agrupe por TRIM(PARAM1) y SLGUSER sin el filtro SLGTC<>'', y que GUARDE su salida -- la corrida ad-hoc que dio estas cifras no existe"
+    "_para_re_medir": "faltan los RECUENTOS DE USUARIO por dominio: COUNT(DISTINCT SLGUSER) agrupando por TRIM(PARAM1), con un script VERSIONADO que guarde su salida. Los recuentos de EVENTO ya estan re-medidos",
+    "_riesgo_creado": "aparentaba confirmar H71 (write-channel SoD). Re-verificar por PARAM1 cualquier apoyo a H71 basado en actividad de dialogo",
+    "_re_medido_por_claim": 602
   },
   {
     "id": 217,
@@ -10560,7 +10568,9 @@
     "superseded_date": "2026-08-26",
     "superseded_reason": "la mitad NUMERICA sale del histograma de SLGTC; la mitad del MAPEO sale de d01_tstc y es independiente del defecto",
     "_lo_que_sobrevive": "los 5 cockpits -> programa. Escrito aparte a proposito: sin esto la proxima revision lo retira por contagio y se vuelve a pagar",
-    "superseded_by_claim_id": 596
+    "superseded_by_claim_id": 596,
+    "_re_medido_por_claim": 602,
+    "_para_re_medir": "HECHO 2026-08-26 -> claim 602: 45,9% negocio / 56,5% total"
   },
   {
     "id": 219,
@@ -28183,15 +28193,16 @@
     ],
     "domain": "Process_Mining",
     "related_objects": [
+      "A48_semantic_activity_map",
+      "H71",
+      "PARAM1",
       "RSAU_AUDIT_HISTORY",
       "SLGTC",
-      "PARAM1",
+      "TIER2_SOD",
       "TSTC",
-      "A48_semantic_activity_map",
       "claim_213",
       "claim_219",
-      "claim_231",
-      "TIER2_SOD"
+      "claim_231"
     ],
     "created_session": 103,
     "status": "OPEN",
@@ -28206,7 +28217,8 @@
         "date": "2026-08-26",
         "que_cambia": "cambiar el ancla 'process_mining/semantic_activity_map.py:65-66' por 'process_mining/semantic_activity_map.py:73-74 (HEAD); 63-64 en 27452c2; 50-51 en 62b5a9e' -- en :65-66 no hay consulta en ninguna version. Y ANADIR el hecho mas importante que el claim no decia: EL DEFECTO ESTA DESDE EL PRIMER COMMIT (62b5a9e:50-51), asi que NINGUNA cifra derivada de este script en ningun momento de su historia estuvo limpia. Anadir a related_objects los claims 213 y 219, que arrastran el mismo error de columna SIN pasar por el script"
       }
-    ]
+    ],
+    "_riesgo_h71": "LO MAS PELIGROSO DE ESTE DEFECTO no es la cifra: es que su salida APARENTABA CONFIRMAR una hipotesis viva. 'Casi no hay mantenimiento de proveedores en dialogo' encaja de lleno con H71 (write-channel SoD: las escrituras entran por RFC/portal), y es un artefacto de leer la columna del LANZADOR. Leyendo PARAM1, XK01+XK02 en dialogo son 54.126 eventos, no 35. Un defecto que produce ruido se detecta; uno que produce la respuesta que esperabas, no."
   },
   {
     "id": 597,
@@ -28328,6 +28340,67 @@
     "status": "OPEN",
     "domain_axes": {
       "functional": "Brain_Architecture",
+      "module": "BASIS",
+      "process": "P2D"
+    }
+  },
+  {
+    "id": 601,
+    "claim": "LOS CONFLICTOS SoD CONDUCTUALES SON 308, NO 32 -- Y CUATRO DE LAS CINCO REGLAS DABAN CERO POR CONSTRUCCION (medido 2026-08-26 tras arreglar la columna, ventana 20260203-20260822, 1.602 usuarios humanos). Leyendo el tcode ARRANCADO en TRIM(PARAM1) en vez del LANZADOR en SLGTC, y sin el filtro SLGTC<>'': Vendor master + Invoice posting 21 usuarios (antes 0) · Invoice posting + Payment/clearing 236 (antes 68) · Bank master + Payment 4 (antes 0) · GL master + JE posting 37 (antes 0) · PO create + Goods receipt 10 (antes 0). TOTAL 308 pares usuario x regla. Los ceros anteriores NO eran 'no hay conflicto': eran 'no medido' -- seis de los ocho tcodes clave del ruleset (XK01/XK02/FK01/FK02, F-53/F-58/F-44/FF_5) no aparecen NUNCA como SLGTC, asi que esas reglas no podian dar otra cosa. EJEMPLOS CONCRETOS que antes eran invisibles: E_AMARAL con FI01 (alta de banco) y 111 pagos F-53/F110; K_BHATIA con FI01 y FI02 mas F-53; L_HANGI con FS00 (maestro de mayor) y 9.863 asientos FB01. AHORA EL INSTRUMENTO DISTINGUE 'cero' de 'no medible': si un lado de una regla no aparece nunca, lo declara NO MEDIBLE y no lo suma.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "process_mining/tier2_sod.py corregido y corrido contra el Gold, 2026-08-26",
+      "rsau_audit_history, TXSUBCLSID='Transaction Start', TRIM(PARAM1)",
+      "supersede el claim 213 (32 conflictos, medido sobre SLGTC)"
+    ],
+    "domain": "Security",
+    "related_objects": [
+      "RSAU_AUDIT_HISTORY",
+      "PARAM1",
+      "SLGTC",
+      "A49_tier2_sod",
+      "FI01",
+      "FI02",
+      "FS00",
+      "F-53",
+      "F110",
+      "FB01",
+      "XK01",
+      "XK02"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Security",
+      "module": "BASIS",
+      "process": "P2D"
+    }
+  },
+  {
+    "id": 602,
+    "claim": "LA COBERTURA SEMANTICA REAL ES 45,9% DE NEGOCIO Y 56,5% TOTAL, NO EL 97% PUBLICADO (medido 2026-08-26 tras arreglar la columna). Leyendo TRIM(PARAM1) sin el filtro SLGTC<>'': 993.634 eventos de negocio con 456.241 etiquetados = 45,9%; total 56,5% sobre 3.776 tcodes distintos de los que 52 estan mapeados -- no '155/N'. EL VOLUMEN POR DOMINIO, re-medido: FI 127.592 · FI-AP 82.695 · PSM 73.425 · P2P 72.245 · MDM 55.024 · Payment 35.610 · FI-AR 4.405 · Treasury 2.392 · BASIS 2.178 · HCM 612. Frente a lo que publicaba el histograma del LANZADOR: MDM 35 (factor 1.572x), FI 14.022, FI-AP 4.538, Payment 3.213. El titular del 97% era ademas falacia de composicion: el 92,7% de lo etiquetado era `_nav` (SESSION_MANAGER, S000), que es precisamente el lanzador y que el propio script declara que no es trabajo de negocio -- por eso ahora se imprimen DOS coberturas y la de NEGOCIO va PRIMERO: el numero que la gente cita es el que lee antes. La cola sin etiquetar que esto destapa es real y grande: ECPAO_INVT 28.709, PA20 28.121, FMX2 27.742, S_ALR_87013558 24.852, PA30 23.834.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "process_mining/semantic_activity_map.py corregido y corrido, 2026-08-26",
+      "rsau_audit_history: 993.634 eventos de negocio, 456.241 etiquetados",
+      "supersede la mitad numerica de los claims 216 y 218"
+    ],
+    "domain": "Process_Mining",
+    "related_objects": [
+      "RSAU_AUDIT_HISTORY",
+      "PARAM1",
+      "A48_semantic_activity_map",
+      "ECPAO_INVT",
+      "PA20",
+      "FMX2",
+      "PA30"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Process_Mining",
       "module": "BASIS",
       "process": "P2D"
     }

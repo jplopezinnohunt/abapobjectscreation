@@ -75,11 +75,26 @@ Categorization (§3) ≠ analysis. Mining the human signal (Dialog Logon + Trans
 - **What humans actually do** (after stripping nav SESSION_MANAGER/S000): the work is **Finance/FM/Treasury/P2P** —
   MIRO/MIR4 (invoice verification), FMRP_*/FMX3 (budget reporting), FEB_BSPROC + F.13 (bank stmt + clearing),
   FBL1N/ME23N (vendor items / PO display), custom cockpits ZICTP_COCKPIT/YFM1. `SE16` by 13 users = direct
-  table access (a control flag).
+  table access (a control flag) — **usuarios que operaron DENTRO de SE16; el recuento de ARRANQUES de SE16
+  se desconoce** (ver claim 219).
+  ⚠ **La lista es INCOMPLETA** — medida con `SLGTC` (tcode LANZADOR), así que **faltan los tcodes TERMINALES**
+  desde los que no se lanza nada: `XK02`, `FB01`, `PR01`, `PA30` entre ellos. **Re-derivar con `PARAM1`.**
+  (Sobrevive por coincidencia: MIRO, FMX3 y FBL1N son a la vez lanzadores frecuentes y lanzados frecuentes.)
 - **When** (by hour, UTC): office double-peak **10–11h & 14–16h with a 12–13h lunch dip**, plus a **persistent
   4–9K/hour overnight floor → globally distributed workforce** (field offices across timezones), not just HQ.
-- **User fingerprints**: generalists (T_NDUNGU 22 tcodes, G_PEROTIN 21) vs specialists (O_KIRARA 5 — the vendor-
-  address XK02 editor seen in CDHDR). Each user's tcode mix = their de-facto role.
+  > **Este perfil horario SOBREVIVE al defecto A48 — no tires la §7b entera por contagio
+  > (verificado 2026-08-26).** Un perfil por hora se calcula sobre `SAL_TIME` de las filas de la
+  > subclase, y **la columna por la que agrupas el tcode es irrelevante para cuándo ocurrieron esas
+  > filas**. Lo único que podría moverlo es el filtro `SLGTC<>''` si los 108.375 descartados tuvieran
+  > otra distribución horaria — INFERIDO, no comprobable sin el Gold: un 8,8% no borra un doble pico
+  > ni un suelo nocturno de 4-9K/hora.
+- **User fingerprints — RETIRADAS.** ~~generalistas (T_NDUNGU 22 tcodes, G_PEROTIN 21) vs especialistas
+  (O_KIRARA 5 — the vendor-address XK02 editor seen in CDHDR). Each user's tcode mix = their de-facto role.~~
+  **RETIRADO 2026-08-26:** los recuentos de tcodes distintos por usuario miden **desde dónde NAVEGA** cada
+  usuario, no **qué EJECUTA** — que es exactamente lo contrario de lo que la frase promete. La contradicción
+  es visible en el propio texto: O_KIRARA aparece con 5 tcodes y **sin `XK02`**, aunque CDHDR lo identifica
+  como el editor de direcciones de proveedor; bajo `SLGTC` no podía estar. La inferencia
+  *mezcla-de-tcodes = rol-de-facto* **es válida como MÉTODO, pero exige `PARAM1`.**
 - **NEXT analysis layers (not yet done)**: (a) **tcode SEQUENCES per session** = the actual process flows
   (pm4py DFG on user-sessions, case_id = SLGUSER+logon-window); (b) **systematic SoD** = users doing both
   entry (MIRO/FB60) and settle/clear (F.13/FBRA/F110) — the BCM dual-control finding generalized; (c)
@@ -117,8 +132,25 @@ Method: model each satellite as an OCEL resource/system; the BAPI = activity; co
   TODO: run by-year on all master OBJECTCLAS + by-month on the satellite RFCs (excluding JP_LOPEZ).
 
 ## 7d. METHOD lesson — find a blind spot from RESULT × METHOD (CDHDR is the channel-agnostic detector) (2026-06-21)
-The audit-log activity stream (Transaction Starts) counts SESSIONS not CHANGES and misses the RFC/BAPI write
-channel → it made MDM look like ~0 (a blind spot). The fix: read the RESULT side — **CDHDR change documents
+> **LECCIÓN DE MÉTODO, CORREGIDA 2026-08-26.** El stream de arranques de transacción **NO es ciego**
+> al mantenimiento de maestros en diálogo — **nuestro LECTOR lo era**. Agrupábamos por `SLGTC` (el
+> tcode de CONTEXTO desde el que se lanzó) en vez de por `PARAM1` (el tcode ARRANCADO), así que todo
+> tcode **TERMINAL** —aquel desde el que no se lanza nada más— daba cero por construcción, y `XK02`
+> entre ellos. La lección válida es OTRA y es más útil: **cuando un stream da CERO en algo que el
+> negocio hace todos los días, la primera hipótesis es un defecto del LECTOR, no una propiedad del
+> sistema**; y la segunda es **cruzar con una fuente independiente ANTES de publicar** — aquí CDHDR
+> estaba tres líneas más abajo diciendo lo contrario. Sigue siendo cierto, y **por su propio mérito**,
+> que CDHDR es el detector agnóstico de canal y el punto de partida correcto para minar procesos de
+> cambio.
+>
+> *Texto retirado (conservado para anti-regresión):* ~~The audit-log activity stream (Transaction
+> Starts) counts SESSIONS not CHANGES and misses the RFC/BAPI write channel → it made MDM look like
+> \~0 (a blind spot).~~ **RETIRADO 2026-08-26:** atribuía a una PROPIEDAD DE SAP lo que era un bug de
+> nuestro lector (A48 `semantic_activity_map`, agrupación por `SLGTC`; las dos columnas coinciden en
+> 8 de 1.235.225 filas). Segunda mano, no re-medido: leyendo `PARAM1`, `XK01`+`XK02` = 54.126
+> arranques de diálogo y MDM completo 55.024, frente a los 35 que imprime el script.
+
+The fix: read the RESULT side — **CDHDR change documents
 (channel-agnostic: every change, with USERNAME + the TCODE that delates the channel)** — and cross it with the
 METHOD side (RFC/BAPI call stream). CORRECTED finding: vendor master is NOT ~0 — **KRED = 143,406 change docs**,
 DOMINANTLY dialog **XK02 by M_AYIMBA (72,718 = the #1 vendor maintainer)** + a SECONDARY external BAPI channel
@@ -127,15 +159,38 @@ DOMINANTLY dialog **XK02 by M_AYIMBA (72,718 = the #1 vendor maintainer)** + a S
 FMRESERV 6.4M, BELEG 442K, EINKBELEG 188K, KRED 143K, ENTRYSHEET 128K, BANF 106K, HR_IT* . Start change-process
 mining from CDHDR (result), not the activity stream. The §7c RFC/BAPI view below is the METHOD half — both are needed.
 
-## 7c. Master data & financials run via RFC/BAPI, NOT dialog (2026-06-21, user-confirmed + audit-located)
-Why dialog MDM ≈ 0 (FS00 by 1 user): GL accounts and **vendor master are maintained by EXTERNAL solutions via
-RFC/BAPI**, invisible to tcode analysis but captured in the RSAU "RFC Function Call" stream (PARAM3 = FM name,
-SLGUSER = RFC user). Located in `rsau_audit_history`:
-- **Vendor master CHANGE = `ZBAPI_VENDOR_CHANGE`** (MP_ANCUTA 19,481 + S_STANTIC 4,683) — not XK02. Read/search via
+> **La CORRECCIÓN con CDHDR de este párrafo SOBREVIVE ENTERA al defecto A48 — no la reabras
+> (verificado 2026-08-26).** «KRED = 143.406 change docs, dominantly dialog XK02 by M_AYIMBA
+> (72.718)» y el inventario `OBJECTCLAS` salen de **CDHDR**, una fuente completamente independiente
+> del audit-log y de la columna `SLGTC`. Y conviene subrayar lo que esto significa, porque vale más
+> que el dato: **la evidencia que REFUTABA el artefacto estaba publicada tres líneas más arriba, en
+> el mismo fichero y el mismo día, y no se leyó como refutación sino como complemento.** El fallo no
+> fue falta de datos.
+
+## 7c. Master data & financials run via RFC/BAPI **IN ADDITION TO** dialog (2026-06-21, user-confirmed + audit-located; título corregido 2026-08-26)
+**El MDM en diálogo NO es ≈0** — esa lectura venía de agrupar el audit-log por `SLGTC`. Medido en CDHDR
+(§7d): **`KRED` = 143.406 documentos de cambio, dominados por `XK02` en DIÁLOGO** (M_AYIMBA 72.718), con
+`ZBAPI_VENDOR_CHANGE` (MP_ANCUTA 19.481 + S_STANTIC 4.683) como canal **SECUNDARIO** — el diálogo cuadruplica
+al BAPI que esta sección declaraba sustituto. Lo que sí es cierto y se conserva: GL accounts y vendor master
+**también** se mantienen por soluciones EXTERNAS vía RFC/BAPI, invisibles al análisis de tcode y capturadas en
+el stream RSAU "RFC Function Call" (PARAM3 = FM name, SLGUSER = RFC user). Localizado en `rsau_audit_history`:
+
+> *Texto retirado (conservado para anti-regresión):* ~~«Master data & financials run via RFC/BAPI, NOT
+> dialog» · «Why dialog MDM ≈ 0 (FS00 by 1 user): GL accounts and vendor master are maintained by EXTERNAL
+> solutions via RFC/BAPI»~~ — **RETIRADO 2026-08-26.** Daba el cero por hecho y se ponía a explicarlo; estaba
+> refutado **dentro del mismo fichero, nueve líneas más arriba** (§7d, `KRED` dominantemente `XK02`). La
+> etiqueta *user-confirmed* es lo que lo hacía peligroso: parecía validado por humano. Causa: A48
+> `semantic_activity_map` agrupa por `SLGTC` (lanzador) en vez de `PARAM1` (arrancado).
+
+- **Vendor master CHANGE también por `ZBAPI_VENDOR_CHANGE`** (MP_ANCUTA 19,481 + S_STANTIC 4,683) — **canal
+  secundario, junto al `XK02` en diálogo que lo cuadruplica** (~~"not XK02"~~ RETIRADO 2026-08-26). Read/search via
   **BRIDGE-RFC** (`ZBAPI_VENDOR_GETDETAIL` 72K, `ZBAPI_VENDOR_SEARCH*`); bank via `ZBAPI_GET_BANK_COUNTRY_DATA`.
 - **FM/Fund master = MuleSoft** (`Y_FMKU_0050_CREATE_WITH_COMMIT`, `FM_FUND_CHANGE_RFC`).
 - Integration backbone (top RFC): `Y_BAPI_WBS_FINANCIAL_DATA_1` 974K (#1, WBS financials), `Z_RFC_GET_USER` 508K,
   `Y_BAPI_YPS8` 461K, `Y_BAPI_CUSTOMER_GET_ID` 148K, `BAPI_INCOMINGINVOICE_CREATE1`/`BAPI_GOODSMVT_CREATE` (E_SILVA/L_NEVES).
+  > **Este inventario de RFCs de integración SOBREVIVE INTACTO al defecto A48 (verificado 2026-08-26):**
+  > sale del stream *RFC Function Call* por `PARAM3` — **otra subclase y otra columna**, que el defecto
+  > de `SLGTC` no toca. No lo tires por contagio al corregir el resto de la §7c.
 - **GL-account-master BAPI not yet surfaced** (low volume or differently named) — OPEN: grep RFC stream for GL/SKA1.
 - Implication: the master-data + WBS-financial "way of working" is a BAPI/integration process. Model it from the
   RFC stream (resource = SLGUSER incl. BRIDGE-RFC/MULESOFT; activity = FM name). Custom Z-BAPI names = the brain/LLM moat.

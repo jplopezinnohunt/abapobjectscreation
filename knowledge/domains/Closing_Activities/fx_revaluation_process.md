@@ -98,6 +98,20 @@ banco/inversión — **678 bloqueadas** · **350 completas** · **55 latentes** 
 **0** con exposición y sin determinación · **1 defecto vivo**: `4041011`, con `T030H` y en ninguna
 variante.
 
+> **Estas cifras SOBREVIVEN al defecto A47 (`covered()` legado) — verificado offline 2026-08-26, no
+> aceptado de segunda mano.** Sobreviven **por la población medida, no por diseño**: restringiendo el
+> censo a las 5 posiciones por defecto de `fx_revaluation_scope_check`, n = **1.084** exacto,
+> «Blocked - out of scope» = **678** exacto, y cuentas **ALL-BUT = 0**. Las dos cifras comparables
+> entre los dos instrumentos reproducen **al número**, y **la ausencia de cuentas `AKONTO` en esa
+> población es la razón estructural** por la que el resolutor legado no pudo alterarlas.
+>
+> **Caveat que hay que declarar para no sobrevender:** las otras dos cifras (**350 completas**, **55
+> latentes**) **no se corresponden con ningún bucket del censo** en esa misma población (el censo da
+> Revalued 375 · Latent 10 · Out 20 · GAP 1). **No es una contradicción**: son taxonomías distintas
+> de dos instrumentos distintos — «completa» exige variante **Y** determinación, «Revalued» solo
+> exige variante. No se verificaron más allá de eso y **no son atribuibles a este defecto**.
+> Cuadrarlas es otro trabajo.
+
 ### ⛔ Afirmación REFUTADA (estaba en §3 de este mismo documento)
 
 > ~~"La única confirmación pendiente es leer el check `Bal.sheet preparation valuatn` en la

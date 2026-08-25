@@ -36,6 +36,8 @@ Matiz que hay que saber: un transporte de tabla guarda la **clave** y exporta el
 
 → Mecanizado: `Zagentexecution/quality_checks/config_transport_prerelease_check.py <TRKORR>`. Clasifica VIAJA / INTRUSA / NO-OP / DERIVA y falla si hay una clave de entidad ajena. Regla `feedback_diff_the_whole_table_before_releasing_a_config_transport` (CRITICAL). Claim 526.
 
+> **Nota de vigencia (2026-08-26).** La parte «y falla si hay una clave de entidad ajena» quedó REFUTADA el 2026-08-25: sólo dispara en tablas con campo clave discriminante y mayoría estricta, y sobre la ORDEN que se libera devuelve exit 0 sin analizar. Ver `brain_v2/methods/algorithms.json` A40 (`state: DEFECTO_VIVO`). La LECCIÓN de esta sección — diffear la tabla entera — sigue vigente; lo que no lo está es su mecanización.
+
 ### 1.3 Tres defectos en un día, invisibles en pantalla, cazados por el mismo instrumento
 
 | Defecto | Qué habría salido al banco |
@@ -93,6 +95,8 @@ El aviso del companion tampoco se había medido jamás. Yo lo convertí en crít
 `config_transport_prerelease_check.py`, primera versión: troceaba el `TABKEY` de `E071K` usando `INTLEN` (longitud interna Unicode, 2 bytes por carácter) en vez de `LENG`. Ninguna clave del transporte casaba con las de la tabla, así que **todo salió NO-OP y el check dijo OK** — sobre el mismo transporte cuyo defecto acababa de encontrar a mano.
 
 Es exactamente el modo de fallo contra el que existe el check. Lo detecté porque la salida *parecía* rara, no porque el check lo dijera. Corregido, y añadida una autocomprobación: si ninguna clave del transporte existe en ninguno de los dos sistemas, aborta con error en vez de informar OK.
+
+> **Nota de vigencia (2026-08-26) — esta sección SOBREVIVE a la revisión de A40, y además la refuerza.** No se toca: es el precedente exacto del modo de fallo vuelto a medir el 2026-08-25. La autocomprobación que se añadió es **todo-o-nada** (`config_transport_prerelease_check.py:193`: sólo aborta si `casan == 0`); con un troceo que casa *parcialmente*, avisa y sigue con exit 0. Segunda aparición de la misma clase de defecto en el mismo instrumento ⇒ por la regla #172 del proyecto esto ya no es una corrección, es un **gate debido**. Ver `algorithms.json` A40.
 
 ### 2.3 Violé una regla escrita ese mismo día porque no leí el store antes de escribir en él
 

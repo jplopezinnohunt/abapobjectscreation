@@ -37,6 +37,19 @@ Source = the execution-evidence logs already in the Gold DB. For each object, at
 | **batch job** | `tbtco`/`tbtcp` | `PROGNAME` (+`VARIANT`) | `JOBNAME`/`AUTHCKNAM` |
 | **batch input (BDC)** | `apqi`/`apqd` (SM35) | program | session creator |
 
+> **Esta tabla es el CONTRATO ESCRITO y es CORRECTA — no la toques (verificado 2026-08-26).**
+> Dice `PARAM1`, literal y sin ambigüedad, y separa además el campo de **OBJETO** (`PARAM1`) del de
+> **ACTOR** (`SLGUSER`) — exactamente la distinción que el claim 216 pisoteó al atribuir recuentos de
+> usuarios a un script que no lee `SLGUSER`. Su gemela es
+> `.agents/skills/sap_process_mining/SKILL.md:94` («Transaction Start → `PARAM1`, Report Start →
+> `SLGREPNA`, RFC Function Call → `PARAM3`»).
+> **Lo que hay que decir en voz alta:** `process_mining/semantic_activity_map.py` agrupa por `SLGTC`
+> (el tcode LANZADOR) y **contradice esta documentación desde su primer commit**. No fue un hueco de
+> conocimiento: fue un **fallo de lectura de nuestros propios contratos**. Lo que falta no es cambiar
+> estas líneas, sino **un check que compare lo que hacen los mineros con lo que dicen estos dos
+> ficheros**. Ojo también: aquí NO hay ningún `COALESCE` ni «canal» que combine columnas — si algún
+> artefacto cita esta línea para justificar `COALESCE(NULLIF(SLGTC,''), PARAM1)`, la está mis-citando.
+
 Per object the census records: `exec_count` (volume), `distinct_users`, `top_users`, channel(s), and
 (extendable) time profile from `SAL_DATE`/`SAL_TIME`. Then **cross-reference the static catalog**
 (`d01_tstc`, `tfdir_custom`) to split **EXECUTED vs CATALOG-ONLY** — the coverage truth.
@@ -53,6 +66,14 @@ A transaction/report/FM is a **shared primitive** — the SAME object participat
 processes** (user directive 2026-06-23: "una transacción puede ser usada en múltiples procesos").
 Example: `FMX3` (fund reservation) is used in budget-execution **and** project/grant funding **and**
 closing/carryforward. Therefore:
+
+> **Este aviso es CORRECTO y se queda — pero HOY ESTÁ INCUMPLIDO (verificado 2026-08-26).** El dict
+> `SEMANTIC` de `process_mining/semantic_activity_map.py:22-64` hornea exactamente el 1:1 que esta
+> sección prohíbe: cada tcode mapea a **UN solo** proceso. Es un **SEGUNDO defecto del instrumento,
+> independiente del de la columna** (`SLGTC` vs `PARAM1`): aunque se arregle `PARAM1`, «volumen por
+> PROCESO» seguirá asignando cada evento a un único bucket **por decreto**. Se anota aquí para que,
+> al arreglar la columna, nadie dé por sano el instrumento entero.
+
 - The census stores `object → processes` as a **SET**, never a single label. A `sub_area`/primary tag is
   a convenience, NOT an exclusive classification.
 - **Volume must be split by process** when attributing — an object's 16k executions span N processes;

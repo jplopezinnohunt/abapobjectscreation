@@ -99,6 +99,17 @@ YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json` + integration-layer docs) — the ot
   can self-approve the 3-way match. **MP_ANCUTA + S_STANTIC do `BAPI_PR_CHANGE` AND `ZBAPI_VENDOR_CHANGE`** =
   can direct spend to a vendor they control. `UBO-RFC` posts FI (`Y_RFC_FMRP_RFFMEP1FX_FI_POST` 30K). Extends
   the dialog SoD (claim #213) to the integration write channel — this is where conformance/SoD must focus.
+  > **H71 SOBREVIVE ENTERO al defecto A48 — conclusión Y exposición económica (verificado 2026-08-26).**
+  > Su base **no toca el audit-log de diálogo**: es `AGR_USERS`/`AGR_1251`/`AGR_AGRS` (autorización
+  > DECLARADA, pull de P01 al Gold, H76 hecho 2026-06-22), el stream *RFC Function Call* por `PARAM3`
+  > —otra subclase y otra columna— y documentos contabilizados.
+  > **La ironía conviene dejarla escrita:** el defecto A48 producía «casi no hay mantenimiento de
+  > proveedores en diálogo», y eso se leyó en su día como CONFIRMACIÓN de H71. Ahora sabemos que H71
+  > es cierto **por sus propias evidencias** y que ese falso cero nunca fue una de ellas: muere la
+  > premisa que lo motivó, sobrevive la conclusión.
+  > *Único matiz, que no cambia el veredicto:* «Extends the dialog SoD (claim #213)» cita un claim
+  > **supersedido**; léase como «coincide con el solapamiento conductual observado en T_ENG /
+  > I_MARQUAND (recuento retirado, claim 213)». Es una referencia cruzada, no un pilar.
 - **#7 Permission-level SoD: ✅ DONE 2026-06-22 (PMO H71/H76).** AGR_USERS/AGR_1251/AGR_AGRS pulled from P01 →
   Gold DB `agr_users` + `agr_1251_sod`. **Declared SoD CONFIRMS behavioral** with precision: Conflict 1 (Brasília
   `Y_UBO_*` bundle) = GR+invoice+PO at change-level (vendor-bank role display-only); Conflict 2 (HQ `Y_ICTP_SIS`) =
@@ -107,6 +118,14 @@ YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json` + integration-layer docs) — the ot
 - **#8 CHANNEL-MIX by month:** RFC business is **~5-6x dialog tcode-starts** every month (Mar 738K vs 156K,
   Apr 956K vs 202K, May 912K vs 172K) → the integration channel dominates operation, stable. (IDoc/Jobs sparse
   in the snapshots, not representative.) Dialog is a minority.
+  > **#8 SOBREVIVE al defecto A48 — es la única cifra de esta familia que aguanta, no la tires por
+  > contagio (verificado 2026-08-26).** Razón estructural: el lado «diálogo» es un **RECUENTO TOTAL**
+  > de la subclase, y **un total es INMUNE al defecto de columna** — da igual por qué campo agrupes,
+  > la suma de las filas es la misma. Lo único que podría moverlo es el filtro `SLGTC<>''` si se
+  > aplicó, y eso rebaja el diálogo como mucho un 8,8%: 5-6x pasaría a ~4,6-5,5x. La conclusión «el
+  > canal de integración domina y el diálogo es minoritario» **no se mueve en ningún escenario**.
+  > *(INFERIDO en cuanto al origen: no se ha encontrado el SQL que produjo estas cifras; ningún
+  > script del repo las emite. El veredicto no depende de encontrarlo.)*
 - **#9 PPM side (the other bridge end):** `unescore20-PPM-brain` = Salesforce/Core Planner; holds a SAP
   integration catalog **INT-01..06**, models MuleSoft, has SAP P01 as a graph node (31 edges) + SAP FM source
   (`YCL_FM_STAFF_COST_DISTRIBUT`). Our **17 MuleSoft flows = their INT-01..06 from the SAP side** — align them.

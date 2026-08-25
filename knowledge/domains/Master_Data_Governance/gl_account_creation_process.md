@@ -160,10 +160,24 @@ con lo medido en s102: le faltaba un paso **antes** (nadie dispara el proceso) y
 | **0** | **DETECTAR la deriva** | El aviso solo llega si hay revaluación; las demás altas son invisibles. 33 cuentas de retraso en V01 | `gl_alignment_check.py` — **programado**, no bajo demanda |
 | **1** | **ALINEAR maestro P01 → D01/V01** | La cuenta debe existir donde se prueba, o la config no se puede probar | `gl_master_sync.py` (API estándar `GL_ACCT_MASTER_SAVE_RFC`) |
 | **2** | **DECIDIR si revalúa** | El tipo NO decide esto | las 3 condiciones de §4, leídas del `AM 3-11` + `SKB1.WAERS` vs `T001.WAERS` + exposición viva |
-| **3** | **CONFIGURAR el gate completo: OB09 *y* variante** | Son inseparables: OB09 solo = no corre y no avisa; variante sola = F.05 falla | `ob09_vs_variant_check.py` (cruza `T030H` × variante × exposición) |
+| **3** | **CONFIGURAR el gate completo: OB09 *y* variante** | Son inseparables: OB09 solo = no corre y no avisa; variante sola = F.05 falla | `ob09_vs_variant_check.py` (cruza `T030H` × variante × exposición). ⚠ Hoy la pata «variante» usa el resolutor **legado `covered()`**, que mezcla `SKONTO` con `AKONTO` y no aplica la regla de solo-exclusiones: el resultado **NO es válido para una cuenta asociada** (`MITKZ D/K`); y su pata «exposición» solo interroga `BSIS`, no `BSID`/`BSIK`. Ver claim 599 |
 | **4** | **COMPROBAR cobertura en el balance** | Se asigna por INTERVALO: entra sola o cae en *Not assigned*, y el balance cuadra igual | `fsv_coverage_check.py <cuenta>` |
-| **5** | **TRANSPORTAR con control de alcance** | Un transporte de tabla guarda la CLAVE y exporta el VALOR al liberar: arrastra vecinos | `config_transport_prerelease_check.py <TRKORR>` |
+| **5** | **TRANSPORTAR con control de alcance** | Un transporte de tabla guarda la CLAVE y exporta el VALOR al liberar: arrastra vecinos | ⚠ **sin instrumento** — `config_transport_prerelease_check.py` en `DEFECTO_VIVO`: sobre la ORDEN devuelve exit 0 sin analizar. Hoy: **diff manual de la tabla afectada ENTERA**, D01 vs destino, más resolución de las tareas hijas por `E070 WHERE STRKORR` |
 | **6** | **BARRER la población** | La ocasión es el ticket; el alcance es todo | `--sweep` de los pasos 3 y 4 |
+
+> **El paso 5 se queda: lo que falta es su instrumento, no su razón.** «Un transporte de tabla
+> guarda la CLAVE y exporta el VALOR al liberar: arrastra vecinos» es mecánica de SAP verificada a
+> mano el 2026-08-19 y sostenida por el claim 526 (TIER_1, evidencia = diff fila a fila). Sin ese
+> paso el proceso de 7 se queda en 6 y pierde justo el control de alcance. El hueco es de
+> **herramienta**, y se marca en vez de borrarse para que la deuda quede visible.
+
+> **Texto retirado 2026-08-26 (conservado para anti-regresión).**
+> - Paso 3, Instrumento: ~~`ob09_vs_variant_check.py` (cruza `T030H` × variante × exposición)~~ —
+>   RETIRADO 2026-08-26: de las tres condiciones que promete, dos se cruzan bien y una es falsa en
+>   el detalle que decide. A47 `DEFECTO_VIVO`.
+> - Paso 5, Instrumento: ~~`config_transport_prerelease_check.py <TRKORR>`~~ — RETIRADO 2026-08-26:
+>   sobre el `TRKORR` que un operador teclea al liberar (la ORDEN) el check no controla ningún
+>   alcance; sale exit 0 sin analizar. A40 `DEFECTO_VIVO`.
 
 **El tipo de cuenta entra en el paso 3, no en el 2.** Inversión, banco u otra determinan el
 *método* de valoración y las *cuentas de contrapartida* de `T030H` — no si hay que valorar.

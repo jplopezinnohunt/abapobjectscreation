@@ -35,7 +35,14 @@ QUALITY_CHECK = {
     "tier": "live",   # gate | live | analysis | quarantined
     "needs": "rfc_p01",
     "what": "compara las 8 tablas de la version de balance entre P01 y D01/V01",
-    "args": "[--targets D01,V01] [--spec]",
+    "args": "[--systems D01,V01] [--versn FS10] [--accounts <prefijo>] [--spec]",
+    # SUPERSEDE 2026-08-26 (A43). Se conserva lo que se declaro para anti-regresion: la
+    # declaracion la lee una MAQUINA (run_all.py:60-74 la extrae por AST y la publica en
+    # brain_v2/quality_checks_state.json), y el flag --targets NO EXISTE en este script
+    # (el real es --systems, ver l.138). Quien copiase la declaracion recibia un error de
+    # argparse. Ninguna cifra quedo contaminada: run_all invoca sin argumentos.
+    # Origen de la confusion: los EJECUTORES si usan --targets; el MEDIDOR no.
+    "_superseded_text": {"args": "[--targets D01,V01] [--spec]"},
 }
 
 import argparse
@@ -59,6 +66,22 @@ from rfc_helpers import get_connection  # noqa: E402
 # La que mas duele aqui la aprendio ESTE script: un SID inexistente conecta a D01 EN SILENCIO
 # (rfc_helpers._build_connection_params cae al bloque generico del .env, que ES D01 y lleva
 # password), asi que un typo en --systems certifica ALINEADO un sistema que nadie leyo.
+#
+# ENMENDADO 2026-08-26 (A43) -- PRECISION DEL ALCANCE DE ESTE AVISO. Lo de arriba se queda,
+# pero NO CIERRA NADA y hay que decirlo donde se lee: `_aprendido(...).avisar()` (l.133-134)
+# solo IMPRIME -- metodo.py:89-91 hace `p = salida or print`, no lanza excepcion ni llama a
+# sys.exit. El flujo real sigue siendo `targets = [s.strip().upper() ...]` (l.143) y despues
+# `get_connection(sysid)` (l.113, dentro de snapshot) SIN NINGUNA ASERCION, y la salida se
+# sigue rotulando con la cadena que escribio el usuario (l.153-156). Es el patron
+# "una disciplina declarada no es un control": el aviso sale por stdout y a continuacion sale
+# el veredicto ALINEADO del sistema equivocado.
+#
+# PUERTA PENDIENTE (cambio de LOGICA, no aplicado en la corrida de 2026-08-26 por alcance):
+#   1) en snapshot(), justo despues de get_connection(sysid): leer RFC_SYSTEM_INFO y abortar
+#      con exit 2 (= no analizable, NUNCA 0) si RFCSI_EXPORT.RFCSYSID.strip() != sysid;
+#   2) rechazar de entrada todo SID sin bloque SAP_<SID>_ propio en el .env -- hoy 'D01' no lo
+#      tiene y funciona POR COINCIDENCIA.
+# Y este bloque debe viajar COMMITEADO: un aviso sin commitear no protege a la proxima sesion.
 sys.path.insert(0, os.path.join(REPO, "process_mining"))
 try:
     from metodo import lo_que_ya_aprendimos as _aprendido  # noqa: E402

@@ -60,6 +60,8 @@ Tres checks nuevos. **Los tres encontraron algo en su primera ejecución**, y es
 
 Más `config_transport_prerelease_check` (de ayer), que clasifica `VIAJA / INTRUSA / NO-OP / DERIVA` y caza la clase de defecto que casi cambia Indonesia.
 
+> **Nota de vigencia (2026-08-26).** «Caza la clase de defecto» es una generalización refutada el 2026-08-25: la cazó en `YTFI_PPC_STRUC` porque allí el campo país es 2º campo clave y había mayoría estricta (EG:10 / ID:1). En `T015L`, `T030H` y `YTFI_PPC_TAG` la regla INTRUSA es incapaz de disparar, y sobre la ORDEN el check sale 0 sin analizar. Ver `brain_v2/methods/algorithms.json` A40. Aquella detección concreta de Indonesia **sigue siendo válida**; lo falso es extenderla a «la clase de defecto».
+
 **Una tasa de acierto del 100% en primeras ejecuciones no es mérito de los checks.** Es la medida de cuánta superficie tenemos sin instrumentar. El 12% de mecanización no es un problema de madurez: es un indicador de oportunidad.
 
 ### Y una autocorrección que merece constar

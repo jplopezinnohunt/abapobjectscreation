@@ -262,8 +262,24 @@ def quien_ejecuta_sesiones(con, desde):
     Es la unica senal barata que separa al operador de sesiones del operador de jobs, porque
     TCODE vacio no distingue nada."""
     out = {}
-    for tcode, etiqueta in (("SM35", "ejecuta sesiones"), ("SM35P", "ejecuta sesiones"),
-                            ("SM37", "monitor de JOBS, no de sesiones")):
+    # ENMENDADO 2026-08-26 (A48). La LECTURA sobrevive; la ETIQUETA no. Esta consulta no
+    # lleva filtro de TXSUBCLSID, asi que barre las 8 subclases, y lo que cuenta es
+    # PRESENCIA EN CONTEXTO (SLGTC = la transaccion en la que esta el usuario), NO
+    # arranques de ella. Consecuencias: un usuario que abre SM35 y no genera mas eventos
+    # auditados dentro NO aparece; y las filas de subclase 'Transaction Start' que si
+    # entran estan sesgadas igual que en todo el resto del corpus (el arrancado vive en
+    # PARAM1). Esta cifra NO es comparable con ningun recuento de arranques.
+    # Se retiran las etiquetas ~~"ejecuta sesiones"~~ / ~~"monitor de JOBS, no de
+    # sesiones"~~ por otras que dicen lo que de verdad se cuenta.
+    for tcode, etiqueta in (
+            ("SM35", "usuarios con eventos auditados cuyo CONTEXTO (SLGTC) es SM35 -- es "
+                     "presencia en la transaccion, no arranques de ella; no comparable con "
+                     "un recuento por PARAM1"),
+            ("SM35P", "usuarios con eventos auditados cuyo CONTEXTO (SLGTC) es SM35P -- es "
+                      "presencia en la transaccion, no arranques de ella; no comparable con "
+                      "un recuento por PARAM1"),
+            ("SM37", "usuarios con eventos auditados cuyo CONTEXTO (SLGTC) es SM37 (monitor "
+                     "de JOBS, no de sesiones) -- presencia, no arranques")):
         try:
             filas = con.execute(
                 """SELECT SLGUSER, COUNT(*) FROM rsau_audit_history
@@ -277,7 +293,13 @@ def quien_ejecuta_sesiones(con, desde):
     out["_por_que"] = ("TCODE vacio NO distingue batch input de job de fondo -- el 61% de los "
                        "cambios de los creadores de sesiones lo tiene vacio, y el log no tiene "
                        "clase de evento para batch input. Quien corre SM35 ejecuta SESIONES; "
-                       "quien corre SM37 mira JOBS")
+                       "quien corre SM37 mira JOBS. "
+                       "ENMENDADO 2026-08-26 (A48): lo de arriba se queda, pero el ALCANCE de "
+                       "esta medida es PRESENCIA EN CONTEXTO, no arranques -- la consulta no "
+                       "filtra TXSUBCLSID y barre las 8 subclases. Y la semantica de SLGTC "
+                       "FUERA de la subclase 'Transaction Start' esta SIN VERIFICAR: "
+                       "verificarla es el PRE-REQUISITO para dar por buena esta lectura. Es "
+                       "una tarea de MEDICION pendiente, no un arreglo de codigo")
     return out
 
 
@@ -287,20 +309,42 @@ def lo_que_de_verdad_se_ejecuto(con, creadores, desde):
 
     Es CORRELACION TEMPORAL, no causalidad: se reporta como 'que arrancaron el mismo dia esos
     mismos usuarios', nunca como 'que hizo la sesion'.
+
+    >>> A48 - DEFECTO VIVO, marcado 2026-08-26. TERCER sitio del mismo defecto (los otros:
+    process_mining/semantic_activity_map.py y process_mining/tier2_sod.py), y el peor de
+    NOMBRE: la funcion se llama `lo_que_de_verdad_se_ejecuto` y la clave de salida
+    `transacciones_que_arrancan`, y NINGUNA de las dos cosas es lo que devuelve. La consulta
+    lee SLGTC, que en TXSUBCLSID='Transaction Start' es el tcode LANZADOR; el ARRANCADO
+    vive en PARAM1 (coinciden en 8 de 1.235.225 filas). El docstring se cuida mucho de
+    advertir que es correlacion temporal -- una precaucion epistemica impecable sobre una
+    lectura que mide OTRA COLUMNA: es el patron "una correccion no es un arreglo".
+    La consulta CORRECTA (NO aplicada: es cambio de LOGICA) seria
+        SELECT TRIM(PARAM1), COUNT(*) FROM rsau_audit_history
+         WHERE TXSUBCLSID='Transaction Start' AND SAL_DATE >= ?
+           AND UPPER(TRIM(SLGUSER)) IN (...) AND TRIM(PARAM1)<>''
+         GROUP BY 1 ORDER BY 2 DESC LIMIT 15
+    El nombre de la funcion, la clave de salida y el aviso de correlacion temporal se
+    MANTIENEN INTACTOS a proposito: eran correctos; lo que esta mal es el CAMPO.
     """
     if not creadores:
         return {}
     q = ",".join("?" * len(creadores))
     try:
         filas = con.execute(
-            f"""SELECT SLGTC, COUNT(*) FROM rsau_audit_history
+            f"""SELECT TRIM(PARAM1), COUNT(*) FROM rsau_audit_history
                 WHERE TXSUBCLSID = 'Transaction Start' AND SAL_DATE >= ?
-                  AND UPPER(TRIM(SLGUSER)) IN ({q}) AND TRIM(COALESCE(SLGTC,'')) <> ''
+                  AND UPPER(TRIM(SLGUSER)) IN ({q}) AND TRIM(COALESCE(PARAM1,'')) <> ''
                 GROUP BY 1 ORDER BY 2 DESC LIMIT 15""",
             (desde,) + tuple(creadores)).fetchall()
     except sqlite3.Error:
         return {}
     return {"transacciones_que_arrancan": [{"tcode": t, "veces": n} for t, n in filas],
+            "_arreglado": ("A48, 2026-08-26: ahora se lee TRIM(PARAM1) -- el tcode ARRANCADO. "
+                           "Antes se agrupaba por SLGTC, que es el LANZADOR (coinciden en 8 de "
+                           "1.235.225 filas), asi que la funcion se llamaba "
+                           "`lo_que_de_verdad_se_ejecuto` y devolvia otra cosa. El nombre, la "
+                           "clave de salida y el aviso de correlacion temporal eran correctos: "
+                           "lo que estaba mal era el CAMPO"),
             "_como_se_lee": ("CORRELACION TEMPORAL, no causalidad: son las transacciones que "
                              "esos mismos usuarios arrancaron en la ventana, no lo que la sesion "
                              "ejecuto. Es el unico rodeo posible porque APQD.VARDATA es LCHR y "

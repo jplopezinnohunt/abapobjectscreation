@@ -101,6 +101,9 @@ Comparar por `F011` da un diff casi vacío y una falsa sensación de alineación
 | 7 | `FAGL_011VC` | contrapartidas | 0 · 0 ✅ | 0 · 0 ✅ |
 | 8 | `FAGL_011FC` | áreas funcionales | vacía en P01 | vacía en P01 |
 
+> **Huecos medidos 2026-08-20.** La tabla no lleva fecha en su origen y no es el estado actual:
+> ver **PMO H112**, que está en conflicto con estas cifras. Re-medir antes de usarlas para planificar.
+
 **Orden de ejecución: 2 → 3 → 1 → 4.** La jerarquía y los textos de posición primero: una
 asignación de cuenta apunta a un `ERGSL` que tiene que existir antes.
 
@@ -147,6 +150,14 @@ sí se haya copiado. **Un rango no cubre nada si la fila del rango no existe.**
 
 ## 5. Después: verificar con el dato, no con el log del ajuste
 
+> ⛔ **ANTES DE CREER LA SALIDA (aviso añadido 2026-08-26).** Los dos medidores de abajo aceptan `--systems` **sin validarlo** y
+> rotulan la salida con la cadena que tecleas. Un SID sin bloque `SAP_<SID>_` en
+> `Zagentexecution/mcp-backend-server-python/.env` **cae al bloque genérico, que ES D01 y lleva
+> contraseña**, así que la conexión tiene **ÉXITO**: certifica alineado un sistema que nadie leyó
+> (claim 597). Hoy solo `P01`, `V01`, `TS2` y el genérico (= D01) tienen bloque. **`TS3`, que
+> aparece en el dominio de transporte de la §0, NO LO TIENE**: no se lo pases a estos scripts hasta
+> que aseveren `RFC_SYSTEM_INFO`.
+
 ```bash
 python Zagentexecution/quality_checks/fsv_alignment_check.py --systems D01,V01
 ```
@@ -154,6 +165,15 @@ Exit 0 = alineado. Y el cruce de la otra mitad del problema:
 ```bash
 python Zagentexecution/quality_checks/ob09_vs_variant_check.py --systems P01,D01,V01
 ```
+> ⚠ **NO USAR HOY COMO VERIFICACIÓN DE DERIVA (2026-08-26).**
+> (a) `--systems` imprime **tres bloques independientes y no compara ninguno**: no produce diff —
+> `main()` itera `for sysid in systems:` y ya está.
+> (b) El contraste inverso «en variante y sin fila en `T030H`» **descarta los rangos**, y en D01/V01
+> `UNES_DEPOSIT` es de rangos (ver §6 de este mismo runsheet), así que ahí mira casi nada.
+> (c) La cobertura se resuelve con el `covered()` **legado** (mezcla `SKONTO` con `AKONTO`, sin la
+> regla de solo-exclusiones).
+> Ver A47 `DEFECTO_VIVO` y claim 599. **La comparación de `T030H` entre sistemas queda PENDIENTE de
+> instrumento.**
 
 ---
 
@@ -163,5 +183,9 @@ python Zagentexecution/quality_checks/ob09_vs_variant_check.py --systems P01,D01
   comparable. `UNES_DEPOSIT` tiene **tres contenidos distintos** en los tres sistemas (P01: 16
   valores sueltos; D01: rango 4041011-13; V01: rangos 4041011-14 y 5091010-12). Se corrigen a mano
   en cada sistema.
-- **`T030H` / OB09.** Es customizing y sí se puede comparar, pero no está en esta hoja: usar
-  `ob09_vs_variant_check.py` para el alcance.
+- **`T030H` / OB09.** Es customizing y sí se puede comparar, pero no está en esta hoja.
+  ~~usar `ob09_vs_variant_check.py` para el alcance~~ — **RETIRADO 2026-08-26**: ese instrumento no
+  compara sistemas entre sí (imprime un bloque por SID y no diffea), su contraste inverso descarta
+  los rangos —justo lo que `UNES_DEPOSIT` es en D01 y V01, dos viñetas más arriba— y resuelve la
+  cobertura con el `covered()` legado. A47 `DEFECTO_VIVO`, claim 599. **El alcance de `T030H` entre
+  sistemas queda hoy sin instrumento**; ver la advertencia de la §5.

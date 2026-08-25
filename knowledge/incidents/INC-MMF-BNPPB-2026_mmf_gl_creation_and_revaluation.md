@@ -5,7 +5,8 @@
 > por eso este doc nació con el id provisional `INC-MMF-BNPPB-2026`, que se conserva como alias
 > para no romper los enlaces del brain.
 
-**Status**: ANALIZADO — decisión tomada con evidencia live. **PENDIENTE de ejecución**: (1) OB09/T030H + variante `UNES_DEPOSIT` para 4041018 · (2) sync P01→D01/V01 (script escrito, bloqueado por permisos) · (3) respuesta a Jeannette sobre 4041019
+**Status** (~~2026-08-20~~ **RETIRADO 2026-08-26**, se conserva por trazabilidad): ~~ANALIZADO — decisión tomada con evidencia live. **PENDIENTE de ejecución**: (1) OB09/T030H + variante `UNES_DEPOSIT` para 4041018 · (2) sync P01→D01/V01 (script escrito, bloqueado por permisos) · (3) respuesta a Jeannette sobre 4041019~~
+**Status 2026-08-26**: ANALIZADO — decisión tomada con evidencia live. ⚠️ **El transporte `D01K9B0FXP` figura LIBERADO e importado a 2026-08-25**, así que la acción (1) ya no se puede ejecutar como estaba escrita («corregir `LKORR` en D01 antes de liberar»): **no está medido qué `LKORR` tiene hoy `T030H` en P01 para `0004041018` — se desconoce**. PENDIENTE: (1) re-leer `T030H` en P01 y, si llegó el valor malo, corregir por **transporte nuevo** · (2) variante `UNES_DEPOSIT` en D01/V01 (H113) · (3) respuesta a Jeannette sobre 4041019 · (4) re-medir el alcance del transporte sobre la **orden padre** con `--entity-field HKONT`
 **Type**: Track B — acción operativa (el qué se sabe; hacerlo bien es el trabajo)
 **Date opened**: 2026-07-27 · **Analizado**: 2026-08-20 (s102)
 **Requester**: Thavry ENG (FIN/Treasury, Middle Office) → Jeannette La (BFM-TRS) → Pablo
@@ -25,25 +26,70 @@
 |---|---|---|
 | 1 | Crear 4041018 + 4041019 en UNES/P01 | ✅ **HECHO** por MP_BOUA 2026-07-27 — y **bien**: la EUR quedó con `WAERS=EUR` |
 | 2 | **Variante `UNES_DEPOSIT` en P01** | ✅ **HECHO 2026-08-20** — verificado: 17 entradas `EQ`, `4041018` dentro |
-| 3 | OB09/T030H en **D01**, para transportar | ⚠️ **HECHO CON DEFECTO** — `LKORR=0004041017` en CURTP 10 y 30; debe ser `0004041018` |
-| 4 | OB09/T030H en **P01** | ⏳ se cierra **al liberar el transporte `D01K9B0FXP`**, no a mano |
+| 3 | OB09/T030H en **D01**, para transportar | ⚠️ **HECHO CON DEFECTO** — `LKORR=0004041017` en CURTP 10 y 30; debe ser `0004041018`. **Medición válida (nota 2026-08-26)**: se leyó el valor a los dos lados, no la produjo el clasificador. Pero la remediación cambió — ver «El transporte» |
+| 4 | OB09/T030H en **P01** | ⏳ se cierra **al liberar el transporte `D01K9B0FXP`**, no a mano — ⚠️ **enmendado 2026-08-26**: `D01K9B0FXP` es una **TAREA** (la orden padre no la ha barrido nadie) y a 2026-08-25 figura **ya liberado e importado**; ver «El transporte» |
 | 5 | Revaluación de 4041019 | ⛔ **NO PROCEDE** — formulario `NO`, referencia 4041016 sin T030H, y es USD en sociedad USD |
 | 6 | Sync de cuentas P01 → D01 / V01 | ✅ **HECHO 2026-08-20** — 2 en D01 y 33 en V01, readback campo a campo OK |
 | 7 | Variante en D01 y V01 | ❌ **PENDIENTE** — siguen sin `4041018`; no se transportan (`VARID.TRANSPORT='F'`). Ver H113 |
 
 ### El transporte — `D01K9B0FXP`
-`TRFUNCTION=Q` (customizing) · `TRSTATUS=D` (modificable, **sin liberar**) · JP_LOPEZ 2026-08-20 ·
+~~`TRFUNCTION=Q` (customizing) · `TRSTATUS=D` (modificable, **sin liberar**)~~ **RETIRADO 2026-08-26**
+(clasificación y estado caducados — ver la enmienda inmediatamente debajo) · JP_LOPEZ 2026-08-20 ·
 texto *"INC-000016262 New Account MMF investments Revaluation"*.
 
-`config_transport_prerelease_check.py`: **2 VIAJA · 0 INTRUSA · 0 NO-OP · 2 DERIVA**. Alcance limpio,
-sin claves ajenas. Pero el valor que exporta lleva `LKORR=0004041017`.
+> **Enmienda 2026-08-26 — qué es y en qué estado está.** `D01K9B0FXP` es `TRFUNCTION=Q` = **TAREA**,
+> no orden. Lo analizado fue la tarea; lo que se libera es su **ORDEN padre**
+> (`E070 WHERE STRKORR='D01K9B0FXP'`), que **nadie ha barrido** — si lleva otras tareas, de otro
+> usuario o de otro tema, sus claves viajan junto al OB09 sin que nadie las haya visto.
+> **Estado a 2026-08-25: ya está LIBERADO e importado (`TRSTATUS='R'`)** — medido en la corrida
+> registrada en `brain_v2/methods/algorithms.json:1310`. La línea «`TRSTATUS=D` modificable, sin
+> liberar» es del 2026-08-20 y está caducada.
+> **Sobrevive** el hecho de fondo: OB09/`T030H` llega a P01 **por transporte**, no a mano — se leyó
+> de `E070`/`E07T`, no del clasificador defectuoso.
 
-> **La mecánica que salva esto:** un transporte de tabla guarda la **CLAVE** y exporta el **VALOR al
+~~`config_transport_prerelease_check.py`: **2 VIAJA · 0 INTRUSA · 0 NO-OP · 2 DERIVA**. Alcance limpio,
+sin claves ajenas.~~ **RETIRADO 2026-08-26** — motivo: «alcance limpio, sin claves ajenas» era FALSO
+**POR VACUIDAD** (se conserva el texto para que se pueda leer qué se creyó y por qué).
+
+`config_transport_prerelease_check.py` sobre la **tarea** `D01K9B0FXP`: **2 VIAJA · 2 DERIVA**.
+⚠️ **El alcance NO está verificado: se desconoce si el transporte lleva claves ajenas.** El
+`0 INTRUSA` es vacío, no medido — en `T030H` el check deriva la entidad como el 1er campo clave tras
+`MANDT` (= `KTOPL`), y en D01 sólo existe `UNES`, así que la condición INTRUSA
+(`Zagentexecution/quality_checks/config_transport_prerelease_check.py:210`) no puede cumplirse nunca;
+el discriminador real, `HKONT`, no se mira. Una cuenta ajena habría salido `[VIAJA]` y el resumen
+habría impreso igualmente «OK — ninguna clave ajena». Además se corrió sobre la TAREA; la ORDEN
+padre, que es lo que se libera, no la ha mirado nadie. **Pendiente de re-medir** resolviendo
+`E070 WHERE STRKORR` y con `--entity-field HKONT`.
+
+Pero el valor que exporta lleva `LKORR=0004041017`.
+
+> ~~**La mecánica que salva esto:** un transporte de tabla guarda la **CLAVE** y exporta el **VALOR al
 > LIBERAR**. Corregir `LKORR` en D01 **antes** de liberar hace que el transporte lleve ya lo correcto
-> — no hay que tocarlo, borrarlo ni rehacerlo.
+> — no hay que tocarlo, borrarlo ni rehacerlo.~~ **RETIRADO 2026-08-26** — la mecánica sigue siendo
+> cierta, pero la ventana que explotaba ya está cerrada.
+
+> **Enmienda 2026-08-26 — la ventana «corregir antes de liberar» ya no está abierta.**
+> A 2026-08-25 `D01K9B0FXP` figura **liberado e importado** (`brain_v2/methods/algorithms.json:1310`).
+> **No está medido qué `LKORR` tiene hoy `T030H` en P01 para `0004041018`** — se desconoce hasta
+> releer `T030H WHERE KTOPL='UNES' AND HKONT='0004041018'` en P01 (CURTP 10 y 30). Si llegó el valor
+> malo, la corrección ya **no** es un cambio en D01 antes de liberar sino un **transporte nuevo**.
+> Lo que **sí sobrevive** es la medición: «`LKORR=0004041017` en CURTP 10 y 30; debe ser
+> `0004041018`» se obtuvo imprimiendo el **valor** de cada clave leído de la tabla entera en los dos
+> sistemas, ruta independiente de los defectos del clasificador (lo vio un humano leyendo la línea,
+> no el check — `algorithms.json:1306`).
 
 Las 2 `[DERIVA]`: `0001122421` y `0001122424` tienen fila en P01 y no en D01. Preexistente, este
 transporte no la corrige.
+
+> **Nota 2026-08-26 — esto SOBREVIVE a los defectos del check, no volver a abrirlo.** `DERIVA` se
+> calcula (`config_transport_prerelease_check.py:223-224`) como las claves **fuera** del transporte
+> con valor distinto entre sistemas, leyendo las **dos tablas enteras**: esa ruta no pasa por
+> `main_ents` ni por `idx`, así que el eje de entidad colapsado (defecto B) no la toca, y no depende
+> de si el `TRKORR` es orden o tarea (defecto A tampoco la toca). El único acoplamiento teórico
+> sería un troceo malo del `TABKEY` (defecto C), descartado aquí: las 2 claves del transporte
+> **casaron** contra la tabla y se imprimió su valor a los dos lados. Confirmación independiente:
+> `.agents/intelligence/PMO_BRAIN.md:28` (H114) reporta las mismas `0001122421` / `0001122424` con
+> fila en P01 y no en D01.
 
 ---
 

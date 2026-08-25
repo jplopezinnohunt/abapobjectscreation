@@ -104,14 +104,26 @@ Cuando se cumplen **las tres**:
 | G7 | **Dry-run por defecto**; `--commit` explícito para escribir |
 | G8 | **Tope de filas** y aborto si la clave ya existe en destino |
 | G9 | **Registro auditable** de cada invocación: quién autorizó, cuándo, qué claves, resultado |
-| G10 | **Declarar las claves escritas** y registrarlas después en una orden de customizing; verificar con `Zagentexecution/quality_checks/config_transport_prerelease_check.py` |
+| G10 | **Declarar las claves escritas una a una en el ledger** y registrarlas después en una orden de customizing (`SE01` → `R3TR TABU <tabla>` + claves). ⚠️ **Sin verificador automático**: `config_transport_prerelease_check.py` está en `DEFECTO_VIVO` y su exit 0 no prueba nada sobre una orden. ~~«verificar con `Zagentexecution/quality_checks/config_transport_prerelease_check.py`»~~ **RETIRADO 2026-08-26** — motivo: sólo distingue la clase "clave intrusa" en tablas con **campo clave discriminante Y mayoría estricta**, y sobre la ORDEN que se libera sale exit 0 sin analizar. La verificación de alcance es **manual y PENDIENTE de mecanizar** |
 
 ### El coste que NO desaparece, y cómo se paga
 Un `INSERT` en crudo **no queda en ninguna orden de transporte**. Y D01 es el **origen** de los
 transportes hacia P01: customizing escrito así es invisible para CTS, así que D01 deja de ser una
 fuente fiel. **G10 es la que paga esa deuda**: tras escribir, se registran las claves en una orden
-de customizing (`SE01` → lista de objetos → `R3TR TABU <tabla>` + claves) y se pasa el check de
-pre-liberación, que además detecta la clase de defecto "clave intrusa" del caso Indonesia.
+de customizing (`SE01` → lista de objetos → `R3TR TABU <tabla>` + claves) ~~y se pasa el check de
+pre-liberación, que además detecta la clase de defecto "clave intrusa" del caso Indonesia~~.
+
+> **RETIRADO 2026-08-26** la segunda mitad («se pasa el check de pre-liberación, que además detecta
+> la clase de defecto "clave intrusa"»). Refutado el 2026-08-25: `config_transport_prerelease_check.py`
+> **no lee `E071`**, que es exactamente donde deja rastro el `R3TR TABU` que esta misma línea prescribe;
+> y sobre la ORDEN que se libera devuelve exit 0 sin analizar, porque las claves viven en `E071K` de la
+> **tarea**. La clase "clave intrusa" sólo la distingue en tablas con campo clave discriminante y mayoría
+> estricta — la cazó en `YTFI_PPC_STRUC` (Indonesia) por eso; en `T015L`, `T030H` y `YTFI_PPC_TAG` es
+> incapaz de disparar. **La verificación de alcance queda PENDIENTE**: hoy se hace **a mano**, diffeando
+> enteras las tablas afectadas entre los dos sistemas. Ver `brain_v2/methods/algorithms.json` A40.
+
+El **diagnóstico** de esta sección — un `INSERT` en crudo deja D01 desalineado en trazabilidad — **sigue
+intacto**; lo que se retiró es el **remedio**: hoy la deuda se **declara**, no se **paga**.
 
 Sin G10 el sistema queda alineado en el dato y desalineado en la trazabilidad — que es exactamente
 el problema que estábamos intentando arreglar.
@@ -146,9 +158,24 @@ trampas medidas— en **`knowledge/alignment_executors_model.md` §3**. Este eje
 añade las diez puertas de la excepción, que están arriba en esta misma sección.
 
 **Verificación independiente**, antes y después:
-`python Zagentexecution/quality_checks/fsv_alignment_check.py --systems D01,V01` (exit 0 = alineada).
+`python Zagentexecution/quality_checks/fsv_alignment_check.py --systems D01,V01` — ~~(exit 0 = alineada)~~
+**ENMENDADO 2026-08-26**: exit 0 = **ni filas ausentes ni divergentes**, que no es "alineada". Dos puertas que
+**no existen** y que esta sección daba por hechas:
+- ⚠️ **No prueba contra qué sistema comparó.** Rotula con la cadena que le pasas en `--systems` y **no asevera
+  `RFC_SYSTEM_INFO`**; un SID sin bloque `SAP_<SID>_` en el `.env` cae al bloque genérico, **que ES D01 y lleva
+  password**, así que conecta con **éxito** al sistema equivocado y lo certifica alineado (claim 597).
+- ⚠️ **No cuenta las filas SOBRANTES en el veredicto** (`extra` se imprime pero ni marca flag ni pone `rc=1`).
+  Un destino con TODA la jerarquía de P01 **más** nodos basura sale exit 0 — exactamente el superconjunto de
+  **304 nodos** que EXC-002 (abajo) documenta como su motivo de existir. Y la comparación hace `.strip()`, así
+  que una diferencia **sólo de blancos** es invisible (la clase de defecto de `T015L INA`).
 
-**Alcance previsto:** D01 ~712 filas (287 PC + 179 QT + 195 ZC + 51 SC) · V01 ~527 (278 + 96 + 131 + 22).
+Mientras esas dos puertas no existan, la verificación PRE/POST de EXC-001 y EXC-002 **exige leer el detalle,
+no el exit code**.
+
+**Alcance previsto:** D01 ~712 filas (~~287 PC~~ **PC: número de nodos ausentes DESCONOCIDO** + 179 QT + 195 ZC + 51 SC) ·
+V01 ~527 (~~278~~ **PC desconocido** + 96 + 131 + 22). ~~287~~ / ~~278~~ **RETIRADOS 2026-08-26** — motivo: `FAGL_011PC.ID` es una
+clave **subrogada** y esa cifra se midió sobre ella, de modo que **no cuenta nodos ausentes** (es el mismo argumento
+que obliga a EXC-002, abajo). Los totales `~712` / `~527` arrastran esa cifra y quedan por tanto **sin verificar**.
 
 | **EXC-002** | **FSV — reemplazo ATÓMICO por versión**, chart `UNES` | mismas 4 tablas, **solo `FS10` y `FS11`** | **D01, V01** | **`DELETE` de la versión entera + `INSERT` desde P01** | JP | 2026-08-21 | 🟡 D01 ✅ · V01 parcial (falta `FAGL_011QT`) |
 
@@ -180,7 +207,9 @@ tabla en P01, sin excepción posible.
 ### Por qué el riesgo es menor en el caso FSV concreto (y por qué eso no elimina las puertas)
 El contenido se copia **verbatim de P01**, que es consistente por construcción; se insertan filas
 ausentes, no se modifican existentes; el destino nunca es producción; y hay un comparador
-determinista (`fsv_alignment_check.py`) que **prueba** el resultado antes y después. Eso hace la
+determinista (`fsv_alignment_check.py`) que ~~**prueba**~~ **MIDE** el resultado antes y después — el verbo
+"prueba" queda **RETIRADO 2026-08-26**: hoy **no prueba contra qué sistema lo midió** (no asevera el SID, claim 597)
+ni cuenta las filas sobrantes; ver la nota de la verificación independiente de EXC-001, arriba. Eso hace la
 excepción defendible. No la hace automática: las diez puertas siguen siendo obligatorias, porque lo
 que falla no es el caso bien pensado — es el siguiente, hecho por analogía.
 

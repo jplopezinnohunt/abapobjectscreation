@@ -31,9 +31,30 @@ Así se recuperaron `GL_ACCT_MASTER_SAVE_RFC` y `RS_CREATE_VARIANT_RFC`, ambos d
 |---|---|---|
 | `Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_alignment_check.py` | GL master (`SKA1`/`SKAT`/`SKB1`) P01 vs D01/V01, **fechando cada hueco con `ERDAT`** | separa deriva nueva de "nunca llegó"; permite falsar un "esto estaba alineado a fecha X" |
 | `Zagentexecution/quality_checks/fsv_alignment_check.py` | las 8 tablas de la versión de balance | diff + **especificación de cambio** (`--spec`) |
-| `Zagentexecution/quality_checks/ob09_vs_variant_check.py` | `T030H` × selección real de las variantes | exit 1 solo si hay **exposición abierta en divisa** sin valorar |
-| `Zagentexecution/quality_checks/config_transport_prerelease_check.py` | una orden de customizing contra la tabla entera | clasifica VIAJA / INTRUSA / NO-OP / DERIVA |
+| `Zagentexecution/quality_checks/ob09_vs_variant_check.py` | `T030H` × la selección de las variantes **leída con el resolutor legado `covered()`** (mezcla `SKONTO` con `AKONTO`, sin la regla de solo-exclusiones) — **no válido para cuentas asociadas `MITKZ D/K`**; A47 `DEFECTO_VIVO` | exit 1 solo si hay **exposición abierta en divisa** sin valorar |
+| `Zagentexecution/quality_checks/config_transport_prerelease_check.py` | **DEFECTO_VIVO desde 2026-08-25** — diff de la tabla entera sobre una **TAREA** de customizing; sobre la ORDEN, que es lo que se libera, devuelve exit 0 sin analizar nada | clasifica VIAJA / NO-OP / DERIVA. **INTRUSA no es fiable**: sólo dispara en tablas con campo clave discriminante y mayoría estricta. Ver `brain_v2/methods/algorithms.json` A40 antes de usarlo |
 | `variant_align.py` (sin `--execute`) | las 21 variantes de `SAPF100` en los 3 sistemas | diff por entrada |
+
+> **`config_transport_prerelease_check.py` no cumple hoy la regla de entrada (b)** de este modelo
+> —«verifica releyendo y no por código de retorno»—: publica precisamente un código de retorno
+> engañoso. **Se mantiene listado para no perder la trazabilidad: marcado, no retirado.**
+
+> **La celda de SALIDA de `ob09_vs_variant_check.py` NO está contaminada — sobrevive al defecto A47.**
+> Verificado en código: `rc=1` depende sólo de `active = defect` (HEAD l.251 y l.263-264), y los 34
+> falsos positivos del resolutor legado no pueden entrar en `defect` porque `exposure()` les devuelve
+> «NO» al no mirar `BSID`/`BSIK`. El exit 1 sigue significando exactamente lo que dice la tabla.
+> El epígrafe «Medidores — solo lectura, nunca escriben» también se verificó leyendo el fichero
+> entero: no escribe nada. Anotado aquí para que la próxima revisión no lo reabra por contagio.
+
+> **Texto retirado 2026-08-26 (conservado para anti-regresión).**
+> - Fila 34, celda «Qué mide»: ~~`T030H` × selección real de las variantes~~ — RETIRADO 2026-08-26:
+>   «real» es falso en la palabra que decide; lee la mezcla legada de `variant_accounts`
+>   (HEAD l.81-102), no la selección real. Ver claim 599.
+> - Fila 35: ~~`Zagentexecution/quality_checks/config_transport_prerelease_check.py` | una orden de
+>   customizing contra la tabla entera | clasifica VIAJA / INTRUSA / NO-OP / DERIVA~~ — RETIRADO
+>   2026-08-26: lo que mide no es una ORDEN sino una TAREA; contra una orden (`TRFUNCTION=W/K`)
+>   imprime «E071K vacío» y sale 0 sin clasificar nada (medido con `D01K9B0FXE`,
+>   `algorithms.json:1313`). Y la clase INTRUSA puede ser falsa **por vacuidad**.
 
 **Medir siempre EN VIVO.** El Gold DB va meses por detrás; usarlo para un análisis de hueco produjo
 en s102 una conclusión falsa sobre 20 M EUR de exposición.
@@ -54,6 +75,15 @@ en s102 una conclusión falsa sobre 20 M EUR de exposición.
 | **`T030H` / OB09** | *(no hace falta)* | **transporte** — probado con `D01K9B0FXP` | — | ✅ canal ortodoxo |
 | **Elementos de coste** | — | `BAPI_COSTELEMENT_CREATEMULTIPLE` **no** remote-enabled | — | 🔴 canal sin resolver |
 | **Centros de beneficio** | — | — | — | ⛔ **no se usan en UNESCO** |
+
+> **La fila `T030H` / OB09 SOBREVIVE al defecto A40 — no la reabras (verificado 2026-08-26).**
+> Lo que afirma es que `T030H` **viaja por transporte**, y eso no lo produce el clasificador
+> defectuoso: se prueba con que `E071K` tenga claves de `T030H` para ese `TRKORR` — lectura directa
+> de tabla, ajena a los tres defectos de A40. Además, medido 2026-08-25 (`algorithms.json:1310`),
+> `D01K9B0FXP` está ya **liberado e importado**: el canal no sólo se capturó, se ejecutó extremo a
+> extremo, lo que refuerza la afirmación en vez de debilitarla. Que el `TRKORR` citado sea una
+> **tarea** afecta al ALCANCE de aquella corrida (ver la nota de la fila 35), no a la existencia
+> del canal.
 
 Spikes cerrados: `spike_variant_write.py` (probó el canal de variantes) ·
 `spike_bcset_activate.py` (peldaño 2: el BC-Set debe crearse a mano, `SCPR20`; sin eso no hay cadena).

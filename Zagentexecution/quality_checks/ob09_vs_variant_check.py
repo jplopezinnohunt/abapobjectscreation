@@ -23,7 +23,12 @@ QUALITY_CHECK = {
     "tier": "live",   # gate | live | analysis | quarantined
     "needs": "rfc_p01",
     "what": "cruza T030H/OB09 contra la variante de F.05 que de verdad selecciona la cuenta",
-    "args": "[--bukrs UNES]",
+    "args": "[--systems P01,D01,V01] [--accounts <prefijo>]",
+    # SUPERSEDE 2026-08-26 (A43, misma clase que fsv_alignment_check.py). Se conserva lo que se
+    # declaraba: `--bukrs` NO EXISTE en este script (BUKRS es la constante de l.59) y la
+    # declaracion OMITIA por completo `--systems` (l.180), que es el flag que si tiene. La lee
+    # una MAQUINA (run_all.py:60-74, por AST) y se publica en brain_v2/quality_checks_state.json.
+    "_superseded_text": {"args": "[--bukrs UNES]"},
 }
 
 import argparse
@@ -222,7 +227,17 @@ def main():
                 """'SI' / 'NO' / 'DESCONOCIDA'. BSIS entera revienta (SQL_CAUGHT_RABAX, 3,3M
                 filas), asi que se pregunta CUENTA A CUENTA. Y si la lectura falla se devuelve
                 DESCONOCIDA, nunca 'NO': leer la ausencia de una lectura fallida como ausencia en
-                el sistema es el error que refuto el claim 540 y el que describe el claim 496."""
+                el sistema es el error que refuto el claim 540 y el que describe el claim 496.
+
+                ENMENDADO 2026-08-26 (A47) — EL DOCSTRING SE QUEDABA CORTO Y HAY UN AGUJERO:
+                esta funcion interroga UNICAMENTE BSIS. Las partidas abiertas de una cuenta
+                ASOCIADA de submayor (SKB1-MITKZ lleno) viven en BSID/BSIK, NUNCA en BSIS, asi
+                que para esas cuentas la respuesta correcta es DESCONOCIDA ("preguntamos a la
+                tabla equivocada"), no 'NO' — y hoy TABLE_WITHOUT_DATA se traga como 'NO'
+                (l.232-233), que es exactamente el error que este docstring dice estar evitando.
+                Cerrar el agujero exige derivar el campo por SKB1-MITKZ y leer BSID/BSIK: es
+                cambio de LOGICA y NO se hizo en esta corrida. Cuantas de esas cuentas tienen de
+                verdad exposicion abierta SE DESCONOCE."""
                 try:
                     rows = parse(c.call("RFC_READ_TABLE", QUERY_TABLE="BSIS", DELIMITER="|",
                                         FIELDS=[{"FIELDNAME": "WAERS"}],
@@ -243,7 +258,23 @@ def main():
                 orphan.append((acct, acct in blocked, (x.get("LKORR") or "").strip()))
 
             print("  moneda local: %s" % local)
-            print("  configuradas y FUERA de toda variante: %d" % len(orphan))
+            # SUPERSEDE 2026-08-26 (A47) — TEXTO IMPRESO. Lo que se imprimia:
+            #   ~~"  configuradas y FUERA de toda variante: %d"~~
+            # RETIRADO: ese rotulo daba el numero como SI FUERA la cifra de "cuentas de
+            # T030H/KTOPL=UNES/CURTP=10 fuera de toda variante". No lo es: lo alimenta
+            # `covered()` (la llamada `if covered(acct, sets)` justo arriba, l.256 hoy), el
+            # resolutor LEGADO que mezcla SKONTO con AKONTO y por tanto
+            # no respeta "solo exclusiones = todo lo demas". Medido: 273 frente a 239 por el
+            # camino correcto (covered_in con el campo derivado de SKB1-MITKZ) = 34 falsos
+            # positivos, +14%, asimetria 0 en sentido contrario.
+            # LA CIFRA CORRECTA SE DESCONOCE hoy: la unica medicion del camino bueno es 239 el
+            # 2026-08-25 contra P01 y no se ha vuelto a medir. NO sustituir 273 por 239 en
+            # ningun artefacto publicado sin re-medir. Ver claim 599 (TIER_1, OPEN) y A47
+            # state=DEFECTO_VIVO. El arreglo (migrar main() a variant_selection()+covered_in())
+            # es cambio de LOGICA y no se hizo en esta corrida.
+            print("  candidatas segun el resolutor LEGADO covered() — CIFRA NO VALIDA, inflada")
+            print("  (mezcla SKONTO/AKONTO; la cifra real SE DESCONOCE, ver claim 599): %d"
+                  % len(orphan))
             defect, inert, unknown = [], [], []
             for acct, blk, lk in sorted(orphan):
                 if blk:
@@ -253,14 +284,29 @@ def main():
                 if e == "SI":
                     defect.append((acct, lk))
                 elif e == "NO":
-                    inert.append((acct, lk, "sin partidas abiertas en divisa"))
+                    # SUPERSEDE 2026-08-26 (A47) — TEXTO IMPRESO. Se retira la etiqueta
+                    #   ~~"sin partidas abiertas en divisa"~~
+                    # porque AFIRMA LO CONTRARIO de lo unico que se comprobo: exposure() solo
+                    # interroga BSIS, y para una cuenta asociada (SKB1-MITKZ lleno) las partidas
+                    # abiertas viven en BSID/BSIK -> TABLE_WITHOUT_DATA -> "NO" -> se publicaba
+                    # una ausencia que nadie midio. Aqui aterrizan los 34 falsos positivos del
+                    # resolutor legado (3 bloqueadas + 31 sin-divisa, 0 DEFECTO).
+                    inert.append((acct, lk,
+                                  "BSIS no devolvio partidas en divisa — DESCONOCIDA si la "
+                                  "cuenta es ASOCIADA (SKB1-MITKZ): esas viven en BSID/BSIK"))
                 else:
                     unknown.append((acct, lk))
 
             print("     DEFECTO  (activa + partidas abiertas en divisa): %d" % len(defect))
             for acct, lk in defect:
                 print("        %s  LKORR=%s   <<< exposicion que no se valora" % (acct, lk or "-"))
-            print("     inertes  (config sin efecto): %d" % len(inert))
+            # ENMENDADO 2026-08-26 (A47): la lista se trunca a 20 y ANTES no lo decia, asi que
+            # de las 31 inertes "sin divisa" la mayoria ni se imprimia y el operador leia el
+            # recuento como si fuera la lista.
+            print("     inertes  (config sin efecto): %d%s"
+                  % (len(inert),
+                     "   [se listan solo las 20 primeras; OCULTAS %d]" % (len(inert) - 20)
+                     if len(inert) > 20 else ""))
             for acct, lk, why in inert[:20]:
                 print("        %s  LKORR=%s   (%s)" % (acct, lk or "-", why))
             if unknown:
@@ -276,7 +322,24 @@ def main():
                 invar |= (inc - exc)
             no_ob09 = sorted(invar - set(hk)) if not a.accounts else []
             if no_ob09:
-                print("\n  en variante y SIN fila en T030H: %d" % len(no_ob09))
+                # SUPERSEDE 2026-08-26 (A47) — SEGUNDO defecto, DISTINTO del anterior: no lo
+                # arregla la migracion a covered_in(). Se retira el rotulo
+                #   ~~"\n  en variante y SIN fila en T030H: %d"~~
+                # porque `invar` se construye DESCARTANDO `rngs` por completo (l. arriba:
+                # `invar |= (inc - exc)`), y hay variantes cuya seleccion es SOLO rangos:
+                # medido sin tocar SAP, en la hoja "Variants and methods" de
+                # fx_revaluation_scope_UNES.xlsx, UNES_OI_G/L = 3 rangos (0001100000-0001199999,
+                # 0001500000-0001599999, 0001700000-0001799999) y UNES_UNBA = 3 rangos
+                # (0001000000-0001099999, 0001400000-0001499999, 0001900000-0001999999), ambas
+                # SIN valores sueltos -> `inc` vacio -> no aportan NADA a invar.
+                # Consecuencia medida: imprimia 2 cuando el contraste real son 589. No es que
+                # encuentre poco: NO HA MIRADO. La cifra real SE DESCONOCE hasta reconstruir
+                # invar expandiendo los rangos de inclusion contra SKB1 (y restando los de
+                # exclusion) — cambio de LOGICA, no hecho en esta corrida. Es la rama que
+                # ejercita knowledge/domains/FI/fsv_alignment_runsheet.md:155.
+                print("\n  [CIFRA NO VALIDA — el universo ignora los RANGOS de las variantes;")
+                print("   la cifra real de 'en variante y SIN fila en T030H' SE DESCONOCE]: %d"
+                      % len(no_ob09))
                 for s in no_ob09:
                     print("     %s" % s)
 

@@ -140,12 +140,26 @@ qué deberíamos mecanizar.* Con números, no con impresiones.
 
 | Categoría | Qué |
 |---|---|
-| **Ticket cerrado** | `INC-000016262` — 2 cuentas MMF alineadas en D01/V01, OB09 + variante decididos, FSV verificada |
-| **Alineación ejecutada** | GL master (2 en D01, 33 en V01) · 21/21 variantes · FSV FS10+FS11 byte-idénticas |
+| **Ticket cerrado** | `INC-000016262` — 2 cuentas MMF alineadas en D01/V01, OB09 + variante decididos, FSV verificada (ver nota ⚑ sobre qué significa «verificada») |
+| **Alineación ejecutada** | GL master (2 en D01, 33 en V01) · 21/21 variantes · FSV FS10+FS11 ~~byte-idénticas~~ **RETIRADO 2026-08-26** → **sin filas ausentes ni divergentes** (ver nota ⚑) |
 | **Dominios** | `Master_Data_Governance` **creado** · `Closing_Activities` **rescatado** tras 5 sesiones huérfano |
 | **Instrumentos** | `fsv_coverage_check` · `fx_revaluation_peer_check` · `fx_revaluation_scope_check` · `build_full_census` · `variant_selection`/`covered_in` |
 | **Método** | El proceso de descubrimiento en 6 pasos, escrito y cableado al agente |
 | **Hallazgo** | 50 cuentas con OB09, divisa abierta y ninguna variante — `4041011` es una de 50 |
+
+> ⚑ **Nota de vigencia (2026-08-26) — qué dice y qué no dice «FSV verificada».**
+> El veredicto **sobrevive** al defecto de resolución de sistema de `fsv_alignment_check.py` (un SID
+> inexistente cae al bloque genérico del `.env`, que es D01): ésta fue una corrida
+> `--systems D01,V01`, que resuelve a los sistemas reales.
+> Lo que se enmienda es el **alcance de la afirmación**: `FS10`+`FS11` quedaron **sin filas ausentes
+> ni divergentes según `fsv_alignment_check.py`**, y eso **NO es una igualdad byte a byte** —
+> `parse()` (árbol l.93 / HEAD l.70) corta por `OFFSET`/`LENGTH` y hace `.strip()`, así que una
+> diferencia que consista **sólo en blancos es invisible**, que es exactamente la clase de defecto
+> que en este proyecto costó un incidente vivo en P01 (`T015L INA` con dos espacios, claim 529).
+> Además las **filas sobrantes no cuentan** para el veredicto.
+> Y el estado de `FAGL_011QT` en V01 **está en conflicto** con
+> `.agents/skills/sap_master_data_sync/SKILL.md:153`, que da V01 como parcial con `FAGL_011QT`
+> pendiente: **se desconoce hasta re-medir**.
 
 ## 8. Qué logramos — lo que vale más que el inventario
 

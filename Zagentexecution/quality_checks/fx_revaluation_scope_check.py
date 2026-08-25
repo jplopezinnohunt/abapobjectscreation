@@ -40,6 +40,29 @@ LAS CUATRO SALIDAS
     FALTA DETERMINACION   entra en variante y no tiene la fila que le toca: F.05 fallara al postear
     FUERA DE TODO         ni determinacion ni variante, pero CON exposicion abierta en divisa
 
+SEGUNDO MODO DE FALLO CONOCIDO, anadido 2026-08-26 (A47) - CONTAMINADO-LATENTE: LO DECIDE UN
+ARGUMENTO CLI
+    Este check resuelve la pertenencia a variante con `covered()` (l.239), el resolutor LEGADO de
+    `ob09_vs_variant_check` (importado en l.68), que MEZCLA SKONTO con AKONTO y por tanto no
+    respeta "un campo con solo exclusiones = todo lo demas". El correcto es
+    `variant_selection()` + `covered_in()` eligiendo el campo por SKB1-MITKZ.
+
+    VALIDO HOY SOLO PARA LAS 5 POSICIONES POR DEFECTO: sobre ellas la poblacion son exactamente
+    1.084 cuentas y las marcadas ALL-BUT (AKONTO) son 0, luego `covered()` y `covered_in()` son
+    INDISTINGUIBLES ahi y ninguna cifra ya publicada por este script necesita sustituto (medido
+    2026-08-26 sobre el censo del 2026-08-21).
+
+    PERO --positions (l.94) cambia la poblacion, y las 58 cuentas ALL-BUT viven en 1.1.4.1 /
+    1.1.4.2 / 1.1.5.1 / 1.1.6.1 / 1.2.3.1-5 / 1.2.4.6 / 1.2.5.1-3 / 2.1.1.1 / 2.1.1.2 / 2.1.2.1 /
+    2.1.5.5: apuntar el check a cualquiera de esas y el defecto DISPARA. La trampa ya registrada
+    arriba era la ILUSION DE ALCANCE; esta es la SEGUNDA, y no estaba registrada.
+
+    PENDIENTE (cambio de LOGICA, NO hecho en la corrida del 2026-08-26): migrar l.68 / l.169 /
+    l.239 a variant_selection()+covered_in() con el campo derivado de SKB1-MITKZ (el fichero ya
+    lee SKB1), y mientras tanto un guard que aborte -- o marque la salida como NO VALIDA -- si
+    alguna cuenta de la poblacion tiene MITKZ lleno. Ver claim 599 (TIER_1, OPEN) y A47
+    state=DEFECTO_VIVO.
+
 Uso:
     python fx_revaluation_scope_check.py
     python fx_revaluation_scope_check.py --system P01 --positions 1.1.1.1,1.1.2.1
@@ -66,6 +89,10 @@ sys.path.insert(0, os.path.join(REPO, "Zagentexecution", "mcp-backend-server-pyt
 sys.path.insert(0, HERE)
 from rfc_helpers import get_connection                                    # noqa: E402
 from ob09_vs_variant_check import parse, rd, variant_accounts, covered, PROGRAM  # noqa: E402
+# ENMENDADO 2026-08-26 (A47): `covered` es el resolutor LEGADO (mezcla SKONTO/AKONTO). Se
+# sigue importando A PROPOSITO en esta corrida -- migrarlo es cambio de LOGICA -- pero el
+# limite de validez esta escrito arriba, en el docstring: solo las 5 posiciones por defecto,
+# donde hay 0 cuentas AKONTO. Con otras --positions esta lectura NO es valida.
 from fsv_coverage_check import versions_in_use, pad                       # noqa: E402
 
 # --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
@@ -236,6 +263,8 @@ def main():
             #                          gasto 6045011 / ingreso 7045011.
             # Sin esto el check pedia T030H a 160 cuentas de banco que se determinan por T030S y
             # estan perfectamente configuradas.
+            # ENMENDADO 2026-08-26 (A47): resolutor LEGADO. Valido solo mientras la
+            # poblacion no traiga cuentas ALL-BUT (AKONTO); ver docstring del modulo.
             vs = covered(s, sets)
             if r.get("XOPVW") == "X":
                 has, via = s in t030h, "T030H"

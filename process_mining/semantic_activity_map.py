@@ -6,6 +6,15 @@ log of tcode-starts becomes a labeled PROCESS log. Coverage + the long tail get 
 an LLM enriches on demand (no manual upkeep). Reused by any tcode-based event log we build.
 
 Run:  python process_mining/semantic_activity_map.py   # reports coverage on the live audit log
+
+DEFECTO VIVO (A48, marcado 2026-08-26) -- LEER ANTES DE CITAR NINGUNA CIFRA DE ESTE SCRIPT
+    La consulta de main() (ver el bloque ">>> A48 - CAUSA RAIZ" justo encima de ella) agrupa
+    por SLGTC, que en las filas
+    TXSUBCLSID='Transaction Start' es el tcode LANZADOR, no el ARRANCADO: el arrancado vive
+    en PARAM1. Medido: coinciden en 8 de 1.235.225 filas. El defecto esta desde el PRIMER
+    commit, asi que TODA cobertura semantica emitida por este script (el titular del 97%)
+    esta medida sobre la columna equivocada y NO ES VALIDA.
+    El arreglo es cambio de LOGICA y no se hizo en la corrida del 2026-08-26.
 """
 import sqlite3
 from collections import defaultdict
@@ -67,16 +76,59 @@ SEMANTIC = {
 def main():
     # ANTES de minar: lo ya aprendido de este mismo instrumento. La critica aqui es que en
     # TXSUBCLSID='Transaction Start' el tcode ARRANCADO vive en PARAM1, no en SLGTC.
+    # ENMENDADO 2026-08-26 (A48): esa critica YA ESTABA ESCRITA aqui y NO ARREGLA NADA.
+    # `avisar()` (metodo.py:89-91) solo hace `p = salida or print`: no lanza excepcion y no
+    # llama a sys.exit. O sea que el script imprime la advertencia y A CONTINUACION imprime
+    # la cobertura falsa, que es la que acaba en un informe. Una advertencia no es una
+    # puerta. PENDIENTE (LOGICA, no hecho hoy): (a) leer TRIM(PARAM1) en vez de SLGTC y
+    # quitar el filtro sobre SLGTC; (b) imprimir DOS coberturas y LIDERAR con la de NEGOCIO
+    # (excluyendo `_nav` y `_admin` de numerador y denominador), porque el numero que se
+    # cita es el que se imprime primero; (c) devolver float en vez de `100*labeled//tot` y
+    # guardar el caso tot==0; (d) que `avisar()` reciba una salida que HALTE mientras el
+    # instrumento este en state=DEFECTO_VIVO: no deberia poder emitir su cifra.
     if _aprendido:
         _aprendido("rsau_audit_history", "slgtc", "param1", "tcode", "cobertura").avisar()
     c = sqlite3.connect(GOLD, timeout=10)
-    rows = c.execute("SELECT SLGTC, COUNT(*) FROM rsau_audit_history WHERE TXSUBCLSID='Transaction Start' "
-                     "AND SLGTC<>'' GROUP BY SLGTC").fetchall()
+    # ARREGLADO 2026-08-26 (A48). Lo que habia:
+    #     SELECT SLGTC ... WHERE TXSUBCLSID='Transaction Start' AND SLGTC<>'' GROUP BY SLGTC
+    # y era el defecto entero. En 'Transaction Start' (MSG='AU3', "Transaction &A started")
+    # el tcode ARRANCADO vive en PARAM1; SLGTC es el tcode de CONTEXTO desde el que se lanzo.
+    # Coincidian en 8 de 1.235.225 filas. Agrupar por SLGTC histograma EL LANZADOR.
+    #
+    # Y el filtro SLGTC<>'' no era higiene: descartaba 108.375 arranques (8,8%) de los que
+    # 108.168 llevan un tcode real en PARAM1 -- XK02 40.661, FB01 34.008, PR01 17.649...
+    # Comprobado que no eran arranques fallidos: descartadas y conservadas comparten MSG,
+    # SUBID y SUBCLASID.
+    #
+    # ⛔ Y NO se arregla con COALESCE(NULLIF(SLGTC,''), PARAM1): eso solo toca el 8,8% con
+    # SLGTC vacio y sigue histogramando el lanzador en el 91,2% restante -- arreglaria la
+    # parte visible y ocultaria la causa, dandolo por cerrado. El canal declarado en
+    # capability_U_USAGE_execution_footprint.md:34 y en sap_process_mining/SKILL.md:94 es
+    # PARAM1 A SECAS.
+    rows = c.execute("SELECT TRIM(PARAM1), COUNT(*) FROM rsau_audit_history "
+                     "WHERE TXSUBCLSID='Transaction Start' AND TRIM(PARAM1)<>'' "
+                     "GROUP BY 1").fetchall()
     tot = sum(n for _, n in rows)
     labeled = sum(n for tc, n in rows if tc in SEMANTIC)
     distinct_cov = sum(1 for tc, _ in rows if tc in SEMANTIC)
-    print(f"audit-log tcode-starts: {tot:,} events / {len(rows):,} distinct tcodes")
-    print(f"semantic coverage: {100*labeled//tot}% of volume, {distinct_cov}/{len(rows)} distinct tcodes mapped")
+    if not tot:
+        print("0 arranques en la ventana: no hay nada que medir (y NO es 0% de cobertura)")
+        return 0
+
+    # DOS COBERTURAS, Y LIDERA LA DE NEGOCIO. El titular anterior decia 97% y el 92,7% de lo
+    # etiquetado era `_nav` -- SESSION_MANAGER y S000, que es justo el LANZADOR y que este
+    # mismo fichero declara arriba que no es trabajo de negocio. El numero que la gente cita
+    # es el que se imprime PRIMERO, asi que el primero tiene que ser el honesto.
+    RUIDO = ("_nav", "_admin")
+    neg = [(tc, n) for tc, n in rows if SEMANTIC.get(tc, ("", "", ""))[1] not in RUIDO]
+    neg_tot = sum(n for _, n in neg)
+    neg_lab = sum(n for tc, n in neg if tc in SEMANTIC)
+    print(f"arranques (PARAM1) en Transaction Start: {tot:,} eventos / "
+          f"{len(rows):,} tcodes distintos")
+    print(f"cobertura de NEGOCIO: {100.0*neg_lab/neg_tot:.1f}% del volumen "
+          f"({neg_lab:,} de {neg_tot:,}) -- excluye _nav y _admin de numerador Y denominador")
+    print(f"cobertura total     : {100.0*labeled/tot:.1f}% del volumen, "
+          f"{distinct_cov}/{len(rows)} tcodes distintos mapeados")
     print("\n-- volume by PROCESS (labeled) --")
     byproc = defaultdict(int)
     for tc, n in rows:
