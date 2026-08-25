@@ -1,4 +1,4 @@
-﻿"""A34 — DE QUE TIPO ES CADA CUENTA, segun la estructura de balance que se EJECUTA.
+"""A34 — DE QUE TIPO ES CADA CUENTA, segun la estructura de balance que se EJECUTA.
 
 POR QUE EXISTE
     Saber que una cuenta es de BANCO, de DEPOSITO o de INVERSION decide cosas caras: si tiene

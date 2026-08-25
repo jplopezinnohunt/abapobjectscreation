@@ -1,4 +1,4 @@
-﻿"""EL CIRCULO SE CIERRA: un minero produce la evidencia que un claim abierto estaba esperando.
+"""EL CIRCULO SE CIERRA: un minero produce la evidencia que un claim abierto estaba esperando.
 
 EL HUECO
     Todo el camino de ida existe: minero -> hallazgo -> bus -> grafo -> companion. Y el de
