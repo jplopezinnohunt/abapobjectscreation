@@ -67,6 +67,20 @@ CYCLE = [
      "L1 what each object is FOR", False),
     ("process_mining/attribute_changes_to_programs.py",
      "L2 what WRITES each object class, and through which channel", True),
+    # LA CADENA DE DESCUBRIMIENTO, delegada entera (2026-08-25).
+    #
+    # Este ciclo existia y corria media docena de scripts de process_mining, pero NO la columna
+    # vertebral de casos ni la familia B -- DFG, variantes, cuellos, conformidad, OCEL2. Por eso
+    # llevaban meses sin ejecutarse: el mecanismo estaba, la cadena no. Once algoritmos
+    # registrados sin llamador, medido con graph_landing_check.py.
+    #
+    # Se delega en vez de copiar los pasos aqui porque el ORDEN tiene dependencias reales -- A21
+    # es la puerta de B1-B5, y sin columna vertebral un DFG dibuja un proceso que no existe --
+    # y ese orden debe estar definido en UN sitio. `--desde 2` salta la fase de realidad, que
+    # este ciclo ya corre arriba, y la de ingesta, que es un grifo periodico aparte.
+    ("process_mining/run_discovery_pipeline.py --desde 2",
+     "L2-L3 cadena de descubrimiento: columna vertebral -> familia B -> cruce con lo conocido",
+     True),
     ("brain_v2/build_interface_inventory.py",
      "L2 every interface as a RECORD — prose is not queryable knowledge", False),
     ("process_mining/interface_boundary.py",
@@ -137,13 +151,17 @@ def main():
             say(f"  SKIP  {label}")
             skipped += 1
             continue
-        p = REPO / script
+        # un paso puede llevar argumentos: "ruta.py --desde 2". Hizo falta para delegar la
+        # cadena de descubrimiento sin duplicar aqui el orden de sus fases.
+        partes = script.split()
+        script_rel, extra = partes[0], partes[1:]
+        p = REPO / script_rel
         if not p.exists():
-            say(f"  MISS  {label}  ({script} not found)")
+            say(f"  MISS  {label}  ({script_rel} not found)")
             failed.append(script)
             continue
         t0 = time.monotonic()
-        r = subprocess.run([sys.executable, str(p)], cwd=str(REPO),
+        r = subprocess.run([sys.executable, str(p)] + extra, cwd=str(REPO),
                            capture_output=True, text=True, encoding="utf-8",
                            errors="replace")
         dt = time.monotonic() - t0
