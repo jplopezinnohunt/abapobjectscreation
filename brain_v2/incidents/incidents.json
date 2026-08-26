@@ -1643,7 +1643,8 @@
       "R_RITTER has no BNK_APP role — Security ticket YS:FI:M:BCM_MON_APP______:UBO pending; incident NOT closeable until granted",
       "Yli-Hietanen 10097358 on the carton (both tiers) but active on no UBO node (expired 2024) — ADD x4 nodes",
       "De Sousa Carvalho's 2 BCM roles remain in PFCG (harmless without a node) — Security hygiene",
-      "R_RITTER user validity GLTGB=2026-09-30 — will silently stop signing at that date"
+      "R_RITTER user validity GLTGB=2026-09-30 — will silently stop signing at that date",
+      "YLI-HIETANEN 10097358 is ALSO expired on UIL's nodes since 2024-01-26 (INC-000016338) -- same PERNR, same defect, now TWO entities. Per feedback_second_occurrence_earns_a_procedure this owes a recurring check: run bcm_signatory_reconciliation_check.py --carton for EVERY entity, which already detects the MISSING side (verified 2026-08-26: it caught 10097358 unaided, exit 1). The gap was never the tool -- it was that --carton is optional and no cartons were archived."
     ],
     "side_findings": [
       "IT1218 is the BCM node-selection mechanism (HRP1218/HRT1218 on BNK_STR_BATCH_REL_APPR); HRP1222 is empty at UNESCO",
@@ -1677,7 +1678,8 @@
       "10097358"
     ],
     "related_incidents": [
-      "INC-000006313"
+      "INC-000006313",
+      "INC-000016338"
     ],
     "evidence_extracted_this_incident": [
       "Zagentexecution/quality_checks/bcm_role_gap_check.py",
@@ -2566,7 +2568,8 @@
       "TRS: the cap is expressed in USD and UIL is an EUR company code; MAXPAYAMT_RULECURR is in RULE currency. If it is not USD the configured threshold is not the letter's. UBO shows the same pattern (BRL company, 'USD10.000' text) -- possibly installation-wide.",
       "TRS: the letters grant UNLIMITED transfers between UIL's own accounts to everyone; UIL has a single RULE_ID so that distinction is not represented (UNES models it as 50010079). Model it or accept it in writing?",
       "TRS: BASOGLU now also COMMITS (she was validation-only before). Defensible -- the carton does not split roles -- but confirm.",
-      "AO deadline 2026-09-03: Morsal Jamal must obtain the bank's written confirmation of the list INCLUDING LIMITS."
+      "AO deadline 2026-09-03: Morsal Jamal must obtain the bank's written confirmation of the list INCLUDING LIMITS.",
+      "PMO: migrate UBO/UIS to UIL's low-node-holds-only-the-capped pattern, or accept the divergence knowingly? TRS decides. Cost of touching UBO: it works today and the change moves signatures on real payments. See claim 613."
     ],
     "side_findings": [
       "THE REQUESTER NOTE SAID 'her' IN THE SINGULAR AND THE LETTERS CAP TWO PEOPLE. Not an omitted deletion this time -- an omitted SECOND PERSON under the same condition. BASOGLU had been uncapped since 2024-09-27.",
@@ -2576,7 +2579,8 @@
       "YLI-HIETANEN 10097358: expired on both UIL nodes AND absent from UBO's (INC-000011781 open item). Two entities, one PERNR, one defect -> a PATTERN. He holds the :ALL role, so only node membership is missing.",
       "BEGDA drift, 2nd occurrence: spec said 20260811 (letter date); DBS entered 20260826 -> 15-day audit gap. INC-000006313 had 7 days.",
       "T042A is EMPTY in P01 -- the runbook's gate-1 universe does not exist in this installation. BNK_BATCH_HEADER is unreadable for the SNC user, so contradiction C2 cannot be settled by reading.",
-      "Carton archive went from 1 file (UIS) to 3 + the source PDF; the two UBO cartons read in INC-000011781 were never archived (skill gap #8, still open)."
+      "Carton archive went from 1 file (UIS) to 3 + the source PDF; the two UBO cartons read in INC-000011781 were never archived (skill gap #8, still open).",
+      "CORRECTION TO THIS INCIDENT'S OWN ANALYSIS: it claimed the reconciliation check was ASYMMETRIC (blind to MISSING). FALSE -- bcm_signatory_reconciliation_check.py:171-172 computes BOTH directions (extras = sap-carton, missing = carton-sap) and exits 1 on either. Run 2026-08-26 with --entity UIL --carton uil_deutschebank_hamburg_20260811.txt it returned 'MISSING (1): 10097358 (not active in any SAP UIL group)', exit 1 -- it catches Yli-Hietanen unaided. The real root cause of his 31 invisible months is that --carton is OPTIONAL and there were no archived cartons to run it against (the repo held exactly ONE, for UIS; UBO's two were read in INC-000011781 and never archived -- skill gap #8). The control existed and worked; its INPUT was missing and its invocation was not mandated."
     ],
     "related_objects": [
       "10048024",
@@ -2592,6 +2596,7 @@
       "50037531",
       "50039525",
       "50039526",
+      "613",
       "90000004",
       "90000005",
       "AGR_USERS",
@@ -2629,14 +2634,16 @@
       "Zagentexecution/quality_checks/cartons/uil_deutschebank_hamburg_20260811.txt",
       "Zagentexecution/quality_checks/cartons/uil_societegenerale_20260811.txt",
       "Zagentexecution/quality_checks/cartons/uil_letters_cartons_20260811_INC-000016338.pdf (local only, not in git)",
-      "Gold DB bcm_signatory_assignment refreshed 2026-08-26 (265 rows), bcm_signatory_role_gap, bcm_node_agent_role_check, bcm_release_vs_approve"
+      "Gold DB bcm_signatory_assignment refreshed 2026-08-26 (265 rows), bcm_signatory_role_gap, bcm_node_agent_role_check, bcm_release_vs_approve",
+      "companions/bcm_amount_bands_uil.html -- companion visual del caso (tres niveles, los dos patrones de tramo, la simulacion que lo verifico); registrado en companions/companions.json"
     ],
     "lessons": [
       "SIMULATING IS CHEAPER THAN REASONING. Thirty seconds of OOCU_RESP 'Simulate rule resolution' refuted hours of analysis and prevented a change that would have stripped authority from four people. When an instrument exists that answers the question without writing anything, using it is not optional.",
       "The resolver returns the UNION of every matching node and the band edge is INCLUSIVE -- so an overlapping band is a valid design, not a defect. Two tier patterns now coexist in the installation and neither is wrong; what is dangerous is that they coexist with no record of why.",
       "A node named 'up to 10.000' that holds only the capped people promises the tier and delivers the exception. The legibility gain is real; the misleading name is fixed by renaming, not by restructuring.",
-      "A control that only looks for EXTRAS cannot see an authorized signatory who fell out -- 31 months, two entities, one PERNR. Reconciliation must be symmetric.",
-      "Delimiting is not a formality: deleting an HRP1001 row destroys the only in-SAP evidence of a prior authorization state, and no backup of ours restores what an auditor would look at."
+      "Delimiting is not a formality: deleting an HRP1001 row destroys the only in-SAP evidence of a prior authorization state, and no backup of ours restores what an auditor would look at.",
+      "A control is only as good as the input someone remembers to archive. The carton diff detects a missing signatory perfectly -- and went unused for 31 months because nobody stored the cartons and --carton was optional. Before declaring a control blind, run it with its intended input.",
+      "The pattern chosen for UIL's amount tiers is a DECISION, not a deviation (claim 613): both patterns are valid, and the one that makes 'who is capped' directly readable was preferred because that is the question the carton reconciliation asks."
     ],
     "analysis_doc": "knowledge/incidents/INC-000016338_uil_bcm_add_reiss.md",
     "chain_anchor_type": "PERSON",

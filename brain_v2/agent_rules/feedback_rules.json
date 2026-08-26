@@ -5311,7 +5311,7 @@
       "functional": "Support",
       "process": "P2D"
     },
-    "rule": "AL RESOLVER UN INCIDENTE, COMPROBAR SI TIENE CONOCIMIENTO O DOMINIO RELACIONADO -- y si no lo tiene, ESCRIBIRLO. Un incidente cerrado con su documento de caso y nada mas es un expediente, no conocimiento: el proximo igual vuelve a costar lo mismo. Medido 2026-08-21: **11 de 13 incidentes no tenian documento de PROCESO en su dominio**, y los 2 que si lo tenian son los dos que se tocaron ese dia porque JP lo pidio. Peor: TRES pares de incidentes comparten dominio y tipo sin proceso escrito -- panel de firmantes BCM (INC-000006313 + INC-000011781), requisito regulatorio de banco (INC-EGYPT-PPC + INC-PSTLADR-NOV2026) y tipo de cambio presupuestario (INC-000005638 + INC-BUDGETRATE-EQG).",
+    "rule": "AL RESOLVER UN INCIDENTE, COMPROBAR SI TIENE CONOCIMIENTO O DOMINIO RELACIONADO -- y si no lo tiene, ESCRIBIRLO. Un incidente cerrado con su documento de caso y nada mas es un expediente, no conocimiento: el proximo igual vuelve a costar lo mismo. Medido 2026-08-21: **11 de 13 incidentes no tenian documento de PROCESO en su dominio**, y los 2 que si lo tenian son los dos que se tocaron ese dia porque JP lo pidio. Peor: TRES pares de incidentes comparten dominio y tipo sin proceso escrito -- panel de firmantes BCM (INC-000006313 + INC-000011781), requisito regulatorio de banco (INC-EGYPT-PPC + INC-PSTLADR-NOV2026) y tipo de cambio presupuestario (INC-000005638 + INC-BUDGETRATE-EQG).\n\n== SEGUNDA MITAD (anadida s104, 2026-08-26, INC-000016338) — ESCRIBIRLO NO BASTA: HAY QUE AJUSTAR QUIEN LO DETECTA ==\nAl cerrar un incidente, despues de comprobar si genero conocimiento nuevo, RESPONDER TAMBIEN: **¿que AGENTE, SKILL o CHECK tiene que cambiar para que el proximo caso lo DETECTE, en vez de depender de que alguien se acuerde?** Un claim que nadie consulta no detecta nada, y un documento que el agente del dominio no cita no se abre. Las tres preguntas, en este orden:\n  (a) ¿El AGENTE del dominio (`.claude/agents/<x>.md`) sigue describiendo el mundo como era antes del incidente? Si su metodo, sus trampas o sus mapas quedaron obsoletos, actualizarlo ES parte del ticket.\n  (b) ¿Hay un CHECK que habria cazado esto solo? Si existe pero no se corrio, el hueco es de INVOCACION o de INPUT, no de capacidad — arreglar eso y no escribir un check nuevo. Si no existe y es la 2.a ocurrencia, escribirlo (`feedback_second_occurrence_earns_a_procedure`).\n  (c) ¿Los MAPAS canonicos (tablas de nodos, inventarios, node maps del skill) siguen diciendo lo de antes? Grepear la entidad en TODOS los docs y companions y arreglar cada referencia obsoleta, no solo el fichero que se estaba editando.\nMEDIDO en INC-000016338: se aterrizaron 6 claims, 2 reglas, 3 docs y un companion — y aun asi el SKILL seguia diciendo que UIL era 'nodo unico' (ya tenia 4 nodos), las tablas de grupos de `bcm_signatory_rules.md` no listaban los nodos nuevos, y el AGENTE `bcm-signatory-panel` no sabia nada de bandas de importe, de la semantica de UNION ni de simular antes de decidir. El conocimiento estaba escrito y el detector seguia ciego.",
     "why": "La regla de la 2a ocurrencia ya existia en el skill de incidentes y llevabamos tres pares incumpliendola, porque era una intencion y no una medida. Un incidente es la OCASION; el proceso que hay detras es el PRODUCTO. Sin esa promocion el coste por ticket nunca baja y el conocimiento queda atrapado en un expediente que nadie lee -- que es exactamente lo que le paso al alta de cuentas de mayor hasta que se escribio su proceso.",
     "how_to_apply": "1) Al cerrar CUALQUIER incidente, responde: ¿que PROCESO ensena esto y donde vive? Si el dominio no existe, crealo; si existe sin doc de proceso, escribelo; si el doc existe, cita el incidente en el. 2) Comprueba tambien el EJE: el dominio funcional y el proceso son cosas distintas -- un panel de firmantes BCM vive en el dominio de BANCOS pero su eje es P2P, porque autorizar un pago es purchase-to-pay. Payment_BCM es la GENERACION DE FORMATOS de banco; PSM es Fund Management. Etiquetar por parecido de nombre en vez de por semantica rompe la recuperacion. 3) Mecanizado: `python Zagentexecution/quality_checks/incident_domain_knowledge_check.py` (tier gate) -- falla si un incidente no tiene dominio con registro y doc de proceso, y avisa cuando hay 2+ del mismo tipo sin el."
   },
@@ -5571,6 +5571,39 @@
       "A53_skill_binding_gate",
       "sap_transport_intelligence",
       "sap_payment_bcm_agent"
+    ]
+  },
+  {
+    "id": "feedback_simulate_before_deciding_the_shape",
+    "severity": "CRITICAL",
+    "created_session": 104,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "BCM",
+      "process": "P2P"
+    },
+    "rule": "CUANDO EXISTE UN SIMULADOR DETERMINISTA Y SIN ESCRITURA PARA LA PREGUNTA QUE SE ESTA DISCUTIENDO, CORRELO ANTES DE RAZONAR SOBRE LA FORMA DEL DISENO. No despues de proponer, no para confirmar la propuesta: ANTES, y se razona desde su salida. Ejemplos en esta instalacion: OOCU_RESP 'Simulate rule resolution' (que agentes devuelve una regla para un importe dado), DMEE 'Test active version'. Una corazonada defendida durante horas la resuelve en 30 segundos un instrumento que ya existe y no escribe nada.",
+    "why": "INC-000016338 (2026-08-26): sostuve durante HORAS que el solape de bandas de importe era un defecto y que habia que hacerlas disjuntas subiendo el suelo del nodo alto a 10.000 (claims 609 y 610). Eso habria QUITADO a los cuatro firmantes sin tope los pagos por debajo de 10.000 -- autorizacion que su carta TRS si les concede. Una sola llamada a 'Simulate rule resolution' sobre la regla 90000005 lo refuto: 10.000,00 devuelve SEIS agentes y 10.001,00 devuelve CUATRO, o sea que la determinacion suma los paneles de todos los nodos que encajan (claim 612). La herramienta estuvo disponible todo el tiempo y no se consulto primero.",
+    "how_to_apply": "Antes de proponer un rediseno de configuracion o de autorizaciones, preguntate: esta transaccion o este motor tiene un modo Test/Simular que conteste EXACTAMENTE esta pregunta sin escribir? Si lo tiene, correlo PRIMERO y razona desde su salida. Si no lo tiene, dilo explicitamente en la propuesta -- 'no hay simulador para esto' -- para que quien lea sepa que el analisis es inferencia y no medicion.",
+    "violations_observed": [
+      "INC-000016338"
+    ]
+  },
+  {
+    "id": "feedback_delimit_never_delete_pd_infotype_row",
+    "severity": "CRITICAL",
+    "created_session": 104,
+    "derives_from_core_principle": "CP-001",
+    "domain_axes": {
+      "functional": "BCM",
+      "module": "PD",
+      "process": "P2P"
+    },
+    "rule": "NUNCA BORRAR UNA FILA DE UN INFOTIPO PD/HR (HRP1001, HRP1000, PA*) PARA REPRESENTAR UNA BAJA. Se DELIMITA el ENDDA. La historia hace falta para auditoria y para forense de doble control. Si se encuentra una fila ya borrada, NO SE RECREA: fabricar historia es peor que perderla. Se registra la perdida y donde sobrevive la evidencia (snapshot anterior del Gold, backup, doc del incidente).",
+    "why": "INC-000016338 (2026-08-26): al reorganizar el panel de UIL se BORRARON 3 filas de HRP1001 en vez de delimitarlas -- 50037530 paso de 10 a 8 filas y 50037531 de 9 a 8 -- entre ellas la de BASOGLU 10111198 con BEGDA=20240927, que era el unico rastro EN SAP de sus ~23 meses autorizada sin tope. El descuadre se detecto cuadrando el conteo del Gold (269 esperadas frente a 266 reales), no por una alerta. LA REGLA YA ESTABA ESCRITA en sap_bcm_signatory_maintenance (regla dura 2) y en bcm_signatory_rules.md:171, y se violo igual: documentar no es gatear.",
+    "how_to_apply": "En toda especificacion de cambio de organizacion que se envie a DBS, escribir explicitamente por cada baja 'DELIMITAR ENDDA=<fecha>, NO BORRAR'. En el readback posterior, comprobar que el numero de filas NO HA BAJADO y que lo unico que cambio es el ENDDA. Un conteo que baja es una perdida de historia, aunque el estado activo resultante sea el correcto.",
+    "violations_observed": [
+      "INC-000016338"
     ]
   }
 ]
