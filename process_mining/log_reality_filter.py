@@ -136,6 +136,14 @@ def normalize_actor(u):
 
 
 def main():
+    # LO APRENDIDO, ANTES DE CLASIFICAR. Este minero vive justo encima de las tres memorias que
+    # le aplican: SLGREPNA mezcla objetos con instancias generadas, SLGUSER trae la grafia del
+    # front-end que escribio la fila (sobre-cuenta actores), y el cubo UNKNOWN es un SENSOR, no
+    # un residuo -- esa ultima la aprendio A19 en su propia primera corrida. Ademas enseña las
+    # preguntas abiertas del foro que esta corrida puede contestar, mientras el Gold sigue abierto.
+    if _aprendido:
+        _aprendido("slgrepna", "slguser", "clasific", "unknown", "actor").avisar()
+
     if not os.path.exists(GOLD):
         print(f"Gold DB ausente: {GOLD}")
         return 2

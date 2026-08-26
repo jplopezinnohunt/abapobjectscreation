@@ -45,6 +45,16 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "brain_v2", "methods"))
 from algorithm_memory import remember  # noqa: E402
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. `algorithm_memory.json` guarda, por cada memoria, su `implication`:
+# que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no leerlas es
+# aprender y no aprender a la vez -- y el error queda MECANIZADO, corriendo solo cada semana.
+sys.path.insert(0, HERE)
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
+
 GOLD = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
                     "p01_gold_master_data.db")
 OUT = os.path.join(ROOT, "brain_v2", "project_wbs_model.json")
@@ -61,6 +71,13 @@ def shape(s):
 
 def main(argv):
     out_path = argv[argv.index("--out") + 1] if "--out" in argv else OUT
+
+    # AL PRINCIPIO, no al final: aqui el minero esta a punto de leer justo los datos que
+    # contestan lo que el foro le pregunta. Al terminar ya cerro la conexion y lo que queda
+    # es buena intencion. Los temas son la tabla, los campos y el escritor que ESTE minero mide.
+    if _aprendido:
+        _aprendido("prps", "yye_", "mulesoft", "ernam").avisar()
+
     cx = sqlite3.connect("file:%s?mode=ro" % GOLD.replace("\\", "/"), uri=True)
     cols = [d[0] for d in cx.execute("SELECT * FROM PRPS LIMIT 1").description]
     yy = [c for c in cols if c.startswith(("YYE_", "ZZ"))]

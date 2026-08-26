@@ -134,6 +134,20 @@ def proponer():
 
     Devuelve el documento de propuestas (y lo escribe), o None si faltan insumos.
     """
+    # LO YA APRENDIDO, ANTES DE CRUZAR NADA -- y aqui, en `proponer()`, no en `main()`: la
+    # cadena (run_discovery_pipeline.py:302) importa ESTA funcion, asi que un aviso puesto en
+    # main() no lo veria nunca quien mas la ejecuta. Los temas son lo que este instrumento
+    # toca: `claims.json` (dos memorias sobre anadir filas con campos inventados en vez de
+    # copiar el esquema de una existente), el bus de HALLAZGOS, y la POLARIDAD de una
+    # NEGACION -- entre las que salen esta «una negacion no es una ...», que es exactamente el
+    # falso CONTRADICE por coincidencia de SUBCADENA que este fichero tuvo que corregir.
+    # Y de paso pone delante las preguntas abiertas del foro que esta corrida puede contestar.
+    # Sale por stderr a proposito: `--json` esta documentado en la cabecera como salida para
+    # maquina y el bloque delante la partiria; en terminal se ve igual.
+    if _aprendido:
+        _aprendido("claim", "hallazgo", "negacion", "contradice",
+                   "subcadena").avisar(salida=lambda s: print(s, file=sys.stderr))
+
     C = cargar(CLAIMS, [])
     if isinstance(C, dict):
         C = C.get("claims") or []

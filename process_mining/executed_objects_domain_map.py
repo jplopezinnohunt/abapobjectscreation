@@ -338,6 +338,15 @@ def make_classifier(con):
 
 
 def main():
+    # LO APRENDIDO, ANTES DE CLASIFICAR. Los temas son las cuatro superficies que este mapa
+    # lee y su propio oficio: `make_classifier` (dos memorias hablan literalmente de esta
+    # funcion), `clasific` (entre otras, la de que un patron ingenioso captura de mas -- el
+    # caso ^AB[AZ] que ya esta comentado abajo), PARAM1 (donde vive el tcode ARRANCADO, no
+    # SLGTC), SLGREPNA (que no lleva el modulo de funcion de una RFC), RFCPING y el propio
+    # log. Se lee al arrancar: al terminar ya estan las cifras publicadas.
+    if _aprendido:
+        _aprendido("make_classifier", "clasific", "slgrepna", "param1", "rfcping",
+                   "rsau_audit_history").avisar()
     con = sqlite3.connect(GOLD)
     domain_of, ctx = make_classifier(con)
     tc_prog, tc_text, fm_dom, job_dom = ctx["tc_prog"], ctx["tc_text"], ctx["fm_dom"], ctx["job_dom"]

@@ -40,6 +40,16 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "brain_v2", "methods"))
 from algorithm_memory import remember  # noqa: E402
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. `algorithm_memory.json` guarda, por cada memoria, su `implication`:
+# que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no leerlas es
+# aprender y no aprender a la vez -- y el error queda MECANIZADO, corriendo solo cada semana.
+sys.path.insert(0, HERE)
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
+
 GOLD = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
                     "p01_gold_master_data.db")
 # A route used by one person against an object several others maintain is the signal.
@@ -170,6 +180,14 @@ def transported_content(cx, since):
 
 def main(argv):
     since = argv[argv.index("--since") + 1] if "--since" in argv else "20240101"
+
+    # AL PRINCIPIO, no al final: aqui el minero esta a punto de leer justo los datos que
+    # contestan lo que el foro le pregunta. Al terminar ya cerro la conexion y lo que queda
+    # es buena intencion. Los temas son las tablas y columnas que ESTE minero toca.
+    if _aprendido:
+        _aprendido("cdhdr_history", "objectclas", "transporte", "tabu",
+                   "cts_objects").avisar()
+
     cx = sqlite3.connect("file:%s?mode=ro" % GOLD, uri=True)
 
     print("A17 CHANGE GOVERNANCE DETECTOR   since %s" % since)

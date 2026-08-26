@@ -79,6 +79,18 @@ def classify(fm, user):
 
 
 def main():
+    # ANTES de leer el log, no despues. Los temas son las TABLAS y COLUMNAS que este minero
+    # toca y lo que hace con ellas: rsau_audit_history (el efecto OBSERVADOR -- nuestras
+    # propias lecturas por RFC caen en el mismo log que aqui se cuenta, y la ventana es
+    # RETENCION, no historia), PARAM3 (donde vive el modulo de funcion; SLGREPNA solo trae
+    # SAPMSSY1, el despachador), SLGUSER (la grafia del id varia por front-end: cuenta actores
+    # de mas, y aqui SLGUSER decide el eje ORIGIN) y CLASIFIC (un patron ingenioso captura de
+    # mas -- justo lo que hacen KNOWN/TECH/OURS por subcadena -- y el cubo UNKNOWN es un
+    # SENSOR, no un residuo). Ademas pone delante las preguntas abiertas del foro que esta
+    # corrida puede contestar.
+    if _aprendido:
+        _aprendido("rsau_audit_history", "param3", "slguser", "clasific").avisar()
+
     c = sqlite3.connect(GOLD, timeout=10)
     rows = c.execute("SELECT PARAM3, SLGUSER, COUNT(*) FROM rsau_audit_history "
                      "WHERE TXSUBCLSID='RFC Function Call' AND PARAM3<>'' GROUP BY PARAM3, SLGUSER").fetchall()

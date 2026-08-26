@@ -53,6 +53,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "brain_v2", "methods"))
 from algorithm_memory import recall, remember  # noqa: E402  what the other algorithms learned
+
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# `recall(kind="INSTRUMENT")` mas abajo trae SOLO los instrumentos, y solo dentro de
+# check_instruments -- o sea, a mitad de la corrida y filtrado a un tipo. Esto es la otra
+# mitad: las TRAMPAS y los PORTADORES que aplican a esta cadena, leidos al arrancar. Se lee
+# ANTES de minar porque una advertencia que llega al final no cambia lo que se midio.
+try:
+    import sys as _sys, os as _os
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(
+        _os.path.abspath(__file__))), "process_mining"))
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
 DEFAULT_SPEC = os.path.join(HERE, "chain_spec.json")
 
 # A hop that resolves this well is doing its job.
@@ -608,6 +621,15 @@ def learn(report, session=None):
 # ---------------------------------------------------------------- run
 
 def main(argv):
+    # Los temas son los saltos que esta cadena recorre y los campos de los que cuelgan:
+    # POSID (la raiz antes del primer punto ES el codigo de fondo), FINCODE (tres gramaticas
+    # en un campo, y la gramatica predice el TIPO de fondo), FMIFIIT (donde MEASURE / Funded
+    # Program esta declarado y en blanco en todas las filas), FMAVCT (que colapsa la pata de
+    # posicion presupuestaria en el 63,7% de las direcciones), FMFINCODE y cdhdr_history --
+    # los dos instrumentos con los que se responde 'quien cambio esto'.
+    if _aprendido:
+        _aprendido("posid", "fincode", "fmifiit", "fmavct", "fmfincode",
+                   "cdhdr_history").avisar()
     spec_path = DEFAULT_SPEC
     out_path = os.path.join(ROOT, "brain_v2", "chain_lineage.json")
     rest = [a for a in argv if not a.startswith("--")]

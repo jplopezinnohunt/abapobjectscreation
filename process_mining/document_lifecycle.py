@@ -168,6 +168,15 @@ def main():
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
+    # LO APRENDIDO, ANTES DE MEDIR EL CICLO. La primera memoria que sale es exactamente el
+    # defecto que este minero puede cometer: una tasa construida como eventos-por-ventana MIDE
+    # LA VIDA, no el comportamiento -- el 34,7% de los documentos de reserva viven un solo mes y
+    # puntuan 1,00 por construccion. Ademas: LIFNR va relleno con ceros (aqui se cuenta
+    # `lineas_sin_acreedor_pct`), FMIOI es la tabla de COMPROMISO con tipos de valor que no
+    # estan en los reales, y FKBTR no contesta preguntas de tipo de cambio presupuestario.
+    if _aprendido:
+        _aprendido("fmioi", "reserva", "documento", "fkbtr", "lifnr").avisar()
+
     if not os.path.exists(GOLD):
         print(f"Gold DB ausente: {GOLD}", file=sys.stderr)
         return 2

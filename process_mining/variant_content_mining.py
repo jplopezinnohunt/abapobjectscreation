@@ -247,6 +247,14 @@ def main():
                     help="re-interpreta lo ya leido sin tocar P01")
     a = ap.parse_args()
 
+    # LO APRENDIDO, ANTES DE MINAR -- no despues. Aqui pesan cuatro: que "respondio sin filas"
+    # NO significa que la variante este vacia (es justo lo que `contenido()` concluye), que el
+    # log no distingue batch input de job de fondo, que un nombre de programa puede ser una
+    # INSTANCIA generada y no un objeto, y que la VARIANTE es quien decide que se ejecuta de
+    # verdad. Y de paso saca las preguntas abiertas del foro que esta corrida puede contestar.
+    if _aprendido:
+        _aprendido("variante", "ruta", "job", "seleccion").avisar()
+
     if a.desde_cache:
         d = desde_cache()
         if not d:

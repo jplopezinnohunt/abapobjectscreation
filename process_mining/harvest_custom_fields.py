@@ -40,6 +40,17 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "brain_v2", "methods"))
 from algorithm_memory import remember  # noqa: E402
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Este fichero importaba `remember` y no `recall`: escribia en la memoria de metodo y no la
+# leia nunca. Aprender y no aprender a la vez. Se lee ANTES de barrer el corpus.
+try:
+    import sys as _sys, os as _os
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(
+        _os.path.abspath(__file__))), "process_mining"))
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
+
 CORPORA = ["extracted_sap_p01", "extracted_code", "extracted_sap"]
 GOLD = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
                     "p01_gold_master_data.db")
@@ -121,6 +132,17 @@ def population(cx, table, field):
 
 
 def main(argv):
+    # Los temas son lo que este barrido cosecha y lo que ya se sabe de esos campos: `custom
+    # field` (incluida la cosecha anterior de este mismo algoritmo), YYE_DONOR (el caso
+    # medido de un campo que decae del 82% al 5% sin que nada lo sustituya), `not_extracted`
+    # (el tercer estado, que no es vacio), `fill rate` (una tasa de relleno es propiedad de
+    # QUIEN ESCRIBE la tabla, no del campo) y `dimension` (cuando se anade una segunda vez,
+    # la primera NO se retira). Aqui sale ademas la trampa que este fichero tiene viva: un
+    # campo numerico o NUMC nunca esta en blanco, asi que `trim(col)<>''` cuenta '0' como
+    # relleno -- que es exactamente el test que usa population().
+    if _aprendido:
+        _aprendido("custom field", "yye_donor", "not_extracted", "fill rate",
+                   "dimension").avisar()
     out_path = os.path.join(ROOT, "brain_v2", "custom_fields.json")
     if "--out" in argv:
         out_path = argv[argv.index("--out") + 1]

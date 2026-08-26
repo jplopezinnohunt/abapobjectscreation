@@ -180,6 +180,16 @@ def departures_for(series, rel_change=None):
 
 
 def main():
+    # LO APRENDIDO, ANTES DE BUSCAR DERIVA. Tres memorias van directas a este algoritmo:
+    # (1) nuestras propias lecturas de P01 por RFC caen en el MISMO log que aqui se mide --
+    #     264.521 filas -- asi que un dominio puede "derivar" porque lo miramos mas;
+    # (2) la ventana de rsau es RETENCION, no historia: toda cifra declara de que ventana sale;
+    # (3) el dominio se resuelve contra TRES stores de completitud desigual, y aqui se usan
+    #     domain_of_package + domain_of_function_module: lo que no resuelva se cae en silencio.
+    # Y saca las preguntas abiertas del foro que este perfil mensual puede contestar.
+    if _aprendido:
+        _aprendido("rsau_audit_history", "param3", "ventana", "dominio").avisar()
+
     con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
     prof, days_in = build_profile(con)
     con.close()

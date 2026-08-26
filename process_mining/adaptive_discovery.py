@@ -110,6 +110,18 @@ def auto_resolve(fm, fg, app):
 
 
 def main():
+    # ANTES de aprender nada, porque este es el UNICO minero que PERSISTE lo que decide: una
+    # regla aprendida mal queda mal para siempre y en silencio, asi que el aviso llega tarde si
+    # llega al cerrar. Los temas son lo que toca: TFDIR (de donde saca FUNC_GROUP/APP_DOMAIN),
+    # MODULO DE FUNCION y BAPI (cada superficie necesita su resolucion antes de clasificar --
+    # sin ella las BAPI, que son justo estas llamadas, se caen), COBERTURA (no publicar una sin
+    # decir DONDE esta el resto; y comparar dos corridas con distinto conjunto de superficies
+    # no es una derivada, que es exactamente lo que hace `progression`) y DOMINIO (los stores
+    # de dominio son tres y desiguales: union, nunca elegir uno -- aplica a resolve_domain).
+    # Ademas saca las preguntas abiertas del foro que esta corrida puede contestar.
+    if _aprendido:
+        _aprendido("tfdir", "modulo de funcion", "bapi", "cobertura", "dominio").avisar()
+
     c = sqlite3.connect(GOLD, timeout=10)
     fgmap = {fn: (fg or pn, ap) for fn, pn, fg, ap in
              c.execute("SELECT FUNCNAME, PNAME, FUNC_GROUP, APP_DOMAIN FROM tfdir_custom")}

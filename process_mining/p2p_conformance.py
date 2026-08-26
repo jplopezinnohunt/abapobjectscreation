@@ -32,6 +32,18 @@ def d(s):
 
 
 def main():
+    # ANTES de abrir el Gold, no al cerrar: al arrancar, este minero esta a punto de leer justo
+    # los datos que contestan lo que le preguntan; al terminar la conexion ya esta cerrada y lo
+    # que queda es buena intencion. Los temas son lo que ESTE minero toca -- EKKO (EBELN es su
+    # identificador de caso, y hay memoria de que el corte de un id de caso no se deduce del
+    # nombre), DMBTR (el importe que suma por PO, con la memoria de que el control FM-vs-FI de
+    # la casa ya tiene su propia definicion), BUDAT (ordena el 3-way match por fecha de
+    # contabilizacion: SAP convierte por WWERT, no por BUDAT) y la VENTANA, que este fichero
+    # imprime totales sin declarar. Ademas saca las preguntas abiertas del foro que puede
+    # contestar.
+    if _aprendido:
+        _aprendido("ekko", "dmbtr", "budat", "ventana").avisar()
+
     c = sqlite3.connect(GOLD, timeout=10)
     created = {r[0] for r in c.execute("SELECT DISTINCT EBELN FROM ekko")}
     # per PO: GR dates, IR dates, IR amount

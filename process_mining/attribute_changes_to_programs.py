@@ -541,6 +541,15 @@ def attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, fi
 
 
 def main():
+    # LO APRENDIDO, ANTES DE MINAR — no despues. Los temas son las dos corrientes que este
+    # algoritmo cruza y los campos de los que cuelga su respuesta: cdhdr_history (el log de
+    # cambios), rsau_audit_history (el de ejecucion), SLGREPNA (que la memoria dice que NO
+    # lleva el modulo de funcion de una RFC: solo el despachador), TCODE (que NO distingue
+    # batch input de job de fondo), OBJECTCLAS y SAPMSSY1. Un aviso que llega al final no
+    # sirve: para entonces la conexion esta cerrada y lo que queda es buena intencion.
+    if _aprendido:
+        _aprendido("cdhdr_history", "rsau_audit_history", "slgrepna", "tcode",
+                   "objectclas", "sapmssy1").avisar()
     if not GOLD.exists():
         print(f"golden not found: {GOLD}", file=sys.stderr)
         return 1
