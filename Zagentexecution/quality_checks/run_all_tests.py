@@ -16,6 +16,35 @@ Salida 0 = todo verde. 1 = algo rojo, y dice cual.
 
 from __future__ import annotations
 
+# El bloque va DEBAJO del `from __future__`, no pegado al docstring: un __future__ import tiene
+# que ser la PRIMERA sentencia del modulo y cualquier asignacion delante lo vuelve SyntaxError.
+# `declaration()` de run_all.py lo encuentra igual: recorre tree.body buscando el nombre, no la
+# posicion.
+#
+# POR QUE ES UN GATE Y NO UNA SUITE MAS
+#   Un test_*.py suelto no es un quality check y no deberia correr desde run_all.py -- pero el
+#   RUNNER de esos tests si lo es: es la unica cosa del ciclo que comprueba que nuestras propias
+#   herramientas siguen haciendo lo que dicen. Corre sin SAP y sin Gold DB, y su exit code
+#   distingue limpio de sucio (return 1 con el nombre del fichero que falla, l.57-60).
+#   Ademas gatea el caso VACIO: si no hay ningun test_*.py devuelve 1 (l.30-34), que es la senal
+#   de que se estan escribiendo herramientas sin test -- exactamente lo que
+#   feedback_reusable_tools_carry_offline_tests pide y nada medía.
+#   Descubre por glob, asi que un test nuevo entra en el ciclo sin tocar este fichero.
+#
+# MEDIDO 2026-08-26: exit 0. 1 fichero (test_structured_address_readiness.py), 26 aserciones,
+# 0 fallos. Sin RFC, sin Gold DB.
+QUALITY_CHECK = {
+    "tier": "gate",
+    "needs": "files",
+    # `sobre` = herramientas: lo que se juzga aqui es codigo NUESTRO (las funciones de
+    # structured_address_readiness.py), no un dato de SAP. Contarlo como datos_sap haria leer un
+    # fallo de nuestro instrumento como un fallo del sistema de verdad.
+    "sobre": "herramientas",
+    "what": ("corre todos los test_*.py offline de quality_checks/ y falla si alguno falla -- o "
+             "si no hay ninguno, que es la senal de que las herramientas reutilizables se estan "
+             "escribiendo sin test"),
+}
+
 import glob
 import io
 import os

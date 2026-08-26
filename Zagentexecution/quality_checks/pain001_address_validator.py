@@ -63,8 +63,42 @@ USAGE
 Exit code 0 = clean, 1 = at least one ERROR. WARN does not fail the build; it is
 what becomes an ERROR in November 2026.
 """
-
 from __future__ import annotations
+
+# El bloque va aqui, y no pegado al docstring, por una regla del LENGUAJE y no de estilo:
+# `from __future__` tiene que ser la primera sentencia del modulo o el fichero no compila
+# (probado: SyntaxError "from __future__ imports must occur at the beginning of the file").
+# `run_all.declaration()` lo lee por AST recorriendo todo el cuerpo del modulo, asi que la
+# posicion no le afecta.
+QUALITY_CHECK = {
+    "tier": "analysis",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
+    "needs": "files",      # gold_db | rfc_p01 | files
+    "what": ("un fichero pain.001 CONCRETO contra el XSD ISO 20022 (capa 1, autoridad "
+             "de tercero) y contra las reglas de direccion del banco (capa 2, "
+             "transcripcion nuestra, pre-aviso no veredicto)"),
+    "args": "<fichero.xml> [mas.xml ...] [--after-nov2026]",
+    # POR QUE `analysis` Y NO `gate`, aunque SI tiene veredicto de verdad.
+    # El veredicto existe y funciona -- medido 2026-08-26:
+    #     simulator_output/CGI/sample_1_0010141693_V001.xml -> XSD valido, 1 ERROR de
+    #     capa 2 (CdtrAgt sin BIC), exit 1.
+    # Lo que no existe es un CORPUS que gatear. `run_all.py` invoca cada check SIN
+    # ARGUMENTOS, y sin argumentos este script imprime el docstring y sale 0 (l.343-346,
+    # comprobado ejecutandolo: exit 0 sin haber abierto ni un fichero):
+    # habria validado CERO ficheros y el runner lo contaria PASS. Eso es precisamente el
+    # verde falso que este proyecto no se puede permitir en la fecha del 14-11-2026.
+    # Y no vale cablear un corpus fijo de los que hay en el repo, por dos medidas:
+    #   * Zagentexecution/incidents/xml_payment_structured_address/simulator_output/
+    #     (30 XML, CGI/CITI/SEPA) son artefactos CONGELADOS del incidente: llevan dentro
+    #     los defectos que documentan. Gatearlos deja el ciclo en rojo permanente sobre
+    #     algo que ya esta explicado -- una alarma que nadie mira.
+    #   * v000_real_samples/IIEP_SOGE/*.out (los ficheros REALES) no son pain.001 en
+    #     claro: vienen envueltos en CipherKey/CryptoInternal y ni siquiera son XML bien
+    #     formado (probado 2026-08-26, "Opening and ending tag mismatch ... line 145").
+    # Su momento de uso es el correcto: ANTES de mandar un fichero al banco, sobre ese
+    # fichero. El dia que exista un replay que deje un fichero fresco en una ruta fija,
+    # esto puede pasar a `gate` apuntando a esa ruta -- y no antes.
+}
 
 import os
 import sys

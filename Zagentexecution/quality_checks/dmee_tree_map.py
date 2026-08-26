@@ -52,14 +52,44 @@ USAGE
 
 Read-only. Two RFC_READ_TABLE reads per system, no ROWSKIPS (P01 rejects it).
 """
+from __future__ import annotations
+
+# El bloque va aqui, y no pegado al docstring, por una regla del LENGUAJE y no de estilo:
+# `from __future__` tiene que ser la primera sentencia del modulo o el fichero no compila
+# (probado: SyntaxError "from __future__ imports must occur at the beginning of the file").
+# `run_all.declaration()` lo lee por AST recorriendo todo el cuerpo del modulo, asi que la
+# posicion no le afecta.
+QUALITY_CHECK = {
+    "tier": "analysis",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
+    "needs": "rfc_p01",    # gold_db | rfc_p01 | files
+    "what": ("mapa de los arboles DMEE vivos: estructura, de donde sale el valor de cada "
+             "nodo, que exit lo decide, y las clases de defecto de PstlAdr "
+             "(ORDER / HYBRID / NOV26 / TECNICO / SIN-ORIGEN)"),
+    "args": "[--sys D01|P01] [--tree <TREE_ID>] [--all-trees] [--json <f>] [--md <f>]",
+    # POR QUE `analysis` Y NO `gate` -- las dos razones, y ninguna es opinion:
+    #  1. NO TIENE VEREDICTO. `report()` cuenta las clases de defecto en `totals` (l.418),
+    #     las imprime en el RESUMEN (l.440) y `main()` (l.552) TIRA ese valor: llama a
+    #     report() y `return 0` incondicional (l.561). No hay ruta a un exit != 0. Es un
+    #     mapa: dice que hay, no dice si esta bien. Cablearlo como puerta certificaria
+    #     limpio cada ciclo pasara lo que pasara.
+    #     OJO al leer el estado: `run_all.can_gate()` (run_all.py l.94-96) devuelve True
+    #     para este fichero -- medido 2026-08-26 -- porque `emits_nothing()` (l.280) hace
+    #     `return True` y en Python `isinstance(True, int)` es cierto y `True != 0`. Es un
+    #     falso positivo del detector, no un veredicto de este script: si algun dia se
+    #     declarase gate, el runner lo contaria PASS sin haber comprobado nada.
+    #  2. NO PUEDE CORRER SIN SAP. `load_trees()` (l.175) abre RFC al sistema pedido
+    #     (DMEE_TREE_NODE, DMEE_TREE_COND, YTFI_PPC_TAG/STRUC) y `live_formats()` (l.153)
+    #     abre ADEMAS una a P01 para saber que formatos estan VIVOS (REGUT).
+    # Su salida util es el artefacto: --md regenera el doc de configuracion DMEE
+    # (`write_markdown`, l.459), que por eso NO se edita a mano.
+}
 
 # REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
 #   feedback_check_sap_format_lifecycle_before_extending_dmee
 #     -> el momento es tocar un arbol DMEE: este mapa es la primera parada
 #   feedback_validate_against_extracted_rfc_not_matrix
 #     -> mismo momento: dictar valores DMEE sin validarlos contra lo extraido
-
-from __future__ import annotations
 
 import argparse
 import collections

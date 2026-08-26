@@ -78,6 +78,69 @@ FUERA = {
     "curate.py": "curacion estructural del grafo",
     "validate_artifacts.py": "validador de artefactos",
     "meta_capability.py": "mide nuestra propia madurez, no el sistema SAP",
+
+    # ---- Triaje del 2026-08-26 (s103). 33 candidatos leidos uno a uno: 5 registrados como
+    # algoritmo (A55-A59), 19 aqui con motivo, 9 sin decidir en mining_candidates.json.
+    # NADA se excluye por "no lo entiendo": cada motivo dice QUE hace el fichero y, cuando el
+    # detector se equivoco, POR QUE se equivoco, con fichero:linea. Un motivo generico seria
+    # un hueco disfrazado, que es lo que este bloque existe para evitar.
+
+    # (a) FALSOS POSITIVOS DEL DETECTOR. La firma es sintactica -- que nombres de tabla
+    # aparecen en el texto -- y no distingue una CONSULTA de una MENCION. En estos cinco el
+    # nombre de tabla vive en un comentario, una etiqueta o una cadena literal: cero lecturas.
+    "schema.py": ("definicion de tipos de nodo y arista del grafo; edidc/rfcdes/tstc/tadir/t030h "
+                  "solo aparecen en comentarios que explican el origen de cada arista "
+                  "(brain_v2/core/schema.py:43,60,62,63). No consulta nada"),
+    "build_closing_activities_pdf.py": ("generador de PDF con matplotlib; las cifras son literales "
+                                        "en el propio fichero y vari/varid/t030h son texto de "
+                                        "etiqueta (lineas 125 y 434). Dibuja lo que otro midio"),
+    "build_master_data_companion.py": ("genera companions/master_data_governance.html desde "
+                                       "brain_v2/master_data_registry.json; ska1/skb1/t030h estan "
+                                       "dentro de cadenas HTML (lineas 122, 147)"),
+    "build_bank_operation_design.py": ("genera companions/unesco_bank_operation_design.html desde "
+                                       "brain_v2/house_bank_roles.json; tbtco/tbtcp van dentro de "
+                                       "un <code> (linea 257). El minero de este sustrato es A44"),
+    "_build_realdata_js.py": ("empotra cts_eventlog.json como constante JS; e070/e071 estan dentro "
+                              "de una cadena literal de JavaScript (linea 64)"),
+
+    # (b) ESCRIBEN CONOCIMIENTO YA RAZONADO -- no lo descubren. El nombre de tabla aparece
+    # porque va DENTRO del claim que el script deposita, no porque lo lea de SAP.
+    "ingest_fx_revaluation_structured.py": ("promueve un analisis en prosa a claims+incidente ya "
+                                            "escritos a mano; skb1/t030h/apqi/tbtco son el "
+                                            "contenido del claim (lineas 2, 10, 46), no una lectura"),
+    "backfill_closing_activities.py": ("mismo patron: rellena claims 209/210 con texto fijo; "
+                                       "tbtco/tbtcp/ska1/skb1 estan en el comentario de cabecera y "
+                                       "en related_objects (lineas 2-3, 26, 29)"),
+    "backfill_domain_axes.py": ("backfill de una sola vez que etiqueta reglas/claims/incidentes con "
+                                "los 3 ejes de dominio; los nombres de tabla son tokens de las "
+                                "regex del mapa de palabras clave (lineas 48, 58, 60). No lee SAP"),
+
+    # (c) EL GRIFO. Traen el dato; no sacan patron de el. Misma clase que accumulate_logs.py.
+    "extract_eco09_benchmark.py": "extraccion RFC de la config completa de un banco casa (ECO09)",
+    "extract_cdpos_by_object.py": ("extractor de CDPOS por OBJECTCLAS, troceado y resumible; el "
+                                   "metodo de LECTURA es real y valioso, pero no concluye nada"),
+    "extract_setleaf_ybank.py": "extraccion de SET* de la familia YBANK_ACCOUNTS_* al Gold DB",
+    "extraction_status.py": ("panel de estado + cargador a SQLite: compara filas de checkpoint "
+                             "contra filas cargadas. Mide NUESTRA cobertura de extraccion, no el "
+                             "comportamiento de SAP"),
+
+    # (d) SONDAS DE UN SOLO USO. Leen tablas por RFC para contestar UNA pregunta de una
+    # investigacion concreta y no dejan metodo reutilizable. La numeracion v2/v4/v5 es la
+    # prueba: son iteraciones de la misma sonda, no versiones de una capacidad.
+    "uba01_config_check_v2.py": "sonda RFC de una investigacion puntual del banco casa UBA01",
+    "uba01_config_check_v4.py": "idem, iteracion 4 de la misma sonda",
+    "uba01_config_check_v5.py": "idem, iteracion 5 de la misma sonda",
+    "h48_transport_history_prereqs.py": ("sonda RFC de un solo uso (H48/KU-030) en scrp_temp; lee "
+                                         "E07T/E071 para localizar UN transporte concreto"),
+    "h48_followup_gb921_transports.py": "continuacion de la misma sonda (GB921/GB905), un solo uso",
+
+    # (e) INGESTORES DEL GRAFO. Transcriben filas a nodos y aristas con un mapa cableado.
+    # Mismo motivo que build_brain_state.py y que el caso ya adjudicado
+    # `transport_object_materialisation` en mining_candidates.json: ingerir no es descubrir.
+    "integration_ingestor.py": ("ingestor de rfcdes/edidc/tfdir_custom/icfservice al grafo, con el "
+                                "mapa app.NET->FM cableado en el propio fichero"),
+    "sqlite_ingestor.py": ("ingestor de campos de tabla y aristas de join al grafo, con el JOIN_MAP "
+                           "cableado. El conocimiento esta en la lista, no en el codigo"),
 }
 
 
@@ -253,12 +316,25 @@ def main():
     if "--proponer" in sys.argv:
         # LA MECANIZACION DEL ALTA: emite el borrador de cada minero para que pase al grupo de
         # mineria y lo pueda usar todo el mundo. Deja el failure_mode a COMPLETAR a proposito.
-        prop = {"_que_es": ("borradores de alta para los mineros sin registrar. Completa `does`, "
-                            "`failure_mode` y `lands_in` y pegalos en algorithms.json"),
-                "_regla": ("el failure_mode no se inventa: se averigua CORRIENDO el algoritmo. "
-                           "Un modo de fallo fabricado es peor que ninguno porque parece pensado"),
-                "propuestas": [_propuesta(c) for c in candidatos]}
         salida = os.path.join(ROOT, "brain_v2", "methods", "mining_candidates.json")
+        # FUSIONAR, NO PISAR. La version anterior hacia json.dump de un dict de TRES claves
+        # sobre el fichero entero, y el fichero ya no tiene tres claves: un agente anterior
+        # anadio `descartados_con_motivo` -- artefactos leidos, CORRIDOS y adjudicados uno a
+        # uno, con la medida que justifica cada descarte. Correr --proponer los borraba, y la
+        # salida de este mismo check le dice al usuario que lo corra (ultima linea de main).
+        # O sea: el remedio que el check receta destruia el trabajo mas caro del store.
+        # Se conserva todo lo que no sean `propuestas`, que si es derivado y se regenera.
+        prop = {}
+        if os.path.exists(salida):
+            try:
+                prop = json.load(open(salida, encoding="utf-8"))
+            except Exception:
+                prop = {}
+        prop["_que_es"] = ("borradores de alta para los mineros sin registrar. Completa `does`, "
+                           "`failure_mode` y `lands_in` y pegalos en algorithms.json")
+        prop["_regla"] = ("el failure_mode no se inventa: se averigua CORRIENDO el algoritmo. "
+                          "Un modo de fallo fabricado es peor que ninguno porque parece pensado")
+        prop["propuestas"] = [_propuesta(c) for c in candidatos]
         with open(salida, "w", encoding="utf-8") as fh:
             json.dump(prop, fh, indent=2, ensure_ascii=False)
         print(f"{len(candidatos)} borrador(es) -> {salida}")

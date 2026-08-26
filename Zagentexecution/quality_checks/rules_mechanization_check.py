@@ -32,6 +32,35 @@ trabajo real, y el objetivo es que el numero suba sesion a sesion.
 
 from __future__ import annotations
 
+# El bloque va DESPUES del `from __future__`: una asignacion por delante lo rompe con
+# SyntaxError, y el runner leeria el fichero como UNPARSEABLE.
+QUALITY_CHECK = {
+    # analysis y no gate: esto es una MEDIDA SIN UMBRAL, y una puerta necesita un
+    # veredicto, no una tendencia. El propio docstring dice que el numero "deberia SUBIR
+    # cada sesion" -- eso es una serie temporal, no un pasa/falla. MEDIDO 2026-08-26:
+    # 243 reglas, 41 con algo ejecutable detras (16%), 56 CRITICAL en solo prosa.
+    # No hay linea defendible que separe 16% de 15%.
+    # Ademas sale 0 siempre: llamarlo `gate` seria un verde permanente que certifica.
+    # PARA ASCENDERLO haria falta un ratchet contra el porcentaje anterior, y eso exige
+    # estado persistido que hoy no existe.
+    "tier": "analysis",
+    "needs": "files",
+    # conocimiento: lo que enumera y juzga son las REGLAS (lo que hemos escrito). El
+    # codigo solo aparece como evidencia de que una regla tiene mecanismo. Si el sujeto
+    # fuese el codigo, seria `herramientas`; aqui el codigo es el testigo, no el acusado.
+    "sobre": "conocimiento",  # datos_sap | conocimiento | herramientas
+    "what": ("censo del corpus de feedback rules: que porcentaje tiene algo EJECUTABLE "
+             "detras y que CRITICAL siguen siendo solo prosa; metrica, no veredicto"),
+    "args": "--solo-criticas   --top N   (ambos opcionales)",
+    # CAVEAT MEDIDO, y no es menor: cuenta como MECANIZADA cualquier regla cuyo id APAREZCA
+    # en el texto de un .py -- aunque ese .py no lo ejecute nadie. El 2026-08-26, 5 reglas
+    # CRITICAL (never_delete_extracted_code, never_reextract_released_transports,
+    # never_trust_old_anchors, no_correlated_subquery, extracted_code_is_brain_data) mas
+    # una HIGH (one_rule_in_one_rule_out) tenian su UNICO mecanismo en los tres ficheros
+    # que el runner sacaba como UNCLASSIFIED y por tanto nunca corria. CITAR NO ES CORRER:
+    # este porcentaje es un techo, no una garantia.
+}
+
 import argparse
 import collections
 import glob

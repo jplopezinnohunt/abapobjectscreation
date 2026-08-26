@@ -197,6 +197,14 @@ def main():
     if not a.accounts and not a.sweep:
         ap.error("da cuentas concretas o usa --sweep")
 
+    # LO APRENDIDO VA DELANTE, antes de abrir la conexion. Lo que viene detras es: derivar de
+    # las VARIANTES de RFBILA00 que version de balance se ejecuta (la memoria de los 144 M),
+    # leer FAGL_011ZC/GLT0/SKAT por RFC_READ_TABLE (area de trabajo de 512 caracteres, y un
+    # TABLE_WITHOUT_DATA que NO significa tabla vacia — este fichero lo devuelve como []) y
+    # clasificar cuentas mirando texto libre. Avisar al cerrar seria avisar tarde.
+    if _aprendido:
+        _aprendido("rfbila00", "bilavers", "balance", "rfc_read_table").avisar()
+
     print("COBERTURA FSV — %s · plan %s · sociedad %s\n" % (a.system, a.ktopl, a.bukrs))
     conn = get_connection(a.system)
     try:

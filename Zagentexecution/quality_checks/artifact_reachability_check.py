@@ -29,8 +29,29 @@ LO QUE NO HACE
 Uso:  python Zagentexecution/quality_checks/artifact_reachability_check.py [--json]
 Salida: exit 0 limpio · exit 1 si hay artefactos invisibles
 """
+# --- self-declaration, la lee Zagentexecution/quality_checks/run_all.py -------------
+# POR QUE gate: corre sin SAP y sin Gold (solo lee ficheros del repo), y da veredicto de
+#   verdad -- main() devuelve 1 cuando hay hallazgos. Encaja en cada ciclo. Lo contrario
+#   seria dejarlo UNCLASSIFIED, que es como ha estado: escrito, correcto y sin correr nunca.
+# POR QUE herramientas y NO conocimiento: lo auditado es el cableado de NUESTROS
+#   instrumentos -- lo que algorithms.json promete en `lands_in` frente a lo que existe, lo
+#   que alguien lee y lo que se alcanza desde BRAIN_INDEX. Un fallo aqui es un fallo de
+#   nuestra tuberia, no de lo que SAP dice ni de lo que hemos escrito sobre SAP.
+# VECINO, no duplicado: artifact_wiring_check mira la ENTRADA (quien dispara el artefacto);
+#   este mira la SALIDA (existe / lo lee alguien / se llega a el). Solo solapan en la rama
+#   "nadie lo lee"; la rama INVISIBLE (existe, es correcto y no se alcanza) es solo de aqui.
+QUALITY_CHECK = {
+    "tier": "gate",
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
+    "needs": "files",
+    "what": ("artefactos JSON prometidos en algorithms.json/lands_in que no existen, que "
+             "nadie lee, o que existen y no se alcanzan desde BRAIN_INDEX"),
+    "args": "--json para el informe estructurado (opcional)",
+}
+# ------------------------------------------------------------------------------------
 import json
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -64,6 +85,15 @@ def main():
     prometidos = {}
     for aid, a in algos.items():
         li = str(a.get("lands_in") or "")
+        # ⛔ UNA DECLARACION QUE DICE "PENDIENTE" NO ES UNA PROMESA (arreglado 2026-08-26).
+        #
+        # `lands_in` es prosa, y este check saca de ella cualquier cosa que acabe en .json. Con
+        # A39 eso produjo un AUSENTE falso: su declaracion dice literalmente «PENDIENTE — hoy
+        # solo IMPRIME y devuelve exit 0/1. No escribe store», y menciona el nombre que
+        # TENDRIA. Marcarlo como fichero prometido que falta convierte una declaracion HONESTA
+        # de que algo no existe en un hallazgo, y castiga justo al que lo dijo claro.
+        if re.search(r"\bPENDIENTE\b|\bn/a\b|no escribe store|no persiste", li, re.I):
+            continue
         for tok in li.replace(",", " ").replace("(", " ").replace(")", " ").split():
             if tok.endswith(".json") and "/" in tok:
                 prometidos.setdefault(os.path.basename(tok), set()).add(aid)
@@ -97,8 +127,13 @@ def main():
         # Zagentexecution/sap_data_extraction/sqlite/, learned_rules.json en process_mining/,
         # los p2p_* en process_discovery/. Buscar solo en brain_v2 marcaba AUSENTE cinco
         # ficheros que existen, y un gate que grita en falso deja de leerse.
+        # `companions` faltaba en esta lista, y por eso companion_graph.json salia AUSENTE
+        # existiendo en companions/. La lista de sitios donde buscar se ha ampliado ya TRES
+        # veces por el mismo motivo -- lo dicen los dos comentarios de arriba -- y cada vez el
+        # sintoma fue el mismo: un AUSENTE falso sobre un fichero que esta ahi.
         p = None
-        for base in ("brain_v2", "process_mining", "Zagentexecution", "scripts", "knowledge"):
+        for base in ("brain_v2", "process_mining", "Zagentexecution", "scripts", "knowledge",
+                     "companions"):
             d = os.path.join(ROOT, base)
             if not os.path.isdir(d):
                 continue

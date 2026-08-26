@@ -12,6 +12,34 @@ de que llegue a un fichero que va al banco.
 
 from __future__ import annotations
 
+# El bloque va DEBAJO del `from __future__` por obligacion del lenguaje (un __future__ import
+# tiene que ser la primera sentencia); `declaration()` de run_all.py lo localiza por nombre en
+# tree.body, no por posicion.
+#
+# POR QUE `library` Y NO `gate` -- y por que esto NO lo silencia
+#   Esto no es un quality check: no mira ni SAP ni el conocimiento, mira si cuatro funciones de
+#   structured_address_readiness.py siguen dando lo que daban (receptor_key, es_placeholder,
+#   classify, worst). Es la suite de tests de UNA herramienta.
+#   Se ejecuta igualmente en cada ciclo: la corre run_all_tests.py, que SI esta declarado `tier:
+#   gate` y descubre los test_*.py por glob. Declararlo aqui tambien como gate lo correria DOS
+#   veces por ciclo y lo contaria como dos puertas sobre lo mismo.
+#   Si algun dia se retira run_all_tests.py del tier gate, esta declaracion queda MAL y hay que
+#   subir esto a `gate`: sin ese runner, `library` si seria un agujero.
+#
+# MEDIDO 2026-08-26: exit 0, 26 aserciones OK, 0 fallos. Offline: importa el modulo por ruta
+# (l.20-23) y el modulo solo trae stdlib arriba y guarda su main con `if __name__` -- no abre
+# ninguna conexion al ejecutarse como import.
+QUALITY_CHECK = {
+    "tier": "library",
+    "needs": "files",
+    "sobre": "herramientas",
+    "what": ("NO es un check: es la suite de tests offline de structured_address_readiness.py "
+             "(26 aserciones sobre los 3 cortes que ya fallaron una vez: DORIGIN/PERNR relleno "
+             "de ceros, comodines de codigo postal tipo 99999, y region exigida solo por el rail "
+             "que la pide). La ejecuta run_all_tests.py, que si es gate."),
+    "runner": "run_all_tests.py",
+}
+
 import importlib.util
 import os
 import sys

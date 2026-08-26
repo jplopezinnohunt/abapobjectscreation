@@ -117,11 +117,36 @@ inventario del resto; el contenido se abre con su comando.
 |---|---:|---|
 | **claims** | 589 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 143 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
-| **companions** | 42 | `companions/how_unesco_works.html` los indexa todos |
+| **companions** | 42 | `companions/how_unesco_works.html` los indexa todos · el grafo entre ellos: `companions/companion_graph.json` |
 | **incidentes** | 13 | `python brain_v2/graph_queries.py incident <id>` |
-| **reglas** | 239 | `brain_v2/agent_rules/feedback_rules.json` |
-| **memorias de MÉTODO** | 147 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 64 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **reglas** | 243 | `brain_v2/agent_rules/feedback_rules.json` |
+| **memorias de MÉTODO** | 158 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
+| **algoritmos** | 79 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **skills** | 49 | `brain_v2/skills/skill_registry.json` — qué cubre cada uno y **quién NO lo lee** |
+| **grafo de HERRAMIENTAS** | 226 nodos | `brain_v2/toolgraph.json` — el brain del brain |
+| **clases de cuenta** | 8.781 | `brain_v2/account_classes.json` · `graph_queries.py account_class <cuenta>` |
+| **versiones de balance EN USO** | por sociedad | `brain_v2/fsv_versions_in_use.json` — de la VARIANTE, nunca de T011 |
+| **censo de lo EJECUTADO en FM** | 466 | `brain_v2/fm_executed_census.json` |
+| **foro de mineros** | 307 hallazgos | `process_mining/mining_findings.json` · quién pasó por él: `process_mining/colaboracion_state.json` |
+| **resolutor de método de extracción** | — | `brain_v2/method_registry.json` |
+
+## 🧭 ANTES DE CONSTRUIR O ARREGLAR NADA — pregunta qué hay ya
+
+```
+python brain_v2/graph_queries.py tool para "<la tarea en tus palabras>"
+```
+
+Contesta **qué SKILL leer PRIMERO**, qué algoritmo ya existe, qué agente lo hace, qué puerta lo
+vigila, y **qué sabemos ya** del tema (claims, incidentes, dominios). Clasifica la forma de la
+tarea: `REPETIDA` (hay método: síguelo, no lo re-derives) · `COMPARAR_ESTADO` (el skill da el
+método, los instrumentos que leen la config viva deciden) · `DESCUBRIR` (es minería).
+
+> ⛔ **El fallo más caro de este proyecto no es no saber: es no mirar lo que ya hay.** Medido
+> 2026-08-26: 49 skills con cientos de KB y **39 sin ni un lector**; `LEE` 34 frente a
+> `DEBERIA_LEER` 283. `config_transport_prerelease_check` se escribió y se **arregló dos veces**
+> sin abrir `sap_transport_intelligence`, que documenta que `OBJFUNC=M` borra la tabla ENTERA en
+> destino. El flujo completo de un caso está en `brain_v2/methods/incident_flow.json`.
+> Lo pendiente, de las seis fuentes a la vez: `python brain_v2/methods/pending_inventory.py`.
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un

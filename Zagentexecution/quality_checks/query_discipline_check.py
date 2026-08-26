@@ -31,6 +31,35 @@ sin verlos.
 
 from __future__ import annotations
 
+# El bloque va DESPUES del `from __future__`: una asignacion por delante lo rompe con
+# SyntaxError, y el runner leeria el fichero como UNPARSEABLE.
+QUALITY_CHECK = {
+    # analysis y NO gate, por dos razones distintas y las dos suficientes:
+    #
+    #   1. Hoy sale 0 pase lo que pase. Declararlo `gate` seria fabricar un verde
+    #      permanente -- peor que dejarlo sin declarar, porque ademas certifica.
+    #      (El runner tampoco lo cazaria como UNGATED: su can_gate() ve
+    #      `sys.exit(main())` y da por hecho que puede fallar.)
+    #   2. Aunque tuviera codigo de salida, no deberia ser puerta TAL COMO ESTA: admite
+    #      falsos positivos legitimos y no tiene lista de excepciones. MEDIDO 2026-08-26:
+    #      10 hallazgos, los 10 en Zagentexecution/mcp-backend-server-python/, el servidor
+    #      que nunca llego a conectarse. Como gate, el ciclo queda rojo para siempre por
+    #      codigo muerto y sin forma de silenciarlo: exactamente el fallo que este mismo
+    #      fichero describe en sus lineas 54-56 (un check con ruido se ignora entero).
+    #
+    # PARA ASCENDERLO A GATE hace falta un ratchet: linea base de hallazgos conocidos y
+    # salir 1 solo ante uno NUEVO. Eso es trabajo real, no una etiqueta.
+    "tier": "analysis",
+    "needs": "files",
+    # herramientas: el sujeto examinado son NUESTROS .py (Zagentexecution/, scripts/,
+    # brain_v2/). No mira datos de SAP ni el conocimiento escrito, mira nuestro codigo.
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
+    "what": ("lint sobre nuestros propios .py: subconsulta correlacionada sobre la Gold DB, "
+             "lectura de E071/E071K sin filtrar transportes liberados y recuentos de filas "
+             "cableados; produce un informe, no un veredicto"),
+    "args": "--regla {no_correlated|transports|anchors}  --top N   (ambos opcionales)",
+}
+
 import argparse
 import glob
 import io

@@ -11,10 +11,16 @@ responde, que hoy no lo hacia.
 
 Que hace
 --------
-Guarda una linea base (cuantos ficheros y cuantos bytes por corpus) y avisa si
-baja. No bloquea nunca: informa, porque una bajada legitima existe (consolidar
-duplicados) y bloquear el cierre por eso solo ensena a ignorar el check. Lo que
-NO puede pasar es que encoja sin que nadie se entere.
+Guarda una linea base (cuantos ficheros y cuantos bytes por corpus) y FALLA si
+baja. Una bajada legitima existe (consolidar duplicados), asi que la salida no
+es "prohibido" sino "decide": --sellar acepta el estado actual y limpia el gate.
+Lo que NO puede pasar es que encoja sin que nadie se entere.
+
+    Nota 2026-08-26: hasta hoy devolvia 0 SIEMPRE y ademas no declaraba
+    QUALITY_CHECK, asi que el runner nunca lo ejecuto -- vigilaba sobre el papel.
+    Declararlo `gate` dejando el 0 fijo habria sido peor que no declararlo: un
+    verde permanente que ademas CERTIFICA. El veredicto vive ahora en el codigo
+    de salida y la valvula de escape sigue siendo --sellar.
 
     python Zagentexecution/quality_checks/extracted_corpus_integrity_check.py
     python Zagentexecution/quality_checks/extracted_corpus_integrity_check.py --sellar
@@ -29,6 +35,31 @@ sola cuando el corpus CRECE. Para aceptar una bajada hay que sellarla a mano con
 #     -> el momento es cuando se toca el corpus extraido: este check lo vigila
 
 from __future__ import annotations
+
+# El bloque va DESPUES del `from __future__`, no pegado al docstring: un __future__
+# solo admite docstring y comentarios por delante, y una asignacion antes lo rompe
+# con SyntaxError -- que el runner leeria como UNPARSEABLE.
+QUALITY_CHECK = {
+    # gate y no analysis: es offline, sin argumentos y tarda segundos, pero sobre todo
+    # su valor ENTERO depende de correr en CADA ciclo. La linea base solo avanza cuando
+    # el check corre; bajo demanda ("analysis") no correria nunca, la base se pudriria y
+    # quedaria un cable trampa desarmado que encima parece puesto.
+    "tier": "gate",
+    "needs": "files",
+    # `sobre` = conocimiento, no datos_sap: este check NO lee SAP ni lo compara con nada.
+    # Vigila NUESTRO almacen. La regla que mecaniza lo dice literal --
+    # feedback_extracted_code_is_brain_data: el codigo extraido ES dato del brain.
+    "sobre": "conocimiento",  # datos_sap | conocimiento | herramientas
+    "what": ("el corpus extraido de SAP (extracted_code / extracted_sap / extracted_sap_p01) "
+             "no puede encoger sin que nadie se entere: cuenta ficheros y bytes contra una "
+             "linea base y sale 1 si baja y no se sella"),
+    "args": "--sellar (opcional: acepta una bajada deliberada como nueva linea base)",
+    # ALCANCE HONESTO, para que nadie lea de mas en el verde:
+    #   * mide TAMANO (ficheros + bytes), no contenido. Un fichero sustituido por otro de
+    #     los mismos bytes pasa limpio: esto es un cable trampa de volumen, no un hash.
+    #   * la linea base sube SOLA al crecer, asi que un crecimiento neto puede tapar una
+    #     perdida parcial ocurrida en el mismo intervalo.
+}
 
 import argparse
 import io
@@ -106,7 +137,10 @@ def main():
         print("  Si no lo es, recuperala del ultimo commit ANTES de seguir:")
         print("     git log --diff-filter=D --name-only -- extracted_code/ | head")
         if not a.sellar:
-            return 0          # informa, no bloquea
+            # Sale 1 y, a proposito, NO actualiza la linea base: el gate sigue rojo
+            # hasta que alguien recupere los ficheros o selle la bajada. Si guardase
+            # aqui, la perdida quedaria absorbida y el siguiente ciclo saldria verde.
+            return 1
 
     guardar = a.sellar or not encogio
     if guardar:

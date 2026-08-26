@@ -371,10 +371,23 @@ def main():
     # every fund's WBS pool against FM). It used to "take 5 seconds" only because it crashed
     # on a renamed table and never did the work. The default 300s would time it out, and a
     # TIMEOUT reported every rebuild is how a gate becomes furniture.
+    # ⛔ EL ORDEN IMPORTA Y ESTABA AL REVES (arreglado 2026-08-26).
+    #
+    # Las puertas corrian ANTES de add_knowledge_links.py, y una de ellas --
+    # brain_state_enrichment_check -- comprueba justo lo que ese paso puebla:
+    # objects[].knowledge_docs. build_brain_state deja SIEMPRE _pipeline.status='INCOMPLETE' y
+    # add_knowledge_links es quien lo pasa a COMPLETE. O sea que el runner medía en el UNICO
+    # punto del ciclo en que el campo esta vacio A PROPOSITO, y esa puerta no podia salir verde
+    # NUNCA dentro de un rebuild -- por construccion, no por un defecto del brain.
+    #
+    # Una puerta que siempre esta roja deja de leerse, y entonces el dia que se rompe de verdad
+    # no avisa. El arreglo no es relajar el check (eso es ponerlo verde quitandole lo que
+    # comprueba): es medir DESPUES de que el pipeline se declare completo.
+    run(["python", "brain_v2/add_knowledge_links.py"], "Step 4/7: Link knowledge docs")
     run(["python", "Zagentexecution/quality_checks/run_all.py", "--tier", "gate",
          "--timeout", "900"],
-        "Step 3e: Recurring quality checks (gate tier)", fatal=False)
-    run(["python", "brain_v2/add_knowledge_links.py"], "Step 4/7: Link knowledge docs")
+        "Step 3e: Recurring quality checks (gate tier) -- DESPUES del enriquecimiento",
+        fatal=False)
 
     # Regenerate dynamic companions
     regenerate_dynamic_companions()

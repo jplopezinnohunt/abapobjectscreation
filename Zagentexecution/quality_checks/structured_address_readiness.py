@@ -63,8 +63,38 @@ USO
 
 Solo lectura. Sin ROWSKIPS (P01 lo rechaza).
 """
-
 from __future__ import annotations
+
+# El bloque va aqui, y no pegado al docstring, por una regla del LENGUAJE y no de estilo:
+# `from __future__` tiene que ser la primera sentencia del modulo o el fichero no compila
+# (probado: SyntaxError "from __future__ imports must occur at the beginning of the file").
+# `run_all.declaration()` lo lee por AST recorriendo todo el cuerpo del modulo, asi que la
+# posicion no le afecta.
+QUALITY_CHECK = {
+    "tier": "live",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
+    "needs": "rfc_p01",    # gold_db | rfc_p01 | files
+    "what": ("receptores cuyo dato no soporta la direccion estructurada obligatoria del "
+             "14-11-2026, con los tres cortes aplicados (DORIGIN = quien cobra, "
+             "T042Z = fichero o cheque, rail = contra que regla se mide)"),
+    "args": ("[--sys P01] [--since YYYYMMDD] [--vivos-desde YYYYMMDD] "
+             "[--origin FI-AP,HR-PY,FI-AR,TR-CM-BT] [--pais-sociedad FR] "
+             "[--rail <FORMATO>] [--incluir-no-fichero] [--top N] [--csv <f>]"),
+    # POR QUE `live` Y NO `gate`: no puede correr sin SAP. `build()` (l.238) abre una
+    # sesion RFC (l.239) y lee REGUH, REGUT, T042Z y, para proveedores, LFA1 + ADRC.
+    # Poblacion entera desde --since, sin ROWSKIPS.
+    #
+    # SI TIENE VEREDICTO, y el exit no significa "roto": main() devuelve 1 cuando hay
+    # receptores VIVOS, EN ALCANCE y con defecto accionable (l.426-427). Es una cola de
+    # trabajo con fecha limite, no un fallo del sistema. Leer un exit 1 de aqui como
+    # "check roto" es el error contrario al que este script existe para evitar.
+    #
+    # LO QUE SI SE PUEDE VERIFICAR SIN SAP son sus funciones puras, y esta hecho:
+    # test_structured_address_readiness.py cubre receptor_key, es_placeholder, classify
+    # y worst con los errores reales del 2026-08-19 (26 OK / 0 fallos, corrido 2026-08-26).
+    # Ese test es la red de seguridad de este fichero; si se toca classify() o el
+    # detector de codigos postales comodin, correrlo antes de creer nada.
+}
 
 import argparse
 import collections

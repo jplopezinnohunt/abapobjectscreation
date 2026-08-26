@@ -68,6 +68,49 @@ DEMASIADO_COMUNES = {
 }
 SOLAPE_MINIMO = 2          # una tabla en comun puede ser casualidad; dos ya es el mismo tema
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------------------
+# Este gate existe porque «una promesa de mirar no es un control». Correrlo sin leer lo que el
+# proyecto ya midio sobre gates seria exactamente el mismo fallo, un piso mas arriba.
+#
+# LA RUTA SE BUSCA SUBIENDO hasta el directorio que CONTIENE process_mining; no se cuenta con
+# dirname(). Contarla mal es como quedo ciego el bloque de fsv_coverage_check: dos dirname
+# desde quality_checks/ apuntan a Zagentexecution/process_mining, que NO existe, el import
+# fallaba en silencio dentro de un `except Exception` y la puerta lo daba por bueno porque
+# greppeaba la CADENA, no el efecto.
+import os as _os, sys as _sys                                             # noqa: E401
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while _d != _os.path.dirname(_d):
+    if _os.path.isdir(_os.path.join(_d, "process_mining")):
+        _sys.path.insert(0, _os.path.join(_d, "process_mining"))
+        break
+    _d = _os.path.dirname(_d)
+try:
+    # ImportError y no Exception: cubre "metodo.py no esta" sin tragarse un fallo REAL dentro
+    # de metodo.py. Y AVISA: un gate que corre sin memoria tiene que decirlo, no callarlo.
+    from metodo import lo_que_ya_aprendimos as _aprendido                 # noqa: E402
+except ImportError as _e:
+    print("  AVISO: corriendo SIN memoria de metodo (%s)" % _e)
+    _aprendido = None
+
+# Temas elegidos PROBANDOLOS (`python process_mining/metodo.py <tema>`), no por sonar bien.
+# Devuelven 6 memorias y las cuatro que importan hablan de ESTE instrumento:
+#   decoration  A18: «un check que reporta CANDIDATOS y no puede registrar "revisado,
+#               excluido" repetira el mismo hallazgo para siempre y se dejara de leer;
+#               entonces PARECE un control siendo decoracion, que es peor que no tenerlo».
+#               Es el failure_mode declarado de A53 (GRITAR EN FALSO) medido por otro.
+#   exclusion   misma memoria por su implicacion: da a cada check una lista de exclusion CON
+#               MOTIVO y prueba las DOS cosas -- que calla sobre lo revisado y que sigue
+#               disparando en un caso nuevo. La segunda prueba es la que demuestra que no
+#               apagaste el check. Aqui la lista es DEMASIADO_COMUNES, ya con motivo escrito.
+#   puerta      A37: «una puerta que comprueba que la llamada esta ESCRITA no comprueba que
+#               LLEGUE» -- cinco mineros tenian el import y recibian None. Este bloque es
+#               justo esa clase de codigo, y por eso se mide el efecto, no la cadena.
+#   patron      A34 + A4: clasificar por PATRON sobre texto libre de SAP produce cifras
+#               plausibles, seguras y falsas; un patron ingenioso captura de mas (^AB[AZ] se
+#               traga ABAP4_CALL_TRANSACTION). Es por lo que aqui se cruza por nombres SAP
+#               validados contra el brain y el Gold, nunca por forma.
+TEMAS_APRENDIDOS = ("decoration", "exclusion", "puerta", "patron")
+
 
 def _nombres_sap_conocidos():
     """La lista de nombres SAP REALES — del brain y del Gold, no de un patron inventado.
@@ -121,6 +164,14 @@ def tablas(texto):
 
 
 def main():
+    # ANTES de medir nada. Un aviso que llega despues no sirve: para entonces el veredicto ya
+    # esta escrito. Con --json va a STDERR, no se calla: este gate publica JSON en stdout y
+    # ensuciarlo rompe a quien lo parsee -- pero silenciar la memoria para no ensuciar seria
+    # cambiar una salida limpia por un minero ciego, que es el defecto que este check persigue.
+    if _aprendido:
+        _hacia = (lambda s: print(s, file=sys.stderr)) if "--json" in sys.argv else None
+        _aprendido(*TEMAS_APRENDIDOS).avisar(salida=_hacia, minero="A53_skill_binding_gate")
+        print("", file=sys.stderr if "--json" in sys.argv else sys.stdout)
     if not os.path.isdir(SKILLS):
         print("no hay directorio de skills")
         return 0

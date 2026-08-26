@@ -25,6 +25,7 @@ QUE COMPRUEBA
     script          lo referencia rebuild_all.py, un hook, otro script, o companions.json
     agente          se le nombra en algun sitio (CLAUDE.md, un doc, otro agente, un skill)
     artefacto JSON  algo lo LEE, no solo lo escribe
+    exento          si se declaro TERMINAL, que la promocion que lo justifica siga en pie
 
 QUE NO PUEDE DECIR
     Que el artefacto sirva para algo. Solo que hay un camino que lo dispara. Un script
@@ -65,6 +66,57 @@ ENTRYPOINTS = {
     "claims_health.py", "run_all.py", "run_all_tests.py", "session_preflight.py",
     "build_brain_index.py", "curate.py", "verify_generated.py", "backup_golden.py",
 }
+
+# Este mismo fichero, excluido a proposito del barrido de JSON (ver seccion 4).
+SELF = "Zagentexecution/quality_checks/artifact_wiring_check.py"
+
+# --- artefactos TERMINALES: nadie los lee, y esa es la forma CORRECTA ---------------
+#
+# Un exento NO es un silencio. Cada entrada dice por que nadie debe leerlo y DONDE se
+# promovio su contenido, y el check COMPRUEBA esa promocion: si el destino desaparece o
+# deja de nombrar la fuente, la exencion CADUCA y el fichero vuelve a salir como huerfano.
+# Por eso esta lista no sirve para callar un hallazgo -- solo para declarar un final, y
+# anadir una entrada anade una condicion que puede fallar, no una que deja de mirarse.
+#
+# El criterio para entrar: es la SALIDA CRUDA de una medicion de una sola vez cuyo
+# resultado ya vive donde se consulta. Encadenarlo a un ciclo seria volver a derivar lo
+# que ya esta promovido -- o, peor, hacer que un rebuild offline dependa de una lectura
+# en vivo de P01.
+TERMINAL_JSON = {
+    # INC-000005638 esta en ROOT_CAUSE_CONFIRMED. Las cifras de este JSON (profundidad del
+    # bucket TC, veredicto por PO) estan transcritas en la seccion 14 del doc del incidente,
+    # que ademas nombra el script que las produjo. Releerlo en un ciclo seria re-derivar una
+    # investigacion cerrada en vez de usar el conocimiento ya promovido.
+    "inc5638_per_po_engine_analysis.json": (
+        "investigacion CERRADA: sus cifras estan en la seccion 14 del doc del incidente",
+        [("knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md",
+          "inc5638_per_po_engine_analysis.py"),
+         ("brain_v2/incidents/incidents.json", "INC-000005638")],
+    ),
+    # probe_footprint.py hace una lectura ACOTADA y EN VIVO de P01 (RFC). Su salida es un
+    # recibo: los volumenes se promovieron a unesco_system_profile.json, que declara la
+    # procedencia y la fecha de la sonda, y compose_profile.py nombra la sonda como la
+    # derivacion de los componentes footprint y org_structure. El JSON crudo ni siquiera se
+    # conserva. No puede encadenarse: el rebuild es offline y no debe depender de RFC a P01.
+    "p01_volume_probe.json": (
+        "recibo de una sonda EN VIVO de P01: los volumenes estan en unesco_system_profile",
+        [("brain_v2/system_profile/unesco_system_profile.json", "bounded probes"),
+         ("brain_v2/system_profile/compose_profile.py", "probes/probe_footprint.py")],
+    ),
+}
+
+
+def promoted(rel, needle):
+    """El destino de la promocion existe y sigue nombrando la fuente?"""
+    p = os.path.join(ROOT, rel)
+    if not os.path.isfile(p):
+        return False, "no existe"
+    try:
+        if needle in io.open(p, encoding="utf-8", errors="replace").read():
+            return True, ""
+        return False, "ya no nombra '%s'" % needle
+    except OSError:
+        return False, "no se puede leer"
 
 
 def corpus():
@@ -124,9 +176,15 @@ def main():
                             "nadie sabra que existe"))
 
     # --- 4. JSON que se escribe y nadie lee
+    #
+    # Este fichero se EXCLUYE del barrido, escribiendo y leyendo. Sin la exclusion, nombrar
+    # un JSON en TERMINAL_JSON lo convertiria en "otro escritor" (len(writers)>1) o en un
+    # "lector", y el check se aprobaria a si mismo por el mero hecho de mencionarlo. Un check
+    # que se cierra citandose no comprueba nada.
+    exempt = []
     written = {}
     for f, s in txt.items():
-        if not f.endswith(".py"):
+        if not f.endswith(".py") or f == SELF:
             continue
         for m in re.finditer(r'["\']([\w/\\.-]+\.json)["\']', s):
             j = os.path.basename(m.group(1))
@@ -134,7 +192,8 @@ def main():
                 continue
             written.setdefault(j, set()).add(f)
     for j, writers in sorted(written.items()):
-        readers = [f for f, s in txt.items() if j in s and f not in writers]
+        readers = [f for f, s in txt.items()
+                   if j in s and f not in writers and f != SELF]
         # Un fichero que su PROPIO escritor relee en la vuelta siguiente es ESTADO, no un
         # huerfano: asi funcionan las lineas base y las instantaneas de deriva. Contarlo como
         # muerto hace que el check llore lobo 18 veces y deje de leerse -- que es el modo de
@@ -143,16 +202,47 @@ def main():
                         for w in writers)
         if readers or len(writers) > 1 or self_read:
             ok += 1
-        else:
-            w = sorted(writers)[0]
-            orphans.append(("JSON que nadie lee", j,
-                            "solo %s lo escribe y ni siquiera el lo relee" % w))
+            continue
+        if j in TERMINAL_JSON:
+            reason, proofs = TERMINAL_JSON[j]
+            roto = [(p, why) for p, n in proofs
+                    for vale, why in [promoted(p, n)] if not vale]
+            if roto:
+                orphans.append(("exento CADUCADO", j,
+                                "se declaro terminal porque su contenido estaba promovido, "
+                                "y la promocion ya no esta: "
+                                + "; ".join("%s %s" % (p, why) for p, why in roto)))
+            else:
+                exempt.append((j, reason))
+                ok += 1
+            continue
+        w = sorted(writers)[0]
+        orphans.append(("JSON que nadie lee", j,
+                        "solo %s lo escribe y ni siquiera el lo relee" % w))
+
+    # --- 5. exenciones que ya no cubren nada: si nadie produce el fichero, la entrada de
+    #        TERMINAL_JSON sobra. Una lista de exentos que no se poda acaba tapando cosas
+    #        que nadie decidio tapar.
+    for j in sorted(TERMINAL_JSON):
+        if j not in written:
+            orphans.append(("exento SIN PRODUCTOR", j,
+                            "declarado terminal y ya no lo escribe ningun script: "
+                            "retira la entrada de TERMINAL_JSON"))
 
     print("=" * 78)
     print("CABLEADO DE ARTEFACTOS -- lo que construimos, lo invoca alguien?")
     print("=" * 78)
     print("\n  con quien los dispare : %d" % ok)
+    print("  terminales declarados : %d" % len(exempt))
     print("  HUERFANOS             : %d\n" % len(orphans))
+
+    # Los exentos se IMPRIMEN siempre. Un exento que no se ve es un huerfano con permiso.
+    if exempt:
+        print("  TERMINALES (%d) -- nadie los lee y asi debe ser; promocion verificada:"
+              % len(exempt))
+        for j, reason in exempt:
+            print("     %-46s %s" % (j, reason))
+        print()
 
     if orphans:
         by = {}

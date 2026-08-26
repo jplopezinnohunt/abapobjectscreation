@@ -39,6 +39,33 @@ Sale 1 si hay registros que romperian el rebuild (les falta una clave obligatori
 
 from __future__ import annotations
 
+# --- self-declaration, la lee Zagentexecution/quality_checks/run_all.py -------------
+# Va DESPUES del `from __future__` a proposito: un future statement solo admite delante el
+# docstring, comentarios y lineas en blanco -- una asignacion antes es SyntaxError.
+# run_all.declaration() recorre todo el cuerpo del modulo, asi que la posicion le da igual.
+#
+# POR QUE gate: lee tres ficheros del repo, nada mas (sin RFC, sin Gold), y main() devuelve
+#   1 cuando hay registros rotos. El fallo que lo origino tumbo el rebuild en el paso 2 con
+#   KeyError: 'claim' y dejo 15 claims escritos pero fuera del estado agregado -- eso no se
+#   descubre "al proximo rebuild", que puede ser dias despues.
+# POR QUE gate y NO analysis, aun sabiendo que hoy sale ROJO: analysis es "produce informe,
+#   no veredicto", y este si lo da. Bajarlo de tier para que el ciclo se vea verde seria
+#   certificar un store divergente. El propio docstring ya asume que el aviso caiga sobre
+#   registros VIEJOS: "obliga a migrar, no a divergir". Medido 2026-08-26: 93 registros
+#   desviados (76 claims sin status/resolved_session, 1 incidente sin process, 16 reglas sin
+#   created_session). Es un backlog real de migracion, no un falso positivo.
+# POR QUE conocimiento: los tres stores -- claims, incidents, feedback_rules -- son lo que
+#   hemos escrito nosotros. No toca SAP ni mide un instrumento.
+QUALITY_CHECK = {
+    "tier": "gate",
+    "sobre": "conocimiento",  # datos_sap | conocimiento | herramientas
+    "needs": "files",
+    "what": ("registros de claims/incidents/rules que se desvian del esquema mayoritario de "
+             "su store: la clave que falta es la que rompe el rebuild"),
+    "args": "--store <claims|incidents|rules> para acotar a un store (opcional)",
+}
+# ------------------------------------------------------------------------------------
+
 import argparse
 import collections
 import io
