@@ -5,6 +5,10 @@
 **Gold DB tables**: `bcm_signatory_responsibility`, `bcm_signatory_assignment`
 **Verified against**: OOCU_RESP screenshots provided by user (all 7 responsibility groups of rule 90000004 match structurally)
 
+> **Mechanism (READ FIRST when touching amount bands):** the three levels that decide who signs —
+> grouping rule → node selection (IT1218) → release procedure — are in
+> [bcm_amount_band_mechanism.md](bcm_amount_band_mechanism.md). It also states **what each rule is FOR**,
+> which is what a change proposal must name (claim 608).
 > **Related (signatory-change hub):** solution & routine → [bcm_signatory_change_solution_design.md](bcm_signatory_change_solution_design.md) · visual companion → `companions/bcm_signatory_companion.html` · skill → `sap_payment_bcm_agent` · domain index → [README.md](README.md) · incidents → [INC-000006313](../../incidents/INC-000006313_uis_bcm_add_voffal.md) (UIS) / [INC-000011781](../../incidents/INC-000011781_ubo_bcm_add_ritter.md) (UBO). **Node selection** lives in IT1218 — see the section below.
 
 ---
@@ -44,12 +48,21 @@ OOCU_RESP is the BCM/Treasury maintenance shell over **PFAC** (workflow rule wit
 | **90000004** | `BNK_COM_01_01_03` | **COMMIT** | Which users must click the final "commit" in BNK_APP before the payment file is released to the bank |
 | **90000005** | `BNK_INI_01_01_04` | **INITIATE / VALIDATE** | Which users must approve the BCM batch first (1 or 2 validators depending on amount/entity) |
 
-Both are consumed by workflow `90000003` (BNK_BATCH_HEADER approval).
+Both are the TWO STEPS of one dual control over the SAME payment file, AFTER F110 -- 90000005 decides
+who APPROVES the batch, 90000004 who gives the FINAL SIGNATURE that releases the file to the bank.
+They are consumed by the BCM release workflows `WS50100024` -> `WS50100021` (`BNK_COM`) and `31000004`
+(`BNK_INI`), wired in `TBCA_RTW_LINKAGE`, both under release procedure `01` = Principle of Dual Control.
+> **CORRECTED 2026-08-26 (contradiction C1 propagated, claim 608).** This line previously said
+> *"Both are consumed by workflow 90000003 (BNK_BATCH_HEADER approval)"*. **`WS90000003` is a DIFFERENT
+> gate**: FI Release for Payment, at DOCUMENT level and BEFORE F110 -- it authorizes the INVOICE, not the
+> payment file, and it is where UNESCO's custom code lives. Full mechanism:
+> [bcm_amount_band_mechanism.md](bcm_amount_band_mechanism.md).
 
 ### Flow
 1. `F110` runs → payment groups.
 2. `FBPM1` (or payment medium run) creates BCM batches → rows in `BNK_BATCH_HEADER` with status **New**.
-3. Submit → workflow 90000003 starts.
+3. Submit → the BCM release workflow starts (`WS50100024` → `31000004` for BNK_INI, `WS50100021` for
+   BNK_COM). **Not `WS90000003`** — that one is the invoice-level FI Release for Payment, before F110.
 4. Workflow resolves rule **90000005** with parameters `entity + amount tier` → returns the list of eligible validators (all `P` rows inside the matching `RY` group).
 5. Validators open **BNK_APP** → "Validate batch" (enter SAP user + password = **System Signature**, non-PKI). Authorization object **F_STAT_USR** enforces the 4-eye principle — a validator cannot be the same user who created the F110 run.
 6. Once the required number of validations is reached (tier-dependent), workflow resolves rule **90000004** → returns the committer(s).
@@ -249,7 +262,7 @@ python Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py \
 **Affects**: UIS rules 90000004 (RY 50010054) and 90000005 (RY 50036801).
 **Added**: 2025-10-04 (ENDDA=99991231).
 **Real PERNR**: 10067156 (user `S_OESTTVEIT`, email `S.OESTTVEIT@UNESCO.ORG`).
-**Symptoms**: the ghost PERNR has a single flat PA0002 row with name "Svein OESTTVEIT" but no `PA0105/0001` SAP user. Workflow 90000003 resolves the rule, returns PERNR 10567156, looks up logon → empty → Svein silently cannot sign UIS payments in BNK_APP.
+**Symptoms**: the ghost PERNR has a single flat PA0002 row with name "Svein OESTTVEIT" but no `PA0105/0001` SAP user. The BCM release workflow (`31000004` / `WS50100021`, **not** `WS90000003`) resolves the rule, returns PERNR 10567156, looks up logon → empty → Svein silently cannot sign UIS payments in BNK_APP.
 **Impact**: Svein appears on Citibank Canada carton (as 10067156) but is functionally disabled in SAP. Production payment routing is affected whenever Svein would have been the deciding signatory.
 **Fix path (for DBS, whenever TRS authorizes)**: delimit HRP1001 rows with SOBID=10567156 in both groups (ENDDA=today); insert fresh rows with SOBID=10067156, BEGDA=today, ENDDA=99991231. Do NOT touch Svein's historical 10567156 row — preserve as audit trail.
 **Logged in**: `brain_v2/agi/data_quality_issues.json` as `dq_ghost_pernr_bcm_oesttveit`.
