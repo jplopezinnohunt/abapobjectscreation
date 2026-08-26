@@ -98,7 +98,7 @@ corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta 
 - **rfc** — 12,589,665 ejec · tecnico 52.5% · negocio 34.7% · sin clasificar **2.5%**
 - **TECNICO es una respuesta, no un hueco** (el despachador y el planificador son fontaneria).
   El hueco real es SIN CLASIFICAR: 315,305 de 44,181,831.
-- **Situar no es explicar:** solo el **72.1%** de las ejecuciones de negocio llega a grado 3
+- **Situar no es explicar:** solo el **75.6%** de las ejecuciones de negocio llega a grado 3
   (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
 - Movimiento: **no se movio** desde la ultima corrida — eso ES el hallazgo · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
 - **354 objetos por explorar** (36 custom) —
@@ -115,11 +115,11 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 610 | `python brain_v2/graph_queries.py search <termino>` |
+| **claims** | 612 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 144 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
-| **companions** | 42 | `companions/how_unesco_works.html` los indexa todos |
+| **companions** | 43 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 14 | `python brain_v2/graph_queries.py incident <id>` |
-| **reglas** | 243 | `brain_v2/agent_rules/feedback_rules.json` |
+| **reglas** | 245 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 158 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
 | **algoritmos** | 84 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
@@ -403,7 +403,7 @@ lo deja — solo que nadie lo publicaba.
   - drill: `python brain_v2/graph_queries.py incident INC-000006906`
 - `INC-000011781` - EXECUTED_PARTIAL_OPEN_ITEMS - Add Renata Da Silva Freire RITTER to UBO BCM signatory panel (+ Martin/Ba/De Sousa delimitation,
   - drill: `python brain_v2/graph_queries.py incident INC-000011781`
-- `INC-000016338` - EXECUTED_PARTIAL_OPEN_ITEMS - Add Bettina REISS to UIL BCM signatory panel (+ USD 10K limit NOT representable, Yli-Hietanen ex
+- `INC-000016338` - EXECUTED_VERIFIED_ROLE_PENDING - Add Bettina REISS to UIL BCM signatory panel + build the <=10K amount tier on BOTH rules (verifi
   - drill: `python brain_v2/graph_queries.py incident INC-000016338`
 
 _4 more open, drill by id:_ `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
@@ -430,14 +430,14 @@ _4 more open, drill by id:_ `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE
 > `python brain_v2/bank_model_explorer.py` (paso 2i del rebuild). El CRITERIO lo pone el
 > agente `bank-process-discovery`; el modelo vive en
 > `knowledge/domains/Treasury/house_bank_operating_roles.md`.
-- `NEW` - El 43% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
+- `NEW` - El 51% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
 - `NEW` - 16 cuenta(s) con extracto y CERO pagos: no pagan, COBRAN
 - `BLIND` - El extracto de FEBKO es PARCIAL: faltan 5 sociedad(es)
 - `RISK` - 10 banco(s) casa sin actividad desde 2024 o antes
 - `NEW` - 35 banco(s) ejecutan UN SOLO metodo de pago
-- `RISK` - 4 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
+- `RISK` - 6 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
 
-## WHAT WE KNOW DEEPLY - 48 companions; the 10 densest, and what each covers
+## WHAT WE KNOW DEEPLY - 49 companions; the 10 densest, and what each covers
 > Do NOT re-derive these. Search any term across every store AND the companions: `python brain_v2/graph_queries.py search <term>`.
 
 - `how_unesco_works.html` - Como trabaja UNESCO — vista general - basis, busarea, business area, carry forward, conformance, connectivity, derivation, donor, epi-use
@@ -456,7 +456,7 @@ _4 more open, drill by id:_ `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4538 objects · 243 rules · 610 claims · 17 incidents · 9 closed researches)
+## Brain at a glance (4562 objects · 245 rules · 612 claims · 17 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -491,7 +491,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 243 total)
+## Rules to load first (behavioral DNA — 245 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).

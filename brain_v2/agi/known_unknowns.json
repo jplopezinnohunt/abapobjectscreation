@@ -856,6 +856,17 @@
         "REGUT",
         "PAYR"
       ]
+    },
+    {
+      "id": "KU-2026-104-GOLDEN-SIZE",
+      "opened_at": "2026-08-26",
+      "session": 104,
+      "severity": "LOW",
+      "domain": "Infrastructure",
+      "question": "Cual es el tamano REAL del Golden DB hoy, y de donde sale cada cifra? Circulan TRES: 15,2 GB (MEMORY.md, medido 2026-08-17), 20,74 GB (hook de integridad, medido en cada cierre) y 22,27 GB (salida de scripts/backup_golden.py del 2026-08-26, que declara ademas 379 tablas y 104.957.261 filas).",
+      "why": "Tres instrumentos dan tres numeros y ninguno explica que mide. Importa porque el tamano es el argumento para decidir si un backup se puede correr en linea, y porque una cifra desactualizada en MEMORY.md se cita como si fuera actual. El 22,27 no se puede localizar grepeando el repo: es salida de ejecucion, no un fichero.",
+      "how_to_resolve": "Comparar en la misma corrida: tamano del fichero en disco, tamano tras VACUUM INTO, y lo que declara golden_manifest.json. Luego actualizar MEMORY.md, que es donde la cifra se cita de memoria.",
+      "status": "OPEN"
     }
   ]
 }

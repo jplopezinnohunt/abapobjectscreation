@@ -28780,7 +28780,7 @@
   },
   {
     "id": 610,
-    "claim": "AL PARTIR UN PANEL DE FIRMANTES POR IMPORTE HAY DOS ERRORES QUE INVIERTEN O PARAN EL CONTROL, LOS DOS MEDIDOS EN VIVO EN UIL EL 2026-08-26 (INC-000016338). (A) QUIEN NO TIENE TOPE TIENE QUE ESTAR EN LOS DOS NODOS. Si se le deja solo en el nodo alto NO PUEDE FIRMAR UN PAGO PEQUENO. El patron correcto se ve en UBO: el panel de la banda alta es un SUBCONJUNTO del de la baja y quien sobra en la baja es justamente el limitado (E_AMARAL). Corolario medido en UIL: subir el suelo de 50037530 a 10.000 SIN mover a BASOGLU 10111198 al nodo bajo la dejaria autorizada SOLO POR ENCIMA de 10.000, exactamente lo contrario de lo que dice su carta TRS. (B) UN NODO CON 0 O 1 PERSONAS NO ES UN PANEL, ES UNA PARADA. Con rel_proc=01 (doble control) un nodo VACIO no tiene a quien enrutar el work item y uno de UNA persona no puede satisfacer el doble control; y estar en el nodo no habilita a firmar sin el rol YS:FI:M:BCM_MON_APP______:<ENTIDAD>. ESTADO MEDIDO EN UIL tras crear los nodos de tramo: 50039526 (INI, 0->10.000) con CERO miembros y 50039525 (COM, 0->10.000) con UNA persona (REISS 10049633) SIN el rol -> los pagos de UIL de hasta 10.000 no podian completar NINGUNO de los dos pasos. Ademas los nodos viejos siguieron arrancando en 0.00 (50037530 0->9.999.999.999, 50037531 0->50.000.000), asi que el tramo 0-10.000 tenia DOS DUENOS en las dos reglas. LA RECETA, EN ORDEN: simular primero (OOCU_RESP -> Simulate rule resolution, no escribe) -> hacer las bandas disjuntas SUBIENDO EL SUELO DEL NODO VIEJO -> repartir las personas (sin tope en los dos, con tope solo en el bajo) -> el rol BNK_APP -> re-simular y releer HRP1001 + HRT1218 en vivo. CREAR EL NODO DE TRAMO SIN TOCAR EL VIEJO DEJA EL SOLAPE: es media configuracion, no un paso intermedio seguro. || CORREGIDO 2026-08-26 por MEDICION DIRECTA (claim 612, Simulate rule resolution en OOCU_RESP): la afirmacion de que las bandas DEBEN ser disjuntas es FALSA en esta instalacion. El resolutor devuelve la UNION de los nodos que encajan, asi que un solape es un diseno VALIDO -- es lo que hace que el nodo alto siga cubriendo el tramo bajo. Lo que sigue siendo cierto de este claim es todo lo demas: los tres niveles, la asimetria de aridad, la trampa del signo de AMT_RULECU y que un nodo que sea el UNICO que encaje con 0 o 1 personas no puede satisfacer el doble control.",
+    "claim": "AL PARTIR UN PANEL DE FIRMANTES POR IMPORTE HAY DOS ERRORES QUE INVIERTEN O PARAN EL CONTROL, LOS DOS MEDIDOS EN VIVO EN UIL EL 2026-08-26 (INC-000016338). (A) QUIEN NO TIENE TOPE TIENE QUE ESTAR EN LOS DOS NODOS. Si se le deja solo en el nodo alto NO PUEDE FIRMAR UN PAGO PEQUENO. El patron correcto se ve en UBO: el panel de la banda alta es un SUBCONJUNTO del de la baja y quien sobra en la baja es justamente el limitado (E_AMARAL). Corolario medido en UIL: subir el suelo de 50037530 a 10.000 SIN mover a BASOGLU 10111198 al nodo bajo la dejaria autorizada SOLO POR ENCIMA de 10.000, exactamente lo contrario de lo que dice su carta TRS. (B) UN NODO CON 0 O 1 PERSONAS NO ES UN PANEL, ES UNA PARADA. Con rel_proc=01 (doble control) un nodo VACIO no tiene a quien enrutar el work item y uno de UNA persona no puede satisfacer el doble control; y estar en el nodo no habilita a firmar sin el rol YS:FI:M:BCM_MON_APP______:<ENTIDAD>. ESTADO MEDIDO EN UIL tras crear los nodos de tramo: 50039526 (INI, 0->10.000) con CERO miembros y 50039525 (COM, 0->10.000) con UNA persona (REISS 10049633) SIN el rol -> los pagos de UIL de hasta 10.000 no podian completar NINGUNO de los dos pasos. Ademas los nodos viejos siguieron arrancando en 0.00 (50037530 0->9.999.999.999, 50037531 0->50.000.000), asi que el tramo 0-10.000 tenia DOS DUENOS en las dos reglas. LA RECETA, EN ORDEN: simular primero (OOCU_RESP -> Simulate rule resolution, no escribe) -> hacer las bandas disjuntas SUBIENDO EL SUELO DEL NODO VIEJO -> repartir las personas (sin tope en los dos, con tope solo en el bajo) -> el rol BNK_APP -> re-simular y releer HRP1001 + HRT1218 en vivo. CREAR EL NODO DE TRAMO SIN TOCAR EL VIEJO DEJA EL SOLAPE: es media configuracion, no un paso intermedio seguro. || CORREGIDO 2026-08-26 por MEDICION DIRECTA (claim 612, Simulate rule resolution en OOCU_RESP): la afirmacion de que las bandas DEBEN ser disjuntas es FALSA en esta instalacion. El resolutor devuelve la UNION de los nodos que encajan, asi que un solape es un diseno VALIDO -- es lo que hace que el nodo alto siga cubriendo el tramo bajo. Lo que sigue siendo cierto de este claim es todo lo demas: los tres niveles, la asimetria de aridad, la trampa del signo de AMT_RULECU y que un nodo que sea el UNICO que encaje con 0 o 1 personas no puede satisfacer el doble control. || CORREGIDO 2 (2026-08-26): tambien es FALSO que el check de reconciliacion sea ASIMETRICO. bcm_signatory_reconciliation_check.py:171-172 calcula LAS DOS direcciones -- extras = sap - carton y missing = carton - sap -- y sale con codigo 1 en ambos casos. Corrido hoy con --entity UIL --carton uil_deutschebank_hamburg_20260811.txt devolvio 'MISSING (1): 10097358 (not active in any SAP UIL group)', exit 1: caza a Yli-Hietanen sin ayuda. LA CAUSA REAL de sus 31 meses invisibles NO es una herramienta ciega: es que --carton es OPCIONAL y no habia CARTONES ARCHIVADOS con que correrlo (hasta hoy el repo tenia UNO solo, el de UIS; los dos de UBO se leyeron en INC-000011781 y nunca se guardaron -- hueco 8 del skill). El control existia y funcionaba; faltaba su INPUT y faltaba que fuera obligatorio.",
     "claim_type": "FACT",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -28907,6 +28907,50 @@
     "domain_axes": {
       "functional": "BCM",
       "module": "FI",
+      "process": "P2P"
+    }
+  },
+  {
+    "id": 613,
+    "claim": "LA CONFIGURACION DE TRAMOS DE UIL ES UNA DECISION DE DISENO DELIBERADA, NO UNA DIVERGENCIA SIN EXPLICAR (JP Lopez, 2026-08-26, INC-000016338). LOS DOS PATRONES SON VALIDOS Y CORRECTOS -- verificado por simulacion, claim 612 -- y cada uno hace DIRECTA una pregunta y DERIVADA la otra: UBO (nodo bajo = TODOS, nodo alto DISJUNTO) contesta directo 'quien PUEDE aprobar <=10.000' (el nodo bajo, 7 personas) y deriva 'quien esta LIMITADO' restando bajo-alto; UIL (nodo bajo = SOLO los limitados, nodo alto SOLAPADO 0->max) contesta directo 'quien esta LIMITADO' (el nodo bajo, 2 personas) y deriva 'quien PUEDE aprobar <=10.000' por union bajo+alto=6. SE ELIGIO EL PATRON DE UIL A PROPOSITO: la pregunta que importa al reconciliar contra el carton es la del AUDITOR -- quien esta capado -- que es literalmente lo que la carta TRS anota junto a dos de los siete firmantes ('up to USD 10,000.00 only'). El patron de UIL pone esa anotacion donde se lee sola; el de UBO obliga a derivarla restando grupos. UBO es claro sobre la pregunta del MOTOR (dado un pago, quien lo aprueba); UIL es claro sobre la del AUDITOR. NINGUNO ES CONFUSO: son claros sobre preguntas distintas. DEPENDENCIA: el patron de UIL solo funciona si la determinacion devuelve la UNION de los nodos que encajan (verificado hoy, claim 612: 10.000,00 -> 6 agentes, 10.001,00 -> 4). Depende de que la columna PRIORITY de OOCU_RESP siga VACIA en ambos nodos. RE-VERIFICAR tras cualquier upgrade y si alguien rellena PRIORITY. El patron de UBO no depende de nada: funciona con las dos semanticas. SALVAGUARDA -- quien compare UIL contra UBO en el futuro concluira que UIL esta mal configurado e intentara ARMONIZARLO subiendo el suelo del nodo alto a 10.000. ESE 'ARREGLO' QUITARIA A LOS CUATRO FIRMANTES SIN TOPE LOS PAGOS POR DEBAJO DE 10.000, autorizacion que su carta SI les da. Es exactamente el error que este mismo incidente defendio durante horas antes de simular. PREGUNTA ABIERTA, no resuelta aqui: si el patron de UIL se considera mejor, se migra UBO/UIS o se acepta la divergencia a sabiendas? Lo decide TRS / el responsable funcional, no el agente. Coste de tocar UBO: funciona hoy y el cambio mueve firmas sobre pagos reales.",
+    "claim_type": "DESIGN_DECISION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "JP Lopez (responsable funcional), 2026-08-26, INC-000016338 -- decision registrada en directo",
+      "claim 612 -- Simulate rule resolution: semantica de UNION verificada (10.000->6 agentes, 10.001->4)",
+      "cartas TRS FIN.8/MOD/10.0000003674 y ...3675, 11/08/2026: 'up to USD 10,000.00 only' anotado junto a 2 de 7 firmantes",
+      "P01 live 2026-08-26: UIL 50039526/50039525 = 0.00-10000.00 (2p) y 50037530/50037531 = 0.00->max (4p)",
+      "P01 live 2026-08-26: UBO 50034892 0.00-10000.00 (7p) y 50034893 10000.00-5000000.00 (6p), alto subconjunto del bajo",
+      "knowledge/domains/Treasury/bcm_amount_band_mechanism.md"
+    ],
+    "domain": "Treasury",
+    "related_objects": [
+      "50039525",
+      "50039526",
+      "50037530",
+      "50037531",
+      "50034892",
+      "50034893",
+      "50034894",
+      "50036737",
+      "OOCU_RESP",
+      "HRT1218",
+      "MAXPAYAMT_RULECURR",
+      "RH_GET_ACTORS",
+      "90000004",
+      "90000005",
+      "UIL",
+      "UBO",
+      "UIS",
+      "10049633",
+      "10111198",
+      "10002437"
+    ],
+    "created_session": 104,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "BCM",
+      "module": "PD",
       "process": "P2P"
     }
   }
