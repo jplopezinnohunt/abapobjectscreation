@@ -139,6 +139,58 @@ def cited(txt, needle, exclude):
             if f.replace("\\", "/") not in exclude and needle in t]
 
 
+
+# ==============================================================================
+# SEGUNDA PARTE (s104) — LOS INSTRUMENTOS QUE NO DEJAN ARTEFACTO
+#
+# La primera parte sigue ARTEFACTOS: ficheros producidos. Eso deja un punto
+# ciego exacto: **un instrumento cuya salida es la PANTALLA no produce ningun
+# artefacto, asi que es invisible aqui.**
+#
+# Medido el 2026-08-26: se escribio `brain_v2/rebuild_progress.py` (contesta por
+# donde va el rebuild) y este check dio HUERFANOS: 0, OK, con la herramienta
+# completamente descolgada. No es un fallo del check: es que medía la FORMA
+# (¿tiene el artefacto quien lo dispare?) y no el EFECTO (¿se llega a la
+# herramienta?).
+#
+# Y el descuelgue era estructural, no de timing: `graph_queries.py tool` se
+# alimenta del toolgraph, que solo escanea CINCO raices --
+#   brain_v2/skills/skill_registry.json · brain_v2/methods/algorithms.json ·
+#   brain_v2/methods/algorithm_memory.json · .claude/agents/ ·
+#   Zagentexecution/quality_checks/
+# Un .py util que viva fuera de esas cinco y no lo nombre ninguna es INVISIBLE
+# PARA SIEMPRE para el coordinador.
+# ==============================================================================
+
+TOOL_DIRS = ["brain_v2", "scripts"]
+TOOL_SKIP = ("__init__", "setup", "conftest", "_test", "test_")
+
+
+def instrumentos_descolgados():
+    """.py ejecutables fuera de las raices del toolgraph que nadie nombra."""
+    import glob as _glob
+    txt = corpus()  # {fichero: texto} de todo lo que puede citar algo
+    sueltos = []
+    for d in TOOL_DIRS:
+        base = os.path.join(ROOT, d)
+        if not os.path.isdir(base):
+            continue
+        for f in _glob.glob(os.path.join(base, "*.py")):
+            name = os.path.splitext(os.path.basename(f))[0]
+            if name.startswith(TOOL_SKIP) or name.endswith(("_test",)):
+                continue
+            try:
+                src = io.open(f, encoding="utf-8", errors="replace").read()
+            except OSError:
+                continue
+            if "__main__" not in src:          # no es un instrumento invocable
+                continue
+            citas = [c for c in cited(txt, name, exclude=f)]
+            if not citas:
+                sueltos.append((os.path.relpath(f, ROOT), name))
+    return sueltos
+
+
 def main():
     txt = corpus()
     orphans, ok = [], 0
@@ -262,6 +314,25 @@ def main():
     print("  OK -- todo artefacto tiene un camino que lo dispara.")
     print("  (Ojo: esto NO dice que sirva. Un script llamado desde un paso que nunca")
     print("   se ejecuta sigue muerto, y eso no se ve desde aqui.)")
+
+    sueltos = instrumentos_descolgados()
+    print()
+    print("-" * 78)
+    print("INSTRUMENTOS SIN ARTEFACTO -- los que contestan en pantalla")
+    print("-" * 78)
+    if sueltos:
+        print("  DESCOLGADOS (%d) -- existen y NADIE los nombra, asi que el coordinador" % len(sueltos))
+        print("  (`graph_queries.py tool`) no los encuentra NUNCA:")
+        for rel, name in sueltos:
+            print("     %-52s" % rel)
+        print()
+        print("  ARREGLO: registrarlo donde el toolgraph SI mira -- una ficha en")
+        print("  brain_v2/methods/algorithms.json (dentro de la clave `algorithms`, no")
+        print("  al lado), o nombrarlo desde un agente / skill / quality check.")
+        print("  Un instrumento que solo imprime no deja rastro que otro check pueda seguir:")
+        print("  si no lo nombra nadie, es como si no existiera.")
+        return 1
+    print("  OK -- todo instrumento invocable esta nombrado desde alguna raiz del toolgraph.")
     return 0
 
 

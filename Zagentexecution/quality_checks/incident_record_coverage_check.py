@@ -78,6 +78,74 @@ def doc_incident_id(filename: str) -> str | None:
     return m.group(1) if m else None
 
 
+
+# ==============================================================================
+# TRIANGULO DE ARTEFACTOS (s104) — doc + registro NO bastan
+#
+# Este check nacio para garantizar que todo doc de incidente tuviera registro de
+# primera clase (si no, es invisible para BRAIN LOOKUP). Es necesario y no es
+# suficiente.
+#
+# Medido el 2026-08-26 en INC-000016338: el doc existia, el registro existia, el
+# gate daba VERDE — y el operador tuvo que preguntar tres cosas que faltaban:
+#   · el companion se habia quedado DESFASADO respecto al analisis final
+#   · la referencia era de UNA SOLA DIRECCION (el companion citaba el incidente,
+#     el incidente no citaba el companion, y el registro tampoco)
+#   · no habia BRIEF: 11 secciones tecnicas y ningun resumen para quien no las lee
+#
+# Un incidente cuyo conocimiento solo se alcanza leyendolo entero no se alcanza.
+# ==============================================================================
+
+BRIEF_MARKS = ("## 0.", "BRIEF", "RESUMEN EJECUTIVO", "En 60 segundos")
+
+
+def triangulo(docs_dir, records):
+    """-> lista de (inc_id, [fallos])  ·  docs_dir: Path a knowledge/incidents"""
+    import glob as _glob
+    import os as _os
+    comp_dir = _os.path.join(_os.path.dirname(_os.path.dirname(str(docs_dir))), "..", "companions")
+    comp_dir = _os.path.normpath(comp_dir)
+    companions = {}
+    if _os.path.isdir(comp_dir):
+        for f in _glob.glob(_os.path.join(comp_dir, "*.html")):
+            try:
+                companions[_os.path.basename(f)] = io.open(f, encoding="utf-8", errors="replace").read()
+            except OSError:
+                pass
+
+    out = []
+    for f in sorted(_glob.glob(_os.path.join(str(docs_dir), "INC-*.md"))):
+        inc = doc_incident_id(_os.path.basename(f))
+        if not inc:
+            continue
+        try:
+            texto = io.open(f, encoding="utf-8", errors="replace").read()
+        except OSError:
+            continue
+        fallos, avisos = [], []
+
+        # (1) BRIEF — un resumen antes del detalle.
+        # AVISO y no fallo: hay deuda historica (6 docs el 2026-08-26) y un gate rojo
+        # permanente es como se consigue que se ignore. Se lista para que exista.
+        if not any(m in texto[:4000] for m in BRIEF_MARKS):
+            avisos.append("sin BRIEF: nada legible en 60 s antes de 10+ secciones tecnicas")
+
+        # (2) companion que lo cite  <->  doc que cite al companion
+        citan = [n for n, t in companions.items() if inc in t]
+        if citan:
+            if not any(n in texto for n in citan):
+                fallos.append("referencia de UNA direccion: %s cita al incidente y el doc no lo cita"
+                              % citan[0])
+            rec = records.get(inc) or {}
+            blob = str(rec)
+            if not any(n in blob for n in citan):
+                fallos.append("el REGISTRO no nombra el companion (%s): desde el brain no se llega"
+                              % citan[0])
+        if fallos or avisos:
+            out.append((inc, fallos, avisos))
+    return out
+
+
 def main() -> int:
     if not RECORDS.exists():
         print(f"FAIL: {RECORDS} not found")
@@ -142,6 +210,35 @@ def main() -> int:
         return 1
 
     print("\nOK — every incident doc is reachable from the brain, every record resolves.")
+
+    # --- TRIANGULO DE ARTEFACTOS: doc + registro no bastan (s104) ---
+    try:
+        import json as _json
+        _recs = _json.loads(RECORDS.read_text(encoding="utf-8"))
+        _recs = _recs.get("incidents", _recs) if isinstance(_recs, dict) else _recs
+        pend = triangulo(DOCS_DIR, {r.get("id"): r for r in _recs if isinstance(r, dict)})
+    except Exception as e:                       # nunca tumbar el gate por la parte nueva
+        print("\n(aviso: no se pudo evaluar el triangulo de artefactos: %s)" % e)
+        return 0
+    duros = [(i, f) for i, f, _ in pend if f]
+    blandos = sorted({(i, a) for i, _, av in pend for a in av})
+    if pend:
+        print("\n" + "-" * 74)
+        print("TRIANGULO DE ARTEFACTOS — doc + registro estan, ¿pero se LLEGA?")
+        print("-" * 74)
+    for inc, av in blandos:
+        print("  AVISO  %-26s %s" % (inc, av))
+    for inc, fs in duros:
+        for x in fs:
+            print("  FALLO  %-26s %s" % (inc, x))
+    if duros:
+        print("\n  Una referencia de una sola direccion no es un enlace: desde el brain no se llega.")
+        return 1
+    if blandos:
+        print("\n  (avisos: deuda de BRIEF. NO tumban el gate — un rojo permanente por deuda")
+        print("   historica es como se consigue que un check se ignore. Se saldan al tocar")
+        print("   cada incidente, y mientras tanto existen y se ven.)")
+    print("OK — referencias bidireccionales en todos los incidentes con companion.")
     return 0
 
 

@@ -1787,6 +1787,21 @@
         "CONTEXTO": "MEDIDO por el autor y escrito en el fichero: #027 reporto 3.394 lotes mismo-usuario, #037 midio 4.760 all-time; el hueco CRECIO mientras el hallazgo dormia 15 sesiones en el PMO. INFERIDO-DE-CODIGO por mi: no lo he corrido -- la sesion tiene prohibido tocar el Gold DB -- asi que las cifras de hoy no estan verificadas por mi"
       },
       "_nace_de": "2026-08-26, censo de mineria (A32). Llevaba desde la sesion #037 minando eventos de pago sin figurar en el registro: nadie mas podia saber que existia la capacidad de clasificar operadores BCM por forma de trabajar"
+    },
+    "A48_run_progress_from_its_own_log": {
+      "operates_on": "el log que el propio proceso escribe en vivo",
+      "origin": "OURS",
+      "state": "STRONG",
+      "does": "contestar POR DONDE VA un proceso largo leyendo la ultima marca de paso de su log y si el log se mueve, sin abrir el proceso ni adivinar por mtimes de artefactos",
+      "bound_in": [
+        "brain_v2/rebuild_progress.py"
+      ],
+      "failure_mode": "reconstruir 'la corrida completa' de un log que SE ACUMULA entre ejecuciones. La v1 lo intentaba cortando por la marca de Step 0, el corte fallaba y MEZCLABA corridas: reporto 'TERMINADO 7/7, 148 minutos' con el proceso vivo en el paso 4. Y el marcador de fin obvio NO sirve: 'Rebuild complete.' va a stdout y no llega al curation.log (2 ocurrencias en 80k lineas, las dos de corridas viejas). TAMPOCO se puede derivar un porcentaje lineal: los pasos no van en orden -- el 3e corre DESPUES del 4/7 -- ni duran lo mismo: el 4/7 tardo 874 s.",
+      "improve": "generalizarlo a cualquier proceso largo con marcas de paso; hoy asume el formato de `[<ts>] START|OK Step N/M:` de rebuild_all.py",
+      "lands_in": "n/a - instrumento: contesta en PANTALLA, no produce artefacto",
+      "lands_in_kind": "instrument_screen_only",
+      "mining_kind": "TECNICA_DE_LECTURA",
+      "_nota_s104": "Registrado aqui A PROPOSITO: el toolgraph solo escanea skill_registry, algorithms.json, algorithm_memory.json, .claude/agents/ y quality_checks/. Un .py en brain_v2/ que no este en ninguna de esas cinco raices es INVISIBLE para `graph_queries.py tool` -- para siempre, no por timing."
     }
   },
   "_portfolio": {
