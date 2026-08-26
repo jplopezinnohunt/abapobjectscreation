@@ -2490,5 +2490,145 @@
     "incident_type_meaning": "alta o cambio de un objeto maestro; el trabajo real son las TAREAS POSTERIORES",
     "process": "P2D",
     "generates_process_knowledge": "knowledge/domains/Master_Data_Governance/gl_account_creation_process.md — este incidente NO es un error: es un alta de datos maestros, y su valor duradero es el PROCESO que documenta, no el caso."
+  },
+  {
+    "id": "INC-000016338",
+    "status": "EXECUTED_PARTIAL_OPEN_ITEMS",
+    "title": "Add Bettina REISS to UIL BCM signatory panel (+ USD 10K limit NOT representable, Yli-Hietanen expired, BNK_APP role missing)",
+    "reporter": "Ingrid Wettie (BFM-TRS / Middle Office) - originated by Role Management Mailer Service to Morsal Jamal (UIL AO)",
+    "received_date": "2026-08-21",
+    "analyzed_session": 104,
+    "domain": "Treasury",
+    "secondary_domains": [
+      "BCM",
+      "HCM",
+      "Security",
+      "Payment_BCM"
+    ],
+    "transactions": [
+      "OOCU_RESP",
+      "BNK_APP",
+      "PFCG",
+      "SU01",
+      "PA30"
+    ],
+    "primary_object_id": "10049633",
+    "primary_subject": "PERNR 10049633 Bettina REISS (SAP user B_REISS), UIL",
+    "company_codes_involved": [
+      "UIL"
+    ],
+    "scenario": "signatory_panel_change",
+    "incident_type": "MASTER_DATA",
+    "error_messages": [],
+    "root_cause_summary": "Not a defect. Operational change authorized by TWO TRS letters of 11/08/2026 signed by the Treasurer Anssi Yli-Hietanen: FIN.8/MOD/10.0000003674 (Deutsche Bank Hamburg AG, HBKID DEU01, 3 accounts) and FIN.8/MOD/10.0000003675 (Societe Generale Paris, HBKID SOG05, 2 accounts), both carrying the substitutive clause \"This list replaces all previous signatory lists\" and an identical 7-person panel. Instruction: ADD Mrs Bettina REISS; no deletions. DBS executed in P01 via OOCU_RESP on 2026-08-26. THE REQUEST COULD ONLY BE HALF-FULFILLED: the letters cap REISS (and BASOGLU) at USD 10,000.00, and the UIL RY nodes carry NO amount band - IT1218 read live gives MAXPAYAMT_RULECURR 0.00-9,999,999,999.00 on 50037530 (INI, RULE_ID UIL_AP_ST) and 0.00-50,000,000.00 on 50037531 (COM), versus UBO 50034892 which does have 0.00-10,000.00. So the add grants effectively unlimited signing authority inside SAP against a letter that limits her. This deviation was ALREADY LIVE: BASOGLU 10111198 has been active unlimited on 50037530 since 2024-09-27 under the same cap.",
+    "code_validation_chain": [
+      "T012K BUKRS=UIL -> exactly 2 house banks / 5 accounts (DEU01 USD01+EUR01+EUR02, SOG05 USD01+EUR01); both letters name all 5 -> GATE 1 completeness PASS",
+      "T042A is EMPTY in P01 (RFC_READ_TABLE unfiltered -> TABLE_WITHOUT_DATA): the declared gate-1 universe of the runbook does not exist here; substituted T012K corroborated by T042I (UIL ZLSCH N/S -> SOG05)",
+      "BNK_BATCH_HEADER unreadable for the SNC user (TABLE_WITHOUT_DATA unfiltered) -> contradiction C2 cannot be arbitrated by reading; this is a READ LIMIT, not evidence that UIL produces no BCM batches",
+      "Both letters carry an identical 7-person panel and one entity-level HEPATUS carton -> GATE 2 alignment PASS",
+      "PA0002 PERNR=10049633 -> Bettina REISS, GBDAT=19700609, matches the passport page in the PDF (09.06.1970, Reiss nee Kuester, DE passport C1V54HJJ8)",
+      "PA0105 SUBTY=0001 PERNR=10049633 -> USRID=B_REISS; SUBTY=0010 -> B.REISS@UNESCO.ORG -> no ghost PERNR",
+      "PA0000 STAT2=3 (active from 20260701) for REISS; STAT2=3 for all 7 carton members",
+      "USR02 BNAME=B_REISS -> UFLAG=0, USTYP=A, GLTGB=20271231, TRDAT=00000000 (has never logged on)",
+      "HRP1218/HRT1218 on BNK_STR_BATCH_REL_APPR: 50037530 = ZBUKR UIL + MAXPAYAMT 0.00-9999999999.00 + RULE_ID UIL_AP_ST; 50037531 = ZBUKR UIL + MAXPAYAMT 0.00-50000000.00 -> UIL HAS NO AMOUNT BAND",
+      "HRP1001 all-periods pre-change: REISS absent from both nodes; YLI-HIETANEN 10097358 expired 20230615-20240126 on BOTH nodes; BASOGLU 10111198 active on 50037530 only, never on 50037531",
+      "Post-change HRP1001 live readback: 10049633 present on 50037530 and 50037531, PLVAR=01 ISTAT=1 BEGDA=20260826 ENDDA=99991231",
+      "Gold DB bcm_signatory_assignment 263 -> 265 rows (+2 = exactly the two spec operations); unique signatories 78 -> 79",
+      "AGR_USERS UNAME=B_REISS -> 6 roles, all HR (YCF:HR:EMPL_SELF_SRVCE___:ALL, YSF:HR:*, Y_HR_ADMINISTRATION...), ZERO in the YS:FI:M:BCM_MON_APP______:* family -> cannot open BNK_APP",
+      "bcm_role_gap_check.py post-change: MISSING BNK_APP = 4 users, B_REISS newly among them on both UIL nodes (the control detected it unaided)",
+      "bcm_signatory_reconciliation_check.py post-change: GHOST=0, exit 0; role-split still flags BASOGLU on UIL Validation only"
+    ],
+    "scope": "UIL only for the executed change. The population sweep covered both UIL nodes and all 7 carton members; over-authorization found = ZERO (first entity clean on that axis), which is meaningful because the substitutive clause licensed the search.",
+    "fix_path": {
+      "immediate": "DBS executed in P01 via OOCU_RESP on 2026-08-26 (P01 is read-only for the AI agent): ADD 10049633 to node 50037530 (rule 90000005, UIL Validation) and 50037531 (rule 90000004, UIL signatures for all transfers), ENDDA=99991231. Read back live via RFC_READ_TABLE.",
+      "structural": "OPEN - UIL cannot express the USD 10,000 cap the letters mandate. Needs new RY nodes with a <=10K MAXPAYAMT_RULECURR band for UIL (Approval Procedure customizing regenerating the IT1218 condition), then a split of the panel across bands. The procedure for MODIFYING IT1218 is undocumented in the whole corpus (skill gap #3) - escalated to TRS/DBS, not improvised.",
+      "preventive": [
+        "Grant YS:FI:M:BCM_MON_APP______:UIL to B_REISS via PFCG - node membership alone does not enable signing (trap T5). BLOCKS CLOSURE.",
+        "Correct the gate-1 universe in bcm_signatory_change_procedure.md and the skill: T042A is empty in P01, use T012K + T042I",
+        "Add a MISSING-side recurring check: is every carton signatory active on its node? Today the reconciliation only detects EXTRAS, which is why Yli-Hietanen went 31 months unnoticed in two entities",
+        "Gate BEGDA against the letter date - DBS set 20260826 instead of the 20260811 of the letter (15-day audit gap), the SECOND occurrence of this defect after the 7 days of INC-000006313"
+      ]
+    },
+    "open_followups": [
+      "BLOCKING: BNK_APP role YS:FI:M:BCM_MON_APP______:UIL for B_REISS pending with Security. Until granted, REISS is in both nodes and cannot sign.",
+      "TRS decision: the USD 10,000 cap on REISS and BASOGLU is not representable in UIL (no amount band). Create <=10K nodes, or accept in writing that the cap lives only at the bank.",
+      "TRS authorization: YLI-HIETANEN 10097358 is on the UIL carton and expired in SAP since 2024-01-26 on both nodes (31 months). Proposed ADD x2, retained pending signature.",
+      "TRS question: BASOGLU 10111198 validates but never commits; the carton says jointly two by two with no role distinction. Intentional split or maintenance accident?",
+      "AO deadline 2026-09-03: Morsal Jamal (UIL) must obtain the written confirmation of the bank of the list INCLUDING LIMITS within two weeks of 2026-08-20. That is where the cap gap becomes visible from the bank side."
+    ],
+    "side_findings": [
+      "BEGDA drift, 2nd occurrence: spec said BEGDA=20260811 (letter date, as of immediate effect); DBS entered 20260826 (execution date) -> 15 days in which REISS was on the bank panel and not in SAP routing. INC-000006313 had the same defect at 7 days. By the 2nd occurrence this earns a gate.",
+      "YLI-HIETANEN 10097358 expired on the UIL nodes AND absent from the UBO nodes (open item of INC-000011781): same PERNR, same defect, two entities -> a PATTERN, not a case. He holds YS:FI:M:BCM_MON_APP______:ALL, so the permission is there and only node membership is missing.",
+      "T042A empty in P01 - the gate-1 universe of the runbook does not exist in this installation.",
+      "BNK_BATCH_HEADER not readable by the SNC user - contradiction C2 (T042A vs BNK_BATCH_HEADER as reconciliation universe) cannot be settled by reading.",
+      "Carton archive went from 1 file (UIS) to 3 + the source PDF; the two UBO cartons read in INC-000011781 were never archived (skill gap #8, still open).",
+      "The original PDF carries a passport scan and is deliberately kept OUT of git (cartons/.gitignore *.pdf); the PERNR/panel .txt is versioned."
+    ],
+    "related_objects": [
+      "HRP1000",
+      "HRP1001",
+      "HRP1218",
+      "HRT1218",
+      "HRP1222",
+      "PA0000",
+      "PA0002",
+      "PA0105",
+      "USR02",
+      "AGR_USERS",
+      "T012K",
+      "T042A",
+      "T042I",
+      "BNK_BATCH_HEADER",
+      "OOCU_RESP",
+      "BNK_APP",
+      "PFCG",
+      "BNK_STR_BATCH_REL_APPR",
+      "90000004",
+      "90000005",
+      "50037530",
+      "50037531",
+      "50034892",
+      "10049633",
+      "10097358",
+      "10111198",
+      "10168474",
+      "10048024",
+      "10107337",
+      "10137641",
+      "DEU01",
+      "SOG05",
+      "UIL"
+    ],
+    "related_incidents": [
+      "INC-000011781",
+      "INC-000006313"
+    ],
+    "evidence_extracted_this_incident": [
+      "Zagentexecution/quality_checks/cartons/uil_deutschebank_hamburg_20260811.txt",
+      "Zagentexecution/quality_checks/cartons/uil_societegenerale_20260811.txt",
+      "Zagentexecution/quality_checks/cartons/uil_letters_cartons_20260811_INC-000016338.pdf (local only, not in git)",
+      "Gold DB bcm_signatory_assignment refreshed 2026-08-26 (265 rows), bcm_signatory_role_gap, bcm_node_agent_role_check, bcm_release_vs_approve"
+    ],
+    "lessons": [
+      "A configuration exists for everyone and is EXECUTED for some: the amount cap of the letter is only enforceable if the nodes of the entity carry an amount band. Those of UIL do not, so add her bank limits was unfulfillable - and the gap was already live for another signatory nobody had noticed.",
+      "The third occurrence is where the skill pays: with sap_bcm_signatory_maintenance written, the two gates, the carton parse, the identity reads and the sweep ran in one pass, and the sweep - not the ticket - produced every finding that mattered.",
+      "A control that only looks for EXTRAS cannot see an authorized signatory who fell out. Reconciliation must be symmetric.",
+      "The same defect in two entities is a pattern: stop writing incident rows and write a recurring check."
+    ],
+    "analysis_doc": "knowledge/incidents/INC-000016338_uil_bcm_add_reiss.md",
+    "chain_anchor_type": "PERSON",
+    "chain_anchor_note": "Anchored on PERNR 10049633; the node/rule/role chain is HRP1001 -> RY node -> IT1218 selection -> BNK_APP role.",
+    "domain_axes": {
+      "functional": "BCM",
+      "module": "FI",
+      "process": "P2P"
+    },
+    "incident_type_meaning": "Operational master-data change to the payment authorization panel, executed by an authorized human in P01.",
+    "process": "P2P",
+    "secondary_processes": [
+      "T2R"
+    ],
+    "subprocess": "payment_authorization",
+    "generates_process_knowledge": true
   }
 ]
