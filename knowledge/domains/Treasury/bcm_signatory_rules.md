@@ -5,6 +5,9 @@
 **Gold DB tables**: `bcm_signatory_responsibility`, `bcm_signatory_assignment`
 **Verified against**: OOCU_RESP screenshots provided by user (all 7 responsibility groups of rule 90000004 match structurally)
 
+> **⚠️ Tramos de importe de UIL: es una DECISION, no un defecto (claim 613).** El nodo alto arranca en
+> 0,00 a proposito. **No subir su suelo para 'armonizar' con UBO** — quitaria a los cuatro sin tope los
+> pagos <10.000. Visual: [companions/bcm_amount_bands_uil.html](../../../companions/bcm_amount_bands_uil.html).
 > **Mechanism (READ FIRST when touching amount bands):** the three levels that decide who signs —
 > grouping rule → node selection (IT1218) → release procedure — are in
 > [bcm_amount_band_mechanism.md](bcm_amount_band_mechanism.md). It also states **what each rule is FOR**,
@@ -129,6 +132,7 @@ nothing. *(Snapshot 2026-04-13; pending INC-000011781 adds Renata Ritter to BOTH
 | 50034894 | UBO signatures up to 10.000 | 11 | 8 | Active |
 | 50036737 | UBO signatures for transfers over 10.000 | 10 | 7 | Active |
 | 50037531 | UIL signatures for all transfers | 8 | 4 | Active (newest group, created 2023-06-15) |
+| **50039525** | **UIL signatures up to 10000** | **2** | **2** | **NUEVO 2026-08-26 (INC-000016338)** — banda 0,00–10.000,00. Lleva SOLO a las limitadas (REISS `10049633`, BASOGLU `10111198`). El nodo `50037531` arranca en 0,00 a proposito y cubre todo el rango — ver claim 613 |
 
 ### Active committers as of 2026-04-09 (SELECT WHERE endda >= '20260409')
 
@@ -144,7 +148,7 @@ Marlova JOVCHELOVITCH NOLETO (M_JOVCHELOVI), Fabio SOARES EON (F_EON), Evaney F.
 **UBO signatures for transfers over 10.000** (7):
 Beatriz M. GODINHO BARROS COELHO (B_COELHO), Julio C. CUBA SANCHEZ (JC_CUBA), Marlova JOVCHELOVITCH NOLETO (M_JOVCHELOVI), Maria OTERO GOMES (MR_GOMES), Fabio SOARES EON (F_EON), Ismaila BA (I_BA), Lorena DE SOUSA CARVALHO (L_CARVALHO).
 
-**UIL signatures for all transfers** (4):
+**UIL signatures for all transfers** (4) — *banda 0,00→50.000.000, cubre TODO el rango*:
 Raúl VALDES COTERA (R_VALDES-COT), Rakhat ZHOLDOSHALIEVA (R_ZHOLDOSHAL), Isabell KEMPF (I_KEMPF), Dereje Bune ABDI (DB_ABDI).
 
 ---
@@ -170,6 +174,7 @@ Raúl VALDES COTERA (R_VALDES-COT), Rakhat ZHOLDOSHALIEVA (R_ZHOLDOSHAL), Isabel
 | 50034892 | UBO Validation up to 10.000 USD | 11 | UBO | ≤ 10K |
 | 50034893 | UBO Validation up up to 5.000.000 USD | 11 | UBO | ≤ 5M |
 | 50037530 | UIL Validation | 9 | UIL | All |
+| **50039526** | **UIL Validation up to 10000** | **2** | UIL | **≤10K — NUEVO 2026-08-26** (INC-000016338). SOLO las limitadas; `50037530` sigue en 0,00→max. Claim 613 |
 
 ---
 

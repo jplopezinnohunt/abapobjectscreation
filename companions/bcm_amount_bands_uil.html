@@ -52,6 +52,22 @@ a{color:var(--acc)}
   <div class="kpi"><div class="n bad">1</div><div class="l">bloqueante: rol BNK_APP</div></div>
 </div>
 
+<div class="card" id="brief" style="border-left:3px solid var(--acc2)">
+<h3 style="margin-top:0">En 60 segundos</h3>
+<p><strong>Se pidió</strong> añadir a Bettina REISS al panel de UIL "y sus límites bancarios", según dos
+cartas del Tesorero de 11/08/2026 con panel idéntico de 7 firmantes, dos de ellos capados en USD 10.000.</p>
+<p><strong>Se hizo</strong> el alta <em>y</em> se construyó el tramo ≤10.000 en <strong>las dos</strong>
+reglas (nodos nuevos <code>50039526</code> validar y <code>50039525</code> firmar). Los nodos de siempre se
+dejaron arrancando en <strong>0,00 a propósito</strong>, con los cuatro sin tope.</p>
+<p><strong>Se verificó midiendo, no razonando:</strong> un pago de 10.000 devuelve <strong>6</strong>
+aprobadores y uno de 10.001 devuelve <strong>4</strong>. La determinación <em>suma</em> los paneles de los
+nodos que encajan. Es exactamente lo que autoriza la carta.</p>
+<p><strong>Bloquea el cierre:</strong> <code>B_REISS</code> no tiene el rol <code>BNK_APP</code> — está en
+los dos nodos y no puede firmar.</p>
+<p class="dim">Incidente: <code>knowledge/incidents/INC-000016338_uil_bcm_add_reiss.md</code> ·
+Mecanismo: <code>knowledge/domains/Treasury/bcm_amount_band_mechanism.md</code> · Claims 608–613.</p>
+</div>
+
 <h2>Qué es cada regla, y para qué sirve</h2>
 <p>El número no dice nada y se confunde con el release de factura. Toda propuesta de cambio se escribe
 con el <strong>objetivo</strong> delante.</p>
@@ -137,7 +153,7 @@ No hay zona gris. <span class="dim">Claim 612.</span></div>
 para todo el rango. El bajo añade a las dos limitadas <strong>sólo</strong> su tramo. Es la anotación
 <em>"up to USD 10,000.00 only"</em> de la carta, hecha configuración.</p>
 
-<h2>Dos patrones válidos, y ninguno es un error</h2>
+<h2>Dos patrones válidos — y elegir uno fue una DECISIÓN</h2>
 <table>
 <tr><th></th><th>Nodo bajo</th><th>Nodo alto</th><th>Funciona si…</th><th>Ventaja</th></tr>
 <tr><td><strong>UBO</strong></td><td><strong>todos</strong> (7)</td>
@@ -147,6 +163,25 @@ para todo el rango. El bajo añade a las dos limitadas <strong>sólo</strong> su
     <td class="warn">sólo si hay unión — <span class="ok">verificado que la hay</span></td>
     <td>más <strong>legible</strong> contra el cartón</td></tr>
 </table>
+<div class="err"><strong>⛔ NO "armonizar" UIL hacia UBO subiendo el suelo del nodo alto.</strong>
+El patrón de UIL <strong>es una DECISIÓN, no un defecto</strong> — JP Lopez, 2026-08-26,
+<strong>claim 613</strong>. Subir el suelo de <code>50037530</code>/<code>50037531</code> a 10.000
+<strong>quitaría a los cuatro firmantes sin tope los pagos por debajo de 10.000</strong>, autorización que
+su carta TRS sí les concede. Este análisis defendió ese cambio durante horas antes de simular.<br><br>
+<strong>Por qué se eligió el de UIL:</strong> cada patrón hace <em>directa</em> una pregunta y
+<em>derivada</em> la otra. UBO contesta directo <em>"¿quién PUEDE aprobar ≤10.000?"</em> y deriva
+<em>"¿quién está LIMITADO?"</em> restando grupos; UIL contesta directo <em>"¿quién está LIMITADO?"</em> y
+deriva el otro por unión. <strong>La pregunta que hace el cartón es la del auditor</strong> — quién está
+capado — y es literalmente lo que la carta anota junto a dos de los siete firmantes. UBO es claro sobre la
+pregunta del <em>motor</em>; UIL sobre la del <em>auditor</em>. Ninguno es confuso: son claros sobre cosas
+distintas.<br><br>
+<strong>Condición que lo sostiene:</strong> el patrón de UIL sólo funciona porque la determinación devuelve
+la <strong>unión</strong> — verificado hoy, y depende de que la columna <code>Priority</code> de
+<code>OOCU_RESP</code> siga <strong>vacía</strong>. <strong>Re-verificar tras cualquier upgrade.</strong>
+El de UBO no depende de nada.<br><br>
+<strong>Pregunta abierta, la decide TRS:</strong> ¿se migra UBO/UIS al patrón de UIL, o se acepta la
+divergencia a sabiendas? Tocar UBO mueve firmas sobre pagos reales.</div>
+
 <div class="err"><strong>La trampa que deja el patrón de UIL es el NOMBRE.</strong> El nodo se llama
 <em>"UIL Validation up to 10000"</em> y contiene <strong>dos</strong> personas, cuando quienes pueden
 aprobar ese tramo son <strong>seis</strong>. El nombre promete el tramo y entrega la excepción.
@@ -187,8 +222,15 @@ para todos</strong> y UIL no distingue · que Basoglu ahora firma.</p>
 <code>HRP1001</code> en vez de delimitarlas — entre ellas la de Basoglu con <code>BEGDA=20240927</code>.
 El rastro en SAP de sus ~23 meses sin tope ya no existe. El hecho sobrevive en el Gold anterior y en el
 backup; el sistema no. <strong>No se recrea:</strong> fabricar historia es peor que perderla.</p>
-<p><strong class="warn">Deuda del método.</strong> El check de reconciliación es <strong>asimétrico</strong>:
-ve gente de más, no gente que falta. Por eso Yli-Hietanen lleva 31 meses invisible en dos entidades.</p>
+<p><strong class="warn">Deuda del método — corregida sobre la marcha.</strong> Este companion afirmó que
+el check de reconciliación era <strong>asimétrico</strong>. <strong>Es falso.</strong>
+<code>bcm_signatory_reconciliation_check.py</code> calcula las dos direcciones
+(<code>extras = sap − cartón</code>, <code>missing = cartón − sap</code>) y sale con código 1 en ambas.
+Corrido el 2026-08-26 con <code>--entity UIL --carton …</code> devolvió
+<strong><code>MISSING (1): 10097358</code>, exit 1</strong>: caza a Yli-Hietanen sin ayuda.
+<strong>La causa real de sus 31 meses invisibles es que <code>--carton</code> es OPCIONAL y no había
+cartones archivados</strong> — el repo tenía UNO, el de UIS. El control existía y funcionaba; le faltaba el
+<em>input</em> y le faltaba ser obligatorio.</p>
 </div>
 
 <footer>

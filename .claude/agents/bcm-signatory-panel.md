@@ -131,6 +131,62 @@ con la spec · los tres checks en verde:
 7. **Fecha de efecto** — poner la de ejecucion abre un hueco de auditoria.
 8. **El ticket es la ocasion, no el alcance** — reconcilia la poblacion.
 
+## ⚖️ TRAMOS DE IMPORTE — lo que aprendio INC-000016338 (s104, 2026-08-26)
+
+**Si la carta pone un tope a alguien ("up to USD 10,000.00 only"), el panel se parte en NODOS POR BANDA.
+Antes de tocar nada, lee `knowledge/domains/Treasury/bcm_amount_band_mechanism.md`.** Resumen operativo:
+
+**Son TRES niveles, no uno.** [1] regla de agrupacion (`TBNK_RULE`/`_SELOP`) -> produce `RULE_ID` ·
+[2] seleccion de nodo (`HRP1218`/`HRT1218`: `ZBUKR` + `MAXPAYAMT_RULECURR` + `RULE_ID`) ·
+[3] procedimiento (`TBCA_RELPROC_*`: `01` = doble control). Tocar solo uno no da el efecto buscado.
+Los niveles 1 y 3 **no son legibles por RFC** con el usuario SNC: se leen del Gold DB
+(`bcm_grouping_rule*`, `bcm_release_*`).
+
+**⛔ SIMULA ANTES DE DECIDIR LA FORMA.** `OOCU_RESP` -> **Simulate rule resolution**: no escribe nada,
+tarda 30 segundos y contesta que agentes devuelve la regla para un importe dado. En INC-000016338 refuto
+un analisis de HORAS que iba a quitar autorizacion a cuatro firmantes. Regla
+`feedback_simulate_before_deciding_the_shape` (CRITICAL). **Corre siempre el importe del tope y el tope+1.**
+
+**La determinacion devuelve la UNION** de todos los nodos que encajan (con `Priority` VACIA;
+`RH_GET_ACTORS` suma todas las responsabilidades), y **el borde de banda es INCLUSIVO** — 10.000,00 cae
+en el tramo bajo, 10.001,00 no. Claim 612. **Por eso un SOLAPE de bandas NO es automaticamente un defecto.**
+
+**HAY DOS PATRONES VALIDOS. NO LOS "ARMONICES".** Claim **613**:
+| | Nodo bajo | Nodo alto | Contesta directo |
+|---|---|---|---|
+| **UBO / UIS** | TODOS | **disjunto**, subconjunto sin los limitados | *¿quien PUEDE aprobar <=10K?* |
+| **UIL** | **SOLO los limitados** | **solapado 0->max** | *¿quien esta LIMITADO?* |
+
+El de UIL es una **DECISION** tomada a proposito (JP Lopez, 2026-08-26) porque la pregunta que hace el
+**carton** es la del auditor. **Subir el suelo del nodo alto de UIL para parecerse a UBO quitaria a los
+cuatro sin tope los pagos por debajo de 10.000** — autorizacion que su carta SI les da.
+
+**Cuando propongas o audites un panel con tramos, comprueba:**
+1. Los que NO tienen tope, ¿alcanzan TODOS los tramos? (en los dos nodos, o con un nodo que los cubra).
+2. Los que SI tienen tope, ¿estan FUERA del tramo alto?
+3. Cada nodo que pueda ser el UNICO que encaje, ¿tiene >=2 personas **con rol `BNK_APP`**? Con `01` doble
+   control, un nodo vacio no enruta y uno de una persona no se puede satisfacer.
+4. ¿Coincide lo simulado con lo que dice la carta, tramo por tramo?
+
+**Nombra las reglas por su OBJETIVO, nunca por el numero** (claim 608): *"la regla 90000005 (BNK_INI,
+nodo X — quien VALIDA los lotes de <entidad> de hasta N)"*. `90000004` = **firma final que libera el
+fichero al banco**; `90000005` = **valida el lote**. Las dos DESPUES de F110, sobre el mismo fichero. Lo
+que autoriza la FACTURA es `WS90000003`, otra cosa y antes de F110.
+
+**Dos trampas mas, medidas:**
+- **`T042A` esta VACIA en P01.** El universo del gate de completitud es `T012K` + `T042I`, no `T042A`.
+- **`AMT_RULECU` se guarda NEGATIVO** (`'10000.00-'`): `GT -10000` significa *hasta 10.000*. Leer
+  `GT`/`LE` sin ver el signo invierte la regla.
+
+**Al proponer una BAJA, escribe siempre "DELIMITAR `ENDDA`, NO BORRAR"** y verifica despues que el numero
+de filas NO ha bajado — en INC-000016338 se borraron 3 filas de `HRP1001` y se perdio la historia de una
+firmante (`feedback_delimit_never_delete_pd_infotype_row`, CRITICAL).
+
+**El diff contra el carton detecta las DOS direcciones** — sobra y falta. Corre SIEMPRE
+`bcm_signatory_reconciliation_check.py --entity <X> --carton <fichero>`: sin `--carton` no mira quien
+FALTA, y eso dejo a un firmante del carton 31 meses fuera de SAP en dos entidades. Si no hay carton
+archivado, **pedirlo es parte del ticket**.
+
 ## Limites
 
 **P01 es de solo lectura.** Ejecuta DBS por `OOCU_RESP`. El rol `BNK_APP` lo concede Security por

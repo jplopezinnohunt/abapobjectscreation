@@ -10,6 +10,41 @@ Un unico pendiente bloqueante: el rol `BNK_APP` de `B_REISS` (Security).
 
 ---
 
+## 0. BRIEF — 60 segundos
+
+**Que pedian.** Anadir a Bettina REISS al panel de firmantes de UIL "y sus limites bancarios", segun dos
+cartas del Tesorero de 11/08/2026 (Deutsche Bank Hamburg + Societe Generale, panel identico de 7).
+
+**Que se hizo.** Se anadio a REISS **y** se construyo el tramo de ≤10.000 en **las dos** reglas — nodos
+nuevos `50039526` (validar) y `50039525` (firmar), con REISS y BASOGLU. Los nodos de siempre se dejaron
+arrancando en 0,00 con los cuatro firmantes sin tope, **a proposito**.
+
+**Por que es correcto.** `Simulate rule resolution`: un pago de **10.000 devuelve 6 aprobadores** y uno de
+**10.001 devuelve 4**. La determinacion **suma** los paneles de los nodos que encajan, asi que los cuatro
+cubren todo el rango y las dos limitadas solo su tramo. Es literalmente lo que autoriza la carta.
+
+**Lo que el ticket NO pedia y aparecio.** (1) La nota decia *"her limits"* en singular y las cartas capan a
+**DOS**: BASOGLU llevaba **sin tope desde 2024-09-27**. (2) El **Tesorero que firma las cartas**
+(`YLI-HIETANEN 10097358`) esta en el carton y **expirado en SAP desde 2024-01-26** — 31 meses, y **lo mismo
+en UBO**. (3) Se **borraron** 3 filas de `HRP1001` en vez de delimitarlas, destruyendo la historia de
+BASOGLU.
+
+**Que bloquea el cierre.** `B_REISS` **no tiene el rol `BNK_APP`**: esta en los dos nodos y no puede firmar.
+Es el mismo bloqueo que deja `INC-000011781` abierto desde junio.
+
+**Que decide TRS.** Yli-Hietanen · la **moneda** del umbral (carta en USD, sociedad en EUR) · las
+transferencias entre cuentas propias, que la carta declara **sin tope para todos** · que BASOGLU ahora
+tambien firma.
+
+**Fecha limite.** **2026-09-03** — el AO de UIL debe traer del banco la confirmacion escrita de la lista
+**con los limites**.
+
+**Visual:** [companions/bcm_amount_bands_uil.html](../../companions/bcm_amount_bands_uil.html) ·
+**Mecanismo:** [bcm_amount_band_mechanism.md](../domains/Treasury/bcm_amount_band_mechanism.md) ·
+**Claims:** 608–613.
+
+---
+
 ## 1. Estado de ejecucion
 
 | # | Accion | Quien | Estado |

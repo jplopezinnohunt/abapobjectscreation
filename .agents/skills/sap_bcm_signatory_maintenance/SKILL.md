@@ -232,11 +232,21 @@ Renata Ritter a `50034892`/`50034893`/`50034894`/`50036737` (`bcm_signatory_rule
 | **UBO** | `50034894` ≤10K · `50036737` >10K | `50034892` ≤10K · `50034893` ≤5M | 2×2 limpio, por tramo |
 | **UIS** | `50010054` todos · `50036326` ≤10K *(0)* | `50010051` *(0)* · `50010053` *(0)* · `50036801` | tramos viejos retirados |
 | **IIEP** | `50010088` todos | `50010087` | nodo unico |
-| **UIL** | `50037531` todos | `50037530` | nodo unico |
+| **UIL** | `50037531` **0→50M** · `50039525` **≤10K** | `50037530` **0→max** · `50039526` **≤10K** | **2×2 SOLAPADO** — el nodo alto arranca en 0,00 A PROPOSITO y el bajo lleva SOLO a los limitados (decision s104, claim 613). **NO 'armonizar' con UBO subiendo el suelo del alto**: quitaria a los cuatro sin tope los pagos <10.000 |
 | **UNES** | `50010052` *(0 — va por Coupa)* | `50010075/76/77/78/79` · `50032363` · `50036716` *(0)* · `50038878` | muchos tramos INI |
 | *stubs* | — | `50038588` / `50038589` ("Generated Rule", vacios) | **ignorar** |
 
 *(0)* = cero miembros activos.
+
+> **⚠️ DOS PATRONES DE TRAMO CONVIVEN, y los dos son VALIDOS** (claim **613**, s104):
+> **UBO** — nodo bajo con TODOS (7) y nodo alto DISJUNTO (6, subconjunto sin la limitada).
+> **UIL** — nodo bajo con SOLO los limitados (2) y nodo alto SOLAPADO 0→max (4).
+> Cada uno hace directa una pregunta distinta: UBO *¿quien PUEDE aprobar ≤10K?*, UIL *¿quien esta
+> LIMITADO?*. Se eligio el de UIL a proposito porque esa es la pregunta que hace el **carton**.
+> **El de UIL depende de que la determinacion devuelva la UNION** — verificado (claim 612:
+> 10.000,00→6 agentes, 10.001,00→4) y condicionado a que `Priority` de `OOCU_RESP` siga VACIA.
+> **Antes de tocar bandas en cualquier entidad: SIMULA** (`feedback_simulate_before_deciding_the_shape`).
+
 
 ### Paso 6 — Lecturas previas obligatorias en vivo: PA0002, PA0105, PA0000, USR02, HRP1001
 
