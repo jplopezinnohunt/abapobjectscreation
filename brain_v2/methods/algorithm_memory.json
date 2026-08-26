@@ -1608,6 +1608,28 @@
       "confidence": null,
       "session": 103,
       "source": "sonda aislada por subprocesos, 2026-08-26"
+    },
+    {
+      "subject": null,
+      "kind": "TRAP",
+      "fact": "RFC_DB_OPT-TEXT es CHAR(72): un WHERE mas largo metido en UNA linea se TRUNCA. Medido en P01, un IN de 20 valores da OPTION_NOT_VALID y troceado a 72 funciona. Y hay que cortar POR UN ESPACIO con el espacio al PRINCIPIO de la linea siguiente: un blanco final no se guarda en un CHAR y cortar a ciegas pega dos tokens.",
+      "learned_by": "A41_extract_fund_center_hierarchy",
+      "evidence": null,
+      "implication": "nunca pases un WHERE largo como una sola linea de OPTIONS. Usa rfc_helpers.trocear_where(). Y desconfia del caso silencioso: un truncado que sigue siendo sintaxis valida devuelve filas de MAS sin dar error.",
+      "confidence": null,
+      "session": 103,
+      "source": "P01 2026-08-26, sonda de 8 formas de WHERE"
+    },
+    {
+      "subject": null,
+      "kind": "TRAP",
+      "fact": "Al arreglar un eje de agrupacion elegido a ciegas, elegir 'el campo con MAS valores distintos' salio PEOR que el defecto: sobre YTFI_PPC_STRUC eligio CODE_ORD (un numero de secuencia 01..06), marco 8 claves de Egipto como intrusas y dejo pasar la de Indonesia.",
+      "learned_by": "A40_config_transport_prerelease_check",
+      "evidence": null,
+      "implication": "en una clave de SAP los campos DELANTEROS son la entidad y los traseros el detalle: coge el PRIMERO que discrimina, no el que mas. Y despues de cambiar una heuristica, corre el caso que YA funcionaba: cambiar una heuristica por otra no es arreglar, es mover el error.",
+      "confidence": null,
+      "session": 103,
+      "source": "D01K9B0FXE/FXF, 2026-08-26: 8 falsos positivos con la primera version"
     }
   ]
 }

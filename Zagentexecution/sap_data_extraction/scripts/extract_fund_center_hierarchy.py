@@ -75,19 +75,50 @@ def get_fields(conn, table):
     return [f["FIELDNAME"] for f in res.get("FIELDS", [])]
 
 
+def quoted_in(vals):
+    """Lista para un IN de RFC_READ_TABLE — CON PARENTESIS.
+
+    ⛔ DEFECTO 1 DE 3 (arreglado 2026-08-26). Esta funcion NO EXISTIA aqui: se llamaba en las
+    lineas 93 y 186 y la linea 44 solo importaba get_connection y rfc_read_paginated. El script
+    moria de NameError en la sonda, ANTES del primer RFC. Prueba colateral de que nunca corrio:
+    su manifiesto en el Gold existe y esta VACIO.
+
+    ⛔ Y NO se arregla importando la que ya hay en
+    Zagentexecution/mcp-backend-server-python/extract_zcrp_wf_tables.py:38, que es el atajo
+    obvio: aquella devuelve `'a','b'` SIN parentesis, asi que produce `VALFROM IN 'ABJ','100'`
+    -- medido en P01: rc=5, OPTION_NOT_VALID. Habria cambiado un NameError ruidoso por un error
+    de sintaxis remoto, que es peor de diagnosticar.
+    """
+    vs = [str(v).replace("'", "''") for v in vals]
+    return "(" + ", ".join("'%s'" % v for v in vs) + ")"
+
+
 def sample_fictr(db, n=20):
-    """A spread of real FICTR values (one per FM area + extras) to probe with."""
-    vals = []
-    for area in FM_AREAS:
-        row = db.execute("SELECT FICTR FROM fund_centers WHERE FIKRS=? LIMIT 1", (area,)).fetchone()
+    """Un muestreo de FICTR reales para sondar con que SETCLASS resuelven.
+
+    ⛔ DEFECTO 2 DE 3 (arreglado 2026-08-26): la version anterior devolvia REPETIDOS -- medido,
+    'ADM' cuatro veces y '100' dentro de la lista -- porque tomaba uno por area y luego
+    rellenaba con `LIMIT n` sin comprobar el area de origen. Un muestreo con repetidos gasta la
+    sonda en el mismo valor y sesga el recuento por SETCLASS hacia el area que mas se repite:
+    la sonda deja de medir el reparto y mide la duplicacion.
+    """
+    vals, vistos = [], set()
+
+    def add(v):
+        v = (v or "").strip()
+        if v and v not in vistos:
+            vistos.add(v)
+            vals.append(v)
+
+    for area in FM_AREAS:                      # uno por area: cobertura de las 9 instituciones
+        row = db.execute("SELECT FICTR FROM fund_centers WHERE FIKRS=? LIMIT 1",
+                         (area,)).fetchone()
         if row:
-            vals.append(row[0])
-    # top up with any others
-    for (f,) in db.execute("SELECT FICTR FROM fund_centers LIMIT ?", (n,)):
-        if f not in vals:
-            vals.append(f)
+            add(row[0])
+    for (f,) in db.execute("SELECT DISTINCT FICTR FROM fund_centers LIMIT ?", (n * 3,)):
         if len(vals) >= n:
             break
+        add(f)
     return vals
 
 
@@ -183,17 +214,34 @@ def main():
     print("### Discriminator probe (which SETCLASS resolves fund_centers.FICTR)")
     tally, probe_vals = discriminator_probe(conn, db)
     # exclude 0000 (basis sets) from candidates; pick the dominant non-0000 class
+    # ⛔ DEFECTO 3 DE 3 (arreglado 2026-08-26): NO SE ADIVINA LA CLASE CUANDO LA SONDA NO MIDE.
+    #
+    # Antes, si la sonda no devolvia nada, se caia a `CANDIDATE_SET_CLASSES[0]` -- el valor
+    # documentado por defecto -- y se seguia extrayendo como si estuviera MEDIDO. Medir y no
+    # medir acababan en el mismo sitio, con la misma pinta y sin marca. Y el peor caso no es
+    # equivocarse: es acertar por casualidad y no saber nunca si la sonda funciona.
+    #
+    # Ahora una sonda vacia PARA. La clase por defecto sigue en el catalogo como PISTA para
+    # quien investigue, pero no se puede usar sin decidirlo a mano con --set-class.
     non_basis = {c: n for c, n in tally.items() if c and c != "0000"}
-    resolved_class = None
-    if non_basis:
-        resolved_class = max(non_basis, key=non_basis.get)
-    elif CANDIDATE_SET_CLASSES:
-        resolved_class = CANDIDATE_SET_CLASSES[0]  # fall back to documented default
-    print(f"  -> resolved set class = {resolved_class!r}\n")
+    resolved_class = max(non_basis, key=non_basis.get) if non_basis else None
+    print(f"  -> resolved set class = {resolved_class!r}"
+          f"{'  (MEDIDO por la sonda)' if resolved_class else ''}\n")
 
     if not resolved_class:
-        print("!! No set class resolved the fund-center values. Aborting (nothing to land).")
-        conn.close(); db.close(); return
+        print("!! LA SONDA NO RESOLVIO NINGUNA SETCLASS para los valores de fund_centers.")
+        print("!! Eso NO significa que la clase sea la del catalogo: significa que no se ha")
+        print("!! medido. Causas posibles: el muestreo de FICTR no existe en SETLEAF, la")
+        print("!! ventana de lectura fallo, o la jerarquia vive en otra tabla.")
+        if CANDIDATE_SET_CLASSES:
+            print("!! Pista (NO usada): el catalogo documenta %s. Para forzarla, decidelo a"
+                  % (CANDIDATE_SET_CLASSES[0],))
+            print("!! mano con --set-class <CLASE> y deja constancia de por que.")
+        conn.close(); db.close(); return 2
+
+    if "--set-class" in sys.argv:              # override explicito, con su marca en el summary
+        resolved_class = sys.argv[sys.argv.index("--set-class") + 1].strip()
+        print(f"  -> SOBRESCRITO A MANO: set class = {resolved_class!r} (no medido)\n")
 
     # ---- 2. EXTRACT the four SET tables for the resolved class -------------
     scope = quoted_in(FM_AREAS)

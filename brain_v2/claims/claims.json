@@ -28443,5 +28443,58 @@
       "module": "FI-GL",
       "process": "R2R"
     }
+  },
+  {
+    "id": 604,
+    "claim": "TODO WHERE DE MAS DE 72 CARACTERES SE ESTABA TRUNCANDO EN SILENCIO (medido 2026-08-26). rfc_helpers.rfc_read_paginated construia las opciones como `[{'TEXT': where}]` -- el WHERE entero en UNA linea -- y RFC_DB_OPT-TEXT es CHAR(72). Medido en P01: un `VALFROM IN (...)` de 20 valores (152 caracteres) devuelve OPTION_NOT_VALID, 'RFC_READ_TABLE with suspicious WHERE condition', y la MISMA clausula troceada a 72 funciona y devuelve filas. AFECTA A TODO LLAMADOR con un WHERE largo, no solo al que lo destapo. EL MODO DE FALLO PEOR NO ES EL ERROR: es cuando el trozo truncado sigue siendo sintaxis VALIDA -- p.ej. una condicion compuesta cortada tras el primer AND queda mas ANCHA y devuelve filas de mas, sin avisar. ARREGLADO: `trocear_where()` corta a 72 POR UN ESPACIO y pone el espacio al PRINCIPIO de la linea siguiente, porque un blanco FINAL no se puede guardar en un CHAR (se pierde con el relleno) y uno INICIAL si -- cortar a ciegas cada 72 pega dos tokens ('SETCLASS =' + \"'0311'AND\"). Verificado: reconstruye el original exacto en los cuatro casos probados, incluido un IN sin espacios.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "P01 2026-08-26: IN de 20 valores falla entero, funciona troceado a 72",
+      "Zagentexecution/mcp-backend-server-python/rfc_helpers.py :: trocear_where",
+      "RFC_DB_OPT-TEXT es CHAR(72)"
+    ],
+    "domain": "Data_Quality",
+    "related_objects": [
+      "RFC_READ_TABLE",
+      "RFC_DB_OPT",
+      "rfc_helpers.py",
+      "A41_extract_fund_center_hierarchy"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Data_Quality",
+      "module": "BASIS",
+      "process": "P2D"
+    }
+  },
+  {
+    "id": 605,
+    "claim": "LA JERARQUIA DE CENTROS GESTORES ES LA SETCLASS 0312, Y CUBRE EL 63,3% (medido 2026-08-26 en P01, primera corrida real del extractor). La clase se resolvio POR SONDA, no por catalogo: cruzando 20 valores reales de fund_centers.FICTR contra SETLEAF sin filtrar por clase, el recuento sale 0312=32, 0000=25 (sets de basis, excluida), 0101=16, 0303=5 -- gana 0312. Extraido al Gold para las 9 areas de FM (UNES, ICTP, UIS, IIEP, IBE, UIL, ICBA, MGIE, UBO): SETHEADER 175 · SETHEADERT 166 · SETNODE 150 · SETLEAF 878. COBERTURA: 454 de 717 centros gestores resuelven por una hoja de 0312 = 63,3%. Los 263 restantes NO cuelgan de ninguna hoja de esa clase: puede ser que vivan en otra jerarquia, que esten fuera de las 9 areas, o que no esten en ninguna -- no se ha distinguido y NO se debe leer como 'huerfanos'.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "P01 en vivo 2026-08-26 via RFC_READ_TABLE, solo lectura",
+      "Gold DB: setheader/setheadert/setnode/setleaf + _fund_center_hierarchy_manifest",
+      "Zagentexecution/sap_data_extraction/scripts/extract_fund_center_hierarchy.py"
+    ],
+    "domain": "PSM_FM",
+    "related_objects": [
+      "SETLEAF",
+      "SETNODE",
+      "SETHEADER",
+      "SETHEADERT",
+      "FICTR",
+      "FIKRS",
+      "A41_extract_fund_center_hierarchy"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "PSM",
+      "module": "FM",
+      "process": "B2R"
+    }
   }
 ]

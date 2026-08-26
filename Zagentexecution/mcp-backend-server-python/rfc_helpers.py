@@ -96,6 +96,49 @@ def _build_connection_params(system_id="P01", env_path=None):
     return params
 
 
+ANCHO_OPTIONS = 72          # RFC_DB_OPT-TEXT es CHAR(72). No es un consejo: es la estructura.
+
+
+def trocear_where(where):
+    """Parte un WHERE en lineas de 72 — ARREGLADO 2026-08-26.
+
+    ⛔ AQUI HABIA `[{"TEXT": where}]`: el WHERE entero en UNA linea. RFC_DB_OPT-TEXT es
+    CHAR(72), asi que todo lo que pasara de ahi se TRUNCABA. Medido en P01: un
+    `VALFROM IN (...)` de 20 valores devolvia OPTION_NOT_VALID, «RFC_READ_TABLE with
+    suspicious WHERE condition» -- y troceado a 72 la MISMA clausula funciona. Afectaba a
+    TODO llamador con un WHERE largo, no solo al que lo destapo.
+
+    Y el modo de fallo peor no es el error: es cuando el trozo truncado SIGUE siendo sintaxis
+    valida. `SETCLASS = '0311' AND SUBCLASS IN ('UNES','ICTP',...` cortado a 72 puede quedar en
+    una condicion mas ancha que devuelve filas de mas, sin avisar de nada.
+
+    ⛔ Y SE CORTA POR UN ESPACIO, NUNCA EN MEDIO DE UN TOKEN, con el espacio al PRINCIPIO de la
+    linea siguiente: un blanco FINAL no se puede guardar en un CHAR -- se pierde al rellenar --
+    pero uno INICIAL si. Cortando a ciegas cada 72, un corte que caiga justo tras un espacio lo
+    borra y pega dos tokens: `SETCLASS ='0311'AND`. Esa es la leccion que este proyecto ya
+    pago con los separadores de PPC.
+    """
+    s = str(where).strip()
+    if len(s) <= ANCHO_OPTIONS:
+        return [{"TEXT": s}]
+    lineas, resto = [], s
+    while resto:
+        if len(resto) <= ANCHO_OPTIONS:
+            lineas.append(resto)
+            break
+        corte = resto.rfind(" ", 0, ANCHO_OPTIONS + 1)
+        if corte <= 0:
+            # un token mas largo que 72 (un IN gigante sin espacios): se parte donde toque.
+            # Sigue siendo mejor que truncar, y se DICE en vez de callarlo.
+            corte = ANCHO_OPTIONS
+            lineas.append(resto[:corte])
+            resto = resto[corte:]
+            continue
+        lineas.append(resto[:corte])
+        resto = resto[corte:]          # empieza POR el espacio: inicial se conserva
+    return [{"TEXT": x} for x in lineas]
+
+
 def verificar_sistema(conn, sid_pedido, estricto=True):
     """LA PRUEBA DURA: preguntarle al sistema QUIEN ES, y compararlo con lo que se pidio.
 
@@ -314,7 +357,7 @@ def rfc_read_paginated(conn, table, fields, where, batch_size=5000, throttle=3.0
     if isinstance(where, list):
         rfc_options = where
     elif where:
-        rfc_options = [{"TEXT": where}]
+        rfc_options = trocear_where(where)
     else:
         rfc_options = []
 

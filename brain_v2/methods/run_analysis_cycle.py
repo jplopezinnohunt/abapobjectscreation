@@ -97,6 +97,13 @@ CYCLE = [
      "L3 concept drift over the accumulated history", True),
     ("process_mining/extract_business_rules.py",
      "L2 the rules that live in code, not in configuration", False),
+    # A41 — enchufado 2026-08-26, el dia que corrio por PRIMERA VEZ. Estuvo registrado como
+    # capacidad siendo codigo muerto (NameError antes del primer RFC), y mientras estuvo ROTO
+    # la puerta lo dejaba pasar sin llamador -- correctamente: enchufar codigo que no corre
+    # seria el error. Al arreglarlo, la puerta pidio su llamador en la misma corrida.
+    # heavy=True: necesita RFC contra P01, asi que se salta en modo --quick.
+    ("Zagentexecution/sap_data_extraction/scripts/extract_fund_center_hierarchy.py",
+     "L2 la jerarquia de centros gestores (SETCLASS medida por sonda, no por catalogo)", True),
     ("process_mining/chain_lineage.py",
      "L2 the address chain — how funding reaches work when no foreign key says so", False),
     ("brain_v2/system_profile/build_profile_links.py",

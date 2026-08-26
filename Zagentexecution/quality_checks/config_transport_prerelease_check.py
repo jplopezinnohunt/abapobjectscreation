@@ -159,12 +159,41 @@ def main(argv):
             print("  AVISO: ya esta LIBERADO. Este check es para ANTES de liberar.")
         print()
 
+        # ARREGLADO 2026-08-26 (A40). LA UNIDAD DE CAMBIO ES LA ORDEN, Y ERA LA QUE DECIA OK.
+        #
+        # Las claves de customizing viven en E071K de la TAREA, no de la orden padre. Antes,
+        # con la orden se imprimia «E071K vacio / puede ser una tarea padre» y se devolvia 0
+        # -- mientras su hija D01K9B0FXF devolvia 1 con la clave INTRUSA de Indonesia
+        # '350/ID/USTRD/O/01'. Mismo dia, misma herramienta, veredictos opuestos, y el objeto
+        # que un operador teclea al liberar era justo el que aprobaba. El propio codigo nombraba
+        # el remedio (E070.STRKORR) en el mensaje y no lo aplicaba.
+        #
+        # Ahora se resuelven las hijas y se analiza la UNION. Y si no hay hijas y no hay claves,
+        # se sale 2 (NO ANALIZABLE), nunca 0: un exit 0 sobre algo que no se pudo mirar se lee
+        # como aprobado, que es la forma mas cara de fallar en una puerta de liberacion.
+        analizados = [trkorr]
         keys = read_table(c, "E071K", ["TRKORR", "OBJNAME", "TABKEY"],
                           "TRKORR = '%s'" % trkorr)
         if not keys:
-            print("  El transporte no lleva claves de tabla (E071K vacio).")
-            print("  Puede ser una tarea padre: mira sus tareas hijas (E070.STRKORR).")
-            return 0
+            hijas = [x["TRKORR"].strip() for x in
+                     read_table(c, "E070", ["TRKORR", "STRKORR"],
+                                "STRKORR = '%s'" % trkorr)]
+            if not hijas:
+                print("  El transporte no lleva claves de tabla (E071K vacio) y NO tiene tareas")
+                print("  hijas (E070.STRKORR). NO ANALIZABLE -- no se puede decir que este")
+                print("  limpio, solo que no se ha podido mirar.")
+                return 2
+            print("  Es una ORDEN: sus claves viven en las %d tarea(s) hija(s). Se analiza la"
+                  % len(hijas))
+            print("  UNION, que es lo que de verdad se libera: %s" % ", ".join(sorted(hijas)))
+            for t in sorted(hijas):
+                keys.extend(read_table(c, "E071K", ["TRKORR", "OBJNAME", "TABKEY"],
+                                       "TRKORR = '%s'" % t))
+            analizados = sorted(hijas)
+            if not keys:
+                print("  Ninguna hija lleva claves de tabla: NO ANALIZABLE.")
+                return 2
+            print()
         by_tab = collections.defaultdict(list)
         for k in keys:
             by_tab[k["OBJNAME"].strip()].append(k["TABKEY"])
@@ -184,6 +213,7 @@ def main(argv):
         c.close()
 
     intrusas, viaja, noop, deriva = [], [], [], []
+    no_vacias = []          # tablas donde la prueba INTRUSA NO pudo ejecutarse
 
     for tab in sorted(by_tab):
         fields = meta[tab]
@@ -192,14 +222,46 @@ def main(argv):
         a = {key_of(r, fields): value_of(r, fields) for r in src_rows[tab]}
         b = {key_of(r, fields): value_of(r, fields) for r in dst_rows[tab]}
 
-        # La "entidad" del transporte: el 1er campo clave tras MANDT, salvo override.
-        idx = 0
+        # LA ENTIDAD DEL TRANSPORTE — ARREGLADO 2026-08-26 (A40).
+        #
+        # Antes se fijaba UN eje a ciegas: el 1er campo clave tras MANDT. Para T030H eso es
+        # KTOPL, y en D01 solo existe UNES -- asi que `len(ents) > 1` era SIEMPRE falso y la
+        # prueba INTRUSA no podia dispararse NUNCA. El discriminador real (HKONT, la cuenta) no
+        # se miraba. Resultado: un «0 INTRUSA» que significaba NO COMPROBADO y se leia como
+        # LIMPIO. Un doc de incidente llego a publicar «alcance limpio, sin claves ajenas»
+        # apoyado en ese cero.
+        #
+        # Ahora se recorren los campos clave EN ORDEN y gana EL PRIMERO QUE DISCRIMINA.
+        #
+        # ⛔ EL ORDEN IMPORTA Y NO ES UN DETALLE. La primera version de este arreglo elegia el
+        # campo con MAS VALORES DISTINTOS, y sobre YTFI_PPC_STRUC eligio CODE_ORD -- un numero
+        # de secuencia, 01..06 -- como si fuera una entidad. Resultado medido: marco OCHO claves
+        # de EGIPTO como intrusas (EG/USTRD/O/02..06, EG/USTRD/P/02..04, que son el contenido
+        # propio del transporte) y DEJO PASAR la de Indonesia, 350/ID/USTRD/O/01, clasificada
+        # NO-OP. Rompio el unico caso que funcionaba y produjo 8 falsos positivos. Cambiar una
+        # heuristica por otra heuristica no es arreglar: es mover el error de sitio.
+        #
+        # En una clave de SAP los campos DELANTEROS son la entidad y los traseros el detalle.
+        # Por eso: el primero que separe, no el que mas separe. Asi el pais gana en
+        # YTFI_PPC_STRUC (Indonesia se caza) y HKONT gana en T030H, donde KTOPL no separa nada
+        # porque en D01 solo existe UNES. Si NINGUNO discrimina, se DICE en vez de dar un cero.
+        candidatos = [i for i, f in enumerate(keyf) if f.upper() != "MANDT"]
         if entity_field and entity_field in keyf:
-            idx = keyf.index(entity_field)
-        elif keyf and keyf[0].upper() == "MANDT":
-            idx = 1 if len(keyf) > 1 else 0
-        ents = collections.Counter(k[idx] for k in in_tr if len(k) > idx)
-        main_ents = {e for e, n in ents.items() if n == max(ents.values())} if ents else set()
+            candidatos = [keyf.index(entity_field)]
+        idx, ents, main_ents = None, collections.Counter(), set()
+        for i in candidatos:
+            cnt = collections.Counter(k[i] for k in in_tr if len(k) > i)
+            if len(cnt) < 2:
+                continue                      # ese campo no separa nada en este transporte
+            top = max(cnt.values())
+            mayoria = {e for e, n in cnt.items() if n == top}
+            if len(mayoria) != 1:
+                continue                      # empate: no hay "la entidad que se mantenia"
+            idx, ents, main_ents = i, cnt, mayoria
+            break                             # EL PRIMERO que discrimina, no el que mas
+        eje_discrimina = idx is not None
+        if not eje_discrimina:
+            idx = candidatos[0] if candidatos else 0
 
         print("-" * 78)
         print("TABLA %s   clave=(%s)   %s:%d filas  %s:%d filas   claves en transporte:%d"
@@ -216,16 +278,24 @@ def main(argv):
         if in_tr and casan < len(in_tr):
             print("   AVISO: %d de %d claves del transporte no existen en ningun sistema"
                   % (len(in_tr) - casan, len(in_tr)))
-        if len(ents) > 1:
-            print("   entidades en el transporte (%s): %s"
+        if eje_discrimina:
+            print("   eje de entidad = %s (el campo clave que DISCRIMINA): %s"
                   % (keyf[idx] if len(keyf) > idx else "?", dict(ents)))
+        else:
+            # NO SE CALLA. Un cero que significa "no comprobado" impreso junto a ceros que
+            # significan "no ocurre" es exactamente como se fabrica una conclusion falsa.
+            no_vacias.append(tab)
+            print("   ⛔ NINGUN campo clave discrimina en esta tabla: todas las claves del")
+            print("      transporte comparten el mismo valor en cada campo, o hay empate.")
+            print("      LA PRUEBA INTRUSA NO SE EJECUTA AQUI. Un 0 en el resumen significa")
+            print("      NO COMPROBADO, no 'limpio'. Fuerza un eje con --entity-field <CAMPO>.")
 
         for k in sorted(in_tr, key=str):
             va, vb = a.get(k), b.get(k)
             ent = k[idx] if len(k) > idx else ""
             tag = "NO-OP " if va == vb else "VIAJA "
             extra = ""
-            if ents and len(ents) > 1 and ent not in main_ents:
+            if eje_discrimina and ent not in main_ents:
                 tag = "INTRUSA"
                 extra = "   <-- entidad ajena a este transporte"
                 intrusas.append((tab, k, va, vb))
@@ -249,12 +319,23 @@ def main(argv):
 
     print()
     print("=" * 78)
+    print("  ANALIZADO: %s" % ", ".join(analizados))
     print("  VIAJA   %3d   el cambio que querias -- verifica que TODO es intencionado"
           % len(viaja))
     print("  NO-OP   %3d   misma valor a los dos lados; candidatas a quitar del transporte"
           % len(noop))
     print("  DERIVA  %3d   divergencia que este transporte NO corrige" % len(deriva))
-    print("  INTRUSA %3d   clave de una entidad ajena DENTRO del transporte" % len(intrusas))
+    print("  INTRUSA %3d   clave de una entidad ajena DENTRO del transporte%s"
+          % (len(intrusas),
+             "" if not no_vacias else "   <-- PARCIAL, ver abajo"))
+    if no_vacias:
+        # EL CERO QUE SIGNIFICA "NO COMPROBADO" VA JUNTO AL CERO, NO EN OTRO SITIO.
+        print()
+        print("  ⛔ ALCANCE NO VERIFICADO en %d tabla(s): %s"
+              % (len(no_vacias), ", ".join(no_vacias)))
+        print("     Ahi ningun campo clave discrimina, asi que la prueba INTRUSA no se ejecuto.")
+        print("     NO leas el 'INTRUSA 0' de arriba como 'sin claves ajenas': significa que en")
+        print("     esas tablas no se ha podido mirar. Fuerza un eje con --entity-field <CAMPO>.")
     if intrusas:
         print()
         print("  FALLA. Una clave ajena dentro del transporte es la clase de defecto que")
