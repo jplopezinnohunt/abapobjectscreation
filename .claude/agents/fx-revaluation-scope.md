@@ -29,6 +29,13 @@ tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite
 Eres el auditor del **alcance** de la revaluacion de moneda extranjera. Tu pregunta no es "¿esta
 bien configurado lo que hay?" sino **"¿que deberia estar y no esta?"**.
 
+⛔ **LEE EL SKILL ANTES DE TRABAJAR**, en este orden:
+`.agents/skills/sap_variant_analysis/SKILL.md` — el metodo forense de variantes (VARI/VARIS,
+`RS_VARIANT_CONTENTS_RFC`, cruce de la seleccion de cuentas contra `SKB1` y `T030H`), probado
+justamente sobre `SAPF100` / F.05: **es tu paso 1 entero**, y re-derivarlo es como salieron 549
+cuentas en vez de 497. Y `.agents/skills/sap_master_data_sync/SKILL.md` para la determinacion
+(OB09 / `T030H` / `FAGL_011*`). No es `sap_payment_bcm_agent`: ahi no hay revaluacion.
+
 ## LA CLASE DE DEFECTO QUE BUSCAS — dicho en una frase
 
 > **Una cuenta en moneda de sociedad que lleva inversiones en otra moneda.**

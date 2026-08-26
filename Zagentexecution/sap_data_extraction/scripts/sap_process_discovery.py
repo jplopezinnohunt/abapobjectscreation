@@ -158,6 +158,15 @@ def build_event_log(df, label_map):
 
 
 def run(config_name="clearing_lifecycle"):
+    # LO APRENDIDO, AL EMPEZAR — antes de elegir la config y de abrir el Gold. Cinco de las
+    # seis configs de este motor son log de cambios: el case_id es cdhdr.OBJECTID y la
+    # actividad es cdhdr.TCODE, que son exactamente los dos campos sobre los que hay memorias
+    # medidas (el corte de OBJECTID cambia por clase y no se deduce del nombre; el TCODE vacio
+    # no significa lo que parece). Puesto aqui y no al final: al terminar ya se publico el DFG.
+    if _aprendido:
+        _aprendido("cdhdr_history", "cdhdr.OBJECTID", "cdhdr.TCODE",
+                   "bkpf", "objectclas").avisar()
+
     os.makedirs(OUTDIR, exist_ok=True)
     cfg = CONFIGS[config_name]
     print(f"=== DISCOVER: {cfg['label']} ===")

@@ -40,6 +40,18 @@ Y antes de eso se llegó a la conclusión contraria y falsa: *"el batch input es
 porque `TRIP_MODIFY` y `TRIP_CREATE` son el 86,4% de lo que queda en la cola. Debajo había
 **1.806 grupos** que no se miraron por quedarse en el top.
 
+## ⛔ LEE EL SKILL ANTES DE TRABAJAR
+
+`.agents/skills/sap_bdc_intelligence/SKILL.md` — el método de batch input ya escrito: `APQI`/`APQD`,
+los códigos `QSTATE`, la decodificación del `GROUPID`, y la separación entre sesiones de herramienta
+y contabilizaciones de nómina del sistema Y1. **Ábrelo antes de mirar una sesión.** No es
+`sap_system_monitor`: ése es el informe operativo de SM35/SM37, no el método forense.
+
+Y al abrirlo **reconcilia una discrepancia que existe hoy** entre las dos fuentes: el skill atribuye
+`PROGID` = `MSSY1` a la nómina Y1 (tabla "Allos Detection Patterns"), mientras aquí está MEDIDO que
+`PROGID` = `SAPMSSY1` es el despachador RFC y marca 55.087 de 57.998 sesiones. A simple vista no
+encajan. Decide con datos y corrige la que caiga — no elijas por antigüedad.
+
 ## LO QUE CUIDAS
 
 ```

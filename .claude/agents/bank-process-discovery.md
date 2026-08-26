@@ -70,6 +70,18 @@ Esto es el paso 0 porque es el que falló. Hoy hay una regla para ello
 (`feedback_reload_the_domain_when_the_topic_moves`, CRITICAL) que existe por ese fallo exacto.
 **Si vas a medir algo de un área que no cargaste, no estás informado: estás improvisando.**
 
+**Y LEE EL SKILL DEL DOMINIO ANTES DE TRABAJAR — el método ya está escrito, no lo re-derives.**
+Cada tramo de tu modelo tiene dueño y hay que ABRIRLO (`.agents/skills/<nombre>/SKILL.md`):
+
+| tramo del modelo | skill que hay que leer |
+|---|---|
+| MEDIO DE PAGO + ACUSE — FBZP, `T042Z`, F110, lotes BCM | `sap_payment_bcm_agent` |
+| BANCO CASA ↔ cuenta ↔ mayor — FI12, `T012K`, marca de extracto | `sap_house_bank_configuration` |
+| EXTRACTO — FF_5, `FEBKO`/`FEBEP`, reglas de contabilización | `sap_bank_statement_recon` |
+
+No es `sap_payment_e2e`: ése mina el ciclo de vida del pago, no describe cómo opera el banco.
+Puerta que lo comprueba: `python Zagentexecution/quality_checks/skill_binding_check.py`.
+
 ### 1. Ante un requisito de un banco — la pregunta va antes que el diseño
 ```
 python brain_v2/house_bank_roles.py --country <ISO2>

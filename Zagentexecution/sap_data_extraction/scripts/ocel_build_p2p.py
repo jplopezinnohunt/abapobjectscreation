@@ -48,6 +48,14 @@ SINCE = "20240101"   # bound the first store; scales by widening this
 
 
 def run():
+    # LO APRENDIDO, AL EMPEZAR — no al terminar. Aqui el minero esta a punto de leer ekko/ekbe
+    # y de construir identidades de objeto a partir de LIFNR y EKGRP; despues de `con.close()`
+    # ya no puede comprobar nada y lo que queda es buena intencion. `avisar()` enseña ademas
+    # las PREGUNTAS ABIERTAS del foro que este minero puede contestar con los datos que esta a
+    # punto de leer.
+    if _aprendido:
+        _aprendido("ekko", "ekbe", "vgabe", "lifnr", "_joins").avisar()
+
     con = sqlite3.connect(GOLD)
     po = pd.read_sql_query(
         f"SELECT EBELN,AEDAT,LIFNR,EKGRP FROM ekko WHERE AEDAT>='{SINCE}' AND AEDAT<>''", con)

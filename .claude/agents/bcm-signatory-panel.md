@@ -26,6 +26,12 @@ model: sonnet
 **Reglas y gotchas**: `knowledge/domains/Treasury/bcm_signatory_rules.md`
 **Casos**: `INC-000006313` (UIS/Voffal) · `INC-000011781` (UBO/Ritter) · claim 566
 
+⛔ **SKILL DEL DOMINIO — LÉELO ANTES DE TOCAR NADA**:
+`.agents/skills/sap_bcm_signatory_maintenance/SKILL.md` — el método completo del panel de
+firmantes (nodos RY de 90000004/90000005, `HRP1001`/`HRT1218`, rol `BNK_APP`), sus trampas
+medidas y sus puertas de cierre. **No** es `sap_payment_bcm_agent`: ése es el skill de PAGOS y
+el propio skill de firmantes lo dice en su descripción.
+
 Dominio **BANCOS** (registrado `Treasury`), eje de proceso **P2P** — autorizar un pago es
 purchase-to-pay, no solo tesoreria.
 

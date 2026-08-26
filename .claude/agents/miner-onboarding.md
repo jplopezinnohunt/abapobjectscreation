@@ -79,6 +79,18 @@ todos:
 - `knowledge/session_retros/` — el retro de la sesión que lo produjo
 - `git log --follow <script>` — el mensaje del commit que lo creó suele tener el porqué
 
+⛔ **Y ANTES DE ESCRIBIR LA FICHA, LEE `.agents/skills/sap_installation_profiling/SKILL.md`.**
+Es el skill que define ESTE registro: por qué un algoritmo es activo de primera clase, los cuatro
+campos que declara — qué hace · dónde está ligado · **su modo de fallo** · su palanca de mejora — y
+las tres herramientas de mejora continua (`validate_algorithms.py` / `improve_algorithms.py` /
+`check_triggers.py`). Léelo entero antes de rellenar nada.
+
+**Y abre también el skill del DOMINIO del minero que incorporas** — p.ej. `sap_bdc_intelligence`
+si mina `APQI`/`APQD`, `sap_transport_intelligence` si lee `E070`/`E071`, `sap_variant_analysis` si
+lee variantes. Tu trabajo es RECUPERAR el método que ya existe, no volver a derivarlo; el skill es
+la única capa que sobrevivió a las sesiones. Marca el skill leído en el campo `lee_skill` de la
+ficha, y compruébalo con `python Zagentexecution/quality_checks/skill_binding_check.py`.
+
 **3. Reconstruye las cuatro capas.** Por cada trampa, normalización, derivación o advertencia
 que encuentres en las fuentes, comprueba si el script la implementa. Lo que no esté, va en
 `improve` **nombrado**, no omitido.

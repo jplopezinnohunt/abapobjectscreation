@@ -57,6 +57,16 @@ GROUP BY k.EBELN, k.AEDAT
 
 
 def run():
+    # LO APRENDIDO, AL EMPEZAR. Este minero declara AUSENCIAS ("facturado sin entrada de
+    # mercancia") sobre un LEFT JOIN ekko-ekbe y publica porcentajes de la poblacion entera:
+    # las tres memorias que le aplican son justo esas -- antes de concluir que algo FALTA
+    # deriva de la configuracion como se veria, imprime seis parejas del join y leelas, y un
+    # ratio sospechosamente uniforme es un filtro que falta, no un hallazgo. Despues del
+    # `con.close()` ninguna de las tres se puede aplicar ya.
+    if _aprendido:
+        _aprendido("ekko", "ekbe", "_joins", "_negative_results",
+                   "_uniform_ratio_is_a_missing_filter", "_as_designed_is_not_as_run").avisar()
+
     con = sqlite3.connect(GOLD)
     rows = con.execute(SQL).fetchall()
     con.close()

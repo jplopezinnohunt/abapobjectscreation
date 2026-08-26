@@ -510,6 +510,15 @@ def accumulate_rsau(db, run_stamp, lookback_days, chunk_hours=RSAU_CHUNK_HOURS,
 
 
 def main():
+    # LO APRENDIDO VA DELANTE. Justo despues de esto se decide CUANTO se pide hacia atras
+    # (derive_rsau_days) y se lee por RFC_READ_TABLE: las memorias que aplican son
+    # exactamente la retencion MEDIDA de P01 (>=182d, no los ~14 que este acumulador asumia,
+    # ni el techo de 70 sacado de la propia sonda), el area de trabajo de 512 caracteres, y
+    # que TABLE_WITHOUT_DATA no significa tabla vacia -- que es como _read_windowed lo trata.
+    # Decidir la ventana y DESPUES leer el aviso es como se dejaron 45 dias atras en julio.
+    if _aprendido:
+        _aprendido("rsau_audit_history", "rowskips", "retencion", "rfc_read_table",
+                   "ventana").avisar()
     verify_only = "--verify" in sys.argv
     db = sqlite3.connect(GOLD_DB, timeout=120)
 
