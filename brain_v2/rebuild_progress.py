@@ -97,10 +97,19 @@ def main():
     mtime = datetime.fromtimestamp(log.stat().st_mtime, tz=now.tzinfo)
     quieto = now - mtime
 
+    # FIN DE CORRIDA: 'Rebuild complete.' va a stdout y NO siempre llega al curation.log
+    # (medido s104: solo 2 ocurrencias en 80k lineas, ambas de corridas viejas). El marcador
+    # fiable es que la ULTIMA marca sea un OK sobre el paso final (num == tot).
+    num_limpio = re.sub(r"\D", "", last["num"] or "")
+    terminado = (saw_complete_after_last_mark or
+                 (last["kind"] == "OK" and last["tot"] and num_limpio == last["tot"]))
+
     print("=" * 70)
-    if saw_complete_after_last_mark:
-        print("REBUILD TERMINADO — el log cierra con 'Rebuild complete.'")
+    if terminado:
+        print(f"REBUILD TERMINADO — ultimo paso {last['num']}/{last['tot']} cerrado con OK")
         print(f"  ultima marca : {last['name'][:60]}")
+        if last["ts"]:
+            print(f"  a las        : {last['ts'].strftime('%H:%M:%S')}  (hace {human(now - last['ts'])})")
     else:
         cabeza = f"paso {last['num']}" + (f" de {last['tot']}" if last["tot"] else "")
         estado = "EN CURSO" if last["kind"] == "START" else f"entre pasos (ultimo {last['kind']})"

@@ -54,6 +54,17 @@ SALIDA
     0 = coherente · 1 = incoherencia (A-E) · 2 = error de lectura/uso
 """
 
+# --------------------------------------------------------------------------
+QUALITY_CHECK = {
+    "tier": "live",
+    "sobre": "datos_sap",     # datos_sap | conocimiento | herramientas
+    "needs": "rfc_p01",       # lee HRP1000/HRP1218/HRT1218/HRP1001/PA0105/AGR_USERS en vivo
+    "what": ("needs a live P01 RFC session AND an archived carton per entity. Sin carton NO "
+             "se puede juzgar el panel: pedirlo es parte del ticket, no un motivo para "
+             "pasar en verde. Invocacion: --entity <X> --carton <fichero>"),
+}
+# --------------------------------------------------------------------------
+
 import argparse
 import re
 import sys
