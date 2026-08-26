@@ -28632,5 +28632,65 @@
     "_no_enlazado_a_proposito": {
       "0312 / 0101 / 0303 / 0000 (SETCLASS)": "0312 SI es el sujeto -- 'LA JERARQUIA DE CENTROS GESTORES ES LA SETCLASS 0312' -- pero un numero desnudo de cuatro digitos es una clave de indice pesima: colisiona con importes, cuentas y anos en cualquier prosa, y es justo la clase de entrada que hace inutil 'graph_queries.py entity'. 0101, 0303 y 0000 ademas son el recuento perdedor de la sonda, o sea contraste puro. El hecho queda alcanzable por SETLEAF/SETHEADER, que si estan enlazados."
     }
+  },
+  {
+    "id": 606,
+    "claim": "EL PANEL DE FIRMANTES BCM NO LO ENRUTA EL WORKFLOW 90000003: SON DOS GATES DISTINTOS EN DOS MOMENTOS DISTINTOS (verificado 2026-08-26 contra las tres fuentes del dominio). knowledge/domains/Treasury/bcm_signatory_rules.md:47 dice 'Both are consumed by workflow 90000003 (BNK_BATCH_HEADER approval)' y :252 diagnostica el PERNR fantasma nombrando ese mismo workflow. Pero bcm_signatory_change_solution_design.md:140 declara que 90000003 es el GATE 1 -- FI RELEASE FOR PAYMENT, a nivel de DOCUMENTO y ANTES de F110 -- y :151 que el de firmantes es el GATE 2, a nivel de FICHERO y DESPUES de F110: WS50100024 -> WS50100021 (estandar BUSISB001). CONSECUENCIA: el diagnostico del PERNR fantasma en rules.md:252 y la regla feedback_bcm_ghost_pernr_check nombran el workflow equivocado, asi que quien siga esa pista mirara el gate de FI cuando el problema esta en el de firmantes. NO se corrige rules.md en este claim: se DECLARA la contradiccion y cual de las dos fuentes es la que distingue los dos gates explicitamente.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "knowledge/domains/Treasury/bcm_signatory_rules.md:47,52,252",
+      "knowledge/domains/Treasury/bcm_signatory_change_solution_design.md:140,151",
+      "hallada al consolidar .agents/skills/sap_bcm_signatory_maintenance/SKILL.md"
+    ],
+    "domain": "Treasury",
+    "related_objects": [
+      "BNK_BATCH_HEADER",
+      "BNK_APP",
+      "F110",
+      "WS50100024",
+      "WS50100021",
+      "BUSISB001",
+      "feedback_bcm_ghost_pernr_check"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Treasury",
+      "module": "FI-BL",
+      "process": "P2P"
+    }
+  },
+  {
+    "id": 607,
+    "claim": "HAY UN SUBSISTEMA FIORI DE PETICIONES DE RRHH QUE EL BRAIN NO SABE EXPLICAR, Y PARTE DE EL YA ESTABA ESCRITO EN UN SKILL QUE NADIE LEE (medido 2026-08-26). El detector de hallazgos sin aterrizar lista 37 identificadores propios que el codigo toca y el brain no explica; OCHO de ellos son la misma familia y SEIS gatean una rutina que puede BLOQUEAR: ZTHRFIORI_BREQ (9 rutinas), ZTHRFIORI_HREQ (6), ZTHRFIORI_REQSTA (6), ZV_HRFIORI_REQ (5, es una VISTA), ZTHRFIORI_ATTACH (4), ZTHRFIORI_DAPPRV (4), mas ZTHRFIORI_EG_MAI (7) y ZTHRFIORI_RS_MAI (5). Los puntos de llamada son CREATE_REQUEST, CANCEL_REQUEST, DELETE_ATTACHMENT y HANDLE_MESSAGES::HANDLE_INFOTYPE_0965. Y ZTHR_EG_ADVANCE / ZTHR_EG_CLAIM (3 rutinas cada una) cuelgan del mismo HANDLE_INFOTYPE_0965. LO QUE YA ESTABA DOCUMENTADO Y EL BRAIN NO VEIA: .agents/skills/hcm_domain_agent/SKILL.md:164 dice que ZTHRFIORI_BREQ es la CABECERA DE PETICION DE PRESTACION con claves GUID/STATUS/PERNR, y :165 que ZTHRFIORI_EG_MAI son los DATOS PRINCIPALES DE EG con GUID/AMOUNT/CURRENCY; .agents/skills/sap_reverse_engineering/SKILL.md:61 añade que ZTHRFIORI_BREQ lleva codigos de ESTADO 00-09. O sea que el 'no lo sabemos' era en realidad 'no lo alcanzamos'. LO QUE SIGUE SIN SABERSE, y no se rellena: que hacen exactamente HREQ, REQSTA, ATTACH, DAPPRV y la vista, que transicion de estado bloquea, y si EG es Education Grant -- lo sugiere HRPADUNEDGR ('Education Grant console') pero NO esta verificado.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      "brain_v2/methods/unlanded_discoveries.json (37 identificadores, 2026-08-26)",
+      ".agents/skills/hcm_domain_agent/SKILL.md:164-165",
+      ".agents/skills/sap_reverse_engineering/SKILL.md:61"
+    ],
+    "domain": "HCM",
+    "related_objects": [
+      "ZTHRFIORI_BREQ",
+      "ZTHRFIORI_HREQ",
+      "ZTHRFIORI_REQSTA",
+      "ZV_HRFIORI_REQ",
+      "ZTHRFIORI_ATTACH",
+      "ZTHRFIORI_DAPPRV",
+      "ZTHRFIORI_EG_MAI",
+      "ZTHRFIORI_RS_MAI",
+      "ZTHR_EG_ADVANCE",
+      "ZTHR_EG_CLAIM",
+      "HRPADUNEDGR"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "HCM",
+      "module": "HCM",
+      "process": "H2R"
+    }
   }
 ]
