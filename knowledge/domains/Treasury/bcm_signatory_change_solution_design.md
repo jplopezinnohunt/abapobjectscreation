@@ -30,6 +30,14 @@ LEVEL 2  BANKS (per entity)                       LEVEL 3  SIGNATORY NODES (per 
 
 - **Level 1 — Entity** = SAP company code (`ZBUKR`). This is what scopes the signatory nodes.
 - **Level 2 — Banks** = `T012`/`T012K` house banks of the company code. Each **bank account** has its own *carton des signatures* (account-level legal authority). The banks that actually reach BCM are the ones in **`T042A`** (F110 payment path). Banks **not** in `T042A` (collection/manual) never produce a BCM batch.
+
+> ⚠️ **CORREGIDO 2026-08-26 (INC-000016338, claim 611).** **`T042A` está VACÍA en P01** —
+> `RFC_READ_TABLE` sin filtro devuelve `TABLE_WITHOUT_DATA`. El universo del gate de completitud es
+> **`T012K`** (bancos casa de la sociedad) corroborado con **`T042I`** (`ZLSCH`→`HBKID`). Y
+> **`BNK_BATCH_HEADER` tampoco es legible** para el usuario SNC, así que la contradicción C2 **no se
+> puede arbitrar leyendo**: es un LÍMITE DE LECTURA, nunca evidencia de que no haya lotes.
+> *(Contradicción pendiente: `data_quality_issues` `DQ-2026-063-04` afirma que `T042A` sí se consultó
+> con éxito en la sesión 63. O estaba poblada entonces y ahora no, o aquello nunca se re-verificó.)*
 - **Level 3 — Nodes** = `RY` responsibility objects, keyed by **entity + amount band** (selection logic in §3a). Their selection criteria live in **infotype 1218** (`HRP1218`/`HRT1218`) as expressions on the standard BCM structure `BNK_STR_BATCH_REL_APPR` — **NOT** in the generic PFAC `HRP1222` (which is empty here). Members live in `HRP1001` (`RELAT='007' SCLAS='P' SOBID=PERNR`, with `BEGDA/ENDDA`).
 
 ### Two "rules" — and NEITHER is bank-aware (corrected 2026-06-19)

@@ -198,6 +198,21 @@ y 610 quedan `PARTIALLY_SUPERSEDED` por el **claim 612**; lo demás de aquellos 
 | **UBO** | **todos** (7) | **disjunto**, subconjunto sin la limitada (6) | con **cualquiera** de las dos semánticas |
 | **UIL** | **sólo las limitadas** (2) | **solapado** 0 → máx (4) | **sólo si hay unión** — verificado que la hay |
 
+> ### ⛔ NO 'armonizar' UIL hacia UBO subiendo el suelo del nodo alto
+> El de UIL **es una DECISIÓN, no un defecto** (claim **613**, JP Lopez 2026-08-26). Subir el suelo de
+> `50037530`/`50037531` a 10.000 **quitaría a los cuatro firmantes sin tope los pagos por debajo de
+> 10.000** — autorización que su carta TRS sí les concede. Este mismo documento defendió ese cambio
+> durante horas antes de simular.
+> **Los dos patrones son válidos**, y cada uno hace directa una pregunta distinta:
+> UBO responde directo *"¿quién PUEDE aprobar ≤10.000?"* y deriva *"¿quién está LIMITADO?"* restando;
+> UIL responde directo *"¿quién está LIMITADO?"* y deriva *"¿quién PUEDE?"* por unión.
+> **Se eligió el de UIL a propósito**: la pregunta que importa al reconciliar contra el cartón es la del
+> AUDITOR, y es literalmente lo que la carta anota junto a dos de los siete firmantes.
+> **Condición que lo sostiene**: la determinación devuelve la UNIÓN — verificado (claim 612), y depende
+> de que la columna `Priority` de `OOCU_RESP` siga VACÍA. Re-verificar tras un upgrade.
+> **Pregunta abierta, la decide TRS**: ¿se migra UBO/UIS al patrón de UIL, o se acepta la divergencia a
+> sabiendas? Tocar UBO mueve firmas sobre pagos reales.
+
 **Ninguno es un error.** El de UBO es más robusto (no depende de la semántica); el de UIL es más
 legible contra el cartón, porque el nodo bajo **es** la anotación *"up to USD 10,000.00 only"* de la
 carta, hecha configuración. Lo peligroso no es que convivan: es que convivan **sin que conste por

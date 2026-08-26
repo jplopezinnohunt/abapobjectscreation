@@ -220,11 +220,21 @@ si la union fallara alguna vez, quedaria **Basoglu sola** y el doble control no 
 4. **El nombre del nodo miente en el patron de UIL**: *"up to 10000"* con 2 personas cuando pueden
    seis. Se arregla renombrando a `LIMITED to 10.000`.
 5. **`T042A` esta vacia en P01** — el gate 1 del runbook apunta a una tabla que no existe aqui.
-6. **El check de reconciliacion es ASIMETRICO**: ve gente de mas, no gente que falta. Por eso
-   Yli-Hietanen lleva 31 meses invisible en dos entidades. **Es la deuda de mas valor de este caso.**
+6. **El check NO era ciego — le faltaba el INPUT.** Este documento afirmo que la reconciliacion
+   era ASIMETRICA. **Falso**: `bcm_signatory_reconciliation_check.py:171-172` calcula las dos
+   direcciones (`extras = sap - carton`, `missing = carton - sap`) y sale con codigo 1 en ambas.
+   Corrido el 2026-08-26 con `--entity UIL --carton uil_deutschebank_hamburg_20260811.txt`
+   devolvio **`MISSING (1): 10097358 (not active in any SAP UIL group)`, exit 1** — caza a
+   Yli-Hietanen sin ayuda. La causa real de sus 31 meses invisibles es que **`--carton` es
+   OPCIONAL y no habia cartones archivados**: el repo tenia UNO, el de UIS. **El control existia
+   y funcionaba; faltaba su input y faltaba que fuera obligatorio.**
 7. **El `BEGDA` fue a la fecha de ejecucion y no a la de la carta** — 15 dias de hueco, 2.a ocurrencia
    tras los 7 de `INC-000006313`. A la segunda toca gate.
 8. **Se borro donde habia que delimitar** (8.4) — primera vez medida.
+9. **El patron de tramos de UIL es una DECISION, no una desviacion** (claim 613). Los dos patrones
+   son validos; se eligio el que hace directamente legible *quien esta capado*, que es la pregunta
+   del cartón. Depende de que la determinacion devuelva la UNION — verificado.
+
 
 ## 11. Datos archivados
 

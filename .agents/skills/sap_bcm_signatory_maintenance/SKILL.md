@@ -108,6 +108,9 @@ Medido **dos veces** (`..._procedure.md:35-41`):
 |---|---|---|
 | `INC-000011781` | *"add Renata RITTER for UBO"* | ADD Renata **+ DELETE Von Michael MARTIN** en los dos bancos |
 | `INC-000006313` | *"add Ould Ahmedou Voffal, Said"* | ADD Said, y el carton revelo **3 derivas preexistentes** |
+| `INC-000016338` | *"add Bettina REISS **and also add her bank limits**"* — en **singular** | las cartas capan a **DOS**: REISS **y BASOGLU**, sin tope desde 2024-09-27 |
+
+La tercera es una **VARIANTE NUEVA**: la nota no omitio una BAJA, omitio a la **SEGUNDA PERSONA bajo la misma condicion**. Ejecutarla habria dejado a BASOGLU sin tope, como llevaba dos anos.
 
 Ejecutar la nota de `INC-000011781` habria anadido al firmante nuevo y **dejado activo a uno no
 autorizado en dos cuentas bancarias** (`feedback_authority_of_record_not_the_requester_note`, WHY;
@@ -163,6 +166,14 @@ luego un PERNR de 8 digitos por linea con el nombre en comentario `#`
 
 **Que**: ¿hay carton **vigente** para **cada** banco de la entidad que produce lotes BCM?
 **Como**: los bancos BCM son los de **`T042A`** del codigo de sociedad, **NO** todos los de `T012K`
+
+> ⚠️ **CORREGIDO 2026-08-26 (INC-000016338, claim 611).** **`T042A` está VACÍA en P01** —
+> `RFC_READ_TABLE` sin filtro devuelve `TABLE_WITHOUT_DATA`. El universo del gate de completitud es
+> **`T012K`** (bancos casa de la sociedad) corroborado con **`T042I`** (`ZLSCH`→`HBKID`). Y
+> **`BNK_BATCH_HEADER` tampoco es legible** para el usuario SNC, así que la contradicción C2 **no se
+> puede arbitrar leyendo**: es un LÍMITE DE LECTURA, nunca evidencia de que no haya lotes.
+> *(Contradicción pendiente: `data_quality_issues` `DQ-2026-063-04` afirma que `T042A` sí se consultó
+> con éxito en la sesión 63. O estaba poblada entonces y ahora no, o aquello nunca se re-verificó.)*
 (`..._procedure.md:68`, `..._solution_design.md:285`).
 Si falta uno → **HALT**: *"INCOMPLETO: faltan cartones de \<HBKID…\>"*.
 **Si se salta**: con un carton faltante **NO se puede llamar deriva a ningun extra en SAP**

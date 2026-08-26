@@ -66,6 +66,14 @@ cualquier extra en SAP en sobre-autorización.
 ```
 GATE 1 · COMPLETITUD   ¿hay carton VIGENTE para CADA banco de la entidad que produce lotes BCM?
                        Bancos BCM = los de T042A del código de sociedad, NO todos los de T012K.
+
+> ⚠️ **CORREGIDO 2026-08-26 (INC-000016338, claim 611).** **`T042A` está VACÍA en P01** —
+> `RFC_READ_TABLE` sin filtro devuelve `TABLE_WITHOUT_DATA`. El universo del gate de completitud es
+> **`T012K`** (bancos casa de la sociedad) corroborado con **`T042I`** (`ZLSCH`→`HBKID`). Y
+> **`BNK_BATCH_HEADER` tampoco es legible** para el usuario SNC, así que la contradicción C2 **no se
+> puede arbitrar leyendo**: es un LÍMITE DE LECTURA, nunca evidencia de que no haya lotes.
+> *(Contradicción pendiente: `data_quality_issues` `DQ-2026-063-04` afirma que `T042A` sí se consultó
+> con éxito en la sesión 63. O estaba poblada entonces y ahora no, o aquello nunca se re-verificó.)*
                        Si falta uno  ->  HALT: "INCOMPLETO: faltan cartones de <HBKID…>"
                        y NO se puede llamar deriva a ningún extra en SAP.
 
