@@ -131,8 +131,13 @@ def check_backup():
 # mirar si estaba en esta lista.
 NOT_ALGORITHMS = {
     "accumulate_problems.py", "attach_object_text.py", "build_p2p_log.py",
-    "gold_ref.py", "method_registry.py", "parse_syslog.py",
-    "tier0_1_pipeline.py", 
+    "gold_ref.py", "parse_syslog.py",
+    "tier0_1_pipeline.py",
+    # QUITADO 2026-08-26: `method_registry.py` estaba aqui como "revisado y NO algoritmo" y
+    # hoy se ha registrado como A57_extraction_method_resolver. Es la misma caducidad que se
+    # limpio esta manana para fm_executed_census / semantic_activity_map / tier2_sod: una
+    # exclusion escrita a mano no se entera de que el mundo cambio, y mientras siga aqui el
+    # objeto queda dado por triado para siempre.
 }
 
 

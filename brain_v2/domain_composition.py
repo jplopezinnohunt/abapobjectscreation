@@ -125,6 +125,13 @@ def classifiers():
 
 
 def build():
+    # LO APRENDIDO VA DELANTE. Este algoritmo cuenta ACTORES (SLGUSER sin normalizar
+    # sobre-cuenta personas), atribuye por PARAM3, mide el reparto por MES sobre dos fuentes
+    # con VENTANAS distintas, y lee el log donde queda nuestra propia lectura. Las cuatro
+    # cosas tienen memoria escrita; leerla despues de agregar no arregla la agregacion.
+    if _aprendido:
+        _aprendido("param3", "slguser", "actores", "rsau_audit_history", "cdhdr_history",
+                   "ventana").avisar()
     domain_of, ctx, classify_program, normalize_actor = classifiers()
     apps = caller_apps()
     by_user = apps.pop("_by_user", {})

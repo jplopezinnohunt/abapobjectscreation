@@ -566,6 +566,14 @@ def _canales_custom_de_escritura(con):
 
 
 def main():
+    # AL PRINCIPIO, no al final: aqui el minero esta a punto de leer justo los datos que
+    # contestan lo que el foro le pregunta. Al terminar ya cerro la conexion y lo que queda
+    # es buena intencion. Los temas son los portadores que ESTE inventario lee -- y CREATOR
+    # esta puesto a proposito: la memoria que dice que no es una identidad existia desde el 24
+    # de agosto y se mecanizo igual un minero que contaba creadores como actores.
+    if _aprendido:
+        _aprendido("apqi", "creator", "batch input", "sapmssy1", "usr02", "ventana").avisar()
+
     if not GOLD.exists():
         print(f"golden not found: {GOLD}", file=sys.stderr)
         return 1

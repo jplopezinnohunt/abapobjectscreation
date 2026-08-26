@@ -310,6 +310,13 @@ def grade_item(name, execs, actors, bands, dom, resolve, explained):
 
 
 def main():
+    # LO APRENDIDO VA DELANTE, no al final. Aqui el indice esta a punto de leer justo las
+    # cuatro superficies sobre las que hablan estas memorias (SLGREPNA, PARAM3, CDHDR, TBTCP)
+    # y de graduar contra las cadenas de proceso que viven en tres stores distintos. Un aviso
+    # al cerrar llega cuando ya se leyo mal.
+    if _aprendido:
+        _aprendido("rsau_audit_history", "slgrepna", "param3", "cdhdr_history", "tbtcp",
+                   "primary_processes").avisar()
     if not os.path.exists(GOLD):
         print(f"Gold DB ausente: {GOLD}")
         return 2

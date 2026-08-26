@@ -54,6 +54,13 @@ SPINE = [
     ("PBC",        "HRFPM_FM_DOC", ["BELNR"], lambda o: (o,)),
 ]
 
+# AL PRINCIPIO, no al final. Este script no tiene main(): el trabajo de verdad empieza al abrir
+# la Gold DB, asi que la llamada va justo antes. Los temas son el log, el identificador de caso y
+# las tablas destino que ESTE sondeo toca -- incluida HRFPM_FM_DOC, sobre la que ya hay memoria
+# de que TCDOB la declara y sus columnas de union vienen vacias.
+if _aprendido:
+    _aprendido("cdhdr_history", "objectid", "tcdob", "kblk", "hrfpm_fm_doc", "bkpf").avisar()
+
 con = sqlite3.connect("file:" + GOLD + "?mode=ro", uri=True)
 q = con.execute
 tables = {r[0] for r in q("select name from sqlite_master where type='table'")}
