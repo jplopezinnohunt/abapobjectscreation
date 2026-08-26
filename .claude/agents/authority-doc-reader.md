@@ -86,6 +86,41 @@ formulario con respuestas distintas.
 6. **No concluyas si aplica o no.** Tu dices que autoriza el documento. Si eso aplica al sistema lo
    decide el agente de control.
 
+## ⚖️ EL LIMITE POR PERSONA — extraelo SIEMPRE, persona a persona (s104, INC-000016338)
+
+**No basta con decir "la carta pone limites". Cada nombre lleva el suyo, y el correo casi nunca los
+cuenta bien.** En `INC-000016338` la nota del solicitante decia *"add Bettina REISS **and also add her
+bank limits**"* — en **singular** — y las dos cartas capaban a **DOS** personas. La segunda llevaba **sin
+tope desde 2024-09-27** y nadie la habia mirado. No fue una baja omitida: fue **la segunda persona bajo la
+misma condicion**, que es la variante mas silenciosa de la regla dura 1.
+
+**En tu salida, el panel es una lista de PARES, no de nombres:**
+
+```
+panel: [
+  {pernr, nombre, duty_station, limite: null}          # null = SIN TOPE
+  {pernr, nombre, duty_station, limite: 10000.00,      # importe + MONEDA, siempre
+   moneda: "USD", literal: "up to USD 10,000.00 only"} # y la cita textual
+]
+```
+
+**Tres cosas que hay que capturar y se pierden si no las buscas a proposito:**
+
+1. **La MONEDA del tope, literal.** Las cartas dicen *"USD 10,000.00"*; la sociedad puede llevar otra
+   moneda (UIL es EUR, UBO es BRL). El umbral se configura en `MAXPAYAMT_RULECURR`, que es *rule
+   currency*. **Si la moneda de la carta y la de la regla no son la misma, el umbral configurado NO es el
+   de la carta** — sacalo como pregunta, no lo resuelvas.
+2. **Las clausulas que EXCEPTUAN el tope.** Literal de las cartas de UIL: *"All listed signatories above
+   are authorised to transfer **unlimited amount between** UNESCO UIL's bank accounts recorded in your
+   books."* Es decir: **el tope aplica solo a pagos que SALEN**; entre cuentas propias no hay tope para
+   nadie. Va en su propio campo (`excepciones_al_limite`), no enterrado en prosa.
+3. **La clausula SUSTITUTIVA.** *"This list replaces all previous signatory lists"* — sin ella no se
+   puede llamar sobre-autorizacion a ningun extra. Ya estaba, pero se comprueba en la misma pasada.
+
+**Y comparalo tu mismo antes de entregar:** ¿cuantas personas nombra la NOTA frente a cuantas afecta la
+CARTA? Si no coinciden, **dilo en la primera linea de tu salida**. Es el hallazgo mas barato que existe y
+se ha escapado dos de tres veces.
+
 ## Con quien trabajas
 
 | Tema | Agente de control al que entregas |

@@ -174,6 +174,34 @@ delete the work:
    (same keyword across unrelated mechanisms, same field name across different
    exits, etc.) so the next session does not repeat it.
 
+## STEP 8 — ADJUST THE DETECTOR (added s104, 2026-08-26)
+
+Writing the knowledge is half the job. **A claim nobody queries detects nothing, and a document the
+domain agent never cites never gets opened.** Before you report "done", answer three questions in this
+order and DO the work they imply — it is part of the ticket, not a follow-up:
+
+**(a) Does the domain AGENT still describe the world as it was before this incident?**
+Open `.claude/agents/<domain-agent>.md`. If its method, its traps or its maps went stale, update it.
+Measured in `INC-000016338`: 6 claims, 2 rules, 3 docs and a companion were landed — and the
+`bcm-signatory-panel` agent still knew nothing about amount bands, about the UNION semantics of agent
+determination, or about simulating before deciding a shape. The knowledge was written and the detector
+was blind.
+
+**(b) Is there a CHECK that would have caught this on its own?**
+- It exists and was not run → the gap is **invocation or INPUT**, not capability. Fix that; do NOT write
+  a second check. (`bcm_signatory_reconciliation_check.py` computes the MISSING side perfectly and went
+  unused for 31 months because `--carton` is optional and nobody archived the cartons.)
+- It does not exist and this is the **2nd occurrence** → write it
+  (`feedback_second_occurrence_earns_a_procedure`).
+- It exists and passed while the defect was live → the check measures the FORM and not the EFFECT.
+
+**(c) Do the canonical MAPS still say the old thing?**
+Node maps, inventories, group tables, the skill's own tables. **Grep the entity across ALL docs and
+companions** — not just the file you were editing. Measured: the skill still called UIL "nodo unico"
+after it had four nodes, and the domain doc's group tables never listed the new ones.
+
+Rule: `feedback_at_incident_close_check_for_related_domain_knowledge` (CRITICAL), second half.
+
 ## What You Do NOT Do
 
 - Do NOT delegate the 7-step workflow to a subagent — main agent owns it.

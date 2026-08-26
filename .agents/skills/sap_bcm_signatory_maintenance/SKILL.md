@@ -806,6 +806,7 @@ fuente.
 | `.claude/agents/bcm-signatory-panel.md` | **El agente que ejecuta este metodo.** Cruce a tres bandas: PDF / SAP / correo | agente |
 | `.claude/agents/authority-doc-reader.md` | Convierte el PDF autorizante en hechos estructurados. **No lee SAP** | agente |
 | `Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py` | **La puerta**: ghost PERNR + role-split + diff carton. Exit 0/1/2 | gate |
+| `Zagentexecution/quality_checks/bcm_band_consistency_check.py` | **¿El panel POR TRAMO dice lo mismo que el carton?** Razona por TRAMO EFECTIVO (union de nodos, claim 612), no por nodo, asi que vale para los DOS patrones. Comprueba cobertura · exceso · quorum de 2 con rol · extras · `BEGDA` contra la fecha de la carta. Exit 0/1/2 | **gate** |
 | `Zagentexecution/quality_checks/bcm_role_gap_check.py` | ¿Tiene rol `BNK_APP` cada asignado? Reconstruye `bcm_node_agent_role_check` y `bcm_signatory_role_gap` | live |
 | `Zagentexecution/quality_checks/bcm_release_vs_approve.py` | Cruce paso 1 (validar) vs paso 2 (firmar) por entidad × banda | analysis |
 | `Zagentexecution/mcp-backend-server-python/extract_bcm_signatories.py` | Refresco del Gold DB (unica copia en el repo, verificado 2026-08-26) | extractor |
