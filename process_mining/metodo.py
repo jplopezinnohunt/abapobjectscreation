@@ -86,18 +86,66 @@ class Memorias:
                 return m
         return None
 
-    def avisar(self, salida=None):
-        """Imprime lo que aplica ANTES de minar. Un aviso que llega despues no sirve."""
+    def avisar(self, salida=None, minero=None):
+        """Imprime lo que aplica ANTES de minar. Un aviso que llega despues no sirve.
+
+        Y desde 2026-08-26 tambien enseña LAS PREGUNTAS ABIERTAS QUE ESTE MINERO PUEDE
+        CONTESTAR. Aqui y no al final, a proposito: al arrancar, el minero esta a punto de
+        leer justo los datos que las contestan; al terminar ya cerro la conexion y lo que
+        queda es buena intencion.
+
+        El operador lo pidio asi: «tienes que crear el mecanismo de colaboracion; si no, no
+        colaboraran -- ellos tienen que SABER que deben colaborar». Medido antes de esto: 307
+        hallazgos publicados en el foro y UNA sola pregunta contestada de catorce. El
+        mecanismo existia (`pendientes()`) y era opcional, o sea que no existia.
+        """
         p = salida or print
         if not self.items:
             p(f"[metodo] sin memorias sobre {', '.join(self.temas)} -- eres el primero")
-            return
-        p(f"[metodo] {len(self.items)} memoria(s) aplican a {', '.join(self.temas)}:")
-        for m in self.items:
-            verbo, _por = PESO.get(m.get("kind"), ("NOTA", ""))
-            p(f"  [{verbo:10s}] {str(m.get('fact'))[:118]}")
-            if m.get("implication"):
-                p(f"               -> {str(m['implication'])[:110]}")
+        else:
+            p(f"[metodo] {len(self.items)} memoria(s) aplican a {', '.join(self.temas)}:")
+            for m in self.items:
+                verbo, _por = PESO.get(m.get("kind"), ("NOTA", ""))
+                p(f"  [{verbo:10s}] {str(m.get('fact'))[:118]}")
+                if m.get("implication"):
+                    p(f"               -> {str(m['implication'])[:110]}")
+        self._foro(p, minero)
+
+    def _foro(self, p, minero=None):
+        """Las preguntas abiertas que este minero puede contestar, PUESTAS DELANTE.
+
+        Si no se le pasa `minero`, se deduce del fichero que llamo: un minero no deberia
+        tener que identificarse para que el mecanismo funcione -- si depende de que se
+        acuerde, vuelve a ser opcional.
+        """
+        try:
+            import inspect
+            import os as _os
+            import sys as _sys
+            if not minero:
+                for fr in inspect.stack()[1:6]:
+                    f = _os.path.basename(fr.filename)
+                    if f not in ("metodo.py", "<string>") and f.endswith(".py"):
+                        minero = f[:-3]
+                        break
+            _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+            from colaborar import para_mi, marcar_visita
+            # se prueba el nombre del fichero y tambien el id Axx que lo declara
+            mias = para_mi(minero) or []
+            if not mias:
+                marcar_visita(minero, [], [])
+                return
+            p(f"\n[foro] {len(mias)} pregunta(s) abierta(s) que TU puedes contestar:")
+            for q in mias[:6]:
+                p(f"   {q['sujeto']}  (de {q['de']}) -- {q['_por_que_es_tuya']}")
+                p(f"      {str(q.get('pregunta'))[:150]}")
+            p("   contesta con: from colaborar import contestar; "
+              "contestar('<tu id>', '<sujeto>', '<respuesta>', '<evidencia>')")
+            p("   dejarla abierta pudiendo contestarla es la OCASION PERDIDA que mide "
+              "mining_collaboration_check")
+            marcar_visita(minero, [q["sujeto"] for q in mias], [])
+        except Exception:
+            pass          # el foro no puede tumbar a un minero: avisa o calla, nunca rompe
 
 
 def lo_que_ya_aprendimos(*temas):

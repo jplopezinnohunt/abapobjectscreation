@@ -113,7 +113,7 @@ def main():
     h = []
 
     # ---- 1. mineros que corren a ciegas ----
-    ciegos, ciegos_falsos = [], []
+    ciegos, ciegos_falsos, importa_y_no_llama = [], [], []
     for aid, a in A.items():
         if not a.get("mining_kind") or aid in FUERA:
             continue
@@ -134,6 +134,16 @@ def main():
             if ("from metodo import" in t or "import metodo" in t
                     or "algorithm_memory" in t or "lo_que_ya_aprendimos" in t):
                 lee = True
+                # ⛔ TERCERA CAPA DEL MISMO DEFECTO (2026-08-26). Ya no basta con que la cadena
+                # este (capa 1) ni con que el import RESUELVA (capa 2): hay que comprobar que
+                # se LLAMA. Medido: 20 de 35 ficheros importan `_aprendido` y NUNCA lo invocan
+                # -- variant_content_mining.py entre ellos. La capacidad estaba disponible y no
+                # se ejercia, y el gate daba verde las tres veces por mirar un escalon mas
+                # arriba del que importa. Una capacidad disponible no es una capacidad ejercida.
+                if not (re.search(r"(_aprendido|lo_que_ya_aprendimos)\s*\([^)]", t)
+                        and ".avisar(" in t):
+                    importa_y_no_llama.append((aid, os.path.relpath(p, ROOT)))
+                    break
                 # ⛔ ESCRIBIR EL IMPORT NO ES RECIBIR LA MEMORIA.
                 #
                 # Esta puerta media la FORMA -- que la cadena estuviera en el fichero -- y daba
@@ -158,6 +168,19 @@ def main():
                                "mecanizado corre solo cada semana"),
                   "como_se_arregla": ("from metodo import lo_que_ya_aprendimos; "
                                       "m = lo_que_ya_aprendimos('<tema>', ...); m.avisar()")})
+    if importa_y_no_llama:
+        h.append({"gravedad": "IMPORTA_Y_NO_LLAMA",
+                  "cuantos": len(importa_y_no_llama),
+                  "ids": sorted(f"{a} :: {p}" for a, p in importa_y_no_llama),
+                  "que_pasa": ("importan la memoria de metodo y NUNCA la invocan. El import "
+                               "resuelve, la funcion esta ahi, y no se llama: la capacidad esta "
+                               "DISPONIBLE y no se EJERCE. Es la tercera capa del mismo defecto "
+                               "-- la puerta miro primero la cadena, luego que el import "
+                               "resolviera, y las dos veces dio verde"),
+                  "como_se_arregla": ("como PRIMERA cosa del trabajo: "
+                                      "if _aprendido: _aprendido('<tema>', ...).avisar()  -- y "
+                                      "avisar() ademas pone delante las preguntas abiertas del "
+                                      "foro que este minero puede contestar")})
     if ciegos_falsos:
         h.append({"gravedad": "ESCRIBE_EL_IMPORT_Y_RECIBE_NADA",
                   "cuantos": len(ciegos_falsos),
