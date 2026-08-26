@@ -1802,6 +1802,71 @@
       "lands_in_kind": "instrument_screen_only",
       "mining_kind": "TECNICA_DE_LECTURA",
       "_nota_s104": "Registrado aqui A PROPOSITO: el toolgraph solo escanea skill_registry, algorithms.json, algorithm_memory.json, .claude/agents/ y quality_checks/. Un .py en brain_v2/ que no este en ninguna de esas cinco raices es INVISIBLE para `graph_queries.py tool` -- para siempre, no por timing."
+    },
+    "A60_outbound_channel_availability": {
+      "operates_on": "los destinos RFC salientes tipo G/H del Gold DB (rfcdes) + una peticion HTTP real por destino",
+      "origin": "OURS",
+      "state": "STRONG",
+      "does": "contestar la pregunta que ningun inventario nuestro contestaba: DE LOS 239 DESTINOS SALIENTES, ¿CUALES RESPONDEN AHORA MISMO? Parsea RFCOPTIONS (H host, I puerto, N path, s SSL, D usuario, Q auth), hace UNA peticion SIN CREDENCIALES por destino y clasifica la FORMA del fallo, que es el dato: 401/403 = ARRIBA y pide auth (el servicio corre, si algo falla es la credencial) · 404 = puerto arriba, aplicacion no desplegada en esa ruta · 5xx = arriba y rota · CONNECTION_REFUSED = el host vive y NADA escucha en ese puerto (instancia parada) · TIMEOUT = ruta bloqueada o destino saturado · DNS_FAIL = el nombre no resuelve.",
+      "bound_in": [
+        "Zagentexecution/quality_checks/outbound_channel_availability_check.py",
+        "Zagentexecution/quality_checks/ads_availability_check.py"
+      ],
+      "failure_mode": "CONFUNDIR DISPONIBILIDAD CON USO, en los dos sentidos. 'Arriba' NO significa 'se usa': un destino vivo y sin trafico es indistinguible aqui de uno vivo y muy usado -- el trafico de un saliente se mide en el OTRO extremo. Y 'caido' NO significa 'incidente': muchos destinos estan configurados y nunca se usaron. Ademas: (a) un 200 en el endpoint de configuracion NO garantiza que la aplicacion funcione -- ADS puede responder y aun asi fallar un render; (b) mide desde la maquina que lo corre, NO desde P01, y una ruta puede existir para el servidor y no para el portatil (cuando el veredicto importe, contrastar con SM59); (c) no cubre destinos tipo 3 (ABAP) ni T (programa externo), que se prueban con RFC_PING. NUNCA enviar credenciales: un 401 es el RESULTADO que se busca, no un fallo que reintentar autenticado.",
+      "improve": "programarlo (tarea recurrente) y guardar historico para tener una SERIE de disponibilidad por destino, que es lo que convierte una foto en un monitor. Anadir tipo 3/T por RFC_PING.",
+      "lands_in": "n/a - instrumento: contesta en PANTALLA (o --json), no produce artefacto persistente todavia",
+      "lands_in_kind": "instrument_screen_only",
+      "mining_kind": "REALIDAD",
+      "domains": [
+        "Integration",
+        "Output",
+        "Support"
+      ],
+      "_nace_de": "INC-000016471 (2026-08-26): el canal por el que sale TODO PDF de la casa estuvo caido TRES DIAS LABORABLES sin que nadie lo supiera. Estaba etiquetado NO_MEDIBLE -- cierto del TRAFICO, falso de la DISPONIBILIDAD -- y ademas DEAD en interface_boundary, veredicto que venia de contar llamadas RFC cuando una llamada HTTP saliente no lo es (40 de 40 destinos G/H con observed_calls=0: una tasa del 100% en una clase entera es la firma de un instrumento ciego, no una medida)."
+    },
+    "A61_event_dating_without_a_trace": {
+      "operates_on": "rsau_audit_history (log de auditoria) + cualquier poblacion de eventos que sirva de PROXY",
+      "origin": "OURS",
+      "state": "STRONG",
+      "does": "FECHAR UN EVENTO QUE EL SISTEMA NO REGISTRA. Seis pasos: (1) comprobar si el hecho deja traza -- aqui el render Adobe deja CERO eventos FP_* en 6,5 meses, asi que no es que la traza este apagada, es que el evento NO EXISTE; (2) buscar una POBLACION PROXY, tipicamente lo que una persona hace al reaccionar (reintentos); (3) medir la TASA BASE del proxy ANTES de leer cualquier desviacion; (4) exigir GRUPO DE CONTROL -- la poblacion gemela que NO deberia moverse; (5) acotar la ventana con el sensor directo escaso, sin fecharla con el; (6) cerrar con una SONDA DIRIGIDA, no con el log. Es process mining aplicado a un caso, y el metodo es el mismo que el de descubrir un proceso: poblacion, linea base, control, y una medida que decide.",
+      "bound_in": [
+        ".agents/skills/sap_log_forensics/SKILL.md",
+        "knowledge/incidents/INC-000016471_ads_pdf_internship_agreement.md",
+        "knowledge/session_retros/session_105_retro.md"
+      ],
+      "failure_mode": "LEER UN SILENCIO COMO SENAL SIN MEDIR LA TASA BASE DE SILENCIO. Medido y casi publicado como falso positivo: ADS_AGENT callo desde el 2026-08-21 y encajaba perfectamente con el fallo -- pero ese sensor dispara solo 88 de ~200 dias (44%) y su silencio actual de 4 dias HA SIDO IGUALADO O SUPERADO OCHO VECES con todo funcionando (tres huecos de 6 dias). Una ausencia es evidencia solo en proporcion a la densidad de la presencia. Segunda trampa: una subida SIN grupo de control es 'lunes ajetreado' -- la intensidad de ZPAWF_INT_AGREE paso de 2,4 a 5,9 arranques por usuario, y solo fue PRUEBA porque el resto de su propia familia se quedo plano en 2,2. Tercera: el ULTIMO DIA del corpus siempre esta incompleto y se lee como una caida -- comprobar volumen y MAX(SAL_TIME) del dia antes de leer una serie como un corte.",
+      "improve": "mecanizar el paso 3 (distribucion de huecos de cualquier SLGUSER/objeto) y el paso 4 (proponer automaticamente la poblacion gemela por prefijo de nombre o por paquete)",
+      "lands_in": "knowledge/incidents/<INC>.md + claims",
+      "lands_in_kind": "incident_and_claims",
+      "mining_kind": "REALIDAD",
+      "domains": [
+        "Support",
+        "Output",
+        "Integration",
+        "HR-Workflows"
+      ],
+      "_nace_de": "INC-000016471 (2026-08-26): el reloj del corte lo dio la CONDUCTA HUMANA, no el sistema. Cuando la maquina no tiene sensor, el sensor son las personas."
+    },
+    "A62_lazy_generated_object_as_usage_proof": {
+      "operates_on": "tfdir_all (modulos de funcion) + e071 (objetos transportados)",
+      "origin": "OURS",
+      "state": "STRONG",
+      "does": "distinguir LO INSTALADO de LO VIVO usando la generacion PEREZOSA como prueba de uso. Un formulario Adobe compila a un grupo de funciones /1BCDWB/SM<8 digitos> que SOLO EXISTE si el formulario se ha renderizado de verdad EN ESE SISTEMA. Medido en P01: 43-50 SFPF custom instalados (censo por e071) frente a 26 formularios Adobe realmente generados (SM00000002..27). El contraste instalado-vs-vivo es el producto. Generaliza a cualquier objeto que compile de forma perezosa.",
+      "bound_in": [
+        "brain_v2/methods/algorithm_memory.json"
+      ],
+      "failure_mode": "CONFUNDIR /1BCDWB/SF* CON /1BCDWB/SM*: los SF son SMART FORMS y NO pasan por ADS -- meterlos en el censo de Adobe infla la poblacion y el radio de una caida. Y el numero NO trae nombre: el mapeo SM000000nn -> nombre de formulario vive en FPCONTEXT/FPLAYOUT, que NO estan extraidas al Gold DB (TNAPR tampoco existe, ni NAST, ni REPOSRC). Para nombrarlos hace falta una lectura nueva de P01 o el FM estandar FP_GET_USAGE_DATA. Ademas la prueba es de uso HISTORICO, no actual: un generado de 2021 sigue existiendo aunque el formulario lleve anos sin usarse.",
+      "improve": "extraer FPCONTEXT/FPLAYOUT al Gold DB para poner nombre a los 26, o llamar a FP_GET_USAGE_DATA que da el censo con nombres en UNA llamada",
+      "lands_in": "brain_v2/claims/claims.json",
+      "lands_in_kind": "claims",
+      "mining_kind": "CANAL_Y_ACTOR",
+      "domains": [
+        "Output",
+        "HR-Workflows",
+        "FI",
+        "RE-FX"
+      ],
+      "_nace_de": "INC-000016471: habia que decirle al Service Desk cuantos formularios caen con ADS. No era 1 (el del ticket) ni 757 (todo lo instalado, estandar incluido): eran 26."
     }
   },
   "_portfolio": {
