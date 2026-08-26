@@ -24,6 +24,13 @@ someone deciding it is time; those stay explicit. This runs what can always run.
 
     python brain_v2/methods/run_analysis_cycle.py            # the full cycle
     python brain_v2/methods/run_analysis_cycle.py --quick    # skip the slow log scans
+    python brain_v2/methods/run_analysis_cycle.py --con-rfc  # + los pasos que NECESITAN P01
+
+Los pasos de RFC_REQUERIDO estan FUERA por defecto, y eso es la promesa de arriba, no una
+omision: sin --con-rfc el ciclo corre sin VPN y sin depender de que alguien decida que toca
+extraer. Cuando se saltan se DICEN uno a uno -- un paso que no corrio por falta de conexion
+y uno que no corrio por ser lento son cosas distintas, y mezclarlos hace que nadie sepa que
+le falta al resultado.
 """
 import json
 import subprocess
@@ -101,7 +108,11 @@ CYCLE = [
     # capacidad siendo codigo muerto (NameError antes del primer RFC), y mientras estuvo ROTO
     # la puerta lo dejaba pasar sin llamador -- correctamente: enchufar codigo que no corre
     # seria el error. Al arreglarlo, la puerta pidio su llamador en la misma corrida.
-    # heavy=True: necesita RFC contra P01, asi que se salta en modo --quick.
+    #
+    # ⛔ NECESITA RFC, y el contrato de este fichero (ver docstring) es «esto corre lo que
+    # SIEMPRE puede correr». Por eso va en RFC_REQUERIDO y SOLO corre con --con-rfc. Meterlo
+    # en la lista normal habria roto la promesa del ciclo en silencio: la proxima corrida sin
+    # VPN habria dado un fallo que parece del ciclo y es de la conexion.
     ("Zagentexecution/sap_data_extraction/scripts/extract_fund_center_hierarchy.py",
      "L2 la jerarquia de centros gestores (SETCLASS medida por sonda, no por catalogo)", True),
     ("process_mining/chain_lineage.py",
@@ -138,9 +149,18 @@ CYCLE = [
      "L6 what needs re-running on current evidence", False),
 ]
 
+# Los pasos que NO pueden correr sin conexion a SAP. Se declara aparte del paso a proposito:
+# `heavy` es "tarda", esto es "no puede". Confundirlos hace que un ciclo sin VPN informe de un
+# fallo que no es suyo, o peor, que alguien quite el paso para que el ciclo salga verde.
+RFC_REQUERIDO = {
+    "Zagentexecution/sap_data_extraction/scripts/extract_fund_center_hierarchy.py",
+}
+
 
 def main():
     quick = "--quick" in sys.argv
+    con_rfc = "--con-rfc" in sys.argv
+    sin_rfc = []
     say(f"[analysis cycle] {len(CYCLE)} steps, dependency order"
           f"{' (quick: skipping full log scans)' if quick else ''}\n")
     ok, failed, skipped = 0, [], 0
@@ -163,6 +183,14 @@ def main():
         if quick and heavy:
             say(f"  SKIP  {label}")
             skipped += 1
+            continue
+        if script.split()[0] in RFC_REQUERIDO and not con_rfc:
+            # NO se cuenta como saltado sin mas: se DICE que necesita RFC. Un paso que no
+            # corrio por falta de conexion y uno que no corrio por ser lento son cosas
+            # distintas, y mezclarlos hace que nadie sepa que le falta al resultado.
+            say(f"  SKIP  {label}  (necesita RFC: usa --con-rfc)")
+            skipped += 1
+            sin_rfc.append(script.split()[0])
             continue
         # un paso puede llevar argumentos: "ruta.py --desde 2". Hizo falta para delegar la
         # cadena de descubrimiento sin duplicar aqui el orden de sus fases.
@@ -192,6 +220,12 @@ def main():
             say(f"        {(err[-1] if err else '')[:110]}")
 
     print(f"\n  {ok} ran · {len(failed)} failed · {skipped} skipped")
+    if sin_rfc:
+        # LO QUE FALTA SE NOMBRA. Un resumen que dice "N saltados" sin decir cuales convierte
+        # una corrida PARCIAL en una que parece completa, que es como se lee un verde falso.
+        print(f"  ⛔ {len(sin_rfc)} paso(s) NO corrieron por necesitar RFC: "
+              f"{', '.join(x.split('/')[-1] for x in sin_rfc)}")
+        print("     Esta corrida es PARCIAL. Para incluirlos: --con-rfc (necesita VPN a P01).")
     # RECORD THAT IT RAN — before the exit, and whether or not steps failed.
     #
     # Written even on failure ON PURPOSE. A cycle that ran and failed half its steps is WORSE
@@ -213,6 +247,8 @@ def main():
                 datetime.timezone.utc).isoformat(timespec="seconds"),
             "steps_ran": ok, "steps_failed": len(failed), "steps_skipped": skipped,
             "failed": failed,
+            "saltados_por_rfc": sin_rfc,
+            "corrida_completa": not sin_rfc,
         }, open(STATE, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
     except OSError as e:
         say(f"  could not record the run: {e}")

@@ -1569,6 +1569,53 @@
         "asercion: si suben los objetos y NO suben los transportes, PARADA -- era la unica señal"
       ],
       "_nace_de": "2026-08-25. El censo de capacidades midio que 15 scripts analizan transportes y solo uno estaba registrado, porque el contenido no se podia leer: en el Gold solo estaban E070 (cabeceras) y E07T (textos)"
+    },
+    "A51_skill_registry": {
+      "operates_on": "los 48 SKILL.md x brain_state.objects x el Gold (para validar nombres SAP)",
+      "origin": "OURS",
+      "state": "WORKS",
+      "mining_kind": "COLABORACION",
+      "does": "convertir cada SKILL en un NODO con sus aristas: que tablas SAP documenta, quien lo LEE, y -- lo que no existia -- quien DEBERIA leerlo porque opera sobre sus mismas tablas y no lo nombra",
+      "bound_in": [
+        "brain_v2/build_skill_registry.py"
+      ],
+      "lands_in": "brain_v2/skills/skill_registry.json",
+      "lands_in_kind": "store",
+      "failure_mode": "CRUZAR POR PALABRAS EN VEZ DE POR NOMBRES SAP. La primera version reconocia 'lo que parece una tabla' por forma -- mayusculas con digito o guion bajo -- y engancho CRITICAL, NEVER, FROM, SELECT, MARTIN, RISK. Con esa lista dijo «43 ciegos», mezclando aciertos reales (bcm-signatory-panel con sap_payment_bcm_agent por HRP1000/HRP1001/BNK_APP) con basura (brain-steward con el mismo skill por 'ABAP, FILE, NEVER'). Con los nombres validados contra brain_state.objects y el Gold: 19. | SEGUNDO: nombrar UN skill -- el de mayor solape -- es una respuesta segura y a veces falsa: a A40 le señalaba sap_master_data_sync cuando el suyo es sap_transport_intelligence. Por eso publica CANDIDATOS, no veredicto: el solape dice que se habla del mismo tema, no cual es el bueno.",
+      "improve": "derivar tambien el DOMINIO de cada skill (hoy solo tablas y encabezados) para poder cruzarlo con la capa 14 y saber que dominios tienen metodo y cuales no",
+      "_nace_de": "2026-08-26, dicho por el operador: «ya esto es vergonzoso, siempre el mismo error de no mirar lo que hay». Medido: 40 de 48 skills sin ni un lector"
+    },
+    "A52_toolgraph": {
+      "operates_on": "skills x agentes x algoritmos x puertas x stores x memorias de metodo",
+      "origin": "OURS",
+      "state": "WORKS",
+      "mining_kind": "COLABORACION",
+      "does": "EL BRAIN DEL BRAIN: un grafo de mis PROPIOS instrumentos con quien usa a quien (LEE, DEBERIA_LEER, ATERRIZA_EN, VIGILA, INVOCA, RECUERDA), y un COORDINADOR: ante una tarea, `graph_queries.py tool para <tarea>` contesta que SKILL leer primero, que ALGORITMO ya existe, que AGENTE la hace y que PUERTA la vigila",
+      "bound_in": [
+        "brain_v2/build_toolgraph.py",
+        "brain_v2/graph_queries.py"
+      ],
+      "lands_in": "brain_v2/toolgraph.json",
+      "lands_in_kind": "store",
+      "failure_mode": "SER UNA SEPTIMA LISTA. El riesgo de un grafo de herramientas es duplicar los stores que ya existen y quedarse viejo aparte; por eso NO copia contenido -- cada store sigue siendo la fuente de su tipo de nodo -- y solo construye y mide las ARISTAS, que es lo que no existia en ningun sitio. | SEGUNDO: el modo coordinador cruza por PALABRAS de la tarea, asi que una tarea descrita con otro vocabulario no encuentra a quien la sabe, y el silencio se lee como 'no hay nada'. Por eso su salida dice explicitamente que no salir no significa no existir, y sugiere buscar por el nombre de la TABLA, que es lo que indexa mejor.",
+      "improve": "que el coordinador se llame SOLO al empezar una tarea, en vez de depender de que alguien se acuerde de preguntarle: es el mismo fallo que existe para cazar",
+      "_hallazgo_2026_08_26": "226 instrumentos y 537 aristas. LEE 30 frente a DEBERIA_LEER 269: por cada relacion que existe faltan NUEVE. 40 de 48 skills sin ni un lector, entre ellos sap_payment_bcm_agent con 106 KB de metodo de banca y CERO. 57 de 75 algoritmos no leen ningun skill. 6 de 13 agentes no nombran ningun instrumento registrado: su metodo vive en su prompt y muere con el.",
+      "_nace_de": "2026-08-26, dicho por el operador: «tiene que haber un grafo de tus propias herramientas, un gestor de ellas. Asi como tienes un brain de la data, tienes que tener un brain del brain». Y despues: «cuando tengas una tarea, debes ver en tu grafo de herramientas que podrias usar»"
+    },
+    "A53_skill_binding_gate": {
+      "operates_on": "agentes y algoritmos contra los skills, por nombres SAP en comun",
+      "origin": "OURS",
+      "state": "WORKS",
+      "mining_kind": "CONFORMIDAD",
+      "does": "parar cuando alguien opera sobre un tema que YA tiene skill y no lo nombra. Es el control que convierte «hay que mirar lo que hay» de promesa en comprobacion",
+      "bound_in": [
+        "Zagentexecution/quality_checks/skill_binding_check.py"
+      ],
+      "lands_in": "n/a - gate: su salida es el aviso; se actua en el agente o en algorithms.json",
+      "lands_in_kind": "gate",
+      "failure_mode": "GRITAR EN FALSO. Un gate que señala 43 casos de los que la mitad son ruido deja de leerse, y entonces protege menos que no existir. Por eso exige DOS nombres SAP en comun, valida los nombres contra el brain y el Gold, y descarta con motivo escrito los que no distinguen nada: tablas que toca todo el SAP financiero (T001, BKPF), nombres de SISTEMA (P01, D01) y codigos de MODULO (FI, HCM) -- dos artefactos de FI no hablan de lo mismo por eso.",
+      "improve": "cruzar tambien por DOMINIO de la capa 14, no solo por tablas",
+      "_nace_de": "2026-08-26. Una promesa de mirar no es un control; esto lo mide."
     }
   },
   "_portfolio": {

@@ -791,6 +791,160 @@ def account_class(brain, q):
                                  "o HEURISTICA. No uses una heuristica para decidir nada")}
 
 
+def tool(brain, q):
+    """EL BRAIN DEL BRAIN, y sobre todo: ANTE UNA TAREA, QUE TENGO YA.
+
+    Dos modos, y el segundo es el que importa:
+
+      tool <nombre>        que es ese instrumento, que usa y quien lo usa
+      tool para <tarea>    QUE HAY YA para esa tarea: que SKILL leer primero, que ALGORITMO
+                           correrlo, que AGENTE la hace, que PUERTA la vigila
+
+    El segundo existe porque el fallo mas caro de este proyecto no es no saber: es no mirar lo
+    que ya hay. Medido 2026-08-26: 48 skills con cientos de KB, 40 SIN NI UN LECTOR, y
+    `sap_payment_bcm_agent` con 106 KB de metodo de banca y CERO. Un check de transportes se
+    escribio y se arreglo DOS VECES sin abrir el skill de transportes, que documentaba que
+    OBJFUNC=M borra la tabla ENTERA en destino.
+
+    Por eso el orden de la respuesta no es alfabetico: los SKILLS van PRIMERO. Lo que hay que
+    leer antes de tocar nada va antes que lo que se puede ejecutar.
+    """
+    p = Path(__file__).resolve().parent / "toolgraph.json"
+    if not p.exists():
+        return {"error": "no hay grafo de herramientas: corre python brain_v2/build_toolgraph.py"}
+    g = json.loads(p.read_text(encoding="utf-8"))
+    nodos, aristas = g["nodos"], g["aristas"]
+    q = (q or "").strip()
+
+    if not q:
+        return {"_que_es": g["_que_es"], "resumen": g["resumen"], "salud": g["salud"],
+                "_uso": "tool <nombre> | tool para <descripcion de la tarea>"}
+
+    if q.lower().startswith("para "):
+        tarea = q[5:].strip().lower()
+        pal = {w for w in re.split(r"\W+", tarea) if len(w) > 2}
+        if not pal:
+            return {"error": "di de que va la tarea"}
+
+        def puntua(n, v):
+            blob = json.dumps(v, ensure_ascii=False).lower() + " " + n.lower()
+            return sum(1 for w in pal if w in blob)
+
+        por_tipo = {}
+        for n, v in nodos.items():
+            s = puntua(n, v)
+            if s:
+                por_tipo.setdefault(v["tipo"], []).append((s, n, v))
+        for t in por_tipo:
+            por_tipo[t].sort(key=lambda x: (-x[0], x[1]))
+
+        def top(t, k=5):
+            return [{"nombre": n, "encaja_en": s,
+                     **({"bytes": v.get("bytes"), "de_que_habla": (v.get("de_que_habla") or [])[:5]}
+                        if t == "SKILL" else
+                        {"state": v.get("state"), "corre": v.get("bound_in"),
+                         "aterriza": v.get("lands_in")} if t == "ALGORITMO" else
+                        {"tier": v.get("tier")} if t == "GATE" else {})}
+                    for s, n, v in por_tipo.get(t, [])[:k]]
+
+        # QUE FORMA TIENE LA TAREA. No es lo mismo repetir algo que ya sabemos hacer que
+        # comparar el estado de hoy contra lo que pide un cambio, y el instrumento que hace
+        # falta es distinto:
+        #   REPETIDA        ya hay metodo -> el SKILL manda, se sigue
+        #   COMPARAR_ESTADO hay que LEER la configuracion viva y contrastarla -> instrumentos
+        #   DESCUBRIR       no sabemos que hay -> minar
+        # Confundirlas es como se acaba re-derivando a mano algo que ya estaba escrito, o al
+        # reves, leyendo un skill cuando lo que hacia falta era ir a mirar el sistema.
+        CAMBIO = ("compar", "diferenc", "cambio", "nuevo pedido", "propon", "sugerir", "deberia",
+                  "alinear", "deriva", "frente a", "contra", "vs", "actual", "estado")
+        DESCUBRE = ("descubr", "explor", "buscar", "que hay", "quien", "mapear", "minar",
+                    "inventari", "cuant")
+        hay_skill = bool(por_tipo.get("SKILL"))
+        if any(w in tarea for w in CAMBIO):
+            forma, guia = "COMPARAR_ESTADO", (
+                "hay que LEER el estado de hoy y contrastarlo con lo que se pide. El SKILL da el "
+                "METODO y las trampas; lo que decide son los INSTRUMENTOS que leen la "
+                "configuracion viva. Orden: leer el skill para saber QUE mirar y que NO tocar, "
+                "correr el instrumento que lo lee, y proponer el cambio contra lo leido -- nunca "
+                "contra lo recordado")
+        elif any(w in tarea for w in DESCUBRE):
+            forma, guia = "DESCUBRIR", (
+                "no sabemos lo que hay: esto es MINERIA. Mira si ya existe un algoritmo antes de "
+                "escribir otro, y declara la VENTANA de lo que midas")
+        elif hay_skill:
+            forma, guia = "REPETIDA", (
+                "esto ya se ha hecho: hay metodo escrito. Leer el skill y SEGUIRLO, no "
+                "re-derivarlo. Si el skill se queda corto, lo que toca es AMPLIARLO, no "
+                "construir al lado")
+        else:
+            forma, guia = "SIN_METODO_CONOCIDO", (
+                "no hay skill para esto. Antes de construir, comprueba con otras palabras -- el "
+                "grafo indexa mejor por nombre de TABLA. Si de verdad no hay, lo que construyas "
+                "MERECE un skill al terminar")
+
+        # EL OTRO GRAFO: que SABEMOS ya de este tema. Las herramientas dicen con que; el
+        # conocimiento dice que hay medido, que se refuto y que incidentes lo tocaron. Un
+        # coordinador que solo mira las herramientas manda a medir lo que ya esta medido.
+        conocimiento = {}
+        try:
+            claims = [c for c in (brain.get("claims") or [])
+                      if sum(1 for w in pal if w in str(c.get("claim", "")).lower()) >= 2]
+            claims.sort(key=lambda c: -sum(1 for w in pal
+                                           if w in str(c.get("claim", "")).lower()))
+            conocimiento["claims_que_ya_lo_miden"] = [
+                {"id": c.get("id"), "status": c.get("status"),
+                 "tier": c.get("confidence_tier") or c.get("confidence"),
+                 "claim": str(c.get("claim"))[:180]} for c in claims[:6]]
+            inc = {k: v for k, v in (brain.get("indexes", {}).get("by_incident") or {}).items()
+                   if sum(1 for w in pal if w in json.dumps(v, ensure_ascii=False).lower()) >= 2}
+            conocimiento["incidentes"] = sorted(inc)[:6]
+            doms = [d for d in (brain.get("domains_layer", {}).get("domains") or {})
+                    if any(w in str(d).lower() for w in pal)]
+            conocimiento["dominios"] = doms[:6]
+        except Exception as e:
+            conocimiento["_no_se_pudo_cruzar"] = f"{type(e).__name__}: {e}"
+
+        return {
+            "_tarea": tarea,
+            "_forma_de_la_tarea": forma,
+            "_que_implica": guia,
+            "_orden_no_es_casual": ("los SKILL van primero: es lo que hay que LEER antes de "
+                                    "tocar nada. Saltarselo es el fallo mas caro y mas repetido "
+                                    "de este proyecto"),
+            "1_LEE_ESTO_PRIMERO": top("SKILL"),
+            "2_YA_EXISTE_ESTE_ALGORITMO": top("ALGORITMO"),
+            "3_ESTE_AGENTE_LO_HACE": top("AGENTE", 3),
+            "4_ESTA_PUERTA_LO_VIGILA": top("GATE", 3),
+            "5_AQUI_ATERRIZA": top("STORE", 4),
+            "6_LO_QUE_YA_SABEMOS": conocimiento,
+            "_dos_grafos": ("las HERRAMIENTAS dicen con que hacerlo; el CONOCIMIENTO dice que "
+                            "hay ya medido. Mirar solo el primero manda a medir lo ya medido; "
+                            "mirar solo el segundo hace re-derivar el metodo a mano"),
+            "_si_no_sale_nada": ("no significa que no exista: significa que no lo encontro con "
+                                 "esas palabras. Prueba con el nombre de la TABLA SAP, que es "
+                                 "lo que el grafo indexa mejor"),
+        }
+
+    # modo NOMBRE: el instrumento y sus dos vecindarios
+    exactos = {n: v for n, v in nodos.items() if q.upper() in n.upper()}
+    if not exactos:
+        return {"encontrado": False,
+                "_prueba": "tool para <descripcion> para buscar por tema"}
+    out = {}
+    for n, v in list(exactos.items())[:6]:
+        sale = [a for a in aristas if a["de"] == n]
+        entra = [a for a in aristas if a["a"] == n]
+        out[n] = {
+            **v,
+            "usa": [{"rel": a["rel"], "a": a["a"]} for a in sale if a["rel"] != "RECUERDA"][:12],
+            "lo_usan": [{"rel": a["rel"], "de": a["de"]} for a in entra][:12],
+            "deberia_leer": [a["a"] for a in sale if a["rel"] == "DEBERIA_LEER"],
+            "_ojo": ("`deberia_leer` no es una orden: es que opera sobre las mismas tablas que "
+                     "ese skill. Cual es el bueno lo decides leyendolo"),
+        }
+    return out
+
+
 COMMANDS = {
     "channels": lambda b, args: channels(b, args[0] if args else None),
     "what_reads": lambda b, args: what_reads(b, args[0]),
@@ -825,6 +979,8 @@ COMMANDS = {
     "blocking_code": lambda b, args: blocking_code(b, args[0] if args else None),
     # s103 — de que TIPO es una cuenta, por lo que SAP declara y por donde la cuelga el balance
     "account_class": lambda b, args: account_class(b, " ".join(args) if args else ""),
+    # s103 — el BRAIN DEL BRAIN: mis propios instrumentos y quien usa a quien
+    "tool": lambda b, args: tool(b, " ".join(args) if args else ""),
 }
 
 if __name__ == "__main__":

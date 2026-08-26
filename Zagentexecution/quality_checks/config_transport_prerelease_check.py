@@ -171,13 +171,55 @@ def main(argv):
         # Ahora se resuelven las hijas y se analiza la UNION. Y si no hay hijas y no hay claves,
         # se sale 2 (NO ANALIZABLE), nunca 0: un exit 0 sobre algo que no se pudo mirar se lee
         # como aprobado, que es la forma mas cara de fallar en una puerta de liberacion.
+        # ⛔ OBJFUNC PRIMERO — lo dice `.agents/skills/sap_transport_intelligence/SKILL.md`
+        # Parte 3, y este check lo ignoraba por completo en sus dos primeras versiones.
+        #
+        # OBJFUNC cambia la NATURALEZA del transporte, no un detalle:
+        #   ' '  estandar: sobrescribe si existe, crea si no
+        #   K    solo viajan las filas de E071K (el caso que este check asume SIEMPRE)
+        #   M    DELETE + RECREATE: **borra TODAS las filas de la tabla en destino** y luego
+        #        inserta las de origen. Un diff de claves NO puede ver ese daño: las claves que
+        #        no viajan tampoco sobreviven.
+        #   D    borrado del objeto en destino
+        #   I    insercion aditiva, sin borrar: arriesgado si las claves solapan
+        # Un check de alcance que mira solo TABKEY y no OBJFUNC puede dar VERDE a un transporte
+        # que arrasa una tabla entera. Eso no es un falso negativo de matiz: es el peor posible.
+        objs = read_table(c, "E071", ["TRKORR", "PGMID", "OBJECT", "OBJ_NAME", "OBJFUNC"],
+                          "TRKORR = '%s'" % trkorr)
+        peligrosos = [o for o in objs if (o.get("OBJFUNC") or "").strip().upper() in ("M", "D")]
+        if peligrosos:
+            print("  ⛔ OBJFUNC PELIGROSO en %d objeto(s):" % len(peligrosos))
+            for o in peligrosos:
+                f = (o["OBJFUNC"] or "").strip().upper()
+                print("     [%s] %s %s  -- %s" % (
+                    f, o["OBJECT"].strip(), o["OBJ_NAME"].strip(),
+                    "DELETE+RECREATE: borra TODAS las filas de la tabla en destino antes de "
+                    "insertar. El diff de claves NO ve este daño" if f == "M" else
+                    "DELETE: elimina el objeto en destino"))
+            print()
+
         analizados = [trkorr]
         keys = read_table(c, "E071K", ["TRKORR", "OBJNAME", "TABKEY"],
                           "TRKORR = '%s'" % trkorr)
         if not keys:
+            # E071K VACIO TIENE MAS DE UNA CAUSA — SKILL.md 7.1. Ademas de "es una orden
+            # padre", un ROL de seguridad es un OBJETO LOGICO cuyas claves resuelve R3trans en
+            # tiempo de exportacion: AGR_DEFINE, AGR_1251, AGR_1252, AGR_TEXTS, AGR_TCODES,
+            # AGR_USERS. Ahi E071K esta vacio Y NO hay hijas, y decir "no analizable" a secas
+            # esconde que lo que viaja son AUTORIZACIONES.
+            roles = [o for o in objs if o.get("OBJECT", "").strip() in ("ACGR", "SUSO", "SUSC")]
             hijas = [x["TRKORR"].strip() for x in
                      read_table(c, "E070", ["TRKORR", "STRKORR"],
                                 "STRKORR = '%s'" % trkorr)]
+            if roles and not hijas:
+                print("  E071K vacio porque lleva ROLES (%d): son OBJETOS LOGICOS y sus claves"
+                      % len(roles))
+                print("  las resuelve R3trans al exportar, sobre AGR_DEFINE / AGR_1251 /")
+                print("  AGR_1252 / AGR_TEXTS / AGR_TCODES / AGR_USERS. Este check NO sabe medir")
+                print("  el alcance de un rol: lo que viaja son AUTORIZACIONES. NO ANALIZABLE aqui.")
+                for o in roles[:10]:
+                    print("     %s %s" % (o["OBJECT"].strip(), o["OBJ_NAME"].strip()))
+                return 2
             if not hijas:
                 print("  El transporte no lleva claves de tabla (E071K vacio) y NO tiene tareas")
                 print("  hijas (E070.STRKORR). NO ANALIZABLE -- no se puede decir que este")

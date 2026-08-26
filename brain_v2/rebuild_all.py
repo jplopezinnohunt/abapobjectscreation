@@ -326,6 +326,14 @@ def main():
         fatal=False)
     run(["python", "brain_v2/build_brain_state.py"], "Step 3: Rebuild brain_state.json")
     run(["python", "brain_v2/capability_model/maturity_score.py"], "Step 3b: Score capability maturity (Layer 15)")
+    # Step 3b2 — EL BRAIN DEL BRAIN (s103). Primero el registro de skills (que documenta cada
+    # uno y quien lo lee), y encima el grafo de herramientas, que necesita ese registro.
+    # El orden importa: el toolgraph LEE skill_registry.json.
+    run(["python", "brain_v2/build_skill_registry.py"],
+        "Step 3b2a: Skills como NODOS -- que cubre cada uno y quien lo lee", fatal=False)
+    run(["python", "brain_v2/build_toolgraph.py"],
+        "Step 3b2b: Grafo de MIS PROPIAS herramientas -- quien usa a quien", fatal=False)
+
     # Steps 3b3/3b4 — the two SELF-ASSESSMENT instruments. They were NOT in this pipeline
     # (measured 2026-07-26: 0 references), so nothing refreshed them: gold_extractor_maturity.json
     # sat 19 days stale (2026-07-07) and meta_capability.json was read as fresh while frozen.

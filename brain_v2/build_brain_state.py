@@ -170,6 +170,10 @@ STORES_AL_GRAFO = [
     {"file": "fm_executed_census.json", "key": "programa_batch", "at": "batch_programs"},
     {"file": "security_posture.json", "key": "componente_de_seguridad", "at": "components",
      "name_field": "component"},
+    # EL BRAIN DEL BRAIN (s103). Los skills entran como NODOS: 48 con cientos de KB de metodo
+    # curado y 40 sin ni un lector. Un skill que no esta en el grafo no se encuentra buscando,
+    # solo acordandose de que existe -- y acordarse es exactamente lo que fallo.
+    {"file": "skills/skill_registry.json", "key": "skill", "at": "por_skill"},
     # El camino de vuelta tambien tiene que ser recorrible: que un minero haya contestado a un
     # claim abierto es conocimiento sobre ESE objeto, no un parte suelto.
     {"file": "claim_resolution_proposals.json", "key": "cierra_claim", "at": "propuestas",
