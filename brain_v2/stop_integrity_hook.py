@@ -123,10 +123,16 @@ def check_backup():
 # are pipeline steps or helpers of 54-135 lines, none declares itself an algorithm, and none
 # is reusable on another installation, which is the bar for the arsenal. A NEW unregistered
 # script will still be reported, which is the point.
+#
+# ⛔ ESTA LISTA CADUCA, Y CADUCO. Revisada 2026-08-26: tres de sus diez -- fm_executed_census,
+# semantic_activity_map y tier2_sod -- se REGISTRARON como algoritmos (A42, A48, A49) y
+# seguian excluidos aqui, asi que el hook los daba por triados para siempre. Una exclusion
+# escrita a mano no se entera de que el mundo cambio: al registrar un algoritmo hay que
+# mirar si estaba en esta lista.
 NOT_ALGORITHMS = {
     "accumulate_problems.py", "attach_object_text.py", "build_p2p_log.py",
-    "fm_executed_census.py", "gold_ref.py", "method_registry.py", "parse_syslog.py",
-    "semantic_activity_map.py", "tier0_1_pipeline.py", "tier2_sod.py",
+    "gold_ref.py", "method_registry.py", "parse_syslog.py",
+    "tier0_1_pipeline.py", 
 }
 
 

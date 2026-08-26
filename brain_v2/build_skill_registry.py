@@ -51,6 +51,48 @@ DEMASIADO_COMUNES = {
 }
 SOLAPE_MINIMO = 2
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------------------
+# Se lee ANTES de construir el registro. `algorithm_memory.json` guarda, por cada memoria, su
+# `implication`: que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no
+# leerlas es aprender y no aprender a la vez -- y el error queda MECANIZADO, corriendo solo.
+#
+# LA RUTA SE BUSCA, NO SE CUENTA. Subiendo desde __file__ hasta el directorio que CONTIENE
+# process_mining. Contarla con dirname() es como el bloque de fsv_coverage_check quedo ciego:
+# dos dirname desde quality_checks/ apuntan a Zagentexecution/process_mining, que no existe, y
+# un `except Exception` se tragaba el fallo en SILENCIO mientras la puerta daba verde porque
+# greppeaba la CADENA, no el efecto. Aqui el fichero cuelga de brain_v2/, o sea UN nivel, pero
+# la ruta se busca igual: contarla bien HOY es lo que se rompe cuando el fichero se mueve.
+import os as _os, sys as _sys                                             # noqa: E401
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while _d != _os.path.dirname(_d):
+    if _os.path.isdir(_os.path.join(_d, "process_mining")):
+        _sys.path.insert(0, _os.path.join(_d, "process_mining"))
+        break
+    _d = _os.path.dirname(_d)
+try:
+    # ImportError y no Exception: cubre "metodo.py no esta" sin tragarse un fallo REAL dentro
+    # de metodo.py. Y AVISA: un minero que corre sin memoria tiene que decirlo, no callarlo.
+    from metodo import lo_que_ya_aprendimos as _aprendido                 # noqa: E402
+except ImportError as _e:
+    print("  AVISO: corriendo SIN memoria de metodo (%s)" % _e)
+    _aprendido = None
+
+# Los temas se eligieron PROBANDOLOS (`python process_mining/metodo.py <tema>`), no por sonar
+# bien: los cuatro devuelven 7 memorias y las cuatro que importan describen ESTE defecto.
+#   patron               A34: clasificar por PATRON sobre texto libre de SAP produce cifras
+#                        plausibles, seguras y falsas -- que es LITERALMENTE el failure_mode
+#                        de A51 (reconocer "lo que parece una tabla" engancho CRITICAL, NEVER,
+#                        FROM, MARTIN, y dijo 43 ciegos donde habia 19)
+#   sqlite_master        A18: 165 de 374 objetos del Gold son UPPERCASE y el resto minusculas;
+#                        un match exacto contra sqlite_master falla en silencio. Este fichero
+#                        lee sqlite_master y normaliza a mayusculas: la memoria dice POR QUE
+#   tabla maestra        batch-input-explorer: que un nombre case contra una tabla maestra NO
+#                        dice de que ES, solo que existe alli. Un skill que cita REGUH no es
+#                        por eso el skill de REGUH -- por eso se publican CANDIDATOS
+#   lista escrita a mano A50: una lista escrita a mano no avisa de lo que deja fuera. Aqui esa
+#                        lista es DEMASIADO_COMUNES, y su hueco no se ve, se sufre
+TEMAS_APRENDIDOS = ("patron", "sqlite_master", "tabla maestra", "lista escrita a mano")
+
 
 def nombres_sap_conocidos():
     """La autoridad de que ES un nombre SAP: el brain y el Gold. No un patron."""
@@ -87,6 +129,8 @@ def titulos(texto, tope=14):
 
 
 def main():
+    if _aprendido:
+        _aprendido(*TEMAS_APRENDIDOS).avisar(minero="A51_skill_registry")
     conocidos = nombres_sap_conocidos()
     skills = {}
     for d in sorted(os.listdir(SKILLS)) if os.path.isdir(SKILLS) else []:
