@@ -2660,5 +2660,100 @@
     ],
     "subprocess": "payment_authorization",
     "generates_process_knowledge": true
+  },
+  {
+    "id": "INC-000016471",
+    "status": "TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED",
+    "title": "Create PDF Agreement falla en la app Internship Agreement: ADS (Adobe Document Services) no responde - fallo de TRANSPORTE HTTP al AS Java, no funcional",
+    "reporter": "Etienne Wintenberger (ADM/DBS/SAA/ALR/AR, Audiovisual Archivist) via SMART Service Desk; escalado Caballe -> Sabri -> Allami -> JP Lopez el 2026-08-26",
+    "received_date": "2026-08-25",
+    "analyzed_session": 105,
+    "domain": "Output",
+    "secondary_domains": [
+      "Integration",
+      "HCM",
+      "HR-Workflows",
+      "Infrastructure",
+      "Support"
+    ],
+    "transactions": [
+      "SM59",
+      "SFP",
+      "SMICM"
+    ],
+    "primary_object_id": "ADS",
+    "primary_subject": "Destino RFC ADS (tipo G) de P01 -> hq-sap-sbp.hq.int.unesco.org:50300 /AdobeDocumentServices/Config, usuario ADSUSER, basic auth, sin SSL",
+    "company_codes_involved": [],
+    "scenario": "pdf_render_channel_down",
+    "incident_type": "INFRASTRUCTURE",
+    "error_messages": [
+      "500 Internal Server Error",
+      "ADS: SOAP Runtime Exception: CSoapExceptionTransport :(100101)",
+      "Server time: (vacio)"
+    ],
+    "root_cause_summary": "CLASE de causa determinada por el propio mensaje: CSoapExceptionTransport significa que el cliente SOAP del lado ABAP no obtuvo respuesta HTTP del endpoint de Adobe Document Services. Es TRANSPORTE, no negocio: descarta el formulario, los datos y el puesto de trabajo del usuario (que reinicio el PC tres veces sin efecto, coherente). ADS no corre en la pila ABAP sino en un AS Java SEPARADO -- medido en el destino: hq-sap-sbp.hq.int.unesco.org puerto 50300 (instancia Java 03), path /AdobeDocumentServices/Config?style=rpc, usuario de servicio ADSUSER con basic auth y contrasena almacenada, s=N (HTTP plano, sin SSL), T=N (traza apagada). Quedan CUATRO causas concretas posibles y ninguna es diagnosticable desde ABAP: (1) el AS Java o la aplicacion ADS caidos/reiniciados; (2) ADSUSER bloqueado o con contrasena caducada en el UME -- la reincidente clasica, produce 401 que el cliente envuelve como excepcion de transporte, y encaja con 'funcionaba ayer, falla desde esta manana'; (3) ruta de red a 50300 cortada; (4) Java sin recursos. La prueba que las separa es un clic: SM59 -> ADS -> Connection Test (solo lee), y SFP -> Test ADS Connection (FP_PDF_TEST_00) devuelve el error REAL de ADS en vez del SOAP envuelto.",
+    "code_validation_chain": [
+      "extracted_code/HCM/YHR_PA_WF/YCL_HRWF_INTERN_GOS.abap -- clase GOS de practicas: LEIDA y DESCARTADA, no contiene logica de PDF ni llamadas a ADS",
+      "extracted_code/FI/SAPFPAYM/RFFORI00.abap -- unico objeto del corpus extraido con llamadas a formularios Adobe (FP_*): indica que el radio de ADS alcanza tambien la impresion de medios de pago",
+      "LIMITE: el corpus extraido es PARCIAL (812 + 335 ficheros). 1 acierto es un SUELO, no un recuento. El radio real de ADS esta SIN MEDIR."
+    ],
+    "scope": "Todo formulario Adobe del paisaje, no un usuario. Si ADS esta caido caen a la vez: la familia de formularios HR ASR (ASR Framework, CL_HCMFAB_* / CL_HRASR00GEN_SERVICE, registrado en knowledge/domains/HR-Workflows/README.md) y potencialmente la impresion de medios de pago (RFFORI00). La prioridad Critical sobre UNA convencion de practicas probablemente INFRAVALORA el incidente.",
+    "fix_path": "NO ES NUESTRO. Basis / SAP Tech Administrators (sap.admin@unesco.org, ya en copia) + el dueno del AS Java hq-sap-sbp. Orden: SM59 Connection Test -> SFP Test ADS Connection -> UME (ADSUSER bloqueado/caducado) -> NWA (aplicacion AdobeDocumentServices arrancada). Sin ADS NO HAY PDF: no existe via ABAP alternativa, el render ES ADS. Para el plazo del usuario (se va el 2026-08-27) la salida es de proceso, del dueno de la app Internship Agreement, no tecnica.",
+    "open_followups": [
+      "A5 CRITICO: preguntar al Service Desk si hay MAS tickets de 'no se genera el PDF' desde el 2026-08-25. Un solo ticket parecido convierte esto de 'un usuario' a 'un canal de salida caido' y reclasifica prioridad y equipo. Costaba un correo y no lo hizo nadie en cuatro saltos.",
+      "A6: reclasificar el ticket de 'Core HR+ / Recruitment' a 'Basis / Infraestructura' -- clasificado por la app donde estaba el usuario en vez de por la capa que fallo, por eso reboto por 4 personas en 1 dia.",
+      "A8 NUESTRO: medir el radio REAL de ADS -- cuantos objetos de P01 renderizan por Adobe (TNAPR / FPCONTEXT, o census de FP_JOB_OPEN / FP_FUNCTION_MODULE_NAME sobre el repositorio COMPLETO, no el corpus parcial).",
+      "A9 NUESTRO: dar dueno y monitor al canal ADS. NO_MEDIBLE es correcto para el TRAFICO (destino saliente), pero la DISPONIBILIDAD si se mide desde nuestro lado con un test de conexion periodico.",
+      "A10 NUESTRO: registrar la deuda de seguridad -- destino ADS con s=N: basic auth de un usuario de servicio sobre HTTP PLANO en cada render.",
+      "Sonda en vivo PENDIENTE: la lectura RFC contra P01 fue BLOQUEADA por el modo de permisos de la sesion. Correr python Zagentexecution/sap_data_extraction/scripts/_probe_ads_destination.py para reverificar el destino con una lectura de hoy.",
+      "Falta la captura image003.png que el ticket referencia y que no viajo en el .eml. Sin leer.",
+      "Sin determinar QUE ES la app 'Internship Agreement' (WebDynpro ABAP / Fiori / satelite). Solo se sabe, por el error, que su render pasa por el ADS de P01."
+    ],
+    "side_findings": [
+      "El destino ADS usa s=N: HTTP plano. Las credenciales del usuario de servicio ADSUSER cruzan la red SIN CIFRAR en cada render de PDF. No es la causa de este incidente; es deuda que este incidente destapa.",
+      "T=N: la traza del destino esta apagada, asi que no hay traza que mirar del lado ABAP. El diagnostico tiene que venir del lado Java.",
+      "ADS vive en OTRO host que el ABAP productivo (hq-sap-sbp, no hq-sap-p01): otro sistema, otro ciclo de vida, otros reinicios, otro equipo. Eso es exactamente por que un reinicio ajeno rompe SAP sin que nadie toque SAP."
+    ],
+    "related_objects": [
+      "ADS",
+      "ADSUSER",
+      "RFCDES",
+      "SM59",
+      "SFP",
+      "FP_PDF_TEST_00",
+      "FP_TEST_00",
+      "RFFORI00",
+      "YCL_HRWF_INTERN_GOS",
+      "CL_HRASR00GEN_SERVICE"
+    ],
+    "related_incidents": [],
+    "evidence_extracted_this_incident": [
+      "Gold DB tabla rfcdes: destino ADS tipo G, H=hq-sap-sbp.hq.int.unesco.org, I=50300, N=/AdobeDocumentServices/Config?style=rpc, D=ADSUSER, Q=B, s=N, T=N. ADVERTENCIA: instantanea de configuracion sin fila en _gold_sync_log -> fecha de extraccion DESCONOCIDA, no es lectura de hoy.",
+      "Captura del ticket (image001.png del .eml): 500 Internal Server Error / ADS: SOAP Runtime Exception: CSoapExceptionTransport :(100101) / Server time vacio.",
+      "Busqueda en TODOS los stores del brain: Adobe = 0 claims / 0 rules / 0 incidents / 0 annotations; internship = 0 en todo; ADSUSER = 0; SFP = 0. Unico conocimiento previo: 2 lineas (flujo 8.5 del integration_map y una entrada NO_MEDIBLE en interface_inventory)."
+    ],
+    "lessons": [
+      "CSoapExceptionTransport es un VEREDICTO, no un sintoma. 'Transport' significa que no hubo respuesta HTTP, lo que descarta de golpe el formulario, los datos y el puesto de trabajo. Leer el error literalmente termino a termino hizo mas que cualquier busqueda.",
+      "Un usuario que dice 'he reiniciado el PC tres veces y sigue igual' ya te ha dado la mitad del diagnostico: esta descartando el cliente por ti. Escucharlo es mas barato que repetirlo.",
+      "Un ticket clasificado por la APLICACION donde estaba el usuario en vez de por la CAPA que fallo, rebota. Este fue por cuatro personas en un dia, con prioridad Critical, sin que nadie pudiera hacer nada: todos los destinatarios eran funcionales y el fallo era de plataforma.",
+      "El alcance de un fallo de plataforma NUNCA es el que trae el ticket. El ticket trae un usuario porque un usuario escribio. La pregunta que reclasifica el incidente -- 'le pasa a alguien mas?' -- cuesta un correo.",
+      "NO_MEDIBLE para el TRAFICO no es NO_MEDIBLE para la DISPONIBILIDAD. Marcamos ADS como no medible porque es saliente y no vemos el otro extremo -- cierto -- y sin embargo 'responde?' se contesta desde nuestro lado con un test de conexion. Confundir las dos preguntas dejo un canal de salida entero sin vigilancia.",
+      "Un dominio marcado STRANDED en la columna vertebral de procesos (Output: ni en un flujo ni transversal a uno) tiene este aspecto el dia que se rompe: todos los PDF que la institucion produce desde SAP, con una linea de inventario, sin dueno, sin monitor y sin radio medido."
+    ],
+    "analysis_doc": "knowledge/incidents/INC-000016471_ads_pdf_internship_agreement.md",
+    "chain_anchor_type": "INTERFACE",
+    "chain_anchor_note": "Anclado en el DESTINO, no en la persona ni en el documento: la cadena es app HR -> ABAP FP_* -> destino RFC ADS (tipo G) -> AS Java hq-sap-sbp:50300 -> render PDF. El fallo esta en el salto ABAP->Java, que es el unico eslabon que nuestro log no ve.",
+    "domain_axes": {
+      "functional": "Output",
+      "module": "BC",
+      "process": "H2R"
+    },
+    "incident_type_meaning": "Fallo de plataforma en un canal de salida compartido (render de PDF via Adobe Document Services), reportado como si fuera un fallo funcional de una aplicacion de HR.",
+    "process": "H2R",
+    "secondary_processes": [
+      "P2P"
+    ],
+    "subprocess": "document_output_rendering",
+    "generates_process_knowledge": true
   }
 ]
