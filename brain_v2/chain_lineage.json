@@ -356,18 +356,18 @@
   {
    "table": "fmifiit_full",
    "role": "FM actual line",
-   "rows": 2308814,
+   "rows": 2491487,
    "population": {
     "FONDS": {
-     "populated": 2308814,
+     "populated": 2491487,
      "pct": 100.0
     },
     "FISTL": {
-     "populated": 2308814,
+     "populated": 2491487,
      "pct": 100.0
     },
     "FIPEX": {
-     "populated": 2308814,
+     "populated": 2491487,
      "pct": 100.0
     },
     "MEASURE": {
@@ -613,14 +613,23 @@
    "expected": "LIVE",
    "left": "fmifiit_full [col:FONDS]",
    "right": "funds [col:FINCODE]",
-   "left_rows": 2308814,
-   "left_distinct_keys": 8462,
+   "left_rows": 2491487,
+   "left_distinct_keys": 8893,
    "right_distinct_keys": 67479,
-   "resolved_rows": 2308814,
+   "resolved_rows": 2491213,
    "coverage_pct": 100.0,
-   "resolved_distinct_keys": 8462,
-   "orphan_keys": 0,
-   "orphan_examples": [],
+   "resolved_distinct_keys": 8831,
+   "orphan_keys": 62,
+   "orphan_examples": [
+    "103URU1110",
+    "1217GLO312",
+    "221LIB1000",
+    "221PAR3000",
+    "235RSS1002",
+    "263MLW4000",
+    "264LES0202",
+    "264MYA0401"
+   ],
    "collapse_ratio": null,
    "verdict": "LIVE"
   },
@@ -642,21 +651,21 @@
    "resolution": {
     "left_detail": "FIPEX",
     "right_detail": "RCMMTITEM",
-    "addresses_compared": 5949,
-    "avg_left_detail_per_address": 3.99,
+    "addresses_compared": 5961,
+    "avg_left_detail_per_address": 4.03,
     "avg_right_detail_per_address": 1.48,
-    "addresses_where_many_share_one_bucket_pct": 63.7,
-    "_reading": "at 63.7% of addresses, 3.99 distinct FIPEX values on average arrive at a SINGLE RCMMTITEM — every cost category there draws on one shared pool"
+    "addresses_where_many_share_one_bucket_pct": 64.0,
+    "_reading": "at 64.0% of addresses, 4.03 distinct FIPEX values on average arrive at a SINGLE RCMMTITEM — every cost category there draws on one shared pool"
    },
    "left": "fmifiit_full [concat:FONDS|FISTL]",
    "right": "fmavct_2025 [concat:RFUND|RFUNDSCTR]",
-   "left_rows": 2308814,
-   "left_distinct_keys": 9397,
+   "left_rows": 2491487,
+   "left_distinct_keys": 9836,
    "right_distinct_keys": 6727,
-   "resolved_rows": 2138001,
-   "coverage_pct": 92.6,
-   "resolved_distinct_keys": 5949,
-   "orphan_keys": 3448,
+   "resolved_rows": 2260818,
+   "coverage_pct": 90.7,
+   "resolved_distinct_keys": 5961,
+   "orphan_keys": 3875,
    "orphan_examples": [
     "000CRP9000|RFN",
     "000CRP9000|UIS",
@@ -667,9 +676,9 @@
     "000REV9000|OPS",
     "000REV9001|ICTP"
    ],
-   "collapse_ratio": 2.7,
+   "collapse_ratio": 2.72,
    "verdict": "COLLAPSED",
-   "why": "92.6% resolves, and then the detail is destroyed: at 63.7% of addresses several distinct FIPEX arrive at a SINGLE RCMMTITEM. Control still happens on the pooled bucket; attribution to a cost category does not survive it."
+   "why": "90.7% resolves, and then the detail is destroyed: at 64.0% of addresses several distinct FIPEX arrive at a SINGLE RCMMTITEM. Control still happens on the pooled bucket; attribution to a cost category does not survive it."
   }
  ],
  "consistency_checks": [
@@ -913,6 +922,60 @@
      "fact": "no son dos clases sueltas: son el motor de compromiso presupuestario de la plantilla. FMRESERV se cambia desde PA30 (425.956), ZPBC_PERIOD_CLS_EXEC (286.704) y HRPBC_ENGINE_PNP (156.581), y 5.980.533 de sus cambios (82%) no llevan transaccion ninguna.",
      "learned_by": "A21_case_spine",
      "implication": "el mayor flujo de cambios del sistema no se teclea, se genera. Cualquier analisis de 'quien cambia el presupuesto' que mire transacciones de dialogo ve el 18% y cree que lo ve todo"
+    },
+    {
+     "subject": "TCDOB",
+     "fact": "es la respuesta AUTORITATIVA a que tablas guarda cada clase de documento de cambio, y evita la ronda de hipotesis. FMRESERV -> KBLE/KBLK/KBLKKRED/KBLP (NO FMBH/FMBL, que fue la hipotesis razonable y era falsa). PBC -> HRFPM_FM_DOC/HRFPM_FM_POS/HRFPM_FPM_DOC/HRFPM_FPM_POS. BELEG -> BKDF/BKPF/BSEC/BSED/BSEG/BSEG_ADD/BSET. ENTRYSHEET -> ESKN/ESSR.",
+     "learned_by": "A21_case_spine",
+     "implication": "ante una OBJECTCLAS desconocida, preguntale a TCDOB antes de adivinar por el nombre. Dos hipotesis razonables (FMBH y FMBL) costaron dos rondas y las dos eran incorrectas"
+    },
+    {
+     "subject": "CDPOS / CHANGEDOCUMENT_READ",
+     "fact": "la via GENERAL para llevar un cambio a su documento no es parsear el OBJECTID -- que es especifico de cada clase y no esta documentado -- sino CDPOS, que trae TABNAME y TABKEY: la tabla y la clave exacta de la fila. En P01, sin embargo, CHANGEDOCUMENT_READ devuelve NOT_FOUND (DA 300) en las cinco variantes probadas, incluida clase+fecha sin objeto, con la cabecera demostrablemente viva en CDHDR.",
+     "learned_by": "A21_case_spine",
+     "implication": "no des el NOT_FOUND por 'no hay datos': quedan sin distinguir items de CDPOS ausentes y una puerta de autorizacion (S_SCD0) o de configuracion sobre el modulo. Y READ_CHANGEDOCU viene por defecto en SPACE, asi que hay que ponerlo a X -- aunque en este caso no fue la causa"
+    },
+    {
+     "subject": "CHANGEDOCUMENT_READ sobre este canal",
+     "fact": "no es utilizable: devuelve NOT_FOUND (DA 300) para TODA clase de documento de cambio -- BELEG, KRED, PBC, FMRESERV -- con cabeceras vivas en CDHDR de 2002, 2022 y 2026, y con las diez variantes de llamada probadas. NO es S_SCD0: el usuario JP_LOPEZ tiene nueve entradas con ACTVT 08 y 12. NO son los parametros.",
+     "learned_by": "A21_case_spine",
+     "implication": "para llevar un cambio a la clave exacta de su fila hay que ir por CDPOS cluster (FOR ALL ENTRIES), no por este modulo. Y no le pongas etiqueta a la causa: quedo sin determinar y asi debe constar"
+    },
+    {
+     "subject": "SuccessFactors en P01",
+     "fact": "esta INSTALADO y activo: componentes SFIHCM01/02/03 release 600 y PA_SE_IN 100, con las tablas de replicacion de Employee Central (ECPAO_INVT, ECPAO_EE_INVT, ECPAO_FLD_MAP, ECPAO_VALUE_MAP) pobladas. El perfil del sistema no lo registraba.",
+     "learned_by": "A19_log_reality_filter + sonda P01",
+     "implication": "hay un canal de datos de PERSONAL que el mapa de integracion no tiene. Y sirve de ejemplo de por que lo generado se RE-ENRUTA en vez de tirarse: estas tablas salieron de nombres de programa /1BCDWB/DB* que un indice de objetos habria descartado como basura"
+    },
+    {
+     "subject": "el agente no escribe en P01",
+     "fact": "comprobable y comprobado: cdhdr_history con USERNAME='JP_LOPEZ' son 0 filas. La disciplina de solo-lectura sobre produccion no es una promesa, deja rastro medible -- o su ausencia.",
+     "learned_by": "A20_comprehension_index",
+     "implication": "este contador vale como control permanente. Si algun dia deja de ser 0, algo escribio en produccion y hay que saberlo el mismo dia"
+    },
+    {
+     "subject": null,
+     "fact": "APQI tiene 57.998 sesiones y la cola empieza en 20050808 -- no en 2016, que es la primera de SAPMSSY1 y no la de la tabla. La ventana de 2025 mira menos del 18%: el argumento mas fuerte de este canal es su ANTIGUEDAD, y una ventana corta lo borra.",
+     "learned_by": "A31_bdc_channel_mining",
+     "implication": "no acotar apqi por fecha al medir el canal; la ventana solo vale para el cruce con el log"
+    },
+    {
+     "subject": null,
+     "fact": "Una lista de CADENAS es una lista de nombres. El extractor agnostico de forma solo aceptaba listas de diccionarios, asi que worklist_custom -- 80 programas que el modelo NO sabe explicar, o sea el sensor entero -- devolvia cero.",
+     "learned_by": "A31_bdc_channel_mining",
+     "implication": "aceptar list[str] ademas de list[dict] al extraer nombres de un store"
+    },
+    {
+     "subject": null,
+     "fact": "APQI tiene 57,998 sesiones desde 20050808: la ventana de 2025 mira menos del 18%. El argumento mas fuerte de este canal es su ANTIGUEDAD, y una ventana corta lo borra.",
+     "learned_by": "A31_bdc_channel_mining",
+     "implication": "no acotar apqi por fecha al medir el canal; la ventana solo vale para el cruce con el log"
+    },
+    {
+     "subject": null,
+     "fact": "Las claves de customizing viven en E071K de la TAREA, no de la orden padre. La orden de Egipto D01K9B0FXE imprime 'E071K vacio' y devuelve exit 0, mientras su hija D01K9B0FXF da exit 1 con la clave INTRUSA de Indonesia '350/ID/USTRD/O/01'. La unidad de cambio -- lo que se libera -- es la ORDEN, y es justo la que dice OK.",
+     "learned_by": "A40_config_transport_prerelease_check",
+     "implication": "para juzgar un transporte, resuelve sus TAREAS HIJAS por E070.STRKORR y analiza la UNION. Si no hay hijas y no hay claves, sal 2 (no analizable), nunca 0: un exit 0 sobre algo que no se pudo mirar se lee como aprobado."
     }
    ],
    "why": "these instrument facts were learned by other algorithms and applied here without rediscovery — the logs they name were added to the set this run measured"
