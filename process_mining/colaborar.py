@@ -55,13 +55,53 @@ def _tok(t):
 
 
 def _capacidades():
+    """QUIEN SABE DE QUE — del GRAFO ENTERO, no de los once del catalogo.
+
+    ⛔ ARREGLADO 2026-08-26. `ask.py` cataloga 11 mineros a mano, y el repartidor solo miraba
+    ahi. El grafo de herramientas tiene 226 nodos: 79 algoritmos y 13 agentes. Por esa mirilla,
+    DOS preguntas llevaban semanas sin destinatario teniendo la respuesta escrita:
+
+      A19 pregunto «no puedo decir QUE HACE un objeto» -- y la capa de codigo del brain
+          (code_interpretation.json, graph_queries.py code, A9_business_rules_from_source)
+          contesta justo eso. Ninguno de los 11 lee fuente.
+      A30 pregunto «no puedo arbitrar» -- y la respuesta NO ES UN MINERO: es el agente
+          `mining-arbiter`, que existe para exactamente eso. El repartidor no sabia que
+          existieran agentes.
+
+    Las dos se quedaron abiertas por como buscabamos, no por lo que sabemos. El catalogo a mano
+    se queda corto en cuanto alguien registra algo nuevo -- que es lo que pasa cada sesion.
+    """
+    caps = {}
+    # 1) el catalogo a mano: sigue valiendo, dice lo que cada minero responde EN CRISTIANO
     sys.path.insert(0, os.path.join(REPO, "process_mining"))
     try:
         from ask import CAPACIDADES
+        caps.update({c["algoritmo"]: " ".join(str(x) for x in c.get("responde", [])).lower()
+                     for c in CAPACIDADES if c.get("algoritmo")})
     except Exception:
-        return {}
-    return {c["algoritmo"]: " ".join(str(x) for x in c.get("responde", [])).lower()
-            for c in CAPACIDADES if c.get("algoritmo")}
+        pass
+    # 2) TODOS los algoritmos registrados: su `does` es su capacidad declarada
+    try:
+        with open(os.path.join(REPO, "brain_v2", "methods", "algorithms.json"),
+                  encoding="utf-8") as fh:
+            for k, v in (json.load(fh).get("algorithms") or {}).items():
+                if k in caps:
+                    continue
+                caps[k] = " ".join(str(v.get(x) or "") for x in
+                                   ("does", "operates_on", "lands_in")).lower()
+    except Exception:
+        pass
+    # 3) y los AGENTES: hay preguntas cuya respuesta no es un minero. Arbitrar es una.
+    ag = os.path.join(REPO, ".claude", "agents")
+    if os.path.isdir(ag):
+        for f in sorted(os.listdir(ag)):
+            if f.endswith(".md") and f[:-3] not in caps:
+                try:
+                    with open(os.path.join(ag, f), encoding="utf-8", errors="ignore") as fh:
+                        caps[f[:-3]] = fh.read()[:4000].lower()
+                except Exception:
+                    pass
+    return caps
 
 
 def _cargar():
