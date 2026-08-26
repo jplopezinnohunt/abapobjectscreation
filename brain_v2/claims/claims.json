@@ -17886,9 +17886,16 @@
         "added_session": 97
       }
     ],
-    "evidence_against": null,
+    "evidence_against": [
+      {
+        "type": "empirical",
+        "ref": "claim 614 (s105)",
+        "cite": "brain_v2/interface_boundary.json x rfcdes (Gold DB): 38 destinos tipo G + 2 tipo H, 40 de 40 con observed_calls=0; los 11 LIVE son tipo 3/I/T/L/X | tbtco_history: SAP_SLD_DATA_COLLECT (RSLDAGDS) STATUS='F' 126 veces entre 20260304 y 20260826 (+31 en tbtco), mientras SLD_DS_HTTP, SLD_DS_TARGET, SLD_NUC, SLD_UC y SAPSLDAPI -- las CINCO rutas posibles al SLD -- figuran las cinco DEAD",
+        "added_session": 105
+      }
+    ],
     "resolved_session": null,
-    "status": "active",
+    "status": "partially_superseded",
     "evidence_legacy_text_for": null,
     "related_objects": [
       "brain_v2/satellites.json",
@@ -17907,7 +17914,11 @@
       "process": [
         "cross-cutting"
       ]
-    }
+    },
+    "_suspect_since": "2026-08-26 (s105)",
+    "_suspect_by_claim": 614,
+    "_lo_que_sobrevive": "TODO el catalogo de satelites: 40 satelites sobre 7.783.106 llamadas, las 12 flotas de GUID recuperadas por firma de llamada, el redescubrimiento independiente de MuleSoft y el peldano L0b. Eso no lo toca nadie.",
+    "_para_re_medir": "SOLO la ultima frase: 'F1 first run: 238 destinations configured, 8 LIVE, 230 DEAD (configured with zero traffic - maintenance and attack surface nobody uses), 40 UNDECLARED'. El recuento en si es correcto; lo que cae es la SEMANTICA de DEAD para los tipos G y H: 40 de 40 destinos HTTP salen DEAD porque rsau_audit_history no registra llamadas HTTP salientes, no porque nadie los use. Re-emitir separando NO_OBSERVABLE de DEAD y volver a contar."
   },
   {
     "id": 373,
@@ -28019,12 +28030,24 @@
       "ZRFC_FMR_CREATE"
     ],
     "created_session": 103,
-    "status": "OPEN",
+    "status": "partially_superseded",
     "domain_axes": {
       "functional": "Integration",
       "module": null,
       "process": null
-    }
+    },
+    "_suspect_since": "2026-08-26 (s105)",
+    "_suspect_by_claim": 615,
+    "_lo_que_sobrevive": "LOS DOS EJES y todo el reparto de naturaleza: 239 TRANSACCIONAL, 97 LECTURA, 18 MASTER_DATA, 12 mixtas, 50 sin resolver; y el argumento de por que importa (una LECTURA rota cuesta un informe, una TRANSACCIONAL cuesta dinero, una de MASTER_DATA corrompe en silencio). Intacto.",
+    "_para_re_medir": "SOLO el tratamiento de los 239 NO_MEDIBLE. 'No dejan en NUESTRO log que hacen del otro lado' es cierto del TRAFICO; la DISPONIBILIDAD si se mide desde aqui (SM59 Connection Test). Emitir dos campos -- medibilidad_trafico y medibilidad_disponibilidad -- en vez de una sola naturaleza. Ver claim 615.",
+    "evidence_against": [
+      {
+        "type": "empirical",
+        "ref": "claim 615 (s105)",
+        "cite": "INC-000016471: un canal etiquetado NO_MEDIBLE y DEAD estuvo caido un dia entero sin que ningun store lo notara, teniendo la prueba de disponibilidad a un clic",
+        "added_session": 105
+      }
+    ]
   },
   {
     "id": 586,
@@ -28952,6 +28975,268 @@
       "functional": "BCM",
       "module": "PD",
       "process": "P2P"
+    }
+  },
+  {
+    "id": 614,
+    "claim": "EL CANAL POR DONDE SALE TODO PDF DE ESTA INSTALACION ESTABA ETIQUETADO COMO MUERTO, Y NO LO ESTABA: `DEAD` SOBRE UN DESTINO HTTP NO ES UNA MEDIDA (arbitrado 2026-08-26, s105, a raiz de INC-000016471). brain_v2/interface_boundary.json (algoritmo F1) publica el destino `ADS` como DEAD con observed_calls=0 y la semantica declarada 'maintenance and attack surface that nobody uses'. FALSO como afirmacion de uso: el 2026-08-25 un usuario real lo ejercito y recibio 'ADS: SOAP Runtime Exception: CSoapExceptionTransport', que prueba que el cliente SOAP ABAP emitio la llamada. LA CAUSA NO ES UN ERROR DE ADS SINO DE DENOMINADOR: la unica fuente de trafico de F1 es rsau_audit_history.PARAMX, que registra LLAMADAS RFC, y una llamada HTTP saliente (destino tipo G) no es una llamada RFC. MEDIDO: 40 de 40 destinos tipo G/H tienen observed_calls=0, y ninguno de los 11 LIVE es HTTP -- una tasa de muerte del 100% en una clase entera es la firma de un instrumento ciego, no de una poblacion sin usar. FALSADOR INDEPENDIENTE DEL INCIDENTE, por si el anterior pareciera anecdota: el job SAP_SLD_DATA_COLLECT (RSLDAGDS), cuyo unico trabajo es empujar los datos del sistema al SLD por una de las cinco rutas SLD configuradas, termino OK 126 veces entre 20260304 y 20260826 -- y las CINCO rutas figuran DEAD. SEGUNDO MOTIVO, acumulativo: la ventana del log (20260203..20260822) ni siquiera cubre el fallo (20260825). LO QUE F1 SIGUE PUDIENDO DECIR: DEAD es valido para los tipos que su fuente si registra (3, I, L, X y parte de T). LO QUE NO: emitir DEAD sobre G/H; ahi el veredicto correcto es NO_OBSERVABLE. CONSECUENCIA OPERATIVA: no sabemos que objetos de esta casa renderizan por ADS -- el corpus extraido da UNO (RFFORI00) y es un SUELO, no un censo; TNAPR, NAST, FPCONTEXT, FPLAYOUT y FPINTERFACE NO estan en el Gold DB (384 tablas) -- ni tenemos monitor de si el canal responde.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "domain": "Integration",
+    "created_session": 105,
+    "status": "OPEN",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "brain_v2/interface_boundary.json + Gold DB rfcdes",
+        "cite": "brain_v2/interface_boundary.json x rfcdes (Gold DB): 38 destinos tipo G + 2 tipo H, 40 de 40 con observed_calls=0; los 11 LIVE son tipo 3/I/T/L/X",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "Gold DB tbtco_history / tbtco",
+        "cite": "tbtco_history: SAP_SLD_DATA_COLLECT (RSLDAGDS) STATUS='F' 126 veces entre 20260304 y 20260826 (+31 en tbtco), mientras SLD_DS_HTTP, SLD_DS_TARGET, SLD_NUC, SLD_UC y SAPSLDAPI -- las CINCO rutas posibles al SLD -- figuran las cinco DEAD",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "knowledge/incidents/INC-000016471_ads_pdf_internship_agreement.md",
+        "cite": "usuario real, 2026-08-25, '500 Internal Server Error / ADS: SOAP Runtime Exception: CSoapExceptionTransport :(100101)' desde la app Internship Agreement",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "Gold DB rsau_audit_history",
+        "cite": "28.580.216 filas, ventana 20260203..20260822: no cubre el 20260825; 0 filas con PARAMX conteniendo 'ADS'",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "grep sobre extracted_code/ + extracted_sap/ + extracted_sap_p01/",
+        "cite": "1 solo fichero con llamadas a la API de formularios Adobe (FP_JOB_OPEN / FP_FUNCTION_MODULE_NAME / SFPOUTPUTPARAMS): extracted_code/FI/SAPFPAYM/RFFORI00.abap. El corpus es PARCIAL: es un suelo",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "brain_v2/output/brain_v2_graph.json",
+        "cite": "SUELO MEJOR, verificado por el arbitro sobre 60.243 nodos: 50 formularios OBJ:SFPF + 17 interfaces OBJ:SFPI propios, entre ellos la familia del convenio de practicas del incidente (YHRINT_AGREEMENT / _V2 / _ANEX1_EN / _ANEX1_FR / _ANEX2_EN / _ANEX2_FR...), cartas de reclamacion YFI_DUNNING_FORM* y atestaciones YHR_IF_ATTESTATION. El '1 programa RFFORI00' del grep mide OTRA COSA (quien LLAMA a la API) y ademas depende del token: RFFOAVIS_FPAYM usa PDF_FORM_CHECK y fpayhx-pdfaf, no FP_*. Citar 50 SFPF + 17 SFPI como suelo, no 1",
+        "added_session": 105
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "ADS",
+      "ADSUSER",
+      "ADS_AGENT",
+      "RFFORI00",
+      "RSLDAGDS",
+      "SAP_SLD_DATA_COLLECT",
+      "SLD_DS_HTTP",
+      "SLD_DS_TARGET",
+      "SLD_NUC",
+      "SLD_UC",
+      "SAPSLDAPI",
+      "rfcdes",
+      "rsau_audit_history",
+      "interface_boundary.json",
+      "interface_inventory.json",
+      "process_mining/interface_boundary.py",
+      "INC-000016471",
+      "SFP",
+      "FP_PDF_TEST_00",
+      "TNAPR",
+      "hq-sap-sbp",
+      "YHRINT_AGREEMENT",
+      "YHRINT_AGREEMENT_V2",
+      "YFI_DUNNING_FORM",
+      "RFFOAVIS_FPAYM",
+      "RFFORI06",
+      "ZPAWF_INT_AGREE"
+    ],
+    "related_incident": "INC-000016471",
+    "supersedes": [
+      372
+    ],
+    "resolution_notes": "Arbitrado por mining-arbiter en el foro de mineros: process_mining/mining_findings.json, sujeto ADS aspecto vivo_o_muerto. El perdedor NO se borra: claim 372 queda parcialmente retirado con su texto original intacto.",
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Output"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
+  },
+  {
+    "id": 615,
+    "claim": "LA MEDIBILIDAD DE UNA INTERFAZ TIENE DOS EJES Y CONFUNDIRLOS DEJA UN CANAL ENTERO SIN VIGILANCIA (arbitrado 2026-08-26, s105; EXTIENDE el claim 585, que anadio la naturaleza). Los 239 destinos SALIENTES de interface_inventory.json llevan naturaleza `NO_MEDIBLE` con una sola justificacion: 'un destino SALIENTE no registra en nuestro log que hace en el sistema destino; se mediria en el otro extremo'. Eso es CIERTO para el eje TRAFICO/SEMANTICA -- que hace alli, cuantas veces, sobre que datos -- y FALSO para el eje DISPONIBILIDAD: '¿responde?' se contesta desde NUESTRO lado, sin ver el otro extremo, con un test de conexion (SM59 -> Connection Test), y para ADS ademas con una prueba funcional que devuelve el error REAL en vez del SOAP envuelto (SFP -> Test ADS Connection, reports FP_TEST_00 / FP_PDF_TEST_00). RESOLUCION: partir el campo en dos -- `medibilidad_trafico = NO_MEDIBLE_AQUI` (se mide en el otro extremo) y `medibilidad_disponibilidad = MEDIBLE_DESDE_AQUI` con su estado de monitorizacion, que hoy es SIN_MONITOR para los 239. LO IMPORTANTE NO ES QUE UN MINERO SE EQUIVOCARA: A27 (naturaleza) y F1 (LIVE/DEAD) dicen dos cosas VERDADERAS sobre ejes DISTINTOS. El punto ciego nacio porque el unico eje que si es medible desde aqui no lo reclamo NINGUNO -- A27 lo declaro no-medible por confundirlo con el trafico, y F1 lo contesto con una fuente que no llega a los tipos G/H. Un canal por el que sale TODO PDF que esta institucion produce desde SAP se quedo sin dueno y sin monitor en el hueco entre dos etiquetas, las dos honestas. DONDE ATERRIZA, las tres a la vez: (1) brain_v2/build_interface_inventory.py emite los dos campos para los 239; (2) capability_model columna F_INTERFACE_FILE -- un dominio no puede puntuar por encima de PARTIAL en F si sus canales salientes no tienen eje de disponibilidad declarado (Output esta hoy en PARTIAL con S/A/B/C/E/G/H/R en NONE: es como se ve un dominio STRANDED el dia que se rompe); (3) la regla feedback_a_verdict_of_absence_must_name_the_instrument_that_could_have_seen_it.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "domain": "Integration",
+    "created_session": 105,
+    "status": "OPEN",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "brain_v2/interface_inventory.json",
+        "cite": "239 registros RFC_DESTINATION con nature=NO_MEDIBLE y nature_basis identico; ninguno con eje de disponibilidad. Los 239 llevan evidence_it_runs = 'see brain_v2/interface_boundary.json (F1) for LIVE/DEAD', que para los 40 de tipo G/H remite a una fuente que no los ve",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "brain_v2/capability_model/capability_model.json",
+        "cite": "dominio Output: F_INTERFACE_FILE=PARTIAL, D_DATA=PARTIAL y las otras nueve dimensiones en NONE",
+        "added_session": 105
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "ADS",
+      "interface_inventory.json",
+      "interface_boundary.json",
+      "brain_v2/build_interface_inventory.py",
+      "process_mining/interface_boundary.py",
+      "capability_model.json",
+      "Output",
+      "SFP",
+      "FP_PDF_TEST_00",
+      "SM59",
+      "rfcdes"
+    ],
+    "related_incident": "INC-000016471",
+    "supersedes": [
+      585
+    ],
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Output"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
+  },
+  {
+    "id": 616,
+    "claim": "EL FALLO DE AUTENTICACION DE `ADSUSER` ES ESTRUCTURALMENTE INVISIBLE PARA NOSOTROS: ES UNA FRONTERA DEL INSTRUMENTO, NO UN HUECO DE DATOS (2026-08-26, s105, INC-000016471). El destino ADS se autentica con `D=ADSUSER` y `Q=B` (basic auth) contra el AS JAVA de hq-sap-sbp:50300. ADSUSER NO existe en USR02 de P01 -- es una cuenta del UME de Java -- luego ninguna tabla ABAP nuestra (USR02, USH02, USR41, rsau_audit_history) puede contener jamas su bloqueo, su caducidad ni sus intentos fallidos, por mucho log que acumulemos. La cuenta que SI existe en P01, ADS_AGENT (USTYP=B, no bloqueada, sin caducidad, ultimo logon 20260821, 287 eventos AU1 en 6,5 meses y CERO fallidos), es OTRA cuenta y NO es la que usa el destino: confundirlas produce un 'todo esta bien' falso. EL SESGO QUE ESTO CREA, que es lo que hay que recordar: de las cuatro causas posibles de un CSoapExceptionTransport, la mas probable -- la #2, ADSUSER bloqueado o caducado, la reincidente clasica que encaja con 'funcionaba ayer' -- es justo la UNICA invisible desde aqui; si nos guiamos por lo que podemos medir concluiremos siempre que no es esa. QUE HARIA FALTA PARA CERRARLO, nombrado y no aplazado: (a) el log de seguridad del UME de Java (NWA -> Identity Management -> ADSUSER, o security.log del AS Java), que exige acceso al AS JAVA y no al ABAP -- no es nuestro; (b) desde nuestro lado y en un clic, SM59 -> destino ADS -> Connection Test: 401 = es ADSUSER, timeout/rechazo = host o red, 200 = ADS vivo; (c) SFP -> Test ADS Connection (FP_PDF_TEST_00), la prueba funcional. (b) y (c) son de SOLO LECTURA y son de Basis. TERCER HECHO QUE SI PUDIMOS MEDIR Y QUE ESTRECHA EL DIAGNOSTICO: el host que sirve ADS aparece 419.907 veces en nuestro log de auditoria en 201 dias distintos, ~2.200/dia hasta el ultimo dia cubierto (20260822), entrando en P01 como pila ABAP de Solution Manager (usuario SMTMSBP, destinos SM_P01CLNT350_*). Eso rebaja mucho la causa #3 (ruta de red cortada / host movido / DNS) y no toca las causas #1, #2 ni #4, porque el puerto 50300 es la pila JAVA de esa misma maquina. Dice 'el host estaba sano hasta tres dias antes', no 'el host esta sano'.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "domain": "Integration",
+    "created_session": 105,
+    "status": "OPEN",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "Gold DB usr02",
+        "cite": "ADSUSER: 0 filas en P01. ADS_AGENT: USTYP=B, no bloqueado, sin caducidad, ultimo logon 20260821, 287 eventos AU1 en 6,5 meses, 0 fallidos",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "Gold DB rfcdes",
+        "cite": "ADS = tipo G, H=hq-sap-sbp.hq.int.unesco.org, I=50300, N=/AdobeDocumentServices/Config?style=rpc, D=ADSUSER, v=%_PWD, Q=B, s=N (HTTP plano), T=N (traza apagada)",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "Gold DB rsau_audit_history",
+        "cite": "419.907 filas con PARAMX conteniendo 'host=HQ-SAP-SBP', 20260203..20260822, 201 dias distintos, ~2.200/dia hasta 20260822; usuarios SMTMSBP 419.108 / SLDAPI 7; destinos SM_P01CLNT350_READ 332.001, SM_P01CLNT350_TMW 2.179, SM_P01CLNT350_TRUSTED 396",
+        "added_session": 105
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "ADSUSER",
+      "ADS",
+      "ADS_AGENT",
+      "hq-sap-sbp",
+      "SMTMSBP",
+      "usr02",
+      "rfcdes",
+      "rsau_audit_history",
+      "SM59",
+      "SFP",
+      "FP_PDF_TEST_00",
+      "INC-000016471"
+    ],
+    "related_incident": "INC-000016471",
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Output",
+        "Basis_Security"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
+  },
+  {
+    "id": 617,
+    "claim": "EL LATIDO DE LA MAQUINA QUE SIRVE ADS ESTUVO VERDE TODO EL DIA DE LA CAIDA, Y ESO ES LO QUE REDUCE EL DIAGNOSTICO DE CUATRO CAUSAS A DOS (medido 2026-08-26, s105, INC-000016471). El host hq-sap-sbp (172.16.4.107) lleva DOS pilas: la ABAP de Solution Manager (instancia 01) y la JAVA que sirve ADS (instancia 03, puerto 50300). La pila ABAP llama a P01 como un metronomo, ~2.100-2.300 eventos al dia sin huecos. MEDIDO SOBRE EL DIA QUE IMPORTA: el 2026-08-25, mientras el usuario no conseguia generar su PDF, el latido marco 2.138 eventos de 00:00:17 a 23:58:22 — indistinguible de un dia normal. CONSECUENCIA 1, DIAGNOSTICA: caen la causa #3 (red / DNS / host movido) y la #4 en su version de saturacion de la maquina, porque una caja asi de tocada habria mellado el metronomo ABAP y no lo mello. QUEDAN DOS, las dos dentro de la pila Java: #1 la aplicacion AdobeDocumentServices parada o colgada, y #2 ADSUSER bloqueado o caducado en el UME. Y LAS DOS LAS SEPARA EL MISMO CLIC, de solo lectura: SM59 -> destino ADS -> Connection Test (401 = #2 · rechazo o timeout contra 50300 = #1). Para el ticket eso significa que NO hace falta pedir acceso al AS Java primero: hace falta un test de conexion que Basis ya puede dar, y solo si sale 401 se entra en NWA. CONSECUENCIA 2, DE METODO Y MAS DURADERA: este latido es un sensor REAL pero de la MAQUINA, no del canal. Solo puede dar senal NEGATIVA (maquina caida => no hay PDF) y nunca positiva (maquina viva NO implica ADS vivo). Montar el monitor de ADS sobre el latido de la instancia ABAP vecina habria dado VERDE durante toda esta incidencia. El monitor tiene que atacar el puerto 50300.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "domain": "Integration",
+    "created_session": 105,
+    "status": "OPEN",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "Gold DB rsau_audit_history",
+        "cite": "rsau_audit_history leido 2026-08-26 (29.422.633 filas, 20260203..20260826), PARAMX LIKE '%host=HQ-SAP-SBP%' por dia: 20260818 2.195 / 19 2.194 / 20 2.288 / 21 2.194 / 22 504 (parcial 05:28) / 23 1.648 (desde 05:17) / 24 2.130 / 25 2.138 (00:00:17-23:58:22) / 26 1.524 (hasta 17:13)",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "Gold DB rfcdes",
+        "cite": "ADS tipo G: H=hq-sap-sbp.hq.int.unesco.org, I=50300 (puerto HTTP de la instancia Java 03); el latido observado viene de HQ-SAP-SBP_SBP_01, la instancia ABAP 01",
+        "added_session": 105
+      },
+      {
+        "type": "empirical",
+        "ref": "process_mining/mining_findings.json",
+        "cite": "arbitraje publicado: sujeto ADS aspecto sensor_de_disponibilidad; contesta la pregunta abierta de inc16471_ads_log_mining sobre si la maquina se reinicio o se saturo",
+        "added_session": 105
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "ADS",
+      "ADSUSER",
+      "hq-sap-sbp",
+      "SMTMSBP",
+      "SM59",
+      "SFP",
+      "FP_PDF_TEST_00",
+      "rsau_audit_history",
+      "rfcdes",
+      "INC-000016471",
+      "SM_P01CLNT350_READ"
+    ],
+    "related_incident": "INC-000016471",
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Output",
+        "Basis_Security"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
     }
   }
 ]

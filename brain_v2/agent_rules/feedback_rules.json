@@ -5622,5 +5622,28 @@
       "s104-rebuild-sin-progreso",
       "s104-rebuild_progress-v1-mintio"
     ]
+  },
+  {
+    "id": "feedback_a_verdict_of_absence_must_name_the_instrument_that_could_have_seen_it",
+    "severity": "HIGH",
+    "created_session": 105,
+    "derives_from_core_principle": "CP-003",
+    "rule": "UN VEREDICTO DE AUSENCIA -- DEAD, SIN USO, 0 LLAMADAS, NO_MEDIBLE -- TIENE QUE NOMBRAR EL INSTRUMENTO QUE HABRIA VISTO LO CONTRARIO, Y ESE INSTRUMENTO TIENE QUE CUBRIR A TODA LA POBLACION SOBRE LA QUE SE EMITE. Tres obligaciones, y la tercera es la que nadie hace: (1) ESCRIBIR LA FUENTE JUNTO AL VEREDICTO, y si la fuente no cubre a un subconjunto, ese subconjunto recibe NO_OBSERVABLE, nunca AUSENTE -- son estados distintos y el segundo cierra el caso mientras el primero lo deja abierto. (2) PARTIR LA POBLACION por la clase que decide si el instrumento la ve (para destinos RFC: RFCTYPE) y publicar la tasa POR CLASE: una clase entera al 0% o al 100% es la firma de un instrumento ciego, no un hallazgo. (3) NO CONFUNDIR DOS PREGUNTAS BAJO UNA ETIQUETA: 'que hace' y 'responde' son ejes distintos y pueden tener medibilidad opuesta; si un eje es medible desde aqui y el otro no, se emiten DOS campos. Y al arreglar UNA fuente de error (el muestreo) no se sube la confianza de la etiqueta: se nombra la que queda (la cobertura). EXTIENDE feedback_name_the_source_before_you_assert (CP-003) de la prosa a los GENERADORES: alli el fallo se dice una vez, aqui se publica sobre cientos de registros y nadie lo vuelve a mirar.",
+    "why": "2026-08-26 (s105), INC-000016471. El destino `ADS` -- por donde sale TODO PDF que esta institucion produce desde SAP -- estaba etiquetado DEAD ('maintenance and attack surface that nobody uses') en interface_boundary.json y NO_MEDIBLE en interface_inventory.json, y estuvo caido un dia entero con un usuario bloqueado y un ticket rebotando por cuatro personas sin que ningun store lo notara. Ninguna de las dos etiquetas era una mentira: la primera venia de rsau_audit_history, que registra llamadas RFC y no ve una llamada HTTP saliente (medido: 40 de 40 destinos tipo G/H con observed_calls=0, y las 5 rutas al SLD DEAD mientras el job RSLDAGDS que las usa terminaba OK 126 veces); la segunda es cierta del TRAFICO y falsa de la DISPONIBILIDAD, que se mide desde nuestro lado con un test de conexion. El canal se quedo sin vigilancia en el HUECO ENTRE DOS ETIQUETAS HONESTAS, que es peor que un error, porque no hay a quien corregir. Agravante: el algoritmo habia quitado poco antes su error de muestreo y escrito 'DEAD is now a FACT rather than an artefact'.",
+    "how_to_apply": "1) Al emitir cualquier clasificacion de ausencia en un generador, incluir el campo que nombra la fuente y su VENTANA, y un tercer estado NO_OBSERVABLE distinto de AUSENTE. 2) Antes de publicar, agrupar el veredicto por la clase que condiciona la visibilidad y mirar la tasa: 0% o 100% en una clase = parar y revisar la cobertura de la fuente, no publicar. 3) Separar SIEMPRE 'que hace del otro lado' (trafico) de 'responde' (disponibilidad); la segunda casi siempre es medible desde nuestro lado aunque la primera no lo sea. 4) Todo algoritmo que emita veredictos debe estar dado de alta en process_mining/ask.py con su `lo_que_NO_puede`: un minero sin ficha no puede recibir preguntas ni sembrar su limite en el foro, y su punto ciego no sale nunca. 5) Cuando dos stores discrepen, comprobar primero si miden EJES distintos antes de buscar un culpable: aqui los dos tenian razon y lo que faltaba era el tercer campo.",
+    "domain_axes": {
+      "functional": [
+        "Brain_Architecture",
+        "Integration",
+        "Output"
+      ],
+      "module": [
+        "BC",
+        "BASIS"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
   }
 ]

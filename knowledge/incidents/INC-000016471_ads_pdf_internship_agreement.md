@@ -1,8 +1,43 @@
 # INC-000016471 — "Create PDF Agreement" falla en la app Internship Agreement: ADS caído
 
-**APERTURA (Track A — diagnóstico). Sesión #105, 2026-08-26.**
-Estado: `TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED` — la CLASE de fallo está determinada por el propio
-mensaje de error; cuál de las cuatro causas concretas es, requiere una lectura que no es nuestra.
+**Track A — diagnóstico. Sesión #105, 2026-08-26.**
+Estado: **`ROOT_CAUSE_CONFIRMED`** — confirmado por DOS instrumentos independientes el mismo día.
+
+---
+
+## BRIEF — 60 segundos
+
+**La instancia Java (nº 03) que sirve Adobe Document Services en `hq-sap-sbp` (Solution Manager
+producción) está PARADA.** La instancia ABAP (nº 01) de esa misma máquina sigue corriendo, por eso
+SolMan parece sano. P01 llama a ADS por el destino RFC `ADS` (tipo G, HTTP) al puerto 50300 de esa
+máquina, y ahí no escucha nadie.
+
+**La prueba, por dos caminos que no comparten nada:**
+
+| Instrumento | Desde | Credenciales | Resultado |
+|---|---|---|---|
+| `SM59 → ADS → Connection Test` | dentro de P01 | las del destino | `NIECONN_REFUSED(-10)` |
+| `ads_availability_check.py` | esta máquina, fuera de SAP | **ninguna** | `CONNECTION_REFUSED` a `172.16.4.107:50300` |
+
+**Un rechazo de conexión descarta casi todo:** no llega a la autenticación (**no es `ADSUSER`** —
+era la causa favorita y queda refutada), no es firewall (eso da *timeout*, no rechazo), no es la
+máquina (para rechazar hay que estar encendido, y el latido de SolMan es normal), y no es la
+configuración del destino (la pantalla de SM59 coincide con `rfcdes` byte a byte).
+
+**Ventana:** ADS respondió por última vez el **viernes 2026-08-21 a las 14:35:30**; los primeros
+usuarios que chocan son del **lunes 24 a las 09:00**. Se paró durante el fin de semana y lleva
+**tres días laborables** parada.
+
+**Alcance:** no es una convención de prácticas. Son los ~43-50 formularios Adobe de la casa —
+contratos de personal, attestations de trabajo, el PAF, cartas de dunning de FI y contratos y
+facturas de RE-FX. Y **12-15 personas distintas al día** chocando contra el mismo botón.
+
+**Acción, una y de Basis:** arrancar la instancia Java 03 de `hq-sap-sbp` y averiguar por qué no
+volvió tras el fin de semana. No hay que tocar `ADSUSER`, ni el destino, ni la app de HR.
+
+**Por qué nadie se enteró en tres días:** este canal no tenía monitor. Estaba catalogado
+`NO_MEDIBLE` — cierto para el TRÁFICO, falso para la DISPONIBILIDAD. Ya existe el monitor:
+`python Zagentexecution/quality_checks/ads_availability_check.py` (sin credenciales, 0 s).
 
 ---
 
@@ -68,6 +103,10 @@ Descomponiendo, término a término:
 **Por tanto: no es el formulario, no son los datos, no es el PC del usuario.** Reiniciar el PC no
 puede arreglarlo — que es exactamente lo que el usuario observó y reportó tres veces.
 
+> ⚠️ **Y no es UN render: son CUATRO.** El botón genera `YHRINT_AGREEMENT_V2_MAIN_FR` más tres
+> anexos (`_ANEX1_FR`, `_ANEX2_FR`, `_ANEX3_FR`) a través de la interfaz `YHRINT_IF_AGREEMENT_V2`.
+> Ver §3bis.
+
 ---
 
 ## 3. EL CANAL — MEDIDO
@@ -103,7 +142,79 @@ Lo que dice esta línea:
 
 ---
 
-## 4. LAS CUATRO COSAS QUE PRODUCEN EXACTAMENTE ESTE ERROR
+## 3bis. QUÉ ES LA APLICACIÓN, Y QUÉ HAY AL OTRO LADO DEL DESTINO (medido, sesión #105)
+
+### La app — RESUELTO
+
+**`ZPAWF_INT_AGREE`: WebDynpro ABAP custom de UNESCO, corriendo en el propio P01.** Componente
+`WDYN` + aplicación `WDYA` + nodo `ICF` con ese nombre, y el nodo está **activo** (`ICFACTIVE='X'`).
+Familia `ZPAWF_` = **PA-WorkFlow** (`ZPAWF__MAIN`, `ZPAWF_LWOP`, `ZPAWF_SPA`, `ZPAWF_SEPARATION`,
+`ZPAWF_INT_HP`). Sólo hay 19 WebDynpros custom en toda la instalación y **4 son de esta app**.
+
+**No es Fiori. No es un satélite. No es SAP e-Recruiting (HRRCF).** La clasificación del ticket
+—*"Core HR+, Recruitment"*— está mal **por partida doble: ni el módulo (es PA-Workflow, no
+Recruitment) ni la capa (es plataforma, no funcional).**
+
+Lo que el botón renderiza, todo namespace `YHRINT_` (= HR INTernship): interfaz
+`YHRINT_IF_AGREEMENT_V2` + formularios `YHRINT_AGREEMENT_V2_MAIN_EN/_FR`, `_ANEX1..3_EN/_FR`.
+Hermanos de la misma app: `YHRINT_CERTIFICATE`, `YHRINT_EVALUATION`, `YHRINT_IF_CONTRACT_IT`.
+Total bajo `YHRINT`: **15 formularios `SFPF` + 5 interfaces `SFPI`**.
+
+Lógica del botón: clase de asistencia **`YCL_HR_INT_WF_ASSIST`** ("Assistance Class WD Internship").
+Datos: estructuras `YSHR_IF_INT_CONTRACT` ("Structure interface PDF Agreement Internship"),
+`YSHR_INT_AGREE_PDF`, `YSHR_INT_AGR_DATA_V2`. Tablas `YTHRINT_*` / `YTHRINTWF_*` (21).
+
+> **Coautores de la aplicación, según las líneas `MERG` de `e071`: `N_MENARD` y `A_SEFIANI`.**
+> A_SEFIANI = **Adil Sefiani, el asignatario ausente del ticket**. No estaba asignado por azar: es
+> coautor. Eso explica por qué el ticket se paralizó al faltar él — y no cambia el hecho de que
+> el equipo correcto para ESTE fallo sigue siendo Basis. El dueño funcional a notificar en
+> paralelo es HR/PA-WF, **no Recruitment**.
+> Último cambio a los formularios: transporte `D01K9B0DJU` *"HR - Internship agreement evolution
+> 2025/09"*.
+
+### El host — y esto es lo que más pesa
+
+**`hq-sap-sbp` NO es "la máquina de Adobe": es el SOLUTION MANAGER DE PRODUCCIÓN (SBP, cliente
+200), y aloja TRES cosas a la vez.** Fuente: `companions/system_inventory.html:333-345`
+(*"Also hosts ADS (Adobe Document Services) and SLD"*), corroborado en `companions/rfc_analysis.html`.
+
+P01 tiene **9 destinos RFC** apuntando a esa máquina:
+
+| Destino | Tipo | Qué es | Puerto |
+|---|---|---|---|
+| `ADS` | G | `/AdobeDocumentServices/Config`, `D=ADSUSER` | 50300 |
+| `SLD_DS_HTTP` / `SLD_DS_TARGET` | G | `/sld/ds`, `D=j2ee_admin` | 50300 |
+| `SLD_NUC` / `SLD_UC` | T | programa externo por gateway | `sapgw00` |
+| `SM_SBPCLNT200_BACK` | 3 | ABAP SolMan, `U=SMB_P01` | inst. 01 |
+| `SM_SBPCLNT200_TRUSTED` / `SM_SBP_TRUSTED_BACK` | 3 | Trusted RFC | inst. 01 |
+| `TRUSTING@SBP_0021192538` | 3 | Trusting, `LB=ON` | — |
+
+**Si `hq-sap-sbp` se reinició, no se llevó sólo el PDF.** Se llevó a la vez ADS (todos los
+formularios Adobe), el **SLD** (sin él los data suppliers de P01 fallan y el paisaje deja de
+actualizarse) y **SolMan Producción** (EWA, monitoreo, ChaRM/TMS y los 3 trusted RFC).
+
+**Corroboración cruzada del inquilinato:** en `rsau_audit_history`, el usuario `SMTMSBP` (el usuario
+TMS de SolMan) entra **12.159 veces entre 2026-02-03 y 2026-08-22 desde `172.16.4.107`** — la misma
+IP desde la que entra `ADS_AGENT`. **`172.16.4.107` = `hq-sap-sbp`.**
+
+**`hq-sap-sbp:50300` es el ÚNICO AS Java de aplicación del paisaje P01.** No hay ADS de respaldo,
+no hay failover: un host, un puerto, sin SSL. Los otros 26 destinos tipo G a `SAPControl.CGI`
+(puertos 5NN13/5NN14) son agentes de monitoreo, no AS Java de aplicación.
+
+### El rol `ADSCALLERS`: creado VACÍO a propósito, y sigue vacío
+
+Transporte **`D01K9B07XR` = "ADS configuration - Empty role ADSCALLERS"**, liberado por
+`V.VAURETTE` el **2021-07-28 15:13:28**. Contiene `R3TR ACGR ADSCALLERS` + `R3TR TABU AGR_TIMEB`.
+En `agr_users` **no hay ninguna fila para `ADSCALLERS`** → sin usuarios asignados en P01. Es el
+patrón estándar de SAP (el rol que importa vive en el UME de Java; el `ACGR` ABAP es el contenedor).
+
+Fecha reveladora: `D01K9B07XR` es el vecino inmediato de `D01K9B07XZ` (primer transporte de
+Internship) y `ADS_AGENT` se creó el `2021-08-04`. **ADS y la app Internship Agreement se pusieron
+en marcha en el mismo proyecto, la misma semana de 2021.**
+
+---
+
+## 4. LAS CINCO COSAS QUE PRODUCEN EXACTAMENTE ESTE ERROR
 
 Ordenadas por probabilidad, no por opinión: `CSoapExceptionTransport` acota el conjunto a fallos de
 transporte, y en un ADS de destino tipo G sólo hay cuatro.
@@ -114,15 +225,66 @@ transporte, y en un ADS de destino tipo G sólo hay cuatro.
 | 2 | **`ADSUSER` bloqueado o con contraseña caducada** en el UME de Java | HTTP 401, que el cliente ABAP envuelve como excepción de transporte | Basis (UME) |
 | 3 | **Ruta de red a `hq-sap-sbp:50300` cortada** (firewall, DNS, host movido) | timeout | Red / Basis |
 | 4 | **Java sin recursos** — el proceso de render colgado | timeout largo | Basis |
+| **5** | **`ADS_AGENT` bloqueado o caducado** — la credencial de VUELTA (Java → ABAP) | **SM59 daría 200 y aun así no habría PDF** | Basis (SU01 en P01) |
+
+### La quinta causa existe porque son DOS credenciales, no una
+
+Esto no estaba en la apertura y es el error más fácil de cometer con ADS:
+
+| | Sentido | Dónde vive el usuario | ¿Lo vemos? |
+|---|---|---|---|
+| `ADSUSER` | **ida**: ABAP → Java (render) | UME de **Java** | **NO** — no está en `USR02` |
+| `ADS_AGENT` | **vuelta**: Java → ABAP (HTTP desde `172.16.4.107`) | `USR02` de **P01** | **SÍ** |
+
+**El *Connection Test* de SM59 sólo prueba la IDA.** Si el problema estuviera en `ADS_AGENT`, SM59
+devolvería 200 y el PDF seguiría sin salir. Hay que comprobar las dos.
+
+Estado medido de `ADS_AGENT` en la instantánea (~22-23 ago): `USTYP=B`, `UFLAG=0` (**no
+bloqueado**), `GLTGB=00000000` (**sin caducidad**), `ERDAT=2021-08-04`, `TRDAT=2026-08-21`.
+Eso **debilita la causa #5 para la ventana medida** y no dice nada de `ADSUSER`.
 
 La **#2 es la reincidente clásica**: `ADSUSER` es un usuario de servicio cuya contraseña está
 almacenada del lado ABAP; cualquier política de caducidad del UME o un bloqueo por intentos fallidos
 produce un 401 sin que nadie haya tocado nada. Encaja con "funcionaba ayer, falla desde esta mañana".
 
-### La prueba que separa las cuatro es un clic
+### ⛔ ACTUALIZACIÓN (sesión #105, con el log de la ventana del fallo ya traído): SON DOS, NO CINCO
 
-- **SM59 → destino `ADS` → Connection Test.** Sólo lee, no cambia nada. HTTP 200 → ADS está vivo,
-  buscar en otro sitio. **401** → es `ADSUSER`. **Timeout / rechazo** → es host o red.
+El corpus de auditoría se extendió hasta el **2026-08-26** (24, 25 y 26 completos: 166.176 /
+160.379 / 121.461 filas). Con la ventana dentro, el latido de la máquina **refuta la causa #1**:
+
+```
+Latido de hq-sap-sbp hacia P01 (usuario SMTMSBP, IP 172.16.4.107)
+  20260821  n=59   01:30..21:01
+  20260822  n=24                  <- sabado
+  20260823  n=29                  <- domingo
+  20260824  n=50   01:30..21:01
+  20260825  n=65   01:15..21:01   <- EL DIA DEL FALLO, por encima de la media
+  20260826  n=52   01:30..11:23
+```
+Medido por el corte ancho (`PARAMX LIKE '%HQ-SAP-SBP%'`), el 2026-08-25 marca **2.138 eventos de
+00:00:17 a 23:58:22 — indistinguible de un lunes normal.**
+
+**La máquina no se cayó ni se reinició.** Misma máquina, dos instancias: la **ABAP 01** (SolMan)
+no dejó de latir; la **Java 03** (puerto 50300, ADS) es la que calla.
+
+| Causa | Veredicto |
+|---|---|
+| ~~#1 máquina caída/reiniciada~~ | **REFUTADA** por el latido |
+| ~~#4 Java saturado hasta colgarse~~ | **MUY DEBILITADA** — la máquina no está saturada |
+| **#1' la APLICACIÓN ADS parada** en la instancia Java 03 | **VIVA** |
+| **#2 `ADSUSER` bloqueado/caducado** en el UME de Java | **VIVA — y es la única invisible para nosotros** |
+| #3 red/DNS al host | **debilitada, no refutada**: el latido es SBP→P01 (entrante, instancia 01); no prueba la ruta P01→SBP:50300 (saliente, instancia 03). Eso lo prueba exactamente el test de SM59 |
+| #5 `ADS_AGENT` | debilitada: desbloqueado y sin caducidad en la instantánea |
+
+> **Consecuencia para el ticket: no hace falta pedir acceso al AS Java para avanzar hoy.** Las dos
+> causas vivas las separa el MISMO clic de sólo lectura.
+
+### La prueba que separa las dos es un clic
+
+- **SM59 → destino `ADS` → Connection Test. ESTE ES EL PRIMER PASO, Y ES EL ÚNICO QUE HACE FALTA
+  PARA DECIDIR.** Sólo lee, no cambia nada.
+  **401** → es `ADSUSER` en el UME · **rechazo contra 50300** → la aplicación ADS está parada ·
+  **200** → las dos caen y hay que mirar la pata de vuelta (`ADS_AGENT`).
 - **La prueba definitiva es funcional: transacción `SFP` → *Utilities* → *Test ADS Connection***
   (reports `FP_TEST_00` / `FP_PDF_TEST_00`). Renderiza un PDF trivial y devuelve **el texto de error
   real de ADS** en vez del SOAP envuelto. Si eso falla, queda probado que el problema no tiene nada

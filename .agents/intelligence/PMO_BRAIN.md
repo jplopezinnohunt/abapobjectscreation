@@ -1027,3 +1027,50 @@ consulten antes de concluir y que alguien conteste las preguntas abiertas.
 - **MIN-OBEDECER** — leer no es obedecer. La puerta mide la forma.
 - **MIN-REGISTRAR-45** — con borrador; el `failure_mode` hay que averiguarlo CORRIENDOLO.
 - **MIN-MIRAR-LOS-NUEVOS** — 418 nombres que el delta destapo y nadie ha mirado.
+
+---
+
+## Canal ADS (Adobe Document Services) — ARBITRADO 2026-08-26 (s105), lo que queda ABIERTO
+
+Origen: INC-000016471 (vivo). Arbitraje publicado en `process_mining/mining_findings.json`
+(sujetos `ADS`, `DESTINO_SALIENTE_TIPO_G`, `ADSUSER`, `F1_INTERFACE_BOUNDARY`) y promovido a los
+claims **614 / 615 / 616**; claims **372 y 585** quedan `partially_superseded` con su texto intacto.
+
+**Lo establecido, para no re-discutirlo:** `DEAD` sobre un destino RFC de tipo G o H **no es una
+medida** — `rsau_audit_history` registra llamadas RFC y no ve una llamada HTTP saliente (40 de 40
+destinos G/H con `observed_calls=0`; las 5 rutas al SLD DEAD mientras el job `RSLDAGDS` que las usa
+terminaba OK 126 veces en la misma ventana). Y `NO_MEDIBLE` son **dos** preguntas: el TRAFICO no se
+mide desde aqui, la DISPONIBILIDAD si.
+
+| id | pendiente | quien | por que no se cerro |
+|---|---|---|---|
+| **ADS-1 POBLACION** | Censar que objetos renderizan por ADS. Dos vias: (a) extraer `TNAPR` / `NAST` / `FPCONTEXT` / `FPLAYOUT` / `FPINTERFACE` — **ninguna esta en el Gold DB** (384 tablas); (b) censo por EJECUCION: contar los grupos de funciones GENERADOS `/1BCDWB/*` en el log, que es a lo que compila un formulario Adobe. | este proyecto (A19 + A33; preguntas abiertas en el bus, sujeto `ADS`) | el corpus de codigo extraido da **1** objeto (`RFFORI00`) y es un SUELO, no un censo. Sin poblacion no hay radio de alcance: no sabemos a cuanta gente afecta que ADS caiga |
+| **ADS-2 DISPONIBILIDAD** | Dar dueno y monitor al canal: `medibilidad_disponibilidad` en `brain_v2/build_interface_inventory.py` para los 239 destinos salientes + un test de conexion periodico | este proyecto + Basis (el test se ejecuta en SAP) | hoy los 239 dicen `evidence_it_runs: 'see interface_boundary.json for LIVE/DEAD'`, que para los 40 de tipo G/H remite a una fuente que no los ve |
+| **ADS-3 F1 SIN FICHA** | Dar de alta `process_mining/interface_boundary.py` (F1) en `process_mining/ask.py` con su `lo_que_NO_puede` ("no ve trafico que no sea una llamada RFC: los destinos G/H le son invisibles") y hacer que emita `NO_OBSERVABLE` en vez de `DEAD` para esos tipos | `miner-onboarding` | **es la causa raiz del choque, no un empate**: un minero que emite veredictos sobre 238 destinos y no esta en el registro no puede recibir preguntas ni sembrar su limite en el foro. `ask.py` tiene 11 algoritmos; F1 no es ninguno |
+| **ADS-4 GATE** | Check recurrente que falle si un clasificador publica un veredicto de AUSENCIA con tasa 0% o 100% sobre una clase entera de la poblacion (mecaniza la regla nueva `feedback_a_verdict_of_absence_must_name_the_instrument_that_could_have_seen_it`) | este proyecto | es la 2a vez que la misma forma de defecto sale en los stores de interfaces (`DEAD` 40/40 y `NO_MEDIBLE` 239/239): por la regla #172, al 2o avistamiento toca GATE, no correccion |
+| **ADS-5 FRONTERA (escalado, NO nuestro)** | Estado de `ADSUSER` en el **UME del AS Java** de `hq-sap-sbp` (bloqueo / caducidad) | Basis + dueno del AS Java | **estructuralmente invisible para nosotros**, no es un hueco de datos: `ADSUSER` no existe en `USR02` de P01, luego ninguna tabla ABAP nuestra puede contenerlo jamas. Lo que SI esta de nuestro lado y separa las 4 causas en un clic: `SM59` -> destino `ADS` -> Connection Test (401 = ADSUSER · timeout/rechazo = host o red · 200 = ADS vivo) y `SFP` -> Test ADS Connection (`FP_PDF_TEST_00`). Los dos de SOLO LECTURA |
+| **ADS-6 DEUDA** | `s=N` en el destino `ADS`: basic auth de un usuario de servicio viajando sobre **HTTP plano** en cada render de PDF. Y `T=N`: traza apagada | Basis | destapado por el incidente, no es su causa |
+
+**Lo que el arbitraje SI cerro y no hace falta volver a medir (claim 617):** el host `hq-sap-sbp`
+llama a P01 como un metronomo desde su pila **ABAP** de Solution Manager (`SMTMSBP` ->
+`SM_P01CLNT350_*`), ~2.100-2.300 eventos al dia sin huecos. **El 2026-08-25, el dia que el usuario no
+podia sacar su PDF, marco 2.138 eventos de 00:00:17 a 23:58:22 — indistinguible de un dia normal.**
+
+- **El diagnostico baja de CUATRO causas a DOS.** Caen la #3 (red / DNS / host movido) y la #4 en su
+  version de saturacion de la maquina: una caja asi de tocada habria mellado el metronomo ABAP y no
+  lo mello. Quedan la **#1** (la aplicacion `AdobeDocumentServices` parada o colgada) y la **#2**
+  (`ADSUSER` en el UME), las dos dentro de la pila **Java** (instancia 03, puerto 50300).
+- **Las dos las separa el MISMO clic, y es de solo lectura:** `SM59` -> destino `ADS` ->
+  *Connection Test*. **401 = #2** · **rechazo o timeout contra 50300 = #1**. Es decir: **no hace
+  falta pedir acceso al AS Java para avanzar**; hace falta un test que Basis ya puede dar, y solo si
+  sale 401 se entra en NWA. Eso es lo que hay que decirle hoy a quien lleve el ticket.
+- **Y la leccion de instrumento, que dura mas que el incidente:** ese latido es un sensor de la
+  **MAQUINA**, no del canal. Solo produce senal **negativa** (maquina caida => no hay PDF) y nunca
+  positiva. Un monitor de ADS montado sobre el latido de la instancia ABAP vecina **habria dado
+  VERDE durante toda esta incidencia**. El monitor de ADS-2 tiene que atacar el puerto 50300.
+
+**Dominio `Output`:** sigue STRANDED y es el caso de estudio. `capability_model` lo tiene con
+`D_DATA=PARTIAL`, `F_INTERFACE_FILE=PARTIAL` y **las otras nueve dimensiones en NONE**. Antes de hoy
+tenia 0 claims, 0 reglas, 0 incidentes y 0 anotaciones sobre Adobe. Asi se ve un dominio stranded
+**el dia que se rompe**: nadie sabe que cuelga de el, nadie mira si responde, y el ticket llega
+clasificado en el equipo equivocado.

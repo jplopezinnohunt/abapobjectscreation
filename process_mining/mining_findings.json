@@ -3624,6 +3624,313 @@
       "peso": 3,
       "sesion": null,
       "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "INTERFAZ",
+      "aspecto": "vivo_o_muerto",
+      "sujeto": "ADS",
+      "hallazgo": "ARBITRAJE - LA ETIQUETA `DEAD` DEL DESTINO ADS QUEDA SUPERSEDED (motivo: denominador ciego, no medida). interface_boundary.json (F1) publica ADS como DEAD con observed_calls=0 y con la semantica declarada 'maintenance and attack surface that nobody uses'. Es FALSO como afirmacion de uso: un usuario real renderizo contra ese canal el 2026-08-25 (INC-000016471, error 'ADS: SOAP Runtime Exception: CSoapExceptionTransport' = el cliente SOAP ABAP SI emitio la llamada). Pero el hallazgo no es que F1 se equivoque en ADS: es que su UNICA fuente de trafico (rsau_audit_history.PARAMX) registra LLAMADAS RFC, y una llamada HTTP saliente de un destino tipo G no es una llamada RFC. `observed_calls=0` sobre un tipo G no mide ausencia de trafico: mide ausencia de INSTRUMENTO. Y por partida doble, la ventana del log (hasta 20260822) tampoco cubre el fallo (20260825). LO QUE F1 SI PUEDE SEGUIR DICIENDO: DEAD es valido para los tipos que su fuente si registra (3, I, L, X y parte de T). LO QUE NO: emitir DEAD sobre G/H, donde su tasa de 'muerte' es del 100% - y una tasa del 100% en una clase entera es la firma de un instrumento ciego, no de una poblacion sin usar.",
+      "evidencia": "interface_boundary.json x rfcdes (Gold DB, 239 destinos): de los 38 destinos tipo G (HTTP) y los 2 tipo H, 40 de 40 tienen observed_calls=0 -> los 11 LIVE son todos tipo 3/I/T/L/X. FALSADOR INDEPENDIENTE DEL INCIDENTE: las 5 rutas al SLD (SLD_DS_HTTP y SLD_DS_TARGET tipo G; SLD_NUC, SLD_UC y SAPSLDAPI tipo T) figuran las CINCO como DEAD, y el job SAP_SLD_DATA_COLLECT (programa RSLDAGDS, cuyo unico trabajo es empujar los datos del sistema al SLD por una de esas cinco) termino en OK 126 veces entre 20260304 y 20260826 (tbtco_history STATUS=F; 31 mas en tbtco). Fuente unica de trafico de F1: rsau_audit_history.PARAMX, 28.580.216 filas, ventana 20260203..20260822.",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "INTERFAZ",
+      "aspecto": "medibilidad",
+      "sujeto": "DESTINO_SALIENTE_TIPO_G",
+      "hallazgo": "ARBITRAJE - `NO_MEDIBLE` NO ES UNA ETIQUETA, SON DOS PREGUNTAS, Y SOLO UNA ES NO MEDIBLE DESDE AQUI. La justificacion de interface_inventory.json ('un destino SALIENTE no registra en nuestro log que hace en el sistema destino; se mediria en el otro extremo') es CORRECTA para el eje TRAFICO/SEMANTICA - que hace alli, cuantas veces, sobre que datos - y FALSA para el eje DISPONIBILIDAD: 'responde?' se contesta desde NUESTRO lado sin ver el otro extremo (SM59 Connection Test; y para ADS ademas la prueba funcional SFP -> Test ADS Connection / FP_PDF_TEST_00, que devuelve el error real en vez del SOAP envuelto). RESOLUCION: los 239 destinos salientes llevan DOS campos en vez de uno - `medibilidad_trafico = NO_MEDIBLE_AQUI` (se mide en el otro extremo) y `medibilidad_disponibilidad = MEDIBLE_DESDE_AQUI, SIN_MONITOR` (test de conexion, hoy nadie lo corre). NOTA DE ARBITRAJE: A27 y F1 NO se contradicen - dicen dos cosas verdaderas sobre ejes distintos. Lo que produjo el punto ciego es que el eje MEDIBLE de los dos (disponibilidad) no lo reclamo NINGUNO: A27 lo declaro no-medible por confundirlo con el trafico, y F1 lo contesto con una fuente que no llega. Un canal entero - por donde sale TODO PDF que esta casa produce desde SAP - se quedo sin vigilancia en el hueco entre las dos etiquetas.",
+      "evidencia": "interface_boundary.json x rfcdes (Gold DB, 239 destinos): de los 38 destinos tipo G (HTTP) y los 2 tipo H, 40 de 40 tienen observed_calls=0 -> los 11 LIVE son todos tipo 3/I/T/L/X. FALSADOR INDEPENDIENTE DEL INCIDENTE: las 5 rutas al SLD (SLD_DS_HTTP y SLD_DS_TARGET tipo G; SLD_NUC, SLD_UC y SAPSLDAPI tipo T) figuran las CINCO como DEAD, y el job SAP_SLD_DATA_COLLECT (programa RSLDAGDS, cuyo unico trabajo es empujar los datos del sistema al SLD por una de esas cinco) termino en OK 126 veces entre 20260304 y 20260826 (tbtco_history STATUS=F; 31 mas en tbtco). Fuente unica de trafico de F1: rsau_audit_history.PARAMX, 28.580.216 filas, ventana 20260203..20260822. | interface_inventory.json: 239 registros RFC_DESTINATION con nature=NO_MEDIBLE y nature_basis identico, ninguno con eje de disponibilidad.",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "INTERFAZ",
+      "aspecto": "frontera_del_instrumento",
+      "sujeto": "ADSUSER",
+      "hallazgo": "NO SE PUEDE DECIDIR AQUI, Y NO ES UN HUECO DE DATOS: ES LA FRONTERA DEL INSTRUMENTO. Si la causa del fallo es la #2 - ADSUSER bloqueado o con contrasena caducada - el evento de autenticacion ocurre en el UME del AS JAVA de hq-sap-sbp. ADSUSER no existe en USR02 de P01 (medido), luego no hay ni una fila de USR02, USH02, USR41 ni rsau_audit_history que pueda contenerlo: ningun instrumento ABAP nuestro puede verlo, hoy ni nunca, por mucho log que acumulemos. No es 'nos falta extraer una tabla'. QUE HARIA FALTA PARA CERRARLO, nombrado: (a) el log de seguridad del UME de Java (NWA -> Identity Management -> ADSUSER: bloqueo y caducidad, o security.log del AS Java), que exige credenciales y acceso al AS JAVA, no al ABAP; (b) alternativa que SI esta de nuestro lado y separa las cuatro causas en un clic: SM59 -> destino ADS -> Connection Test (401 = es ADSUSER; timeout/rechazo = host o red; 200 = ADS vivo); (c) la prueba funcional SFP -> Test ADS Connection (FP_PDF_TEST_00). Las tres son de Basis, no de este proyecto, y (b) y (c) son de SOLO LECTURA. OJO AL SESGO QUE ESTO CREA: la causa mas probable (#2, la reincidente clasica) es justo la unica INVISIBLE para nosotros; si nos guiamos por lo que podemos medir concluiremos siempre que no es esa.",
+      "evidencia": "usr02 de P01: ADSUSER no existe (0 filas). ADS_AGENT si (USTYP=B, no bloqueado, sin caducidad, ultimo logon 20260821) con 287 eventos AU1 en 6,5 meses y CERO fallidos - es OTRA cuenta, del lado ABAP, y no es la que usa el destino: rfcdes ADS lleva D=ADSUSER. rfcdes ADS: Q=B (basic auth), v=%_PWD, s=N (HTTP plano), T=N (traza apagada) -> tampoco habra traza del destino que leer",
+      "autoridad": "DECLARADO_POR_SAP",
+      "peso": 4,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "METODO",
+      "aspecto": "limite_no_declarado",
+      "sujeto": "F1_INTERFACE_BOUNDARY",
+      "hallazgo": "LA CAUSA RAIZ DEL CHOQUE ES UN MINERO SIN FICHA. `process_mining/interface_boundary.py` (F1) emite el veredicto LIVE/DEAD sobre 238 destinos y NO ESTA EN EL REGISTRO DE CAPACIDADES (ask.py: 11 algoritmos registrados, ninguno es F1). Consecuencias mecanicas, no de opinion: (1) no declara `lo_que_NO_puede`, asi que `colaborar()` no puede convertir su limite en una pregunta del foro - y el limite que le falta es exactamente el que provoco esto; (2) nadie puede enrutarle una pregunta; (3) su cabecera afirma 'the cap is gone and DEAD is now a FACT rather than an artefact' - quito el error de MUESTREO y con ello subio la confianza de la etiqueta, mientras el error de COBERTURA (no ve HTTP) seguia entero. Quitar una fuente de error y anunciar certeza es peor que la version con muestreo. ESTO NO SE ARREGLA ARBITRANDO: se arregla dando de alta F1 en ask.py con su limite declarado ('no ve trafico que no sea una llamada RFC: los destinos G/H son invisibles para el') y haciendo que emita NO_OBSERVABLE en vez de DEAD para esos tipos. Va a miner-onboarding.",
+      "evidencia": "ask.py CAPACIDADES: 11 algoritmos (A19,A21,A23,A24,A27,A30,A31,A33,A34,B1,B4), F1 ausente; interface_boundary.json._generated_by = process_mining/interface_boundary.py; interface_boundary.py lineas 106-115 (comentario 'DEAD is now a fact rather than an artefact' + unica fuente: SELECT PARAMX, PARAM3, COUNT(*) FROM rsau_audit_history)",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "REALIDAD",
+      "aspecto": "OBSERVABILIDAD",
+      "sujeto": "ADS",
+      "hallazgo": "el render Adobe NO DEJA HUELLA en el log de auditoria de P01: cero eventos de FP_JOB_OPEN, FP_FUNCTION_MODULE_NAME o FP_GET_LAST_ADS_ERRSTR en NINGUNA superficie (SLGREPNA, SLGTC, PARAM1, PARAM3) en 6,5 meses. La transaccion SFP se abrio 2 veces en todo el corpus, las dos por el desarrollador N_MENARD. No se puede fechar una caida de ADS con este instrumento: no es que la traza este apagada, es que el evento no existe. AUSENCIA DE DATO, NO DE PROBLEMA.",
+      "evidencia": "rsau_audit_history 28,58M filas 2026-02-03..2026-08-24; SLGREPNA LIKE 'FP%' = 14 filas (FPINTERFACEPARTYPESINTERNAL 12, FP_START_FORM_BUILDER 2); PARAM3 LIKE 'FP%' = 8; SLGTC LIKE 'SFP%' = 2 (N_MENARD, 2026-03-12 y 2026-06-23)",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": [
+        {
+          "minero": "mining-arbiter",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "ARBITRAJE - LA ETIQUETA `DEAD` DEL DESTINO ADS QUEDA SUPERSEDED (motivo: denominador ciego, no medida). interface_boundary.json (F1) publica"
+        },
+        {
+          "minero": "mining-arbiter",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "TERCER HECHO MEDIDO, que ninguno de los dos mineros miro: el HOST que sirve ADS (hq-sap-sbp.hq.int.unesco.org:50300) SI es visible en nuestr"
+        }
+      ]
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "REALIDAD",
+      "aspecto": "RADIO_DE_ALCANCE",
+      "sujeto": "ADS",
+      "hallazgo": "RADIO MEDIDO POR EL CATALOGO, no por el log: 50 formularios Adobe (SFPF) y 17 interfaces (SFPI) propios en el grafo del brain. Si ADS cae, cae TODO esto a la vez: 15 del convenio de practicas (YHRINT_AGREEMENT*, con 6 anexos EN/FR), certificados y evaluacion de practicas, 8 contratos de personal (YHR_CONTRACT_*), 7 atestaciones de trabajo (YHRPA_ATT_*), el PAF de acciones de personal (YHRPA_PAF*), 5 cartas de reclamacion FI (YFI_DUNNING_FORM*) y 6 de patrimonio (YRE_*). ES UN SUELO: solo cuenta lo Y*/Z* presente en el grafo, no el repositorio entero ni lo estandar.",
+      "evidencia": "brain_v2/output/brain_v2_graph.json: 50 nodos OBJ:SFPF y 17 OBJ:SFPI",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": [
+        {
+          "minero": "mining-arbiter",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "ARBITRAJE - LA ETIQUETA `DEAD` DEL DESTINO ADS QUEDA SUPERSEDED (motivo: denominador ciego, no medida). interface_boundary.json (F1) publica"
+        },
+        {
+          "minero": "mining-arbiter",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "TERCER HECHO MEDIDO, que ninguno de los dos mineros miro: el HOST que sirve ADS (hq-sap-sbp.hq.int.unesco.org:50300) SI es visible en nuestr"
+        }
+      ]
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "REALIDAD",
+      "aspecto": "TRAMPA_DE_LECTURA",
+      "sujeto": "RSAU_AUDIT_HISTORY",
+      "hallazgo": "TRAMPA MEDIDA: `PARAM3 LIKE '%ADS%'` devuelve 2.831 filas y NINGUNA es ADS. El LIKE de SQLite es insensible a mayusculas en ASCII y 'Downloads' contiene 'oads'. Todas son rutas de descarga de puesto de trabajo. Quien busque ADS por subcadena publica un canal vivo que no existe.",
+      "evidencia": "SELECT PARAM3,COUNT(*) WHERE PARAM3 LIKE '%ADS%' GROUP BY 1 -> 40/40 valores del top son rutas de fichero terminadas en .XLSX/.DAT/.txt",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "REALIDAD",
+      "aspecto": "VENTANA",
+      "sujeto": "RSAU_AUDIT_HISTORY",
+      "hallazgo": "EL ULTIMO DIA DEL CORPUS SIEMPRE ESTA INCOMPLETO y se lee como una caida. Comprobar el volumen del dia y su MAX(SAL_TIME) ANTES de leer cualquier serie como un corte.",
+      "evidencia": "20260820:158.783 20260821:157.305 22:23.834 (hasta 05:31) 23:84.369 24:22.987 (hasta 05:14), con el acumulador corriendo el 2026-08-26; un dia laborable completo son ~157.000 filas",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "CANAL_Y_ACTOR",
+      "aspecto": "IDENTIDAD_Y_POBLACION",
+      "sujeto": "ZPAWF_INT_AGREE",
+      "hallazgo": "LA APP 'Internship Agreement' del INC-000016471 ES ESTO: una Web Dynpro ABAP NUESTRA (autor N_MENARD), servida por ICF sobre HTTP en el propio P01 -- no un satelite, no un Fiori. Se entra por ZPAWF_INT_HP. NO es un usuario con un problema: 3.751 arranques por 210 USUARIOS DISTINTOS en 6,5 meses, y la familia ZPAWF* la usan entre 18 y 32 personas CADA DIA LABORABLE. El PDF es el paso TERMINAL: sin el, el expediente queda validado y sin firmar.",
+      "evidencia": "rsau PARAM1='R3TR WDYA ZPAWF_INT_AGREE' 3.751 arranques / 210 usuarios; ZPAWF_INT_HP 3.088 / 257; E_WINTENBERG en ZPAWF_INT_HP el 2026-07-21 y el 2026-08-21; el 20260821, 70 arranques ZPAWF por 20 usuarios distintos. Inventario de objetos: knowledge/abap-style-guide/N_MENARD-OBJECT-INVENTORY.md seccion 9 (WDYA/WDYN/SICF/SFPF)",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "CANAL_Y_ACTOR",
+      "aspecto": "TOPOLOGIA",
+      "sujeto": "HQ-SAP-SBP",
+      "hallazgo": "EL HOST DEL DESTINO ADS ES EL DE SOLUTION MANAGER (SID SBP), IP 172.16.4.107. Misma maquina: instancia ABAP 01 para SolMan, instancia Java 03 (puerto 50300) para ADS. Consecuencia arquitectonica: un reinicio, parcheo o saturacion de la maquina de SolMan se lleva por delante TODOS los PDF de la institucion. Y da un SENSOR DE DISPONIBILIDAD que SI podemos leer: llama a P01 como un metronomo, ~2.120-2.290 eventos cada dia, de 00:00 a 23:58, sin un hueco.",
+      "evidencia": "rsau PARAMX LIKE '%HQ-SAP-SBP%' = 416.193 filas, usuario SMTMSBP, PARAMX literal 'caller: host=HQ-SAP-SBP_SBP_01, dest=SM_P01CLNT350_READ/TRUSTED/LOGIN', usuarios SOLMAN_BTC y SM_EFWK, extractores /SDF/*; serie diaria 20260801..21 entre 2.118 y 2.288; SLGLTRM2='172.16.4.107' lleva a la vez a SMTMSBP y a ADS_AGENT; rfcdes ADS: H=hq-sap-sbp.hq.int.unesco.org I=50300",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "CANAL_Y_ACTOR",
+      "aspecto": "DIRECCION_DEL_CANAL",
+      "sujeto": "ADS_AGENT",
+      "hallazgo": "NO ES el usuario del destino: va EN SENTIDO CONTRARIO. ADS_AGENT entra al ABAP por HTTP (tipo de logon 'H', programa SAPMHTTP, tcode S000) desde 172.16.4.107 -- es el Java de ADS llamando de vuelta a P01. ADSUSER es la credencial que el ABAP usa para ir HACIA el Java y vive en el UME de Java. Confundirlos hace buscar un 401 en el log equivocado. 287 eventos en 6,5 meses, TODOS AU1 (correctos), cero fallidos, 1-6 al dia y no todos los dias: su AUSENCIA un dia NO PRUEBA NADA, solo vale su presencia.",
+      "evidencia": "rsau SLGUSER='ADS_AGENT': PARAM1='H', SLGREPNA='SAPMHTTP', SLGLTRM2='172.16.4.107', SLGTC='S000'; ultimo evento 2026-08-21 14:35:30; USR02 no contiene ADSUSER",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "REALIDAD",
+      "aspecto": "FRONTERA_DEL_INSTRUMENTO",
+      "sujeto": "ADSUSER",
+      "hallazgo": "ESTRUCTURALMENTE INVISIBLE PARA NOSOTROS. La causa #2 del incidente (ADSUSER bloqueado o con contrasena caducada) produce un HTTP 401 EN EL UME DE JAVA. ADSUSER no existe en USR02 de P01 -- MEDIDO --, luego no hay sujeto ABAP al que atribuir un evento: el log de auditoria de P01 no puede registrar ese fallo ni en principio. Ningun barrido nuestro la confirmara ni la refutara. Solo se ve desde NWA / el UME del AS Java de hq-sap-sbp.",
+      "evidencia": "usr02: ADSUSER ausente (ADS_AGENT si existe: USTYP=B, UFLAG=0, GLTGB=00000000, TRDAT=20260821); rfcdes ADS D=ADSUSER Q=B (basic) s=N (HTTP plano) T=N (traza off)",
+      "autoridad": "DECLARADO_POR_SAP",
+      "peso": 4,
+      "sesion": 105,
+      "ya_dicho_por_otros": [
+        {
+          "minero": "mining-arbiter",
+          "autoridad": "DECLARADO_POR_SAP",
+          "dijo": "NO SE PUEDE DECIDIR AQUI, Y NO ES UN HUECO DE DATOS: ES LA FRONTERA DEL INSTRUMENTO. Si la causa del fallo es la #2 - ADSUSER bloqueado o co"
+        }
+      ]
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "REALIDAD",
+      "aspecto": "INSTRUMENTO_CIEGO",
+      "sujeto": "SNAP_HISTORY",
+      "hallazgo": "CIEGO POR CONSTRUCCION, dos veces. (a) 0 filas: accumulate_logs.py lleva SNAP DESACTIVADO porque P01 devuelve TABLE_NOT_AVAILABLE por RFC_READ_TABLE; no se llenara solo. (b) Aunque se llenara, su esquema es DATUM/UZEIT/AHOST/UNAME/MODNO/SEQNO: NO lleva programa, ni clase de error, ni texto, asi que jamas podria contestar 'un volcado que mencione ADS'. st22_dumps_history SI lleva ERROR_CLASS/OBJECT/MESSAGE pero tiene 1 fila (2026-06-21, DBIF_REPO_SQL_ERROR).",
+      "evidencia": "snap_history COUNT(*)=0; st22_dumps_history COUNT(*)=1; accumulate_logs.py lineas 114-117",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "REALIDAD",
+      "aspecto": "INSTRUMENTO_CIEGO",
+      "sujeto": "SM21_SYSLOG_HISTORY",
+      "hallazgo": "EL INSTRUMENTO CORRECTO, SIN ALIMENTAR. Su contenido SI llevaria la respuesta: tiene mensajes de plugin HTTP (AREA R2 / SUBID G, programa SAPMHTTP) y UNCAUGHT_EXCEPTION (E0/A). Pero solo tiene 2.402 filas y TODAS del 15..22 de JUNIO de 2026: una extraccion suelta, no un flujo. accumulate_logs.py acumula exactamente cuatro flujos -- TBTCO, TBTCP, CDHDR y RSAU -- y SM21 no esta entre ellos. La ventana de agosto no existe y no va a llegar sola.",
+      "evidencia": "sm21_syslog_history 2.402 filas, TS 2026061512290900..2026062213393400; LOG_TABLES en accumulate_logs.py = {TBTCO, TBTCP, CDHDR} mas RSAU por su propia via",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "inc16471_ads_log_mining",
+      "mining_kind": "REALIDAD",
+      "aspecto": "CONTROL_NEGATIVO",
+      "sujeto": "P01_BATCH",
+      "hallazgo": "NO HUBO OLA DE ABORTOS EN BATCH el 24-26 de agosto: 2.259 / 5.321 / 3.156 jobs, TODOS en estado F. Los dos unicos abortos del periodo son del 21 (RPCIPE00_OLD) y del 23 (SAP_SLD_DATA_COLLECT_STARTUP), ninguno relacionado. Compatible con un fallo SINCRONO del lado dialogo, no con una caida global. OJO: 'F' es TERMINADO, no CORRECTO -- RFFOAVIS_FPAYM (aviso de pago, unico programa de nuestro corpus extraido con formulario Adobe) corrio 7 veces el 25 y 19 el 26 y acabo en F las 26. Eso NO prueba que su PDF saliera.",
+      "evidencia": "tbtco_history 20260818..20260826 agrupado por STATUS; tbtcp_history JOIN tbtco_history por PROGNAME='RFFOAVIS_FPAYM'",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "METODO",
+      "aspecto": "choques_que_no_ve",
+      "sujeto": "A30_MINING_BUS",
+      "hallazgo": "EL DETECTOR DE CHOQUES DEL FORO NO HABRIA VISTO ESTE CHOQUE, Y ES EL MAS CARO QUE HEMOS TENIDO.  y  solo comparan HALLAZGOS PUBLICADOS EN EL BUS. El desacuerdo del canal ADS vivia entre dos STORES GENERADOS -- interface_boundary.json decia DEAD, interface_inventory.json decia NO_MEDIBLE, sobre el mismo artefacto y el mismo aspecto -- y ninguno de los dos publica en el bus. MEDIDO HOY:  devuelve 5 choques resueltos por jerarquia y 0 para juicio; el numero de EMPATES vivos en el foro es CERO, y sin embargo habia un canal entero con dos etiquetas incompatibles. Un foro que solo oye a quien habla no detecta a los que se contradicen por escrito en otro sitio. QUE HARIA FALTA: sembrar el bus desde los stores -- que cada generador publique su veredicto por artefacto+aspecto al terminar (una linea al final de su main), o un sembrador que lea los stores conocidos y publique en nombre de su algoritmo. Sin eso, la deteccion de contradicciones cubre solo la parte del conocimiento que ya estaba en el foro, que es la minoria.",
+      "evidencia": "mining_bus.py resolver, 2026-08-26: 5 resueltos / 0 para juicio, con 312 hallazgos de 26 mineros; interface_boundary.json (ADS -> dead, observed_calls=0) e interface_inventory.json (ADS -> nature NO_MEDIBLE) no aparecen en mining_findings.json",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "INTERFAZ",
+      "aspecto": "sensor_de_disponibilidad",
+      "sujeto": "ADS",
+      "hallazgo": "ARBITRAJE SOBRE UN SENSOR PROPUESTO: EL LATIDO DE SOLMAN ESTUVO VERDE TODO EL DIA DE LA CAIDA. inc16471_ads_log_mining propone el metronomo de hq-sap-sbp (~2.120-2.290 eventos diarios entrando en P01) como 'un SENSOR DE DISPONIBILIDAD que SI podemos leer'. La observacion es correcta y el sensor es real, pero MEDIDO HOY contra el dia que importa: el 2026-08-25, mientras el usuario no podia generar su PDF, el latido marco 2.138 eventos de 00:00:17 a 23:58:22, SIN UN HUECO — igual que un lunes cualquiera (2.194 / 2.195 / 2.288). CONCLUSION, que no anula el sensor sino que le pone su frontera: el metronomo vigila la MAQUINA (instancia ABAP 01 de SolMan), no la PILA JAVA (instancia 03, puerto 50300, donde vive ADS). Solo puede producir senal NEGATIVA — maquina caida => no hay PDF — y NUNCA positiva: maquina viva NO implica ADS vivo, y hoy tenemos la prueba del dia exacto. Montar el monitor de ADS sobre este latido habria dado VERDE durante toda la incidencia que se supone que tiene que cazar. El monitor de disponibilidad de ADS tiene que atacar el puerto 50300 (SM59 Connection Test / SFP Test ADS Connection), no el latido de al lado. BENEFICIO COLATERAL PARA EL INCIDENTE VIVO: de las cuatro causas candidatas quedan DOS. Cae la #3 (red / DNS / host movido) y cae la #4 en su version de saturacion de la maquina — una caja tan saturada como para tumbar el Java habria mellado el metronomo ABAP y no lo mello. Quedan la #1 (la aplicacion ADS del AS Java parada o colgada) y la #2 (ADSUSER en el UME de Java). Las dos viven dentro de la pila Java, las dos son invisibles desde aqui, y las dos las separa el MISMO clic: SM59 -> ADS -> Connection Test (401 = #2, rechazo/timeout contra 50300 = #1).",
+      "evidencia": "rsau_audit_history (leido 2026-08-26 17:xx, 29.422.633 filas, 20260203..20260826), PARAMX LIKE '%host=HQ-SAP-SBP%' agrupado por dia: 20260818 2.195 · 19 2.194 · 20 2.288 · 21 2.194 · 22 504 (parcial, hasta 05:28) · 23 1.648 (desde 05:17) · 24 2.130 (00:00:16-23:59:20) · **25 2.138 (00:00:17-23:58:22)** · 26 1.524 (hasta 17:13). El dia del fallo es indistinguible de un dia normal",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": [
+        {
+          "minero": "inc16471_ads_log_mining",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "el render Adobe NO DEJA HUELLA en el log de auditoria de P01: cero eventos de FP_JOB_OPEN, FP_FUNCTION_MODULE_NAME o FP_GET_LAST_ADS_ERRSTR "
+        },
+        {
+          "minero": "inc16471_ads_log_mining",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "RADIO MEDIDO POR EL CATALOGO, no por el log: 50 formularios Adobe (SFPF) y 17 interfaces (SFPI) propios en el grafo del brain. Si ADS cae, c"
+        }
+      ]
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "METODO",
+      "aspecto": "dos_recuentos_del_mismo_latido",
+      "sujeto": "HQ-SAP-SBP",
+      "hallazgo": "EMPATE RESUELTO SIN PERDEDOR: 416.193 y 419.907 SON EL MISMO NUMERO EN DOS MOMENTOS. inc16471_ads_log_mining midio 416.193 filas con host HQ-SAP-SBP; el arbitro midio 419.907 el mismo dia sobre la misma tabla. No hay contradiccion: EL CORPUS ESTA CRECIENDO MIENTRAS LO LEEMOS. Medido: rsau_audit_history paso de 28.580.216 filas / MAX(SAL_DATE)=20260822 a 29.422.633 / 20260826 en el curso de esta misma sesion, porque accumulate_logs.py esta corriendo. IMPLICACION PARA TODOS LOS MINEROS: cualquier recuento sobre una tabla en acumulacion es una FOTO, y una foto sin fecha no se puede comparar ni reproducir. Todo recuento sobre rsau_audit_history debe publicar, junto a la cifra, el COUNT(*) total y el MAX(SAL_DATE) del momento de la lectura. Sin eso, dos mineros correctos producen un choque falso y gastan un arbitraje en nada — que es exactamente lo que ha estado a punto de pasar aqui. AVISO ANADIDO: los dos ultimos dias del corpus estan SIEMPRE incompletos (22 con 504 filas hasta las 05:28, 26 con 1.524 hasta las 17:13); leerlos como una serie es leer una caida que no existe — ya publicado por inc16471_ads_log_mining y CONFIRMADO aqui por segunda fuente.",
+      "evidencia": "dos lecturas de rsau_audit_history el 2026-08-26: COUNT(*) 28.580.216 con MAX(SAL_DATE)=20260822 al principio de la sesion y 29.422.633 con MAX(SAL_DATE)=20260826 al final; +842.417 filas y +4 dias en ~40 minutos",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": [
+        {
+          "minero": "inc16471_ads_log_mining",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "EL HOST DEL DESTINO ADS ES EL DE SOLUTION MANAGER (SID SBP), IP 172.16.4.107. Misma maquina: instancia ABAP 01 para SolMan, instancia Java 0"
+        }
+      ]
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "INTERFAZ",
+      "aspecto": "poblacion_suelo",
+      "sujeto": "ADS",
+      "hallazgo": "TRES RECUENTOS DE 'LA POBLACION DE ADS' Y NINGUNO ES LA POBLACION: MIDEN COSAS DISTINTAS Y LOS TRES SON SUELOS. (a) El arbitro grepeo el corpus extraido buscando la API de formularios (FP_JOB_OPEN / FP_FUNCTION_MODULE_NAME / SFPOUTPUTPARAMS...) y encontro UN fichero: RFFORI00 (linea 626, `gs_fpparams TYPE sfpoutputparams`, bajo el comentario 'Globale Hilfsvariablen fuer PDF-Formulardruck'). (b) inc16471_ads_log_mining dice que el unico del corpus es RFFOAVIS_FPAYM. (c) y ademas cuenta 50 formularios SFPF + 17 interfaces SFPI en el grafo del brain. LOS TRES SON CIERTOS Y NINGUNO SE CONTRADICE: (a) y (b) son el MISMO corpus con DETECTORES distintos — RFFOAVIS_FPAYM no usa los tokens FP_* sino el parametro `par_apdf LIKE fpayhx-pdfaf` ('Abweichendes PDF-Avisformular') y `CALL FUNCTION 'PDF_FORM_CHECK'`, y pasa el formulario a RFFORI06, que tambien esta en el corpus. Es UNA FAMILIA (RFFOAVIS_FPAYM -> RFFORI06 -> helpers de RFFORI00), no un programa, y cual sale depende enteramente del token que grepees. Y (c) cuenta OTRA COSA: el FORMULARIO es el artefacto, el PROGRAMA es el que lo llama; la poblacion real es el producto de los dos, y no la tenemos. QUE HARIA FALTA: TNAPR/NAST (que formulario dispara que salida) y el censo por ejecucion de los grupos de funciones generados /1BCDWB/*, que es a lo que compila un formulario Adobe. Ninguna de esas tablas esta en el Gold DB (384 tablas). MIENTRAS TANTO, el suelo que se debe citar es el mayor y mejor fundado: 50 SFPF + 17 SFPI, no 1 programa.",
+      "evidencia": "grep -i sobre extracted_code/ + extracted_sap/ + extracted_sap_p01/: SFPOUTPUTPARAMS -> 1 fichero (RFFORI00.abap:626); PDF_FORM_CHECK + pdfaf -> RFFOAVIS_FPAYM.abap:78,144-149,248 y RFFORI06.abap:859-864,1371 (+CONVERT_OTF 1959,3017). brain_v2/output/brain_v2_graph.json: nodos OBJ:SFPF y OBJ:SFPI",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": [
+        {
+          "minero": "inc16471_ads_log_mining",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "el render Adobe NO DEJA HUELLA en el log de auditoria de P01: cero eventos de FP_JOB_OPEN, FP_FUNCTION_MODULE_NAME o FP_GET_LAST_ADS_ERRSTR "
+        },
+        {
+          "minero": "inc16471_ads_log_mining",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "RADIO MEDIDO POR EL CATALOGO, no por el log: 50 formularios Adobe (SFPF) y 17 interfaces (SFPI) propios en el grafo del brain. Si ADS cae, c"
+        }
+      ]
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "INTERFAZ",
+      "aspecto": "host_del_canal",
+      "sujeto": "ADS",
+      "hallazgo": "CORREGIDO POR MI MISMO, MISMA SESION. Mi primera version de este hallazgo decia que la ventana del log acababa el 20260822 y que por tanto solo se podia afirmar que el host estuvo sano HASTA TRES DIAS ANTES del fallo. Era cierto a media tarde y dejo de serlo una hora despues: accumulate_logs estaba corriendo y el corpus paso de 28.580.216 filas / MAX(SAL_DATE)=20260822 a 29.422.633 / 20260826 en el curso de esta misma sesion. Con los dias nuevos, el dia del fallo SI se puede medir, y se midio: el 20260825 el latido de hq-sap-sbp marco 2.138 eventos de 00:00:17 a 23:58:22, sin huecos. EL HALLAZGO BUENO ES EL ASPECTO 'sensor_de_disponibilidad' DE ESTE MISMO SUJETO; este se conserva porque una correccion sin su version anterior no se puede auditar. LO QUE DEJA COMO LECCION: una cifra sobre una tabla en acumulacion caduca en una hora. Publicar la FOTO -- COUNT(*) y MAX(SAL_DATE) del momento de la lectura -- junto a la cifra no es pedanteria: es lo unico que permite comparar dos lecturas sin inventarse un choque.",
+      "evidencia": "dos lecturas de rsau_audit_history el 2026-08-26: 28.580.216/20260822 y despues 29.422.633/20260826; latido host=HQ-SAP-SBP el 20260825 = 2.138 eventos, 00:00:17-23:58:22",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 105,
+      "ya_dicho_por_otros": [
+        {
+          "minero": "inc16471_ads_log_mining",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "el render Adobe NO DEJA HUELLA en el log de auditoria de P01: cero eventos de FP_JOB_OPEN, FP_FUNCTION_MODULE_NAME o FP_GET_LAST_ADS_ERRSTR "
+        },
+        {
+          "minero": "inc16471_ads_log_mining",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "dijo": "RADIO MEDIDO POR EL CATALOGO, no por el log: 50 formularios Adobe (SFPF) y 17 interfaces (SFPI) propios en el grafo del brain. Si ADS cae, c"
+        }
+      ]
     }
   ],
   "preguntas": [
@@ -3666,7 +3973,15 @@
       "sujeto": "LIMITE:A27_INTERFACE_NATURE",
       "pregunta": "lo que este minero NO puede: saber que hace un destino SALIENTE del otro lado: eso se mide en el otro extremo",
       "porque_no_puedo_yo": "limite declarado de su instrumento. Trampa asociada: quien entra lo dice USR02-USTYP, NO el log: dos heuristicas sobre logons fallaron por los dos lados",
-      "respuestas": [],
+      "respuestas": [
+        {
+          "de": "mining-arbiter",
+          "respuesta": "CONTESTADA, Y EL LIMITE ES MAS ESTRECHO DE LO QUE DECLARAS. Tienes razon en que no puedes saber QUE HACE un destino saliente del otro lado - eso se mide en el otro extremo. Pero tu ficha convierte eso en `NO_MEDIBLE` a secas para los 239 destinos, y ahi se cuela una segunda pregunta que SI es tuya: si el destino RESPONDE. La disponibilidad se contesta desde nuestro lado (SM59 Connection Test; para ADS ademas SFP -> Test ADS Connection / FP_PDF_TEST_00) sin ver el otro extremo. Emite DOS campos: `medibilidad_trafico=NO_MEDIBLE_AQUI` y `medibilidad_disponibilidad=MEDIBLE_DESDE_AQUI, SIN_MONITOR`. Y no aceptes el `evidence_it_runs: 'see interface_boundary.json (F1) for LIVE/DEAD'` que hoy llevan tus 239 registros: para los 40 destinos tipo G/H, F1 no tiene fuente que los vea (40 de 40 con observed_calls=0) y su DEAD no es una medida.",
+          "evidencia": "interface_boundary.json x rfcdes (Gold DB, 239 destinos): de los 38 destinos tipo G (HTTP) y los 2 tipo H, 40 de 40 tienen observed_calls=0 -> los 11 LIVE son todos tipo 3/I/T/L/X. FALSADOR INDEPENDIENTE DEL INCIDENTE: las 5 rutas al SLD (SLD_DS_HTTP y SLD_DS_TARGET tipo G; SLD_NUC, SLD_UC y SAPSLDAPI tipo T) figuran las CINCO como DEAD, y el job SAP_SLD_DATA_COLLECT (programa RSLDAGDS, cuyo unico trabajo es empujar los datos del sistema al SLD por una de esas cinco) termino en OK 126 veces entre 20260304 y 20260826 (tbtco_history STATUS=F; 31 mas en tbtco). Fuente unica de trafico de F1: rsau_audit_history.PARAMX, 28.580.216 filas, ventana 20260203..20260822.",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "peso": 3
+        }
+      ],
       "_repartida": {
         "cuando": "2026-08-26",
         "por_que_a_el": "declara responder a 2 de los terminos que la pregunta necesita",
@@ -3846,6 +4161,78 @@
           "de": "A27_interface_nature",
           "respuesta": "de las grafias preguntadas, 0 aparecen alguna vez como usuario en el log de auditoria () -- esas EXISTIERON y estan borradas. Las otras 6 no aparecen NUNCA (BILLAULT_RFC, BOUQUET_RFC, BRIDGE_RFC, COLLOCA_RFC, KROTOVA_RFC): son texto que la herramienta escribe sin validar, no cuentas",
           "evidencia": "usr02 + SLGUSER distinto de rsau_audit_history",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "peso": 3
+        }
+      ]
+    },
+    {
+      "de": "mining-arbiter",
+      "para": "CUALQUIERA",
+      "sujeto": "ADS",
+      "pregunta": "CASO ABIERTO (INC-000016471, vivo): que objetos de esta instalacion renderizan por ADS, y como sabemos si el canal esta vivo. SON DOS PREGUNTAS DISTINTAS y no tenemos ninguna: (1) POBLACION -- quien depende del canal por el que sale TODO PDF que SAP produce aqui; (2) DISPONIBILIDAD -- si responde. Estado medido hoy: el corpus extraido da UN solo objeto con llamadas a formularios Adobe (RFFORI00), y eso es un SUELO, no un censo; interface_boundary.json marca el destino ADS DEAD con observed_calls=0 mientras un usuario real lo estaba usando el 2026-08-25. Contesta con TU instrumento la parte que te toque.",
+      "porque_no_puedo_yo": "el arbitro no tiene instrumento de censo de formularios: en el Gold DB (384 tablas) NO estan TNAPR, NAST, FPCONTEXT, FPLAYOUT ni FPINTERFACE. La poblacion exige o una extraccion nueva o un censo por EJECUCION sobre el log, que es de otros mineros",
+      "respuestas": []
+    },
+    {
+      "de": "mining-arbiter",
+      "para": "A19_log_reality_filter",
+      "sujeto": "ADS",
+      "pregunta": "POBLACION POR EJECUCION: un formulario Adobe se compila a un grupo de funciones GENERADO (/1BCDWB/*), que es exactamente la clase de nombre que tu instrumento sabe separar de un objeto de verdad. Cuantos /1BCDWB/* distintos se ejecutan en la ventana del log, y a que objeto fuente apunta cada uno? Eso convierte 'no sabemos cuantos PDF produce esta casa' en un numero contado.",
+      "porque_no_puedo_yo": "el arbitro no distingue instancia generada de objeto: es literalmente tu trampa declarada (576 'programas nuevos' eran 95% instancias generadas)",
+      "respuestas": []
+    },
+    {
+      "de": "mining-arbiter",
+      "para": "A33_variant_content_mining",
+      "sujeto": "ADS",
+      "pregunta": "POBLACION POR PROGRAMACION: de los 18.351 jobs programados, cuales ejecutan programas cuya SALIDA es un formulario (parametros de dispositivo de salida, formulario, o llamada a SFP)? Si ADS cae de noche, lo que se rompe sin que nadie lo pulse son los JOBS, y ese es el radio que el ticket de un usuario nunca trae.",
+      "porque_no_puedo_yo": "el arbitro no lee variantes; y la variante es lo unico que dice que se EJECUTA de verdad",
+      "respuestas": []
+    },
+    {
+      "de": "mining-arbiter",
+      "para": "A23_channel_discovery_by_traffic",
+      "sujeto": "ADS",
+      "pregunta": "EL HOST: el destino ADS apunta a hq-sap-sbp:50300. En rsau_audit_history ese host SI aparece, pero al reves -- entrando en P01 (caller: host=HQ-SAP-SBP_SBP_01, dest=SM_P01CLNT350_READ, user=SM_EFWK) y con al menos un 'RFC/CPIC logon failed' con contexto de ese host. Que trafico hay con hq-sap-sbp, de que cuentas, en que direccion, y hasta que fecha? OJO AL SALTO: que su pila ABAP este viva NO prueba que su pila JAVA (puerto 50300, la que sirve ADS) lo este. Dime lo que el trafico SI sostiene y donde se acaba.",
+      "porque_no_puedo_yo": "es tu instrumento -- descubrir por trafico quien cruza la frontera -- y el arbitro solo hizo un recuento crudo por LIKE que casi le hace confundir el usuario SMTMSBP con el host HQ-SAP-SBP",
+      "respuestas": []
+    },
+    {
+      "de": "mining-arbiter",
+      "para": "A27_interface_nature",
+      "sujeto": "DESTINO_SALIENTE_TIPO_G",
+      "pregunta": "PARTIR `NO_MEDIBLE` EN DOS EJES. Tu etiqueta actual dice: 'un destino SALIENTE no registra en nuestro log que hace en el sistema destino'. Eso es CIERTO para el TRAFICO y FALSO para la DISPONIBILIDAD: si RESPONDE se contesta desde nuestro lado sin ver el otro extremo (SM59 Connection Test / ping HTTP), y para ADS ademas hay una prueba funcional (SFP -> Test ADS Connection, FP_PDF_TEST_00). Puedes emitir dos campos -- `medibilidad_trafico` y `medibilidad_disponibilidad` -- en vez de uno solo, para los 239 destinos salientes?",
+      "porque_no_puedo_yo": "el arbitro puede decidir el criterio, pero el store lo escribe tu generador (brain_v2/build_interface_inventory.py); cambiarlo desde fuera seria un parche que la proxima corrida borra",
+      "respuestas": []
+    },
+    {
+      "de": "inc16471_ads_log_mining",
+      "para": "Basis / dueno del AS Java",
+      "sujeto": "ADSUSER",
+      "pregunta": "Esta ADSUSER bloqueado o con la contrasena caducada en el UME del AS Java de hq-sap-sbp (instancia 03, puerto 50300)? Y esta arrancada la aplicacion AdobeDocumentServices en NWA?",
+      "porque_no_puedo_yo": "ADSUSER no existe en USR02 de P01 (medido). Un 401 suyo ocurre en Java y no puede generar ninguna fila en el log ABAP. Es la unica de las cuatro causas que no puedo ni confirmar ni refutar desde aqui, y encaja con el patron 'funcionaba ayer, falla desde esta manana'.",
+      "respuestas": [
+        {
+          "de": "mining-arbiter",
+          "respuesta": "CONFIRMADO Y CERRADO COMO FRONTERA, NO COMO PENDIENTE: coincido contigo, y lo he medido por mi cuenta. ADSUSER no existe en USR02 de P01, luego ningun instrumento ABAP nuestro puede registrar jamas su 401 — es la frontera del instrumento, no un hueco de datos, y no se cierra acumulando mas log. AÑADO LO QUE ESTRECHA LA DECISION: con el latido de la maquina verde todo el 25 (2.138 eventos, 00:00-23:58), de las cuatro causas solo quedan la #1 (aplicacion ADS parada/colgada) y la #2 (ADSUSER en el UME). Las dos las separa el MISMO clic y es de solo lectura: SM59 -> destino ADS -> Connection Test — 401 = es ADSUSER, rechazo o timeout contra 50300 = es la aplicacion Java. Es decir: para el ticket ya no hace falta el UME primero; hace falta el test de conexion, y solo si da 401 hay que entrar en NWA. Eso convierte una peticion de acceso a otro equipo en un clic que Basis ya puede dar.",
+          "evidencia": "rsau_audit_history (leido 2026-08-26 17:xx, 29.422.633 filas, 20260203..20260826), PARAMX LIKE '%host=HQ-SAP-SBP%' agrupado por dia: 20260818 2.195 · 19 2.194 · 20 2.288 · 21 2.194 · 22 504 (parcial, hasta 05:28) · 23 1.648 (desde 05:17) · 24 2.130 (00:00:16-23:59:20) · **25 2.138 (00:00:17-23:58:22)** · 26 1.524 (hasta 17:13). El dia del fallo es indistinguible de un dia normal | usr02: ADSUSER 0 filas; rfcdes ADS D=ADSUSER Q=B s=N T=N",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "peso": 3
+        }
+      ]
+    },
+    {
+      "de": "inc16471_ads_log_mining",
+      "para": "Basis",
+      "sujeto": "HQ-SAP-SBP",
+      "pregunta": "Se reinicio, parcheo o quedo sin recursos la maquina hq-sap-sbp (Solution Manager, 172.16.4.107) entre el 24 y el 25 de agosto de 2026 por la manana?",
+      "porque_no_puedo_yo": "El destino ADS apunta a esa misma maquina en el puerto 50300. Si se movio la maquina, se movieron los PDF de toda la institucion. El latido de SolMan hacia P01 es el unico proxy de disponibilidad que tenemos de esa maquina, y se lee con Zagentexecution/tasks/2026_08_26_inc16471_ads_log_mining/ads_outage_window_check.py",
+      "respuestas": [
+        {
+          "de": "mining-arbiter",
+          "respuesta": "NO SE PUEDE CONTESTAR DESDE AQUI, PERO SE PUEDE ACOTAR MUCHO, Y ESTA ACOTADO: el 2026-08-25 la maquina hq-sap-sbp NO se reinicio ni quedo sin recursos a nivel de sistema operativo. Su instancia ABAP 01 latio contra P01 2.138 veces de 00:00:17 a 23:58:22, sin un hueco, indistinguible de un dia normal (2.194 / 2.195 / 2.288 los dias previos). Un reinicio de la caja o una saturacion capaz de tumbar el Java habrian mellado ese metronomo y no lo mellaron. Lo que NO queda descartado — y es lo unico que queda — es un problema SOLO de la pila Java (instancia 03, puerto 50300): la aplicacion AdobeDocumentServices parada o colgada, o su JVM sin recursos, con el ABAP de al lado tan campante. Eso ya no se mide con el log: se mide con SM59 -> destino ADS -> Connection Test, o en NWA sobre el AS Java.",
+          "evidencia": "rsau_audit_history (leido 2026-08-26 17:xx, 29.422.633 filas, 20260203..20260826), PARAMX LIKE '%host=HQ-SAP-SBP%' agrupado por dia: 20260818 2.195 · 19 2.194 · 20 2.288 · 21 2.194 · 22 504 (parcial, hasta 05:28) · 23 1.648 (desde 05:17) · 24 2.130 (00:00:16-23:59:20) · **25 2.138 (00:00:17-23:58:22)** · 26 1.524 (hasta 17:13). El dia del fallo es indistinguible de un dia normal",
           "autoridad": "MEDIDO_EN_DATOS",
           "peso": 3
         }

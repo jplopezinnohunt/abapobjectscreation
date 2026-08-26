@@ -1638,6 +1638,112 @@
    "confidence": null,
    "session": 103,
    "source": "D01K9B0FXE/FXF, 2026-08-26: 8 falsos positivos con la primera version"
+  },
+  {
+   "subject": "rsau.FP_ / el render Adobe",
+   "kind": "INSTRUMENT",
+   "fact": "el render Adobe (ADS) NO DEJA HUELLA en el log de auditoria. Cero eventos de FP_JOB_OPEN, FP_FUNCTION_MODULE_NAME o FP_GET_LAST_ADS_ERRSTR en las cuatro superficies (SLGREPNA, SLGTC, PARAM1, PARAM3) en 6,5 meses, y la transaccion SFP solo se abrio 2 veces, las dos por un desarrollador. El motivo es estructural: el render es un modulo de funcion LOCAL dentro de un programa, no un arranque de transaccion ni una llamada RFC ENTRANTE, que son las unicas cosas que el filtro SM19 de este inquilino captura.",
+   "learned_by": "inc16471_ads_log_mining (A19_log_reality_filter + A56 slots)",
+   "evidencia_extra": "SLGREPNA LIKE 'FP%' = 14 filas; PARAM3 LIKE 'FP%' = 8; SLGTC LIKE 'SFP%' = 2",
+   "evidence": "rsau_audit_history 28,58M filas 2026-02-03..2026-08-25",
+   "implication": "no se puede fechar una caida de ADS -- ni de ningun destino tipo G -- con este log. Ausencia de dato, NO de problema. Para un canal SALIENTE hay que medir el proxy que SI entra (el host llamando de vuelta) o declarar el punto ciego; nunca publicar 'no se usa' desde observed_calls=0.",
+   "confidence": "MEASURED",
+   "session": 105
+  },
+  {
+   "subject": "rsau.PARAM3 LIKE '%ADS%'",
+   "kind": "TRAP",
+   "fact": "devuelve 2.831 filas y NINGUNA es ADS: el LIKE de SQLite es insensible a mayusculas en ASCII y 'Downloads' contiene 'oads'. Todas son rutas de descarga de puesto de trabajo (C:/Users/<x>/Downloads/EXPORT.XLSX y similares).",
+   "learned_by": "inc16471_ads_log_mining",
+   "evidence": "top 40 valores de PARAM3 que casan: 40 de 40 son rutas de fichero",
+   "implication": "una sigla de tres letras NO se busca por subcadena en un campo que lleva rutas. Mira los VALORES DISTINTOS antes de contar: aqui la cuenta sola daba un canal vivo con 2.831 eventos que no existe.",
+   "confidence": "MEASURED",
+   "session": 105
+  },
+  {
+   "subject": "el borde del corpus acumulado",
+   "kind": "TRAP",
+   "fact": "el ULTIMO DIA de rsau_audit_history esta siempre a medias y se lee como una caida. Medido mientras el acumulador corria: el 22-ago tenia 23.834 filas hasta las 05:31 y el 24-ago 22.987 hasta las 05:14, contra ~157.000-166.000 de un dia laborable completo. Horas despues los mismos dias estaban completos.",
+   "learned_by": "inc16471_ads_log_mining",
+   "evidence": "20260820:158.783 21:157.305 22:23.834 23:84.369(domingo) 24:166.176",
+   "implication": "antes de leer cualquier serie diaria como un corte, comprueba el VOLUMEN del dia y su MAX(SAL_TIME) contra la mediana de un dia laborable. Y no confundas un domingo (~84K) con una caida: la semana tiene forma.",
+   "confidence": "MEASURED",
+   "session": 105
+  },
+  {
+   "subject": "sm21_syslog_history / snap_history / st22_dumps_history",
+   "kind": "INSTRUMENT",
+   "fact": "los tres logs de INFRAESTRUCTURA estan practicamente vacios y no se llenan solos. accumulate_logs.py acumula exactamente cuatro flujos -- TBTCO, TBTCP, CDHDR y RSAU. SM21 tiene 2.402 filas de una extraccion suelta del 15..22 de junio de 2026 (y su contenido SI sirve: lleva plugin HTTP en AREA R2/SUBID G y UNCAUGHT_EXCEPTION en E0/A). SNAP tiene 0 filas y esta DESACTIVADO a proposito -- P01 devuelve TABLE_NOT_AVAILABLE por RFC_READ_TABLE -- y ademas su esquema (DATUM/UZEIT/AHOST/UNAME/MODNO/SEQNO) no lleva ni programa ni texto, asi que aunque se llenara no podria contestar 'un volcado que mencione X'. st22_dumps_history si lleva ERROR_CLASS/OBJECT/MESSAGE pero tiene 1 fila.",
+   "learned_by": "inc16471_ads_log_mining",
+   "evidence": "sm21 2.402 filas 20260615..20260622; snap_history 0; st22_dumps_history 1 (20260621, DBIF_REPO_SQL_ERROR); accumulate_logs.py LOG_TABLES + lineas 114-117",
+   "implication": "cualquier pregunta de INFRAESTRUCTURA -- se cayo el ICM, hubo timeout HTTP, volco un programa -- es HOY incontestable con el golden, y esa respuesta hay que darla como frontera del instrumento, no como 'no hubo nada'. Si se quiere contestar, lo que falta es meter SM21 en el acumulador y ST22 por su FM (sap_system_monitor.py), no una consulta mas lista.",
+   "confidence": "MEASURED",
+   "session": 105
+  },
+  {
+   "subject": "tbtco.STATUS = 'F'",
+   "kind": "TRAP",
+   "fact": "'F' es TERMINADO, no CORRECTO. RFFOAVIS_FPAYM (aviso de pago, el unico programa de nuestro corpus con formulario Adobe) corrio 7 veces el 25-ago y 19 el 26 y acabo en F las 26, durante una caida declarada del servicio que renderiza sus PDF.",
+   "learned_by": "inc16471_ads_log_mining",
+   "evidence": "tbtco_history x tbtcp_history por PROGNAME, 20260810..20260826",
+   "implication": "el estado de un job no es una senal de exito FUNCIONAL. Un fallo de render, de salida o de negocio capturado dentro del programa deja el job en F. Para saber si el trabajo SALIO hay que mirar lo que produce, no como acabo.",
+   "confidence": "MEASURED",
+   "session": 105
+  },
+  {
+   "subject": "rsau_audit_history",
+   "kind": "INSTRUMENT",
+   "fact": "El log de auditoria de seguridad registra LLAMADAS RFC. Una llamada HTTP saliente (destino RFCDES tipo G, y tipo H) NO es una llamada RFC y no deja ni una fila: medido, 40 de 40 destinos tipo G/H tienen observed_calls=0 y ninguno de los 11 LIVE es HTTP. Falsador independiente: las 5 rutas al SLD salen DEAD mientras el job SAP_SLD_DATA_COLLECT (RSLDAGDS) que las usa termino OK 126 veces en la misma ventana.",
+   "learned_by": "mining-arbiter",
+   "evidence": "interface_boundary.json x rfcdes x tbtco_history, 2026-08-26; rsau_audit_history 28.580.216 filas, ventana 20260203..20260822",
+   "implication": "interface_boundary.py (F1) y cualquier algoritmo que derive presencia/ausencia de PARAMX debe emitir NO_OBSERVABLE -- no DEAD -- para los destinos tipo G y H. Y para la disponibilidad de un destino saliente la fuente NO es el log: es un test de conexion (SM59), que es de nuestro lado.",
+   "confidence": null,
+   "session": 105,
+   "source": "INC-000016471 / arbitraje del canal ADS"
+  },
+  {
+   "subject": "process_mining/interface_boundary.py",
+   "kind": "TRAP",
+   "fact": "Una tasa del 100% en una CLASE ENTERA de la poblacion es la firma de un instrumento ciego, no de un hallazgo. 227 de 238 destinos DEAD no llamo la atencion de nadie; que los 40 de tipo G/H fueran 40 de 40 es lo que delata que la fuente no los ve. Agravante medido: F1 quito el muestreo (400.000 filas -> las 8,7M) y escribio en su cabecera 'DEAD is now a FACT rather than an artefact' -- subio la confianza de la etiqueta arreglando el error de MUESTREO mientras el de COBERTURA seguia entero.",
+   "learned_by": "mining-arbiter",
+   "evidence": "interface_boundary.py lineas 106-115; interface_boundary.json summary",
+   "implication": "antes de publicar un veredicto de ausencia, PARTIR LA POBLACION por la clase que decide si el instrumento la ve (aqui: RFCTYPE) y mirar la tasa por clase. Si una clase da 0% o 100%, el veredicto es sobre el instrumento, no sobre la poblacion. Y quitar UNA fuente de error no autoriza a subir la confianza: autoriza a nombrar la que queda.",
+   "confidence": null,
+   "session": 105,
+   "source": "arbitraje ADS, 2026-08-26"
+  },
+  {
+   "subject": "rsau_audit_history",
+   "kind": "TRAP",
+   "fact": "Buscar 'host=HQ-SAP-SBP' con `'host=HQ-SAP-SBP' in campo.upper()` devuelve 0 filas: el .upper() tambien pone en mayusculas la parte literal 'host=' del propio dato. Devolvio CERO donde hay 419.907. Le paso al arbitro en medio de este mismo arbitraje, y por un momento parecio la confirmacion de que el host no se veia.",
+   "learned_by": "mining-arbiter",
+   "evidence": "dos corridas sobre las mismas 28.580.216 filas: 0 vs 419.907, 2026-08-26",
+   "implication": "normalizar LOS DOS LADOS de una comparacion, nunca uno. Y el corolario, que es el mismo defecto que este arbitraje resuelve a escala: un CERO recien salido de una consulta no es una ausencia hasta que la consulta se ha probado contra un caso donde SABES que hay algo.",
+   "confidence": null,
+   "session": 105,
+   "source": "arbitraje ADS, 2026-08-26"
+  },
+  {
+   "subject": "rsau_audit_history",
+   "kind": "INSTRUMENT",
+   "fact": "El latido de una instancia ABAP VECINA no es un sensor de la pila JAVA de la misma maquina. hq-sap-sbp corre SolMan ABAP (inst. 01) y ADS Java (inst. 03, puerto 50300); el 2026-08-25, con ADS caido todo el dia, el latido ABAP marco 2.138 eventos de 00:00:17 a 23:58:22, igual que un dia normal.",
+   "learned_by": "mining-arbiter",
+   "evidence": "rsau_audit_history leido 2026-08-26 (29.422.633 filas, 20260203..20260826), PARAMX LIKE '%host=HQ-SAP-SBP%' por dia: 20260818 2.195 / 19 2.194 / 20 2.288 / 21 2.194 / 22 504 (parcial 05:28) / 23 1.648 (desde 05:17) / 24 2.130 / 25 2.138 (00:00:17-23:58:22) / 26 1.524 (hasta 17:13)",
+   "implication": "un sensor de co-ubicacion solo produce senal NEGATIVA (maquina caida => el servicio tambien) y JAMAS positiva. Antes de proponer un proxy de disponibilidad, correrlo contra el dia de la caida que ya conoces: si sale verde, es un proxy que no vale para alarmar.",
+   "confidence": null,
+   "session": 105,
+   "source": "INC-000016471, arbitraje contra inc16471_ads_log_mining"
+  },
+  {
+   "subject": "rsau_audit_history",
+   "kind": "SUBSTRATE",
+   "fact": "La tabla CRECE mientras se lee: en una sola sesion paso de 28.580.216 filas / MAX(SAL_DATE)=20260822 a 29.422.633 / 20260826, porque accumulate_logs.py estaba corriendo. Dos mineros midieron el mismo latido y sacaron 416.193 y 419.907.",
+   "learned_by": "mining-arbiter",
+   "evidence": "dos lecturas del mismo dia, 2026-08-26: +842.417 filas y +4 dias en ~40 minutos",
+   "implication": "todo recuento sobre esta tabla publica junto a la cifra el COUNT(*) total y el MAX(SAL_DATE) de la lectura. Sin la foto, dos mineros correctos generan un choque falso y se gasta un arbitraje en nada.",
+   "confidence": null,
+   "session": 105,
+   "source": "arbitraje ADS vs inc16471_ads_log_mining"
   }
  ]
 }
