@@ -793,6 +793,55 @@ def main():
     if _mm.exists() and system_profile:
         system_profile["_maturity_methods"] = json.load(open(_mm, encoding="utf-8"))
 
+    # INSTRUMENTOS QUE NO SE PUEDEN CREER — al ARRANQUE, no a un drill de distancia.
+    #
+    # `algorithms.json` no entraba en brain_state de ninguna forma, asi que un algoritmo
+    # marcado DEFECTO_VIVO -- uno cuya salida de HOY es demostrablemente falsa -- era
+    # invisible al empezar una sesion. Medido 2026-08-26: cuatro instrumentos en ese estado,
+    # uno de ellos contaminando dos claims TIER_1, y ninguna sesion se habria enterado.
+    #
+    # NO se cargan los 75 con su metodo entero: eso es justo lo que la carga por niveles
+    # existe para evitar. Se carga SOLO lo que no es fiable, que es lo unico que hay que
+    # saber ANTES de usar nada. El resto se consulta con `graph_queries.py methods`.
+    instrumentos_no_fiables = {}
+    _alg = BRAIN_V2 / "methods" / "algorithms.json"
+    if _alg.exists():
+        _A = (json.load(open(_alg, encoding="utf-8")).get("algorithms") or {})
+        # LISTA BLANCA DE LO MALO, no lista negra de lo bueno. Con lista negra entraban aqui
+        # 'RUN s098' y 'NEW s098', que son etiquetas de SESION y no defectos: tres avisos
+        # falsos de ocho. Un bloque de advertencias con ruido deja de leerse, que es la misma
+        # forma en que se hueca un gate.
+        _NO_FIABLE = {"DEFECTO_VIVO", "ROTO", "MUERTO", "QUARANTINED", "FRAGILE"}
+        _malos, _sin_reconocer = {}, {}
+        for _aid, _a in _A.items():
+            _st = str(_a.get("state") or "").upper()
+            if _st not in _NO_FIABLE:
+                # tampoco se calla lo que no se entiende: un estado desconocido no es bueno
+                # ni malo, es SIN CLASIFICAR, y eso se dice aparte en vez de adivinarlo.
+                if _st and _st not in ("WORKS", "STRONG", "NEW", "PARCIAL"):
+                    _sin_reconocer[_aid] = _st
+                continue
+            _malos[_aid] = {
+                "state": _st,
+                "no_usar_porque": (_a.get("_defecto_vivo") or {}).get("medido")
+                                  or str(_a.get("failure_mode") or "")[:400],
+                "donde_vive": _a.get("bound_in"),
+                "aterriza_en": _a.get("lands_in"),
+            }
+        if _malos:
+            instrumentos_no_fiables = {
+                "_que_es": ("algoritmos de mineria cuya salida de HOY es incorrecta o que nunca "
+                            "han corrido. Esto va en el ARRANQUE a proposito: una advertencia "
+                            "que hay que ir a buscar no es una advertencia"),
+                "_como_se_lee": ("DEFECTO_VIVO = la salida es falsa y ya publico cifras que hay "
+                                 "que revisar. ROTO = nunca corrio. No uses su cifra sin leer "
+                                 "`no_usar_porque`"),
+                "_drill": "python brain_v2/graph_queries.py methods",
+                "cuantos": len(_malos),
+                "instrumentos": _malos,
+                "_estados_sin_reconocer": _sin_reconocer or None,
+            }
+
     # LAYER 15 — Capability Model (4th axis). Load the domain x capability matrix
     # and inject each domain's coverage into its Layer-14 entry (best-effort name
     # map); keep the full model as a top-level layer so it's queryable even when a
@@ -982,6 +1031,9 @@ def main():
         # gaps, not per-domain gaps. ALIGN acquired knowledge, EXPAND the empty
         # cells. Source: brain_v2/capability_model/capability_model.json. S#079.
         "capability_model": capability_model,
+        # va en el ARRANQUE, no a un drill de distancia: una advertencia que hay que ir a
+        # buscar no es una advertencia. Solo lo que NO es fiable, no los 75 algoritmos.
+        "_instrumentos_no_fiables": instrumentos_no_fiables,
         # LAYER 16: PROFILE — the tenant's measured reality. Keyed on SAP
         # application component (a different axis from L15's domain key), with
         # evidence tiers INSTALLED/CONFIGURED/PRODUCTIVE/NOT_USED/NOT_EVIDENCED.

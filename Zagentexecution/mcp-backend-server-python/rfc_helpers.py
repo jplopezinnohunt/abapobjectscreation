@@ -15,6 +15,7 @@ Usage:
 """
 
 import os
+import re
 import time
 from dotenv import load_dotenv
 
@@ -23,12 +24,63 @@ MAX_RECONNECT_ATTEMPTS = 3
 RECONNECT_WAIT_SEC = 10
 
 
+def _sid_del_bloque_generico():
+    """QUE SISTEMA ES el bloque generico del .env — DERIVADO, no escrito a mano.
+
+    El bloque sin prefijo (SAP_ASHOST, SAP_PASSWD...) es un sistema concreto, y saber cual es
+    lo unico que permite distinguir un fallback LEGITIMO de uno silencioso. Se deduce de su
+    SNC_PARTNERNAME ('p:CN=D01' -> D01). Hardcodear 'D01' aqui seria repetir el defecto un
+    nivel mas arriba: si manana el generico apunta a otro sistema, la comprobacion mentiria.
+    """
+    pn = os.getenv("SAP_SNC_PARTNERNAME") or ""
+    m = re.search(r"CN=([A-Z0-9]{3})", pn.upper())
+    return m.group(1) if m else None
+
+
+def sids_declarados(env_path=None):
+    """Los SID que tienen bloque PROPIO en el .env, mas el del generico.
+
+    Carga el .env por su cuenta: llamada antes de la primera conexion devolvia una lista
+    VACIA, y una lista vacia en un mensaje de error dice 'no hay ninguno declarado' cuando
+    hay tres. Un diagnostico que miente cuesta mas que no darlo.
+    """
+    load_dotenv(env_path or os.path.join(os.path.dirname(__file__), ".env"))
+    out = {k[4:-7] for k in os.environ if k.startswith("SAP_") and k.endswith("_ASHOST")
+           and len(k) == 15}
+    g = _sid_del_bloque_generico()
+    return (out | {g}) if g else out
+
+
 def _build_connection_params(system_id="P01", env_path=None):
-    """Build pyrfc connection params dict (reusable for reconnect)."""
+    """Build pyrfc connection params dict (reusable for reconnect).
+
+    ⛔ UN SID QUE NO EXISTE YA NO SE CONECTA EN SILENCIO AL GENERICO (arreglado 2026-08-26).
+
+    `env()` cae al bloque generico cuando no hay SAP_<SID>_<CLAVE>. Ese generico ES D01 y
+    LLEVA PASSWORD, asi que la conexion no fallaba: tenia EXITO contra el sistema equivocado.
+    Medido: `_build_connection_params('VO1')` y `('ZZZ')` devolvian parametros identicos a
+    `('D01')`, y RFC_SYSTEM_INFO confirmaba pedido=VO1 -> SID REAL=D01 (host HQ-SAP-D). Un
+    typo en `--systems` certificaba «alineado» un sistema que nadie habia leido.
+
+    Ahora: si el SID pedido no tiene bloque propio Y no es el sistema del generico, se NIEGA
+    en vez de conectar. Un error ruidoso es infinitamente mas barato que una certificacion
+    falsa. Y la comprobacion dura -- que el sistema al otro lado sea el que se pidio -- la
+    hace `verificar_sistema()` DESPUES de conectar: esto solo caza el typo, no la
+    configuracion mal puesta.
+    """
     if env_path is None:
         env_path = os.path.join(os.path.dirname(__file__), ".env")
     load_dotenv(env_path)
-    prefix = f"SAP_{system_id}_"
+    sid = (system_id or "").strip().upper()
+    propio = os.getenv(f"SAP_{sid}_ASHOST")
+    generico = _sid_del_bloque_generico()
+    if not propio and sid != generico:
+        raise ValueError(
+            f"SID '{system_id}' no tiene bloque SAP_{sid}_* en el .env y el bloque generico es "
+            f"'{generico}'. Conectar de todas formas hablaria con {generico} creyendo hablar "
+            f"con {sid} -- que es exactamente como un typo certifica alineado un sistema que "
+            f"nadie leyo. Declarados: {sorted(sids_declarados())}")
+    prefix = f"SAP_{sid}_"
     def env(k, d=None): return os.getenv(prefix + k) or os.getenv("SAP_" + k) or d
     params = {
         "ashost": env("ASHOST"), "sysnr": env("SYSNR"),
@@ -42,6 +94,40 @@ def _build_connection_params(system_id="P01", env_path=None):
         params["snc_partnername"] = env("SNC_PARTNERNAME")
         params["snc_qop"] = env("SNC_QOP", "9")
     return params
+
+
+def verificar_sistema(conn, sid_pedido, estricto=True):
+    """LA PRUEBA DURA: preguntarle al sistema QUIEN ES, y compararlo con lo que se pidio.
+
+    El .env dice a donde CREES que vas; RFC_SYSTEM_INFO dice a donde FUISTE. Solo la segunda
+    cosa se puede escribir en un informe. Medido 2026-08-26: RFC_SYSTEM_INFO no se llamaba en
+    NINGUN quality_check ni ejecutor -- solo en 4 sondas sueltas -- asi que ninguna puerta
+    comprobaba con que sistema habia hablado, y todas rotulaban su salida con la cadena que
+    tecleo el usuario.
+
+    Devuelve el SID REAL. Con estricto=True (por defecto) LEVANTA si no coincide: un check que
+    sigue adelante tras descubrir que hablo con otro sistema produce una certificacion falsa,
+    que es peor que no producir nada.
+    """
+    try:
+        info = conn.call("RFC_SYSTEM_INFO")
+        real = str((info.get("RFCSI_EXPORT") or {}).get("RFCSYSID", "")).strip().upper()
+        host = str((info.get("RFCSI_EXPORT") or {}).get("RFCHOST", "")).strip()
+    except Exception as e:
+        if estricto:
+            raise RuntimeError(
+                f"no se pudo verificar con que sistema se hablo ({type(e).__name__}: {e}). "
+                f"NO rotules ninguna salida con '{sid_pedido}' sin esta prueba") from e
+        return None
+    pedido = (sid_pedido or "").strip().upper()
+    if pedido and real and real != pedido:
+        msg = (f"⛔ SISTEMA EQUIVOCADO: se pidio '{pedido}' y se hablo con '{real}' "
+               f"(host {host}). Rotular esta salida como '{pedido}' seria certificar un "
+               f"sistema que no se ha leido.")
+        if estricto:
+            raise RuntimeError(msg)
+        print(msg)
+    return real
 
 
 class ConnectionGuard:
@@ -78,9 +164,11 @@ class ConnectionGuard:
         "connection reset",
     ]
 
-    def __init__(self, system_id="P01", env_path=None):
+    def __init__(self, system_id="P01", env_path=None, estricto=True):
         self.system_id = system_id
         self.env_path = env_path
+        self.estricto = estricto      # False solo para SONDAS que quieren ver, no certificar
+        self.sid_real = None          # lo que RFC_SYSTEM_INFO dijo: esto es lo que se rotula
         self._params = _build_connection_params(system_id, env_path)
         self._conn = None
         self.reconnect_count = 0
@@ -88,6 +176,11 @@ class ConnectionGuard:
     def connect(self):
         from pyrfc import Connection
         self._conn = Connection(**self._params)
+        # SE VERIFICA AQUI, NO EN CADA LLAMADOR. Poner la comprobacion en los scripts significa
+        # que la tiene el que se acuerda; ponerla aqui significa que la tienen todos, incluido
+        # el que se escriba manana. Tambien corre en la RECONEXION: una reconexion que aterrice
+        # en otro sistema es el mismo defecto y ademas no lo veria nadie.
+        self.sid_real = verificar_sistema(self._conn, self.system_id, estricto=self.estricto)
         return self
 
     def close(self):
@@ -128,13 +221,17 @@ class ConnectionGuard:
         raise last_err  # All retries exhausted
 
 
-def get_connection(system_id="P01", env_path=None):
+def get_connection(system_id="P01", env_path=None, estricto=True):
     """Connect to SAP via pyrfc with auto-reconnect guard.
 
     Returns a ConnectionGuard that behaves like pyrfc.Connection
     but automatically reconnects on VPN drops / timeouts.
+
+    Desde 2026-08-26 COMPRUEBA con RFC_SYSTEM_INFO que el sistema al otro lado es el que se
+    pidio, y levanta si no. `guard.sid_real` lleva el SID que contesto: es lo que hay que
+    rotular en cualquier salida, NUNCA la cadena que tecleo el usuario.
     """
-    guard = ConnectionGuard(system_id, env_path)
+    guard = ConnectionGuard(system_id, env_path, estricto=estricto)
     guard.connect()
     return guard
 

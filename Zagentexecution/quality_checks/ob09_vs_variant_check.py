@@ -211,9 +211,16 @@ def main():
             hk = sorted({x["HKONT"] for x in t030h})
             print("\n  cuentas con fila en T030H (CURTP 10): %d" % len(hk))
 
-            blocked = {x["SAKNR"] for x in
-                       rd(c, "SKB1", ["SAKNR", "XSPEB"], "BUKRS = '%s'" % BUKRS)
-                       if x.get("XSPEB") == "X"}
+            # ARREGLADO 2026-08-26 (A47): se lee TAMBIEN MITKZ, no solo XSPEB.
+            #
+            # MITKZ dice si la cuenta es ASOCIADA de submayor, y de eso depende POR QUE CAMPO
+            # la selecciona la variante: AKONTO si lo es, SKONTO si no. main() solo leia XSPEB,
+            # asi que la eleccion de campo por cuenta ni siquiera estaba implementada en el
+            # camino que corre -- y por eso tenia que usar covered(), el resolutor LEGADO que
+            # mezcla los dos campos. 34 falsos positivos sobre 780 cuentas.
+            _skb1 = rd(c, "SKB1", ["SAKNR", "XSPEB", "MITKZ"], "BUKRS = '%s'" % BUKRS)
+            blocked = {x["SAKNR"] for x in _skb1 if x.get("XSPEB") == "X"}
+            mitkz = {x["SAKNR"]: (x.get("MITKZ") or "").strip() for x in _skb1}
 
             # TERCERA CONDICION (s102, tras refutar el claim 540). Sin ella este check daba
             # FALSOS POSITIVOS: marcaba 4041011/4041012/4041014 como defecto cuando sus partidas
@@ -250,10 +257,24 @@ def main():
                     return "DESCONOCIDA"
                 return "SI" if any(r["WAERS"] and r["WAERS"] != local for r in rows) else "NO"
 
+            # ARREGLADO 2026-08-26 (A47) — main() pasa al camino CORRECTO.
+            #
+            # Antes: `if covered(acct, sets)`, el resolutor LEGADO. Su propio docstring (l.147)
+            # dice literalmente «Prefiere variant_selection() + covered_in()», las dos funciones
+            # estaban en ESTE MISMO fichero desde el commit 8da7910 y el vecino
+            # fx_revaluation_peer_check.py las usaba bien. El fichero EXPORTABA lo correcto y
+            # CONSUMIA lo legado. Medido sobre 780 cuentas: covered() 273 fuera de toda
+            # variante, covered_in() por MITKZ 239 -> 34 FALSOS POSITIVOS, todos MITKZ=D/K
+            # (20110xx, 20210xx, 20220xx, 20290xx) que UNES_OI_AR/AP si selecciona por AKONTO
+            # con «todas menos esas 27».
+            seleccion = {v: variant_selection(c, v) for v in variants}
             orphan = []
             for x in t030h:
                 acct = x["HKONT"]
-                if covered(acct, sets):
+                # el CAMPO se deriva de la cuenta, que es justo lo que el camino legado no
+                # podia hacer: una asociada de submayor se selecciona por AKONTO.
+                campo = "AKONTO" if mitkz.get(acct) else "SKONTO"
+                if covered_in(acct, seleccion, field=campo):
                     continue
                 orphan.append((acct, acct in blocked, (x.get("LKORR") or "").strip()))
 
@@ -270,11 +291,17 @@ def main():
             # LA CIFRA CORRECTA SE DESCONOCE hoy: la unica medicion del camino bueno es 239 el
             # 2026-08-25 contra P01 y no se ha vuelto a medir. NO sustituir 273 por 239 en
             # ningun artefacto publicado sin re-medir. Ver claim 599 (TIER_1, OPEN) y A47
-            # state=DEFECTO_VIVO. El arreglo (migrar main() a variant_selection()+covered_in())
-            # es cambio de LOGICA y no se hizo en esta corrida.
-            print("  candidatas segun el resolutor LEGADO covered() — CIFRA NO VALIDA, inflada")
-            print("  (mezcla SKONTO/AKONTO; la cifra real SE DESCONOCE, ver claim 599): %d"
-                  % len(orphan))
+            # state=DEFECTO_VIVO. HECHO el 2026-08-26: main() ya usa
+            # variant_selection() + covered_in() con el campo derivado de SKB1-MITKZ, y la
+            # corrida da 239 -- exactamente la cifra que el camino correcto midio el 2026-08-25.
+            #
+            # El rotulo de abajo decia «CIFRA NO VALIDA, resolutor LEGADO» y se quedo puesto
+            # despues de arreglar el codigo: mentia al reves. Es el mismo patron que este
+            # fichero lleva persiguiendo -- arreglar el codigo y no el texto que lo describe --
+            # y por eso se anota aqui en vez de borrarlo sin mas.
+            print("  configuradas en T030H y FUERA de toda variante: %d" % len(orphan))
+            print("     (resuelto por variant_selection()+covered_in(), campo derivado de "
+                  "SKB1-MITKZ: AKONTO para cuenta asociada, SKONTO para la de mayor)")
             defect, inert, unknown = [], [], []
             for acct, blk, lk in sorted(orphan):
                 if blk:

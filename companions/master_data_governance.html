@@ -50,9 +50,9 @@ CONFIG   (OB09 . variante . FSV)   D01  --&gt;  V01  --&gt;  P01   nace en DESAR
 <li class="zero"><b>DETECTAR la deriva.</b> El aviso solo llega si hay revaluacion. Programado, no bajo demanda. &rarr; <code>Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_alignment_check.py</code></li>
 <li><b>Alinear D01/V01</b> &rarr; <code>gl_master_sync.py</code></li>
 <li><b>Decidir si revalua (3 condiciones: formulario + moneda cuenta != moneda sociedad + exposicion abierta)</b></li>
-<li><b>OB09 (T030H) Y variante de F.05 — un solo gate, inseparables</b> &rarr; <code>ob09_vs_variant_check.py</code></li>
+<li><b>OB09 (T030H) Y variante de F.05 — un solo gate, inseparables</b> &rarr; <code>ob09_vs_variant_check.py — NO VALIDO para cuenta ASOCIADA (SKB1-MITKZ = D o K) hasta que main() resuelva con covered_in() eligiendo el campo por MITKZ: hoy la daria por fuera de toda variante siendo falso, y la enterraria bajo 'inertes' porque exposure() no mira BSID/BSIK (claim 599, A47 state=DEFECTO_VIVO). Para cuenta de mayor normal (MITKZ vacio) el resultado es correcto.</code></li>
 <li><b>Cobertura en la version de balance (FSV) que se EJECUTA para la sociedad</b> &rarr; <code>fsv_coverage_check.py</code></li>
-<li><b>Transportar con control de alcance</b> &rarr; <code>config_transport_prerelease_check.py</code></li>
+<li><b>Transportar con control de alcance</b> &rarr; <code>- (config_transport_prerelease_check.py en DEFECTO_VIVO: exit 0 sobre la ORDEN; ver algorithms.json A40). Hoy manual: diff de la tabla entera + E070 STRKORR</code></li>
 <li><b>Barrer la poblacion (la ocasion es el ticket, el alcance es todo)</b> &rarr; <code>--sweep de los pasos 3 y 4</code></li>
 </ol>
 <div class="box"><b>Los pasos 3 y 4 son los que se olvidan, y cada uno falla en silencio.</b> OB09 sin variante: la revaluacion no corre y no da error. Variante sin OB09: F.05 revienta. Y la cobertura de balance se asigna por <b>intervalo</b>, asi que una cuenta nueva entra sola o cae en <i>Not assigned</i> — y el balance cuadra igual.</div>

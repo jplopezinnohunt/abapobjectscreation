@@ -10,6 +10,7 @@ Se engancha en rebuild_all.py. Editar el builder, no el HTML.
 import io
 import json
 import os
+import re
 import sys
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -62,6 +63,28 @@ def esc(x):
     return (str(x) if x is not None else "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def nombre_corto(tool):
+    """Acorta una RUTA, no la prosa que la acompaña.
+
+    Aqui habia `os.path.basename(tool)`, y funcionaba mientras `tool` fuera solo una ruta.
+    Cuando el registro paso a llevar texto rico -- «ob09_vs_variant_check.py (claim 599, A47
+    state=DEFECTO_VIVO): NO VALIDO para cuenta ASOCIADA... BSID/BSIK» -- basename() corto por
+    la ULTIMA barra y devolvio «BSIK...», comiendose el nombre del instrumento y dejando en su
+    sitio un trozo del aviso. Un agente lo detecto al regenerar, vio que el resultado era PEOR
+    y revirtio; el companion se quedo sin la advertencia.
+
+    Regla: solo se acorta el PRIMER token si parece una ruta a fichero; el resto se conserva
+    tal cual. Lo que el registro tenga que decir es exactamente lo que hay que enseñar.
+    """
+    s = str(tool or "").strip()
+    if not s:
+        return s
+    cabeza, sep, resto = s.partition(" ")
+    if ("/" in cabeza or "\\" in cabeza) and re.search(r"\.\w{1,4}$", cabeza):
+        cabeza = os.path.basename(cabeza)
+    return cabeza + sep + resto
+
+
 def main():
     reg = json.load(io.open(REG, encoding="utf-8"))
     objs = reg["objects"]
@@ -112,7 +135,7 @@ def main():
         tool = t["tool"]
         a("<li><b>%s</b>%s</li>"
           % (esc(t["task"]),
-             "" if tool == "-" else " &rarr; <code>%s</code>" % esc(os.path.basename(tool))))
+             "" if tool == "-" else " &rarr; <code>%s</code>" % esc(nombre_corto(tool))))
     a("</ol>")
     a('<div class="box"><b>Los pasos 3 y 4 son los que se olvidan, y cada uno falla en silencio.</b> '
       'OB09 sin variante: la revaluacion no corre y no da error. Variante sin OB09: F.05 revienta. '
@@ -140,7 +163,7 @@ def main():
           % (esc(o["name"]), esc(" . ".join(o.get("tables", []) or ["-"])),
              esc(o.get("transaction", "-")),
              ("<code>%s</code>" % esc(w)) if w else "<i>ninguno</i>",
-             ("<code>%s</code>" % esc(os.path.basename(o["executor"]))) if o.get("executor")
+             ("<code>%s</code>" % esc(nombre_corto(o["executor"]))) if o.get("executor")
              else "<i>-</i>", cls, lab))
     a("</table>")
 
