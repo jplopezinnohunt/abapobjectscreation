@@ -5605,5 +5605,22 @@
     "violations_observed": [
       "INC-000016338"
     ]
+  },
+  {
+    "id": "feedback_a_long_process_must_be_able_to_report_its_own_progress",
+    "severity": "HIGH",
+    "created_session": 104,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "UN PROCESO QUE TARDA MAS DE UNOS MINUTOS TIENE QUE PODER DECIR POR DONDE VA SIN ABRIRLO. Tres obligaciones: (1) NO lanzarlo con una tuberia que tampone la salida -- `| tail -N` deja el fichero de captura en 0 bytes hasta que el proceso sale; usar `python -u` y sin tuberia. (2) Si escribe un log de progreso, DAR EL COMANDO que lo lee -- no una nota que explique como grepearlo. (3) NO reportar un porcentaje que el instrumento no pueda sostener: si el corte de corrida es ambiguo o los pasos no son lineales, DECIRLO en vez de inventar un numero. Y LA TERCERA ES LA QUE FALTA CASI SIEMPRE: **CONTRASTAR el mecanismo contra una senal INDEPENDIENTE** antes de fiarse de el. Anotar deja el conocimiento; mecanizar lo hace consultable; solo contrastar impide que automatices el error.",
+    "why": "s104 (2026-08-26): `rebuild_all.py` se lanzo en background con `| tail -30`, la salida quedo tamponada en 0 bytes y durante ~40 minutos la unica respuesta posible fue 'sigue corriendo', adivinando por el `mtime` de los artefactos. Se escribio `brain_v2/rebuild_progress.py` para arreglarlo -- Y LA PRIMERA VERSION MINTIO: reporto 'REBUILD TERMINADO 7/7, 148 minutos' con el proceso vivo en el paso 4, porque cortaba el log acumulado por una marca que no encajaba y MEZCLABA tres corridas. Se detecto solo al contrastarla con dos senales independientes (el fichero de background en 0 bytes y la ultima linea del log). Un mecanismo equivocado es peor que ninguno: da una respuesta con autoridad. Ademas quedo medido que los pasos NO son lineales -- el `3e` corre DESPUES del `4/7` y el `4/7` tardo 874 s -- asi que cualquier porcentaje ingenuo enganaba.",
+    "how_to_apply": "Antes de lanzar algo largo: ¿como voy a saber por donde va? Si la respuesta es 'mirando mtimes' o 'esperando', para y resuelvelo primero. Al escribir el lector de progreso, CONTRASTALO contra una senal que no comparta su fallo (el proceso vivo o no, otro artefacto) antes de reportar su salida como hecho. Para el rebuild: `python brain_v2/rebuild_progress.py [--tail N]`.",
+    "violations_observed": [
+      "s104-rebuild-sin-progreso",
+      "s104-rebuild_progress-v1-mintio"
+    ]
   }
 ]
