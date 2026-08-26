@@ -62,8 +62,12 @@ def declaration(path):
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
     except SyntaxError as e:
-        return {"tier": "UNPARSEABLE",
-    "sobre": "datos_sap", "what": f"{type(e).__name__}: {e}"}
+        # Un fichero que no PARSEA no comprueba nada, asi que no pertenece a ninguna familia:
+        # decir que es 'datos_sap' seria contarlo como una puerta sana sobre SAP. Un parche
+        # automatico me metio eso aqui y es exactamente lo que este runner existe para no
+        # dejar pasar -- un artefacto roto contado como bueno.
+        return {"tier": "UNPARSEABLE", "sobre": "NO_PARSEA",
+                "what": f"{type(e).__name__}: {e}"}
     for node in tree.body:
         if isinstance(node, ast.Assign):
             for t in node.targets:
