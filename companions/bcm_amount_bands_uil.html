@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BCM — Tramos de importe y panel de firmantes (UIL)</title>
+<style>
+:root{--bg:#0f1216;--card:#171c23;--line:#2a323d;--tx:#e6ebf2;--dim:#98a4b3;
+--ok:#4ea77a;--bad:#c9584f;--warn:#c9a227;--acc:#5b8dd6;--acc2:#8a6fd1}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 -apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:27px;margin:0 0 6px;letter-spacing:-.4px}
+h2{font-size:19px;margin:38px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+h3{font-size:15px;margin:22px 0 8px;color:var(--acc)}
+.sub{color:var(--dim);margin:0 0 26px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:16px 18px;margin:14px 0}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+code{background:#0b0e12;padding:1px 6px;border-radius:4px;font-size:12.5px;color:#b8c7db}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}.dim{color:var(--dim)}
+.tag{display:inline-block;padding:2px 8px;border-radius:11px;font-size:11px;font-weight:600;border:1px solid}
+.t-ok{color:var(--ok);border-color:var(--ok)}.t-bad{color:var(--bad);border-color:var(--bad)}
+.t-warn{color:var(--warn);border-color:var(--warn)}
+.flow{background:#0b0e12;border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto}
+.flow pre{margin:0;font-size:12.5px;line-height:1.75;color:#b8c7db}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.kpi .n{font-size:25px;font-weight:700;letter-spacing:-.5px}
+.kpi .l{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+.quote{border-left:3px solid var(--acc2);padding:4px 0 4px 15px;margin:14px 0;color:#c3cddb;font-style:italic}
+.err{border-left:3px solid var(--bad);background:#1d1416;padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+.win{border-left:3px solid var(--ok);background:#121c17;padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+.band{display:flex;align-items:center;gap:0;margin:8px 0;font-size:12px}
+.seg{padding:7px 12px;border-radius:5px;font-weight:600;white-space:nowrap}
+.seg.lo{background:#25384d;color:#a9cdf0}.seg.hi{background:#2c2540;color:#c3b0e8}
+footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px}
+a{color:var(--acc)}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>BCM — Tramos de importe y panel de firmantes</h1>
+<p class="sub">UIL · <code>INC-000016338</code> · medido en P01 el <strong>2026-08-26</strong> · verificado por
+<em>Simulate rule resolution</em>, no por razonamiento</p>
+
+<div class="grid">
+  <div class="kpi"><div class="n">3</div><div class="l">niveles encadenados</div></div>
+  <div class="kpi"><div class="n ok">6 → 4</div><div class="l">agentes a 10.000 → 10.001</div></div>
+  <div class="kpi"><div class="n">2</div><div class="l">patrones válidos conviviendo</div></div>
+  <div class="kpi"><div class="n bad">1</div><div class="l">bloqueante: rol BNK_APP</div></div>
+</div>
+
+<h2>Qué es cada regla, y para qué sirve</h2>
+<p>El número no dice nada y se confunde con el release de factura. Toda propuesta de cambio se escribe
+con el <strong>objetivo</strong> delante.</p>
+<table>
+<tr><th>Regla</th><th>Clase</th><th>Paso</th><th>Qué decide</th></tr>
+<tr><td><strong>90000005</strong></td><td><code>BNK_INI</code></td><td>1.º <strong>VALIDAR</strong></td>
+    <td>quién <strong>aprueba</strong> el lote de pago una vez creado</td></tr>
+<tr><td><strong>90000004</strong></td><td><code>BNK_COM</code></td><td>2.º <strong>COMPROMETER</strong></td>
+    <td>quién da la <strong>firma final que libera el fichero al banco</strong> — pasado esto, el dinero sale</td></tr>
+</table>
+<p>Las dos son BCM y actúan sobre el <strong>mismo</strong> fichero, <strong>después</strong> de F110.
+Son los dos pasos del doble control (<code>rel_proc 01</code> en ambas), <em>no</em> "una para la
+factura y otra para pagar".</p>
+<div class="quote">Lo que autoriza la <strong>factura</strong> es <code>WS90000003</code> — FI Release
+for Payment, a nivel de documento y <strong>antes</strong> de F110. Confundirlas ya hizo buscar el
+workflow equivocado en <code>SWDD</code> (contradicción C1).</div>
+
+<h2>Los tres niveles</h2>
+<div class="flow"><pre>F110 / FBPM1
+   │
+   ▼
+[1] REGLA DE AGRUPACIÓN     TBNK_RULE + TBNK_RULE_SELOP        → produce RULE_ID
+   │
+   ▼
+[2] SELECCIÓN DE NODO       HRP1218 + HRT1218  (infotipo 1218 sobre el objeto RY)
+   │                        clave = ZBUKR + MAXPAYAMT_RULECURR + RULE_ID
+   ▼                        evaluada contra BNK_STR_BATCH_REL_APPR   · HRP1222 está VACÍA
+[3] PROCEDIMIENTO           TBCA_RELPROC_* → 01 Dual Control · 02 3x · 03 4x
+   │
+   ▼
+HRP1001 del nodo  →  personas  →  rol BNK_APP  →  DMEE  →  banco</pre></div>
+
+<h3>La asimetría del nivel 1 — y por qué importa en UIL</h3>
+<table>
+<tr><th>RULE_ID</th><th>Aridad</th><th>Criterios</th><th>¿parte por importe?</th></tr>
+<tr><td><code>UBO_AP_MAX</code> / <code>UBO_AP_ST</code></td><td>4</td>
+    <td>DORIGIN · ZBUKR · <strong>AMT_RULECU</strong> · RZAWE</td><td class="ok">sí</td></tr>
+<tr><td><code>UIS_AP_MAX</code> / <code>UIS_AP_ST</code></td><td>3</td>
+    <td>DORIGIN · ZBUKR · <strong>AMT_RULECU</strong></td><td class="ok">sí</td></tr>
+<tr><td><code>UIL_AP_ST</code></td><td>2</td><td>DORIGIN · ZBUKR</td><td class="bad">no</td></tr>
+</table>
+<p><code>UIL_AP_ST</code> es la <strong>única</strong> regla de agrupación de UIL: todo lote sale con el
+mismo <code>RULE_ID</code>, sea de 100 € o de 2 M €. <strong>La banda del nodo es la única
+discriminación por importe que existe para esa entidad.</strong></p>
+<div class="err"><strong>Trampa de lectura.</strong> <code>AMT_RULECU</code> se guarda
+<strong>negativo</strong> (<code>low='10000.00-'</code>, <code>high='0.00'</code>). Por eso
+<code>GT -10000</code> significa <em>pagos de hasta 10.000</em> y <code>LE -10000</code> significa
+<em>por encima</em>. Leer <code>GT</code>/<code>LE</code> sin ver el signo <strong>invierte la
+regla</strong>.</div>
+
+<h2>La verificación que lo decide todo</h2>
+<p><code>OOCU_RESP</code> → <strong>Simulate rule resolution</strong>. No escribe nada, tarda 30 segundos.
+Regla 90000005, <code>ZBUKR=UIL</code>, <code>RULE_ID=UIL_AP_ST</code>, 26.08.2026:</p>
+<table>
+<tr><th><code>M.PymtAmt(rcur)</code></th><th>Agentes</th><th>Lectura</th></tr>
+<tr><td><strong>10.000,00</strong></td><td class="ok"><strong>6</strong> — A_BASOGLU · B_REISS · DB_ABDI ·
+    I_KEMPF · R_VALDES-COT · R_ZHOLDOSHAL</td><td>encajan los <strong>dos</strong> nodos y sus paneles
+    <strong>se SUMAN</strong></td></tr>
+<tr><td><strong>10.001,00</strong></td><td><strong>4</strong> — 10048024 · 10107337 · 10137641 · 10168474</td>
+    <td>sólo el nodo alto</td></tr>
+</table>
+<div class="win"><strong>Dos hechos que el corpus no tenía.</strong>
+(1) La determinación devuelve la <strong>UNIÓN</strong> de todos los nodos que encajan — requiere que la
+columna <code>Priority</code> esté vacía: sin ella <code>RH_GET_ACTORS</code> suma todas las
+responsabilidades. (2) El borde es <strong>inclusivo</strong>: 10.000,00 cae abajo, 10.001,00 arriba.
+No hay zona gris. <span class="dim">Claim 612.</span></div>
+
+<h2>La configuración de UIL, y por qué es correcta</h2>
+<div class="band"><span class="seg lo">0,00 — 10.000,00 &nbsp;·&nbsp; REISS + BASOGLU</span></div>
+<div class="band"><span class="seg hi">0,00 —————————————— máximo &nbsp;·&nbsp; KEMPF + VALDES COTERA + ZHOLDOSHALIEVA + ABDI</span></div>
+<table>
+<tr><th>Regla</th><th>Nodo</th><th>Banda</th><th>Miembros</th></tr>
+<tr><td>90000005 VALIDAR</td><td><code>50037530</code> UIL Validation</td><td>0,00 → 9.999.999.999,00</td>
+    <td>Kempf · Valdes Cotera · Zholdoshalieva · Abdi</td></tr>
+<tr><td>90000005 VALIDAR</td><td><code>50039526</code> UIL Validation up to 10000</td><td>0,00 → 10.000,00</td>
+    <td>Reiss · Basoglu</td></tr>
+<tr><td>90000004 FIRMAR</td><td><code>50037531</code> UIL signatures for all transfers</td><td>0,00 → 50.000.000,00</td>
+    <td>los mismos cuatro</td></tr>
+<tr><td>90000004 FIRMAR</td><td><code>50039525</code> UIL signatures up to 10000</td><td>0,00 → 10.000,00</td>
+    <td>Reiss · Basoglu</td></tr>
+</table>
+<p><strong>El nodo alto arranca en 0,00 a propósito</strong>: es lo que mantiene a los cuatro habilitados
+para todo el rango. El bajo añade a las dos limitadas <strong>sólo</strong> su tramo. Es la anotación
+<em>"up to USD 10,000.00 only"</em> de la carta, hecha configuración.</p>
+
+<h2>Dos patrones válidos, y ninguno es un error</h2>
+<table>
+<tr><th></th><th>Nodo bajo</th><th>Nodo alto</th><th>Funciona si…</th><th>Ventaja</th></tr>
+<tr><td><strong>UBO</strong></td><td><strong>todos</strong> (7)</td>
+    <td><strong>disjunto</strong>, subconjunto sin la limitada (6)</td>
+    <td class="ok">cualquiera de las dos semánticas</td><td>más <strong>robusto</strong></td></tr>
+<tr><td><strong>UIL</strong></td><td>sólo las limitadas (2)</td><td>solapado 0 → máx (4)</td>
+    <td class="warn">sólo si hay unión — <span class="ok">verificado que la hay</span></td>
+    <td>más <strong>legible</strong> contra el cartón</td></tr>
+</table>
+<div class="err"><strong>La trampa que deja el patrón de UIL es el NOMBRE.</strong> El nodo se llama
+<em>"UIL Validation up to 10000"</em> y contiene <strong>dos</strong> personas, cuando quienes pueden
+aprobar ese tramo son <strong>seis</strong>. El nombre promete el tramo y entrega la excepción.
+<strong>Se arregla renombrando</strong> a <code>LIMITED to 10.000</code> — sin tocar la configuración.</div>
+
+<h2>El error que la simulación evitó</h2>
+<div class="quote">Este análisis sostuvo durante horas que el solape era un defecto y que había que
+subir el suelo del nodo alto a 10.000. <strong>Habría quitado a los cuatro sin tope los pagos por
+debajo de 10.000</strong> — autorización que su carta sí les da. No lo corrigió un razonamiento mejor:
+lo corrigió una simulación de 30 segundos que no escribe nada. Claims 609 y 610 quedan
+<code>PARTIALLY_SUPERSEDED</code> por el 612.</div>
+
+<h2>Estado del panel frente al cartón</h2>
+<table>
+<tr><th>PERNR</th><th>Persona</th><th>Cartón</th><th>Dónde queda</th><th>Rol <code>BNK_APP</code></th></tr>
+<tr><td><code>10168474</code></td><td>ABDI</td><td>sin límite</td><td>nodo alto (cubre todo)</td><td class="ok">:UIL ✔</td></tr>
+<tr><td><code>10048024</code></td><td>KEMPF</td><td>sin límite</td><td>nodo alto</td><td class="ok">:UIL ✔</td></tr>
+<tr><td><code>10107337</code></td><td>VALDES COTERA</td><td>sin límite</td><td>nodo alto</td><td class="ok">:UIL ✔</td></tr>
+<tr><td><code>10137641</code></td><td>ZHOLDOSHALIEVA</td><td>sin límite</td><td>nodo alto</td><td class="ok">:UIL ✔</td></tr>
+<tr><td><code>10111198</code></td><td>BASOGLU</td><td>≤10K</td><td>nodo bajo · <span class="warn">y ahora también FIRMA</span></td><td class="ok">:UIL ✔</td></tr>
+<tr><td><code>10049633</code></td><td><strong>REISS</strong></td><td>≤10K</td><td>nodo bajo</td><td class="bad">NINGUNO ✖</td></tr>
+<tr><td><code>10097358</code></td><td>YLI-HIETANEN</td><td>sin límite</td>
+    <td class="bad">en ningún nodo — expirado 2024-01-26</td><td class="ok">:ALL ✔</td></tr>
+</table>
+<p><span class="tag t-ok">sobre-autorización: 0</span> &nbsp; <span class="tag t-ok">ghost PERNR: 0</span>
+&nbsp; <span class="tag t-bad">rol pendiente: B_REISS</span>
+&nbsp; <span class="tag t-warn">Yli-Hietanen: 31 meses fuera, también en UBO</span></p>
+
+<h2>Lo que este caso deja abierto</h2>
+<div class="card">
+<p><strong class="bad">Bloqueante.</strong> Rol <code>YS:FI:M:BCM_MON_APP______:UIL</code> para
+<code>B_REISS</code> + primer logon (<code>TRDAT=00000000</code>). Estar en el nodo no habilita a firmar.</p>
+<p><strong class="warn">A TRS.</strong> Yli-Hietanen (31 meses, dos entidades) · la <strong>moneda</strong>
+del umbral — la carta dice USD y UIL es sociedad EUR, y <code>MAXPAYAMT_RULECURR</code> es en moneda
+<em>de la regla</em> · las transferencias entre cuentas propias, que la carta declara <strong>sin tope
+para todos</strong> y UIL no distingue · que Basoglu ahora firma.</p>
+<p><strong class="bad">Defecto de proceso.</strong> Se <strong>borraron</strong> 3 filas de
+<code>HRP1001</code> en vez de delimitarlas — entre ellas la de Basoglu con <code>BEGDA=20240927</code>.
+El rastro en SAP de sus ~23 meses sin tope ya no existe. El hecho sobrevive en el Gold anterior y en el
+backup; el sistema no. <strong>No se recrea:</strong> fabricar historia es peor que perderla.</p>
+<p><strong class="warn">Deuda del método.</strong> El check de reconciliación es <strong>asimétrico</strong>:
+ve gente de más, no gente que falta. Por eso Yli-Hietanen lleva 31 meses invisible en dos entidades.</p>
+</div>
+
+<footer>
+Fuentes: <code>knowledge/domains/Treasury/bcm_amount_band_mechanism.md</code> ·
+<code>bcm_signatory_rules.md</code> · <code>knowledge/incidents/INC-000016338_uil_bcm_add_reiss.md</code> ·
+claims 608–612 · skill <code>sap_bcm_signatory_maintenance</code>.<br>
+Todo lo numérico es <strong>medido</strong> en P01 el 2026-08-26 por <code>RFC_READ_TABLE</code>/SNC y por
+<em>Simulate rule resolution</em>. Nada inferido.
+</footer>
+
+</div></body></html>

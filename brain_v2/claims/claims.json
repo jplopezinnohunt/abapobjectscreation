@@ -28732,7 +28732,7 @@
   },
   {
     "id": 609,
-    "claim": "QUIEN FIRMA UN LOTE BCM SE DECIDE EN TRES NIVELES ENCADENADOS, Y TOCAR SOLO UNO NO PRODUCE EL EFECTO BUSCADO (medido 2026-08-26 en P01, INC-000016338). [1] REGLA DE AGRUPACION (TBNK_RULE/TBNK_RULE_SELOP) -> produce RULE_ID en el lote. [2] SELECCION DE NODO (HRP1218/HRT1218 sobre el objeto RY, evaluado contra BNK_STR_BATCH_REL_APPR): clave = ZBUKR + MAXPAYAMT_RULECURR + RULE_ID; HRP1222 esta VACIA. [3] PROCEDIMIENTO (TBCA_RELPROC_CUS/_EXP/TBCA_REL_PROC) -> cuantas firmas. LA ASIMETRIA MEDIDA ESTA EN EL NIVEL 1: la ARIDAD de la regla de agrupacion difiere por entidad -- UBO_AP_MAX/UBO_AP_ST arity 4 (DORIGIN, ZBUKR, AMT_RULECU, RZAWE), UIS_AP_MAX/UIS_AP_ST arity 3 (con AMT_RULECU), pero UIL_AP_ST arity 2 (solo DORIGIN + ZBUKR, SIN AMT_RULECU) e IIEP_AP_ST y PAYROLL igual. UIL_AP_ST es ademas la UNICA regla de agrupacion de UIL, asi que TODO lote de UIL sale con el mismo RULE_ID sea de 100 EUR o de 2 M EUR: UIL nunca ha partido lotes por importe. CONSECUENCIA: donde la agrupacion no lleva importe, la banda del nodo es la UNICA discriminacion, y entonces que las bandas sean DISJUNTAS no es una mejora sino un REQUISITO -- en UBO un solape quedaria tapado por el RULE_ID, en UIL no hay red. TRAMPA DE LECTURA de AMT_RULECU: los valores se guardan NEGATIVOS (low='10000.00-', high='0.00'), asi que UBO_AP_MAX con 'GT -10000' significa pagos DE HASTA 10.000 y UBO_AP_ST con 'LE -10000' significa POR ENCIMA de 10.000; leer GT/LE sin ver el signo INVIERTE el sentido de la regla. Las tablas TBNK_* y TBCA_* NO son legibles por RFC con el usuario SNC (TABLE_WITHOUT_DATA / TABLE_NOT_AVAILABLE): se leen del Gold DB.",
+    "claim": "QUIEN FIRMA UN LOTE BCM SE DECIDE EN TRES NIVELES ENCADENADOS, Y TOCAR SOLO UNO NO PRODUCE EL EFECTO BUSCADO (medido 2026-08-26 en P01, INC-000016338). [1] REGLA DE AGRUPACION (TBNK_RULE/TBNK_RULE_SELOP) -> produce RULE_ID en el lote. [2] SELECCION DE NODO (HRP1218/HRT1218 sobre el objeto RY, evaluado contra BNK_STR_BATCH_REL_APPR): clave = ZBUKR + MAXPAYAMT_RULECURR + RULE_ID; HRP1222 esta VACIA. [3] PROCEDIMIENTO (TBCA_RELPROC_CUS/_EXP/TBCA_REL_PROC) -> cuantas firmas. LA ASIMETRIA MEDIDA ESTA EN EL NIVEL 1: la ARIDAD de la regla de agrupacion difiere por entidad -- UBO_AP_MAX/UBO_AP_ST arity 4 (DORIGIN, ZBUKR, AMT_RULECU, RZAWE), UIS_AP_MAX/UIS_AP_ST arity 3 (con AMT_RULECU), pero UIL_AP_ST arity 2 (solo DORIGIN + ZBUKR, SIN AMT_RULECU) e IIEP_AP_ST y PAYROLL igual. UIL_AP_ST es ademas la UNICA regla de agrupacion de UIL, asi que TODO lote de UIL sale con el mismo RULE_ID sea de 100 EUR o de 2 M EUR: UIL nunca ha partido lotes por importe. CONSECUENCIA: donde la agrupacion no lleva importe, la banda del nodo es la UNICA discriminacion, y entonces que las bandas sean DISJUNTAS no es una mejora sino un REQUISITO -- en UBO un solape quedaria tapado por el RULE_ID, en UIL no hay red. TRAMPA DE LECTURA de AMT_RULECU: los valores se guardan NEGATIVOS (low='10000.00-', high='0.00'), asi que UBO_AP_MAX con 'GT -10000' significa pagos DE HASTA 10.000 y UBO_AP_ST con 'LE -10000' significa POR ENCIMA de 10.000; leer GT/LE sin ver el signo INVIERTE el sentido de la regla. Las tablas TBNK_* y TBCA_* NO son legibles por RFC con el usuario SNC (TABLE_WITHOUT_DATA / TABLE_NOT_AVAILABLE): se leen del Gold DB. || CORREGIDO 2026-08-26 por MEDICION DIRECTA (claim 612, Simulate rule resolution en OOCU_RESP): la afirmacion de que las bandas DEBEN ser disjuntas es FALSA en esta instalacion. El resolutor devuelve la UNION de los nodos que encajan, asi que un solape es un diseno VALIDO -- es lo que hace que el nodo alto siga cubriendo el tramo bajo. Lo que sigue siendo cierto de este claim es todo lo demas: los tres niveles, la asimetria de aridad, la trampa del signo de AMT_RULECU y que un nodo que sea el UNICO que encaje con 0 o 1 personas no puede satisfacer el doble control.",
     "claim_type": "FACT",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -28768,16 +28768,19 @@
       "50036737"
     ],
     "created_session": 104,
-    "status": "OPEN",
+    "status": "PARTIALLY_SUPERSEDED",
     "domain_axes": {
       "functional": "BCM",
       "module": "FI",
       "process": "P2P"
-    }
+    },
+    "superseded_by": [
+      612
+    ]
   },
   {
     "id": 610,
-    "claim": "AL PARTIR UN PANEL DE FIRMANTES POR IMPORTE HAY DOS ERRORES QUE INVIERTEN O PARAN EL CONTROL, LOS DOS MEDIDOS EN VIVO EN UIL EL 2026-08-26 (INC-000016338). (A) QUIEN NO TIENE TOPE TIENE QUE ESTAR EN LOS DOS NODOS. Si se le deja solo en el nodo alto NO PUEDE FIRMAR UN PAGO PEQUENO. El patron correcto se ve en UBO: el panel de la banda alta es un SUBCONJUNTO del de la baja y quien sobra en la baja es justamente el limitado (E_AMARAL). Corolario medido en UIL: subir el suelo de 50037530 a 10.000 SIN mover a BASOGLU 10111198 al nodo bajo la dejaria autorizada SOLO POR ENCIMA de 10.000, exactamente lo contrario de lo que dice su carta TRS. (B) UN NODO CON 0 O 1 PERSONAS NO ES UN PANEL, ES UNA PARADA. Con rel_proc=01 (doble control) un nodo VACIO no tiene a quien enrutar el work item y uno de UNA persona no puede satisfacer el doble control; y estar en el nodo no habilita a firmar sin el rol YS:FI:M:BCM_MON_APP______:<ENTIDAD>. ESTADO MEDIDO EN UIL tras crear los nodos de tramo: 50039526 (INI, 0->10.000) con CERO miembros y 50039525 (COM, 0->10.000) con UNA persona (REISS 10049633) SIN el rol -> los pagos de UIL de hasta 10.000 no podian completar NINGUNO de los dos pasos. Ademas los nodos viejos siguieron arrancando en 0.00 (50037530 0->9.999.999.999, 50037531 0->50.000.000), asi que el tramo 0-10.000 tenia DOS DUENOS en las dos reglas. LA RECETA, EN ORDEN: simular primero (OOCU_RESP -> Simulate rule resolution, no escribe) -> hacer las bandas disjuntas SUBIENDO EL SUELO DEL NODO VIEJO -> repartir las personas (sin tope en los dos, con tope solo en el bajo) -> el rol BNK_APP -> re-simular y releer HRP1001 + HRT1218 en vivo. CREAR EL NODO DE TRAMO SIN TOCAR EL VIEJO DEJA EL SOLAPE: es media configuracion, no un paso intermedio seguro.",
+    "claim": "AL PARTIR UN PANEL DE FIRMANTES POR IMPORTE HAY DOS ERRORES QUE INVIERTEN O PARAN EL CONTROL, LOS DOS MEDIDOS EN VIVO EN UIL EL 2026-08-26 (INC-000016338). (A) QUIEN NO TIENE TOPE TIENE QUE ESTAR EN LOS DOS NODOS. Si se le deja solo en el nodo alto NO PUEDE FIRMAR UN PAGO PEQUENO. El patron correcto se ve en UBO: el panel de la banda alta es un SUBCONJUNTO del de la baja y quien sobra en la baja es justamente el limitado (E_AMARAL). Corolario medido en UIL: subir el suelo de 50037530 a 10.000 SIN mover a BASOGLU 10111198 al nodo bajo la dejaria autorizada SOLO POR ENCIMA de 10.000, exactamente lo contrario de lo que dice su carta TRS. (B) UN NODO CON 0 O 1 PERSONAS NO ES UN PANEL, ES UNA PARADA. Con rel_proc=01 (doble control) un nodo VACIO no tiene a quien enrutar el work item y uno de UNA persona no puede satisfacer el doble control; y estar en el nodo no habilita a firmar sin el rol YS:FI:M:BCM_MON_APP______:<ENTIDAD>. ESTADO MEDIDO EN UIL tras crear los nodos de tramo: 50039526 (INI, 0->10.000) con CERO miembros y 50039525 (COM, 0->10.000) con UNA persona (REISS 10049633) SIN el rol -> los pagos de UIL de hasta 10.000 no podian completar NINGUNO de los dos pasos. Ademas los nodos viejos siguieron arrancando en 0.00 (50037530 0->9.999.999.999, 50037531 0->50.000.000), asi que el tramo 0-10.000 tenia DOS DUENOS en las dos reglas. LA RECETA, EN ORDEN: simular primero (OOCU_RESP -> Simulate rule resolution, no escribe) -> hacer las bandas disjuntas SUBIENDO EL SUELO DEL NODO VIEJO -> repartir las personas (sin tope en los dos, con tope solo en el bajo) -> el rol BNK_APP -> re-simular y releer HRP1001 + HRT1218 en vivo. CREAR EL NODO DE TRAMO SIN TOCAR EL VIEJO DEJA EL SOLAPE: es media configuracion, no un paso intermedio seguro. || CORREGIDO 2026-08-26 por MEDICION DIRECTA (claim 612, Simulate rule resolution en OOCU_RESP): la afirmacion de que las bandas DEBEN ser disjuntas es FALSA en esta instalacion. El resolutor devuelve la UNION de los nodos que encajan, asi que un solape es un diseno VALIDO -- es lo que hace que el nodo alto siga cubriendo el tramo bajo. Lo que sigue siendo cierto de este claim es todo lo demas: los tres niveles, la asimetria de aridad, la trampa del signo de AMT_RULECU y que un nodo que sea el UNICO que encaje con 0 o 1 personas no puede satisfacer el doble control.",
     "claim_type": "FACT",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -28810,12 +28813,15 @@
       "90000005"
     ],
     "created_session": 104,
-    "status": "OPEN",
+    "status": "PARTIALLY_SUPERSEDED",
     "domain_axes": {
       "functional": "BCM",
       "module": "FI",
       "process": "P2P"
-    }
+    },
+    "superseded_by": [
+      612
+    ]
   },
   {
     "id": 611,
@@ -28850,6 +28856,54 @@
     ],
     "created_session": 104,
     "status": "OPEN",
+    "domain_axes": {
+      "functional": "BCM",
+      "module": "FI",
+      "process": "P2P"
+    }
+  },
+  {
+    "id": 612,
+    "claim": "LA DETERMINACION DE AGENTES BCM DEVUELVE LA UNION DE LOS NODOS QUE ENCAJAN, NO UNO SOLO -- MEDIDO el 2026-08-26 con 'Simulate rule resolution' de OOCU_RESP sobre la regla 90000005 en UIL (INC-000016338). Contenedor: Paying co. code = UIL, Rule ID = UIL_AP_ST, M.PymtAmt(rcur) variable. RESULTADO: con 10000.00 devuelve SEIS agentes (A_BASOGLU, B_REISS, DB_ABDI, I_KEMPF, R_VALDES-COT, R_ZHOLDOSHAL) -- los dos nodos encajan y sus paneles se SUMAN; con 10001.00 devuelve CUATRO (10048024 KEMPF, 10107337 VALDES COTERA, 10137641 ZHOLDOSHALIEVA, 10168474 ABDI) -- solo el nodo alto. DOS CONSECUENCIAS. (1) UN SOLAPE DE BANDAS NO ES UN DEFECTO: es un diseno valido y deliberado. Un nodo alto que arranca en 0.00 y cubre hasta el maximo mantiene a sus miembros habilitados para TODO el rango, y un nodo bajo con SOLO los limitados les anade a ellos unicamente su tramo. El resultado es exactamente la semantica de una carta TRS que dice 'estos sin tope, estos dos hasta 10.000'. Requiere que la columna PRIORITY de OOCU_RESP este VACIA en los nodos: en PFAC la prioridad es el desempate entre responsabilidades que encajan a la vez, y sin ella RH_GET_ACTORS suma todas. (2) EL BORDE ES INCLUSIVO Y LIMPIO: 10.000,00 cae en el tramo bajo (EXPR_HIGH inclusivo) y 10.001,00 ya no. No hay zona gris en el punto. ESTO CORRIGE la afirmacion de los claims 609 y 610 de que las bandas DEBEN ser disjuntas: no es un requisito, es UNO de dos patrones validos que hoy CONVIVEN en la instalacion -- UBO usa bandas disjuntas con el panel alto como subconjunto del bajo (funciona con las dos semanticas), UIL usa solape con el nodo bajo conteniendo solo a los limitados (funciona porque hay union, y es mas legible contra el carton). NINGUNO ES UN ERROR; lo peligroso es que convivan sin que conste por que. TRAMPA DE LEGIBILIDAD que deja el patron de UIL: el nodo se llama 'UIL Validation up to 10000' y contiene DOS personas, cuando quienes pueden aprobar ese tramo son SEIS. El nombre promete el tramo y entrega la excepcion. Renombrarlo a 'LIMITED to 10.000' quita la lectura falsa sin tocar la configuracion.",
+    "claim_type": "FACT",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "OOCU_RESP Simulate rule resolution, regla 90000005 BNK_01_01_04, key date 26.08.2026, ZBUKR=UIL, RULE_ID=UIL_AP_ST",
+      "  M.PymtAmt(rcur)=10000.00 -> 6 agentes (US): A_BASOGLU, B_REISS, DB_ABDI, I_KEMPF, R_VALDES-COT, R_ZHOLDOSHAL",
+      "  M.PymtAmt(rcur)=10001.00 -> 4 agentes (P): 10048024, 10107337, 10137641, 10168474",
+      "P01 live HRT1218 2026-08-26: 50039526 = 0.00-10000.00 (Reiss, Basoglu); 50037530 = 0.00-9999999999.00 (los 4)",
+      "columna Priority de OOCU_RESP vacia en todos los nodos UIL (pantalla Responsibilities for Rule BNK_01_01_04)",
+      "cadena estandar BNK_API_GET_REL_ACTORS -> BCA_API_REL_GET_ACTORS -> BCA_OBJ_REL_GET_ACTORS -> RH_GET_ACTORS",
+      "knowledge/domains/Treasury/bcm_amount_band_mechanism.md"
+    ],
+    "domain": "Treasury",
+    "related_objects": [
+      "OOCU_RESP",
+      "RH_GET_ACTORS",
+      "BNK_API_GET_REL_ACTORS",
+      "HRP1218",
+      "HRT1218",
+      "MAXPAYAMT_RULECURR",
+      "UIL_AP_ST",
+      "50039525",
+      "50039526",
+      "50037530",
+      "50037531",
+      "50034892",
+      "50034893",
+      "50034894",
+      "50036737",
+      "90000004",
+      "90000005",
+      "UIL",
+      "UBO"
+    ],
+    "created_session": 104,
+    "status": "OPEN",
+    "supersedes": [
+      609,
+      610
+    ],
     "domain_axes": {
       "functional": "BCM",
       "module": "FI",

@@ -100,7 +100,7 @@ está **VACÍA** para estos nodos: buscar ahí devuelve nada.
 **No hay ningún campo de banco en la clave** → la selección es *bank-agnostic*, y por eso el grupo
 RY es de ENTIDAD y cubre todas las cuentas de todos sus bancos.
 
-### El patrón CORRECTO — UBO, medido
+### El patrón de UBO — bandas disjuntas, panel alto subconjunto del bajo
 
 | Nodo | Regla | Banda | RULE_ID |
 |---|---|---|---|
@@ -109,9 +109,13 @@ RY es de ENTIDAD y cubre todas las cuentas de todos sus bancos.
 | `50034892` UBO Validation up to 10.000 | 90000005 INI | 0,00 → 10.000,00 | `UBO_AP_MAX` |
 | `50034893` UBO Validation up to 5.000.000 | 90000005 INI | 10.000,00 → 5.000.000,00 | `UBO_AP_ST` |
 
-**Bandas DISJUNTAS.** La baja termina donde la alta empieza.
+**Bandas DISJUNTAS.** La baja termina donde la alta empieza, y el panel alto es un
+**subconjunto** del bajo: sólo la limitada (`AMARAL 10002437`) está abajo y no arriba.
+*(Durante unas horas del 2026-08-26 este documento llamó a esto "el patrón CORRECTO". No lo
+es más que el de UIL — es el más ROBUSTO, porque funciona tanto si la determinación une
+como si elige un nodo. Ver la sección de la UNIÓN, más abajo.)*
 
-### El patrón A MEDIO HACER — UIL, dos lecturas del mismo día
+### El patrón de UIL — solape deliberado, nodo bajo con sólo las excepciones
 
 **Lectura A — 2026-08-26, justo tras crear los nodos de tramo** (el peor estado, y la razón por la
 que este documento existe):
@@ -126,22 +130,26 @@ que este documento existe):
 Un nodo vacío no tiene a quién enrutar y uno de una persona no satisface el doble control: los pagos
 de UIL ≤10.000 no podían completar **ninguno** de los dos pasos.
 
-**Lectura B — mismo día, tras repartir a los limitados** (estado actual mientras se escribe esto):
+**Lectura B — mismo día, tras repartir a los limitados: el ESTADO FINAL, y es correcto.**
 
 | Nodo | Regla | Banda | Miembros |
 |---|---|---|---|
-| `50037530` UIL Validation | 90000005 INI | **0,00** → 9.999.999.999,00 | 4 — Kempf, Valdes Cotera, Zholdoshalieva, Abdi |
+| `50037530` UIL Validation | 90000005 INI | **0,00 → 9.999.999.999,00** | 4 — Kempf, Valdes Cotera, Zholdoshalieva, Abdi |
 | `50039526` UIL Validation up to 10000 | 90000005 INI | 0,00 → 10.000,00 | 2 — Reiss, Basoglu |
-| `50037531` UIL signatures for all transfers | 90000004 COM | **0,00** → 50.000.000,00 | 4 — los mismos cuatro |
+| `50037531` UIL signatures for all transfers | 90000004 COM | **0,00 → 50.000.000,00** | 4 — los mismos cuatro |
 | `50039525` UIL signatures up to 10000 | 90000004 COM | 0,00 → 10.000,00 | 2 — Reiss, Basoglu |
 
-Simétrico y legible, **pero todavía incompleto por dos razones**:
-1. **Los nodos viejos siguen arrancando en 0,00** → el tramo 0–10.000 sigue teniendo dos dueños en
-   los dos pasos.
-2. **Los cuatro sin tope NO están en los nodos bajos.** Subir el suelo ahora los dejaría sin poder
-   aprobar por debajo de 10.000 — que es autorización que su carta SÍ les da. Es la consecuencia 2
-   de más abajo, y es el orden lo que la evita: **primero poblar el nodo bajo, después subir el
-   suelo del alto.**
+El nodo alto **arranca en 0,00 a propósito**: es lo que mantiene a los cuatro habilitados para todo
+el rango. El nodo bajo contiene **sólo a las dos limitadas**, así que es la anotación
+*"up to USD 10,000.00 only"* de la carta, hecha configuración.
+
+**Verificado por simulación, no por razonamiento** (ver la sección siguiente): 10.000 → 6 agentes,
+10.001 → 4. Es exactamente lo que la carta autoriza.
+
+> Este documento afirmó durante unas horas que este estado estaba *"a medio hacer"* y que había que
+> subir el suelo del nodo alto a 10.000. **Habría sido un error**: los cuatro sin tope habrían
+> perdido los pagos por debajo de 10.000, que su carta sí les autoriza. Lo que evitó el fallo no fue
+> el razonamiento — fue la simulación, que se puede correr en 30 segundos y no escribe nada.
 
 ## Nivel 3 — el PROCEDIMIENTO de release (cuántas firmas)
 
@@ -158,38 +166,77 @@ no hay ninguna entidad con triple o cuádruple control.
 
 ---
 
-## Las tres consecuencias que sólo se ven cruzando los tres niveles
+## ⛔ EL RESOLUTOR DEVUELVE LA UNIÓN — medido, y corrige lo que este doc decía antes
 
-**1. Si la regla de agrupación no lleva importe, la banda del nodo es la ÚNICA discriminación —
-y entonces ser disjuntas no es una mejora, es un REQUISITO.**
-En UBO el importe discrimina dos veces (nivel 1 y nivel 2), así que un solape en el nivel 2 quedaría
-tapado por el `RULE_ID`. En UIL no hay red: los dos nodos INI llevan **el mismo** `RULE_ID`
-(`UIL_AP_ST`), y los dos COM no llevan ninguno. Con bandas solapadas, **nada discrimina**.
+`OOCU_RESP` → **Simulate rule resolution**, regla 90000005, `ZBUKR=UIL`, `RULE_ID=UIL_AP_ST`,
+2026-08-26:
 
-**2. Quien NO tiene tope tiene que estar en LOS DOS nodos.**
-Es el error de concepto más fácil de cometer, y el que invierte el resultado: si a alguien sin
-límite se le deja sólo en el nodo alto, **no puede firmar un pago pequeño**. En UBO se ve el patrón
-correcto: el panel de la banda alta es un **subconjunto** del de la baja, y quien sobra en la baja es
-justamente el limitado (`E_AMARAL`).
-Corolario para UIL: subir el suelo de `50037530` a 10.000 **sin** mover a BASOGLU al nodo bajo la
-dejaría autorizada **sólo por encima de 10.000** — exactamente lo contrario de lo que dice su carta.
+| `M.PymtAmt(rcur)` | Agentes devueltos | Lectura |
+|---|---|---|
+| **10.000,00** | **6** — Basoglu, Reiss, Abdi, Kempf, Valdes Cotera, Zholdoshalieva | encajan los **dos** nodos y sus paneles se **SUMAN** |
+| **10.001,00** | **4** — Kempf, Valdes Cotera, Zholdoshalieva, Abdi | sólo el nodo alto |
 
-**3. Un nodo con 0 o 1 personas no es un panel: es una parada.**
-Con `rel_proc 01` (doble control), un nodo **vacío** no tiene a quién enrutar el work item y un nodo
-de **una** persona no puede satisfacer el doble control. Y estar en el nodo **no** habilita a firmar:
-hace falta además el rol `YS:FI:M:BCM_MON_APP______:<ENTIDAD>`. Medido en UIL el 2026-08-26:
-`50039526` vacío y `50039525` con una sola persona **sin rol** → los pagos de UIL ≤10.000 no podían
-completar ninguno de los dos pasos.
+**Dos hechos que cierran preguntas abiertas:**
 
----
+1. **La determinación devuelve la UNIÓN de todos los nodos que encajan**, no uno solo. Requiere que
+   la columna **`Priority`** de `OOCU_RESP` esté **vacía**: en PFAC la prioridad es el desempate
+   entre responsabilidades simultáneas, y sin ella `RH_GET_ACTORS` suma todas.
+2. **El borde es inclusivo y limpio**: 10.000,00 cae en el tramo bajo, 10.001,00 ya no. No hay zona
+   gris en el punto.
+
+### Esto REFUTA "las bandas deben ser disjuntas"
+
+Una versión anterior de este documento afirmaba que el solape era un defecto y que ser disjuntas
+era un **requisito**. **Es falso en esta instalación.** Con unión, el solape es lo que hace que un
+nodo alto que arranca en 0,00 mantenga a sus miembros habilitados para **todo** el rango. Claims 609
+y 610 quedan `PARTIALLY_SUPERSEDED` por el **claim 612**; lo demás de aquellos claims sigue en pie.
+
+### Hay DOS patrones válidos, y hoy conviven
+
+| | Nodo bajo | Nodo alto | Funciona si… |
+|---|---|---|---|
+| **UBO** | **todos** (7) | **disjunto**, subconjunto sin la limitada (6) | con **cualquiera** de las dos semánticas |
+| **UIL** | **sólo las limitadas** (2) | **solapado** 0 → máx (4) | **sólo si hay unión** — verificado que la hay |
+
+**Ninguno es un error.** El de UBO es más robusto (no depende de la semántica); el de UIL es más
+legible contra el cartón, porque el nodo bajo **es** la anotación *"up to USD 10,000.00 only"* de la
+carta, hecha configuración. Lo peligroso no es que convivan: es que convivan **sin que conste por
+qué**, y que alguien "armonice" uno con el otro sin medir.
+
+### La trampa de legibilidad que deja el patrón de UIL
+
+El nodo se llama **"UIL Validation up to 10000"** y contiene **dos** personas — pero quienes pueden
+aprobar ese tramo son **seis**. *El nombre promete el tramo y entrega la excepción.* Quien lo abra
+dentro de un año concluirá que los otros cuatro no pueden firmar pagos pequeños, y se equivocará.
+**Se arregla renombrando, sin tocar la configuración**: `LIMITED to 10.000`.
+
+## Las consecuencias que sí se sostienen
+
+**1. Quien no tiene tope tiene que poder alcanzar TODOS los tramos.** Da igual cómo: estando en los
+dos nodos (UBO) o teniendo un nodo que los cubra todos (UIL). Lo que **no** vale es dejarle sólo un
+nodo alto disjunto — perdería los pagos pequeños, que su carta sí le autoriza.
+
+**2. Un nodo que sea el ÚNICO que encaje, con 0 o 1 personas, es una parada.** Con `rel_proc 01`
+(doble control), un nodo vacío no tiene a quién enrutar y uno de una persona no puede satisfacer el
+doble control. Con unión el riesgo baja —otros nodos aportan gente— pero no desaparece: en el tramo
+que sólo cubra ese nodo, sigue vivo. Y estar en el nodo **no** habilita a firmar sin el rol
+`YS:FI:M:BCM_MON_APP______:<ENTIDAD>`.
+
+**3. La asimetría del nivel 1 sigue siendo real y sigue importando.** `UIL_AP_ST` no lleva
+`AMT_RULECU` y es la única regla de agrupación de UIL, así que **la banda del nodo es la única
+discriminación por importe que existe** para esa entidad. No obliga a que sean disjuntas —lo
+anterior lo demuestra— pero sí significa que **si la banda está mal, no hay nada detrás que lo
+corrija**.
 
 ## La receta, en el orden en que hay que hacerla
 
-1. **Simular primero** — `OOCU_RESP` → nodo → *Simulate rule resolution*, con un importe de cada
-   tramo. No escribe nada y responde qué nodo gana.
-2. **Hacer las bandas disjuntas** subiendo el **suelo** del nodo antiguo al techo del nuevo.
-   Crear el nodo de tramo sin tocar el viejo deja el solape.
-3. **Repartir las personas**: sin tope → en los dos nodos; con tope → sólo en el bajo.
+1. **Simular ANTES de decidir la forma** — `OOCU_RESP` → nodo → *Simulate rule resolution*, con un
+   importe de cada tramo y con el **borde exacto**. No escribe nada, y es lo que dice si el diseño
+   que tienes en la cabeza hace lo que crees. Medido: 30 segundos frente a una tarde discutiendo.
+2. **Elegir patrón y dejarlo escrito**: solape con nodo bajo de excepciones (UIL) o bandas
+   disjuntas con panel alto subconjunto (UBO). Los dos valen; el segundo no depende de la unión.
+3. **Comprobar la cobertura por tramo, no por persona**: para cada tramo, ¿quién sale? ¿coincide
+   con la carta? ¿son al menos dos con rol?
 4. **El rol** `BNK_APP` de la entidad, ticket aparte a Security.
 5. **Re-simular** y releer `HRP1001` + `HRT1218` en vivo.
 
@@ -202,8 +249,8 @@ completar ninguno de los dos pasos.
    **BRL** con el texto *"max amount USD10.000"*. Si la moneda de la regla no es USD, **el umbral
    configurado no es el de la carta** — y sería un problema de toda la instalación, no de UIL.
    **Medir**: la moneda de la regla, y una simulación con un importe alrededor del umbral.
-2. **El borde exacto.** En UBO las dos bandas incluyen `10.000,00`; un pago de exactamente 10.000
-   encaja en las dos. **Medir** con la simulación en el punto.
+2. ~~**El borde exacto.**~~ **RESUELTO 2026-08-26**: `EXPR_HIGH` es **inclusivo** — 10.000,00 cae
+   en el tramo bajo y 10.001,00 no. Medido con la simulación en el punto.
 3. **`MAXPAYAMT_RULECURR` = pago más alto del lote** está tomado de la semántica del nombre, no
    verificado. **Medir**: un lote con varios pagos y comprobar qué nodo resuelve.
 4. **La ruta exacta en pantalla para crear el nodo y su banda** sigue sin escribirse. Lo que SÍ está
