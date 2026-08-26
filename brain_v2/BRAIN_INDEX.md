@@ -77,13 +77,13 @@ It is ONE missing model capability, not 21 separate gaps — closing it once lif
   layer, not at the role layer.
 - **What that means for any answer about roles:** the role model is NOT the control surface here.
   A clean SU01/PFCG picture does not mean segregation holds.
-- Claims touching authorization: 20 · drill: `graph_queries.py capability E_AUTH`
-- **Posture store** `brain_v2/security_posture.json` — 2 ready · 3 missing input · 2 findings already stored as RECORDS.
-- **Cannot see yet:** identity_inventory, role_content, auth_defaults — MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'.
+- Claims touching authorization: 21 · drill: `graph_queries.py capability E_AUTH`
+- **Posture store** `brain_v2/security_posture.json` — 3 ready · 2 missing input · 2 findings already stored as RECORDS.
+- **Cannot see yet:** role_content, auth_defaults — MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'.
 
-## 📈 MATURITY OF THE METHOD — 69.5%, measured from artifacts
+## 📈 MATURITY OF THE METHOD — 65.3%, measured from artifacts
 Not a self-assessment: each dimension is derived from what is on disk.
-- **Weakest:** **VERIFY** 0.40 · **DURABILITY** 0.43 · **ANALYZE** 0.48
+- **Weakest:** **DURABILITY** 0.10 · **VERIFY** 0.40 · **ANALYZE** 0.48
 - **Strongest:** MODEL_FIDELITY 0.98 · CONSOLIDATE 0.95 · ESCALATE 0.93
 - **Read this together with the capability grid.** Two independent instruments agree: strong at
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
@@ -98,7 +98,7 @@ corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta 
 - **rfc** — 12,589,665 ejec · tecnico 52.5% · negocio 34.7% · sin clasificar **2.5%**
 - **TECNICO es una respuesta, no un hueco** (el despachador y el planificador son fontaneria).
   El hueco real es SIN CLASIFICAR: 315,305 de 44,181,831.
-- **Situar no es explicar:** solo el **70.7%** de las ejecuciones de negocio llega a grado 3
+- **Situar no es explicar:** solo el **72.1%** de las ejecuciones de negocio llega a grado 3
   (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
 - Movimiento: **no se movio** desde la ultima corrida — eso ES el hallazgo · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
 - **354 objetos por explorar** (36 custom) —
@@ -115,38 +115,13 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 589 | `python brain_v2/graph_queries.py search <termino>` |
-| **docs de dominio** | 143 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
-| **companions** | 42 | `companions/how_unesco_works.html` los indexa todos · el grafo entre ellos: `companions/companion_graph.json` |
-| **incidentes** | 13 | `python brain_v2/graph_queries.py incident <id>` |
+| **claims** | 610 | `python brain_v2/graph_queries.py search <termino>` |
+| **docs de dominio** | 144 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
+| **companions** | 42 | `companions/how_unesco_works.html` los indexa todos |
+| **incidentes** | 14 | `python brain_v2/graph_queries.py incident <id>` |
 | **reglas** | 243 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 158 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 79 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
-| **skills** | 49 | `brain_v2/skills/skill_registry.json` — qué cubre cada uno y **quién NO lo lee** |
-| **grafo de HERRAMIENTAS** | 226 nodos | `brain_v2/toolgraph.json` — el brain del brain |
-| **clases de cuenta** | 8.781 | `brain_v2/account_classes.json` · `graph_queries.py account_class <cuenta>` |
-| **versiones de balance EN USO** | por sociedad | `brain_v2/fsv_versions_in_use.json` — de la VARIANTE, nunca de T011 |
-| **censo de lo EJECUTADO en FM** | 466 | `brain_v2/fm_executed_census.json` |
-| **foro de mineros** | 307 hallazgos | `process_mining/mining_findings.json` · quién pasó por él: `process_mining/colaboracion_state.json` |
-| **resolutor de método de extracción** | — | `brain_v2/method_registry.json` |
-
-## 🧭 ANTES DE CONSTRUIR O ARREGLAR NADA — pregunta qué hay ya
-
-```
-python brain_v2/graph_queries.py tool para "<la tarea en tus palabras>"
-```
-
-Contesta **qué SKILL leer PRIMERO**, qué algoritmo ya existe, qué agente lo hace, qué puerta lo
-vigila, y **qué sabemos ya** del tema (claims, incidentes, dominios). Clasifica la forma de la
-tarea: `REPETIDA` (hay método: síguelo, no lo re-derives) · `COMPARAR_ESTADO` (el skill da el
-método, los instrumentos que leen la config viva deciden) · `DESCUBRIR` (es minería).
-
-> ⛔ **El fallo más caro de este proyecto no es no saber: es no mirar lo que ya hay.** Medido
-> 2026-08-26: 49 skills con cientos de KB y **39 sin ni un lector**; `LEE` 34 frente a
-> `DEBERIA_LEER` 283. `config_transport_prerelease_check` se escribió y se **arregló dos veces**
-> sin abrir `sap_transport_intelligence`, que documenta que `OBJFUNC=M` borra la tabla ENTERA en
-> destino. El flujo completo de un caso está en `brain_v2/methods/incident_flow.json`.
-> Lo pendiente, de las seis fuentes a la vez: `python brain_v2/methods/pending_inventory.py`.
+| **algoritmos** | 84 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -155,7 +130,7 @@ método, los instrumentos que leen la config viva deciden) · `DESCUBRIR` (es mi
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 46 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 59 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -214,6 +189,13 @@ lo deja — solo que nadie lo publicaba.
 |---|---|---|---|
 | `F1_interface_boundary_analysis` | enumerate the boundary (RFCDES / EDIDC / TBTCP / ICFSERVICE) and CORRELATE | Treasury | `brain_v2/interface_boundary.json` |
 | `F2_satellite_derivation` | group boundary endpoints into SATELLITES by call signature, resolve what e | BusinessPartner, Integration, Procurement, Travel +1 | `brain_v2/satellites.json` |
+
+**rsau_audit_history (Go...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A45_actor_attribution_per_account` | Dice, cuenta por cuenta, SI UNA ACCION SE PUEDE ATAR A UNA PERSONA. PARAMX | Integration | `brain_v2/security_posture.json` |
+| `A49_tier2_sod` | Descubre QUE PERSONAS CONCRETAS ejecutaron de verdad las dos mitades de un | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
 
 **master data + fact tab...**
 
@@ -309,13 +291,19 @@ lo deja — solo que nadie lo publicaba.
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A32_mining_capability_census` | encontrar scripts que leen datos de EVENTO y sacan patrones de ellos sin e | -- | `brain_v2/methods/mining_candidates.json` |
+| `A32_mining_capability_census` | encontrar scripts que leen datos de EVENTO y sacan patrones de ellos sin e | PY-Finance | `brain_v2/methods/mining_candidates.json` |
 
 **vari/varid -- el CONTE...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
 | `A33_variant_content_mining` | leer los VALORES de las variantes para saber lo que un programa HACE de ve | Output | `brain_v2/variant_content.json` |
+
+**FAGL_011ZC (intervalos...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A34_account_behaviour_classes` | decir de que TIPO es cada cuenta de mayor por TRES EJES en orden de autori | -- | `brain_v2/account_classes.json` |
 
 **la memoria de metodo, ...**
 
@@ -329,6 +317,66 @@ lo deja — solo que nadie lo publicaba.
 |---|---|---|---|
 | `A38_claim_resolution` | cerrar el circulo de vuelta: encontrar los claims abiertos para los que un | Treasury | `brain_v2/claim_resolution_proposals.json` |
 
+**E070 (TRKORR/TRFUNCTIO...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A40_config_transport_prerelease_check` | Antes de liberar una orden de customizing, dice QUE VA A CAMBIAR DE VERDAD | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
+
+**P01 en vivo por RFC: F...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A39_fx_revaluation_scope_by_nature` | Descubre QUE CUENTAS DEBERIAN REVALUARSE Y NO SE REVALUAN, entrando por la | -- | `brain_v2/fx_revaluation_scope.json` |
+
+**rsau_audit_history (P0...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A42_fm_executed_census` | Contrasta el catalogo estatico de PSM-FM contra la evidencia de EJECUCION  | -- | `brain_v2/fm_executed_census.json` |
+
+**los 48 SKILL.md x brai...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A51_skill_registry` | convertir cada SKILL en un NODO con sus aristas: que tablas SAP documenta, | Integration, Output, Procurement | `brain_v2/skills/skill_registry.json` |
+
+**skills x agentes x alg...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A52_toolgraph` | EL BRAIN DEL BRAIN: un grafo de mis PROPIOS instrumentos con quien usa a q | Closing_Activities, Integration, Output, Procurement +1 | `brain_v2/toolgraph.json` |
+
+**el foro de mineros x e...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A54_collaboration_mechanism` | hacer que los mineros COLABOREN, no que se mida si colaboran. Tres piezas: | Treasury | `process_mining/mining_findings.json` |
+
+**rsau_audit_history (15...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A56_audit_slot_aggregate` | colapsar UNA sola vez los dos flujos de evento en un agregado EXTERNO E IN | -- | `brain_v2/change_attribution.json` |
+
+**cualquier objeto SAP c...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A57_extraction_method_resolver` ⚠️ | responder 'como leo X y como lo analizo' sin volver a descubrirlo cada ses | -- | `brain_v2/method_registry.json` |
+
+**los companions (HTML d...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A58_companion_knowledge_graph` | convertir el catalogo PLANO de companions en un GRAFO: dos companions que  | -- | `companions/companion_graph.json` |
+
+**BNK_BATCH_HEADER del G...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A59_bcm_dual_control_mining` ⚠️ | encontrar los lotes de pago donde el que crea es el que aprueba (CRUSR=CHU | -- | `Zagentexecution/mcp-backend-server-python/bcm_dual_control_audit.json` |
+
 - 📐 **Cómo encajan entre sí:** `knowledge/exploration_architecture.md` — la cadena completa,
   las 4 superficies, las 5 vías, los 4 grados y las trampas que costó llegar ahí.
 - **Ninguno de estos ficheros se lee entero.** Se abren con
@@ -337,7 +385,7 @@ lo deja — solo que nadie lo publicaba.
 - **Comprobar que siguen siendo alcanzables:**
   `python Zagentexecution/quality_checks/artifact_reachability_check.py`
 
-## OPEN WORK - incidents awaiting action (11 live, deadline first)
+## OPEN WORK - incidents awaiting action (12 live, deadline first)
 - `INC-EGYPT-PPC` - CLOSED_NOT_REQUIRED - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
   - NEXT: CERRADO como NOT_REQUIRED el 2026-08-20: SG confirma que no hay codigo para Egipto y el canal Citi no lleva este flujo (76,2% SocGen vs 1,9% Citi; la cuenta Citi Egipto emite el 100% en cheque prenumerado). QUEDA UNA SOLA ACCION, y es de higiene, no del incide
   - drill: `python brain_v2/graph_queries.py incident INC-EGYPT-PPC`
@@ -355,10 +403,10 @@ lo deja — solo que nadie lo publicaba.
   - drill: `python brain_v2/graph_queries.py incident INC-000006906`
 - `INC-000011781` - EXECUTED_PARTIAL_OPEN_ITEMS - Add Renata Da Silva Freire RITTER to UBO BCM signatory panel (+ Martin/Ba/De Sousa delimitation,
   - drill: `python brain_v2/graph_queries.py incident INC-000011781`
-- `INC-180995` - ROOT_CAUSE_CONFIRMED - Ticket 180995 — two sibling transports from one ticket reached P01 101 days apart (MZ payroll cu
-  - drill: `python brain_v2/graph_queries.py incident INC-180995`
+- `INC-000016338` - EXECUTED_PARTIAL_OPEN_ITEMS - Add Bettina REISS to UIL BCM signatory panel (+ USD 10K limit NOT representable, Yli-Hietanen ex
+  - drill: `python brain_v2/graph_queries.py incident INC-000016338`
 
-_3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
+_4 more open, drill by id:_ `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
 
 
 ## AGENTES - lo que sabemos HACER (13 disponibles)
@@ -408,7 +456,7 @@ _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (3810 objects · 239 rules · 588 claims · 16 incidents · 9 closed researches)
+## Brain at a glance (4538 objects · 243 rules · 610 claims · 17 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -443,7 +491,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 239 total)
+## Rules to load first (behavioral DNA — 243 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
