@@ -399,7 +399,9 @@
     },
     {
       "canonical_key": "Transport_Intelligence",
-      "aliases": [],
+      "aliases": [
+        "Transport_Management"
+      ],
       "in_capability_model": false,
       "registry_keys": [
         "Transport_Intelligence"
@@ -408,7 +410,7 @@
         "CTS",
         "BASIS"
       ],
-      "_note": "REGISTRY_ONLY. Real functional domain in domains.json (7,745 transports classified across 21 modules, own knowledge docs + objects) with NO row in capability_model.json. NOT an alias: it is a CTS/lifecycle lens that cuts across all 15 rows, so folding it into any single one would be false. Disposition: capability-model backlog - open a row when the domain is scored on the 11 dimensions."
+      "_note": "REGISTRY_ONLY. Real functional domain in domains.json (7,745 transports classified across 21 modules, own knowledge docs + objects) with NO row in capability_model.json. NOT an alias: it is a CTS/lifecycle lens that cuts across all 15 rows, so folding it into any single one would be false. Disposition: capability-model backlog - open a row when the domain is scored on the 11 dimensions. ALIAS ANADIDO s104 (2026-08-26): los claims 593/594/598 de s103 usan 'Transport_Management' para exactamente este dominio (extraccion de E071, check de pre-release de transporte). Mismo sujeto, otro nombre: se resuelve por alias en vez de reescribir los claims (CP-002 preserve-first)."
     },
     {
       "canonical_key": "Support",
@@ -634,11 +636,27 @@
         "PS"
       ],
       "_note": "Ad-hoc PSM x PS compound (WBS/PS-budget channel). Resolves to two canonical keys."
+    },
+    {
+      "key": "Data_Quality",
+      "kind": "meta",
+      "_note": "Calidad del DATO QUE NOSOTROS EXTRAEMOS, no de un dominio SAP. Claims 595 (un completar sin clave unica duplico 4.266.812 filas en el Gold) y 604 (todo WHERE de mas de 72 caracteres se truncaba en silencio en rfc_read_paginated). Vecino de 'Infrastructure': aquel es el CANAL, este el RESULTADO. Declarado s104 para desbloquear el rebuild."
+    },
+    {
+      "key": "Process_Mining",
+      "kind": "meta",
+      "_note": "El METODO de mineria sobre el log, no un dominio de negocio. Claims 596 (el mapa de actividad semantica histograma el LANZADOR, no lo lanzado) y 602 (cobertura real 45,9% de negocio, no el 97% publicado). Los dominios reales de cada hallazgo viven en domain_axes.functional. Declarado s104."
+    },
+    {
+      "key": "Landscape",
+      "kind": "technical_axis",
+      "_note": "El paisaje de sistemas (D01/V01/P01) y su resolucion, no un dominio funcional. Claim 597: rfc_helpers._build_connection_params conecta un SID inexistente a D01 en silencio y lo certifica alineado. Vecino de 'Infrastructure': este es QUE SISTEMA, aquel POR QUE CANAL. Declarado s104."
     }
   ],
   "_consumers": [
     "brain_v2/validate_ontology.py - gate (step 0 of rebuild_all.py)",
     "brain_v2/build_brain_state.py - L14 x L15 crossing (replaced the _norm() token hack)"
   ],
-  "_s097": "+6 canonical domains (PBC, FI_AA, PM, SD, TRM, CO) declared after the PROFILE crossing exposed them as SYSTEM-LEVEL BLIND SPOTS: modules the tenant runs in production with no capability row. The ontology gate correctly refused them until declared here — vocabulary stays canonical by construction, not by discipline. 17 -> 23."
+  "_s097": "+6 canonical domains (PBC, FI_AA, PM, SD, TRM, CO) declared after the PROFILE crossing exposed them as SYSTEM-LEVEL BLIND SPOTS: modules the tenant runs in production with no capability row. The ontology gate correctly refused them until declared here — vocabulary stays canonical by construction, not by discipline. 17 -> 23.",
+  "_s104": "2026-08-26. El rebuild llevaba bloqueado desde s103: 8 claims de esa sesion usaban 4 valores de dominio no declarados y validate_ontology.py (paso 0 de rebuild_all.py) fallaba, asi que brain_state no se podia regenerar. Nadie lo vio porque el gate SOLO dispara al correr el rebuild, y s103 cerro sin correrlo. Resuelto DECLARANDO, no reescribiendo los claims: 1 alias (Transport_Management) y 3 cross_cutting_keys (Data_Quality, Process_Mining, Landscape). Leccion: una puerta que solo se abre al final deja pasar el defecto durante toda la sesion."
 }

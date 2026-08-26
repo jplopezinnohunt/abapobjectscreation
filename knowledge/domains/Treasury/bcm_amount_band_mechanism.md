@@ -111,17 +111,37 @@ RY es de ENTIDAD y cubre todas las cuentas de todos sus bancos.
 
 **Bandas DISJUNTAS.** La baja termina donde la alta empieza.
 
-### El patrón ROTO — UIL, medido 2026-08-26 tras crear los nodos de tramo
+### El patrón A MEDIO HACER — UIL, dos lecturas del mismo día
+
+**Lectura A — 2026-08-26, justo tras crear los nodos de tramo** (el peor estado, y la razón por la
+que este documento existe):
 
 | Nodo | Regla | Banda | Miembros |
 |---|---|---|---|
-| `50037530` UIL Validation | 90000005 INI | **0,00 → 9.999.999.999,00** | 6 |
-| `50039526` UIL Validation upon 10000 | 90000005 INI | **0,00 → 10.000,00** | **0** |
-| `50037531` UIL signatures for all transfers | 90000004 COM | **0,00 → 50.000.000,00** | 4 |
-| `50039525` UIL signatures up to 10000 | 90000004 COM | **0,00 → 10.000,00** | **1, sin rol** |
+| `50037530` UIL Validation | 90000005 INI | 0,00 → 9.999.999.999,00 | 6 |
+| `50039526` UIL Validation upon 10000 | 90000005 INI | 0,00 → 10.000,00 | **0 — vacío** |
+| `50037531` UIL signatures for all transfers | 90000004 COM | 0,00 → 50.000.000,00 | 4 |
+| `50039525` UIL signatures up to 10000 | 90000004 COM | 0,00 → 10.000,00 | **1, sin rol `BNK_APP`** |
 
-Los nodos nuevos se crearon; **los viejos siguen arrancando en 0**, así que el tramo 0–10.000
-tiene **dos dueños en los dos pasos**.
+Un nodo vacío no tiene a quién enrutar y uno de una persona no satisface el doble control: los pagos
+de UIL ≤10.000 no podían completar **ninguno** de los dos pasos.
+
+**Lectura B — mismo día, tras repartir a los limitados** (estado actual mientras se escribe esto):
+
+| Nodo | Regla | Banda | Miembros |
+|---|---|---|---|
+| `50037530` UIL Validation | 90000005 INI | **0,00** → 9.999.999.999,00 | 4 — Kempf, Valdes Cotera, Zholdoshalieva, Abdi |
+| `50039526` UIL Validation up to 10000 | 90000005 INI | 0,00 → 10.000,00 | 2 — Reiss, Basoglu |
+| `50037531` UIL signatures for all transfers | 90000004 COM | **0,00** → 50.000.000,00 | 4 — los mismos cuatro |
+| `50039525` UIL signatures up to 10000 | 90000004 COM | 0,00 → 10.000,00 | 2 — Reiss, Basoglu |
+
+Simétrico y legible, **pero todavía incompleto por dos razones**:
+1. **Los nodos viejos siguen arrancando en 0,00** → el tramo 0–10.000 sigue teniendo dos dueños en
+   los dos pasos.
+2. **Los cuatro sin tope NO están en los nodos bajos.** Subir el suelo ahora los dejaría sin poder
+   aprobar por debajo de 10.000 — que es autorización que su carta SÍ les da. Es la consecuencia 2
+   de más abajo, y es el orden lo que la evita: **primero poblar el nodo bajo, después subir el
+   suelo del alto.**
 
 ## Nivel 3 — el PROCEDIMIENTO de release (cuántas firmas)
 
@@ -186,8 +206,9 @@ completar ninguno de los dos pasos.
    encaja en las dos. **Medir** con la simulación en el punto.
 3. **`MAXPAYAMT_RULECURR` = pago más alto del lote** está tomado de la semántica del nombre, no
    verificado. **Medir**: un lote con varios pagos y comprobar qué nodo resuelve.
-4. **Cómo se MODIFICA el infotipo 1218** sigue sin documentarse: sabemos verlo, y ahora sabemos que
-   crear un nodo funciona, pero la ruta IMG exacta y qué transporta no constan.
+4. **La ruta exacta en pantalla para crear el nodo y su banda** sigue sin escribirse. Lo que SÍ está
+   resuelto: se hace **en `OOCU_RESP`, directamente en P01, y NO genera transporte** (ver abajo).
+   **Medir**: acompañar a DBS y capturar la secuencia de pantallas.
 
 ---
 
@@ -204,3 +225,33 @@ completar ninguno de los dos pasos.
 skill `sap_bcm_signatory_maintenance` ·
 incidentes [INC-000016338](../../incidents/INC-000016338_uil_bcm_add_reiss.md) ·
 [INC-000011781](../../incidents/INC-000011781_ubo_bcm_add_ritter.md)
+
+
+---
+
+## Dónde vive el cambio: P01 directo, sin transporte — y qué implica
+
+**Confirmado 2026-08-26 por el operador que ejecutó el cambio** (INC-000016338): crear los nodos
+`50039525` / `50039526` con su banda de importe, y mantener las personas, se hace **en `OOCU_RESP`
+directamente en P01**. **No genera orden de transporte.** Cierra el hueco 7 del skill.
+
+Coherente con lo que ya constaba: D01 no tiene estructura HR válida para probarlo
+(`bcm_signatory_rules.md:170`) y los OBJID **colisionan** entre D01 y P01
+(`..._solution_design.md:252`), así que estos nodos no se transportan por diseño.
+
+**La consecuencia que hay que tener escrita:** un cambio en **quién puede liberar dinero** se hace
+en producción **sin ninguno de los controles técnicos que este proyecto exige para el código** — sin
+transporte liberado como unidad de cambio, sin ATC, sin cuatro ojos técnicos, sin un rastro que un
+tercero pueda auditar dentro del sistema.
+
+**No es una violación de la disciplina ABAP**: no es código ni customizing transportable, es dato PD
+(`HRP1000` / `HRP1001` / `HRP1218` / `HRT1218`). Pero sí significa que el **único** control real es:
+
+1. el **proceso documental** — la carta TRS y el cartón como autoridad de registro, y
+2. el **readback posterior** por `RFC_READ_TABLE`.
+
+Por eso el readback de `HRP1001` y `HRT1218` **no es una verificación opcional**: es el único rastro
+reproducible que queda del cambio. Y la tabla *Change history* de
+[bcm_signatory_rules.md](bcm_signatory_rules.md) es el único registro que tiene la instalación.
+
+*(Claim 611.)*
