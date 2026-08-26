@@ -16,7 +16,8 @@ sys.path.insert(0, str(_Path(__file__).resolve().parent))
 from baseline import verdict  # noqa: E402  (sibling module)
 
 QUALITY_CHECK = {
-    "tier": "gate",      # gate | live | analysis | quarantined
+    "tier": "gate",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "gold_db",    # gold_db | rfc_p01 | files
     "what": "INC-000005638 class: revenue on REVENUE placeholder, consumption on operational FIPEX",
 }

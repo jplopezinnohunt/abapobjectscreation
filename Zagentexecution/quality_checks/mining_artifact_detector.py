@@ -32,6 +32,7 @@ Uso:  python Zagentexecution/quality_checks/mining_artifact_detector.py [--desde
 """
 QUALITY_CHECK = {
     "tier": "gate",
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
     "needs": "files",
     "what": ("mineros construidos EN ESTA SESION y no registrados como algoritmo: la capacidad "
              "se pierde al cerrar y nadie se entera"),

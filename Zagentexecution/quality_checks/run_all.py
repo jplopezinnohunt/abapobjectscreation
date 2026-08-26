@@ -62,7 +62,8 @@ def declaration(path):
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
     except SyntaxError as e:
-        return {"tier": "UNPARSEABLE", "what": f"{type(e).__name__}: {e}"}
+        return {"tier": "UNPARSEABLE",
+    "sobre": "datos_sap", "what": f"{type(e).__name__}: {e}"}
     for node in tree.body:
         if isinstance(node, ast.Assign):
             for t in node.targets:
@@ -184,6 +185,32 @@ def main():
         "quarantined": [p.name for p, _ in quarantined],
         "results": results,
     }, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    # ---- SOBRE QUE COMPRUEBA CADA UNA -------------------------------------------------
+    #
+    # `tier` dice COMO corre (gate / live / analysis). No dice SOBRE QUE, y son tres familias
+    # distintas que se leen distinto:
+    #   datos_sap      el sistema de verdad: maestros, configuracion, pagos
+    #   conocimiento   lo que hemos escrito: claims enlazados, incidentes con registro, grafo
+    #   herramientas   nuestros propios instrumentos: quien lee que skill, quien tiene llamador
+    # Mezclarlas hace que un fallo en nuestras herramientas se lea como un fallo de SAP, y al
+    # reves. El operador lo pidio asi: los checks de las herramientas son un aparte.
+    por_sujeto = {}
+    for p, d in [(x, declaration(x)) for x in scripts]:
+        s = (d or {}).get("sobre") or "SIN_DECLARAR"
+        r = next((z for z in results if z["script"] == p.name), None)
+        e = por_sujeto.setdefault(s, {"total": 0, "hallazgos": 0})
+        e["total"] += 1
+        if r and r.get("outcome") in ("FINDING", "ERROR", "UNGATED", "TIMEOUT"):
+            e["hallazgos"] += 1
+
+    print("\n" + "-" * 78)
+    print("SOBRE QUE COMPRUEBAN (tier dice COMO corren; esto dice SOBRE QUE):")
+    for s in sorted(por_sujeto, key=lambda x: (x == "SIN_DECLARAR", x)):
+        e = por_sujeto[s]
+        marca = "  <- declara `sobre` en su QUALITY_CHECK" if s == "SIN_DECLARAR" else ""
+        print("  {:14s} {:>3} check(s), {:>2} con hallazgo{}".format(
+            s, e["total"], e["hallazgos"], marca))
 
     print("\n" + "-" * 78)
     print("ran {} | findings {} | errors {} | could-not-run {} | ungated {} | "

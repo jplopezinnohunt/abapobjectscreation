@@ -22,7 +22,8 @@ Usage:
 # An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
 # a central registry is a list someone forgets to update.
 QUALITY_CHECK = {
-    "tier": "analysis",      # gate | live | analysis | quarantined
+    "tier": "analysis",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "gold_db",    # gold_db | rfc_p01 | files
     "what": "per-target audit -- needs a Fund Reservation as input",
 }

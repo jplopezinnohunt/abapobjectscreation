@@ -26,7 +26,8 @@ Exit code:
 # An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
 # a central registry is a list someone forgets to update.
 QUALITY_CHECK = {
-    "tier": "gate",      # gate | live | analysis | quarantined
+    "tier": "gate",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "gold_db",    # gold_db | rfc_p01 | files
     "what": "INC-000005240 class: hardcoded FICTR in FMDERIVE",
 }

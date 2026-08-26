@@ -21,6 +21,7 @@ Salida: exit 0 limpio · exit 1 si hay mineros sin registrar
 """
 QUALITY_CHECK = {
     "tier": "gate",
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
     "needs": "files",
     "what": ("scripts que leen datos de evento para descubrir como se trabaja y no estan "
              "registrados como algoritmo: capacidad de mineria que se pierde al cerrar"),

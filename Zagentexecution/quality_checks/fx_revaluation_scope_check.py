@@ -70,7 +70,8 @@ Salida: exit 0 si toda cuenta con exposicion esta completa · exit 1 si hay algu
 """
 
 QUALITY_CHECK = {
-    "tier": "live",   # gate | live | analysis | quarantined
+    "tier": "live",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "rfc_p01",
     "what": "alcance de la revaluacion FX: que cuentas entran, cuales se quedan fuera y con que exposicion",
     "args": "[--bukrs UNES]",

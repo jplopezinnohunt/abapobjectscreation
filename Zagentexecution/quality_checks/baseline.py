@@ -26,6 +26,7 @@ about the repo rather than a fact about one machine.
 """
 QUALITY_CHECK = {
     "tier": "library",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "files",
     "what": "shared verdict helper - not a check, never run on its own",
 }

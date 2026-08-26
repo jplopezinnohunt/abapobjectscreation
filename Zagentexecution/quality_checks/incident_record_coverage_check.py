@@ -39,7 +39,8 @@ from __future__ import annotations
 # An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
 # a central registry is a list someone forgets to update.
 QUALITY_CHECK = {
-    "tier": "gate",      # gate | live | analysis | quarantined
+    "tier": "gate",
+    "sobre": "conocimiento",  # datos_sap | conocimiento | herramientas
     "needs": "files",    # gold_db | rfc_p01 | files
     "what": "every incident doc must have a first-class record the brain can reach",
 }

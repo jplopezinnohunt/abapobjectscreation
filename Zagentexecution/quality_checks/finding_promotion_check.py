@@ -36,7 +36,8 @@ import sys
 from pathlib import Path
 
 QUALITY_CHECK = {
-    "tier": "gate",      # gate | live | analysis | quarantined
+    "tier": "gate",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "files",    # gold_db | rfc_p01 | files
     "what": "a fat dataset with no claim citing it is a discovery that never landed",
 }

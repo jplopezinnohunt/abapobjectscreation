@@ -27,7 +27,8 @@ import sys
 from pathlib import Path
 
 QUALITY_CHECK = {
-    "tier": "gate",      # gate | live | analysis | quarantined
+    "tier": "gate",
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
     "needs": "files",    # gold_db | rfc_p01 | files
     "what": "every open incident must be reachable from BRAIN_INDEX.md",
 }

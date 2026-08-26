@@ -25,7 +25,8 @@ Uso:
 """
 
 QUALITY_CHECK = {
-    "tier": "live",   # gate | live | analysis | quarantined
+    "tier": "live",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "rfc_p01",
     "what": "una cuenta cae en alguna posicion de la version de balance que la sociedad EJECUTA de verdad",
     "args": "<cuenta...> [--ref <cuenta>] | --sweep",

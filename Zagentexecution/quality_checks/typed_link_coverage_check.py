@@ -29,7 +29,8 @@ import sys
 from pathlib import Path
 
 QUALITY_CHECK = {
-    "tier": "gate",      # gate | live | analysis | quarantined
+    "tier": "gate",
+    "sobre": "conocimiento",  # datos_sap | conocimiento | herramientas
     "needs": "files",    # gold_db | rfc_p01 | files
     "what": "claims naming a known entity in prose without linking it in related_objects",
 }
@@ -99,8 +100,23 @@ def main():
         if not prose:
             continue
         linked = {str(o).strip().upper() for o in (c.get("related_objects") or [])}
+        # UN JUICIO QUE NO SE GUARDA SE VUELVE A PEDIR.
+        #
+        # Este check dice "la prosa nombra una entidad que related_objects no tiene", y para
+        # muchas la respuesta correcta es NO ENLAZARLA: el autor de la medida (JP_LOPEZ suele
+        # ser quien la hizo, no el sujeto), un ejemplo ilustrativo (FBL1N como uno de los pares
+        # dominantes de una muestra), o un contraste ("no es X sino Y"). Enlazarlas ensucia
+        # `graph_queries.py entity <nombre>`, que es como se busca: si al preguntar por una
+        # tabla salen 40 claims que solo la mencionan, la consulta deja de servir.
+        #
+        # Sin esta exclusion el check las señalaria PARA SIEMPRE, y un gate que repite un aviso
+        # ya resuelto acaba ignorandose entero. Se excluye CON MOTIVO ESCRITO en el propio
+        # claim (`_no_enlazado_a_proposito`), igual que las demas puertas de este repo: una
+        # exclusion sin motivo es un hueco disfrazado.
+        a_proposito = {str(k).strip().upper()
+                       for k in (c.get("_no_enlazado_a_proposito") or {})}
         words = set(re.findall(r"[A-Z][A-Z0-9_/-]{3,39}", prose.upper()))
-        missing = sorted((words & known) - linked)
+        missing = sorted((words & known) - linked - a_proposito)
         if missing:
             gaps.append((c.get("id"), missing))
 

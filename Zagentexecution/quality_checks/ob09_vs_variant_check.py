@@ -20,7 +20,8 @@ Salida: exit 0 limpio · exit 1 si hay cuentas ACTIVAS con OB09 fuera de toda va
 """
 
 QUALITY_CHECK = {
-    "tier": "live",   # gate | live | analysis | quarantined
+    "tier": "live",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "rfc_p01",
     "what": "cruza T030H/OB09 contra la variante de F.05 que de verdad selecciona la cuenta",
     "args": "[--systems P01,D01,V01] [--accounts <prefijo>]",

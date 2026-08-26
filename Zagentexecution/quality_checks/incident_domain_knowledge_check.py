@@ -27,7 +27,8 @@ Uso:
 """
 
 QUALITY_CHECK = {
-    "tier": "gate",   # gate | live | analysis | quarantined
+    "tier": "gate",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "files",
     "what": "todo incidente tiene dominio con registro y doc de PROCESO; avisa si hay 2+ del mismo tipo sin el",
 }

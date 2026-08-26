@@ -30,6 +30,7 @@ Salida: exit 0 limpio · exit 1 si un minero corre a ciegas
 """
 QUALITY_CHECK = {
     "tier": "gate",
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
     "needs": "files",
     "what": ("mineros que corren sin leer la memoria de metodo: repiten errores ya medidos, y "
              "ahora mecanizados"),

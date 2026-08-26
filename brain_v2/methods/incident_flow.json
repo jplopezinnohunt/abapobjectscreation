@@ -1,0 +1,169 @@
+{
+  "_que_es": "EL FLUJO DE ALTO NIVEL de resolver un caso, como CONOCIMIENTO y no como costumbre.",
+  "_por_que_existe": [
+    "Los ultimos incidentes se resolvieron todos con la misma forma y esa forma no estaba",
+    "escrita en ningun sitio: vivia en la cabeza de cada sesion. El operador la nombro mirando",
+    "los cinco ultimos: «es una mezcla de exploracion de herramientas, uso de conocimiento,",
+    "generacion de nuevo si no lo hay, y actualizacion de herramienta y conocimiento».",
+    "",
+    "Y la auditoria del 2026-08-26 lo encontro por su cuenta, desde el otro lado: HAY",
+    "INCIDENTES QUE NO DEJARON PROCESO -- el conocimiento se queda en el caso. Senalaba",
+    "INC-EGYPT-PPC e INC-PSTLADR-NOV2026, los dos de Payment_BCM.",
+    "",
+    "Las dos observaciones son la misma: si el flujo no acaba en una HERRAMIENTA, el caso",
+    "siguiente vuelve a empezar por el paso 1."
+  ],
+  "_no_es_un_proceso_de_soporte": [
+    "El protocolo de soporte (Track A diagnostico / Track B accion) vive en",
+    ".agents/skills/sap_incident_analyst/SKILL.md y sigue mandando en el QUE hacer.",
+    "Esto es otra cosa y esta por encima: de donde sale lo que uso y donde vuelve lo que",
+    "aprendo. Un caso puede recorrer este flujo entero sin ser un incidente."
+  ],
+
+  "los_dos_grafos": {
+    "herramientas": {
+      "que_es": "con QUE lo hago: skills, agentes, algoritmos, puertas",
+      "donde": "brain_v2/toolgraph.json · drill: graph_queries.py tool para \"<tarea>\"",
+      "_un_skill_es_una_herramienta": "el metodo de una tarea que ya hicimos, no un documento"
+    },
+    "conocimiento": {
+      "que_es": "que SE ya del tema: dominios, claims, incidentes, objetos",
+      "donde": "brain_state.json · drill: graph_queries.py domain|entity|incident",
+      "_y_load_domain": "python brain_v2/load_domain.py <tema> cuando el tema se nombra"
+    },
+    "_por_que_los_dos": [
+      "Mirar solo las herramientas manda a MEDIR lo que ya esta medido.",
+      "Mirar solo el conocimiento hace RE-DERIVAR a mano un metodo que ya estaba escrito.",
+      "El fallo caro de este proyecto ha sido el segundo: 40 de 48 skills sin ni un lector."
+    ]
+  },
+
+  "pasos": [
+    {
+      "n": 1,
+      "nombre": "EXPLORAR LAS HERRAMIENTAS",
+      "que_se_hace": "preguntar al grafo que hay YA para esta tarea, antes de escribir nada",
+      "como": "python brain_v2/graph_queries.py tool para \"<la tarea en tus palabras>\"",
+      "que_devuelve": "el SKILL a leer primero, el ALGORITMO que ya existe, el AGENTE que la hace, la PUERTA que la vigila",
+      "si_se_salta": [
+        "se re-deriva metodo ya escrito. MEDIDO: config_transport_prerelease_check se escribio",
+        "y se ARREGLO DOS VECES sin abrir sap_transport_intelligence, que documentaba que",
+        "OBJFUNC=M borra la tabla ENTERA en destino. Ninguna de las dos veces se miro."
+      ]
+    },
+    {
+      "n": 2,
+      "nombre": "USAR EL CONOCIMIENTO",
+      "que_se_hace": "cargar lo que ya sabemos del tema ANTES de proponer o diagnosticar",
+      "como": "python brain_v2/load_domain.py <tema> y leer TODAS las partes · graph_queries.py entity|incident",
+      "si_se_salta": [
+        "se vuelve a medir lo medido, o peor, se contradice sin saberlo. El indice ORIENTA;",
+        "no da competencia. Grepear NO es cargar."
+      ]
+    },
+    {
+      "n": 3,
+      "nombre": "DECIDIR LA FORMA DE LA TAREA",
+      "es_una_puerta": true,
+      "que_se_hace": "no es lo mismo repetir, comparar o descubrir, y el instrumento cambia",
+      "formas": {
+        "REPETIDA": "hay metodo escrito -> LEER el skill y SEGUIRLO. Si se queda corto, AMPLIARLO, no construir al lado",
+        "COMPARAR_ESTADO": "el skill da el metodo y las trampas; los INSTRUMENTOS que leen la configuracion VIVA son los que deciden. Proponer contra lo LEIDO, nunca contra lo recordado",
+        "DESCUBRIR": "no sabemos que hay: es MINERIA. Ver si ya existe algoritmo, y declarar la VENTANA de lo que se mida"
+      },
+      "si_se_salta": "se lee un skill cuando habia que ir a mirar el sistema, o al reves"
+    },
+    {
+      "n": 4,
+      "nombre": "GENERAR LO QUE NO HAY",
+      "que_se_hace": "si falta conocimiento, MINARLO; si falta instrumento, construirlo",
+      "delegable": true,
+      "como": [
+        "Ante una duda concreta y acotada, pedirselo a un minero en vez de improvisar:",
+        "  python process_mining/ask.py <tema>        -> que minero sabe de esto",
+        "  el agente `log-process-discovery` para el log, `variant-intelligence` para variantes,",
+        "  `batch-input-explorer` para canales de batch input, `bank-process-discovery` para banca",
+        "Un minero enfocado a una pregunta concreta devuelve una medida; una exploracion vaga",
+        "devuelve prosa."
+      ],
+      "regla_dura": "toda cifra nueva declara su VENTANA y su fuente, y se marca MEDIDO o INFERIDO"
+    },
+    {
+      "n": 5,
+      "nombre": "ACTUALIZAR LAS DOS COSAS",
+      "es_donde_se_pierde_todo": true,
+      "que_se_hace": "devolver lo aprendido a los DOS grafos, no a uno",
+      "al_conocimiento": [
+        "claim con evidencia y tier · incidente de primera clase si fue un caso ·",
+        "doc de dominio si es un mecanismo · related_objects ENLAZADOS, que la prosa no se indexa"
+      ],
+      "a_las_herramientas": [
+        "memoria de metodo (metodo.aprender) si se aprendio del INSTRUMENTO ·",
+        "ficha en algorithms.json si se construyo algo · regla de comportamiento si es una forma",
+        "de trabajar · y el skill del tema AMPLIADO si el metodo cambio"
+      ],
+      "si_se_salta": [
+        "el caso siguiente empieza por el paso 1 otra vez. Es lo que la auditoria llama",
+        "INCIDENTES QUE NO DEJARON PROCESO."
+      ]
+    },
+    {
+      "n": 6,
+      "nombre": "PROMOVER A SKILL CUANDO SE REPITE",
+      "cuando": "a la SEGUNDA vez que aparece el mismo escenario",
+      "que_se_hace": [
+        "consolidar el metodo en un SKILL: no escribir prosa nueva, sino REUNIR lo que ya esta",
+        "escrito en los docs, el procedimiento, el check y el prompt del agente."
+      ],
+      "el_caso_que_lo_prueba": {
+        "tema": "mantenimiento del panel de firmantes BCM",
+        "veces": "al menos dos incidentes ejecutados: INC-000006313 (UIS, alta VOFFAL) e INC-000011781 (UBO, alta RITTER)",
+        "que_existe": [
+          "knowledge/domains/Treasury/bcm_signatory_rules.md",
+          "knowledge/domains/Treasury/bcm_signatory_change_procedure.md",
+          "knowledge/domains/Treasury/bcm_signatory_change_solution_design.md",
+          "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py",
+          ".claude/agents/bcm-signatory-panel.md",
+          "companions/bcm_signatory_companion.html"
+        ],
+        "que_falta": "el SKILL. Existe todo menos el nodo que el coordinador busca",
+        "por_que_importa": [
+          "El metodo esta, pero DISPERSO en seis sitios y sin ser una herramienta consultable.",
+          "`tool para \"panel de firmantes BCM\"` devuelve sap_payment_bcm_agent -- que es de",
+          "pagos, no de firmantes -- porque el de firmantes no existe como skill."
+        ]
+      }
+    }
+  ],
+
+  "invariantes": [
+    {
+      "regla": "LAS HERRAMIENTAS PRIMERO, SIEMPRE",
+      "por_que": "40 de 48 skills sin ni un lector, y LEE 30 frente a DEBERIA_LEER 269 en el grafo entero",
+      "consecuencia": "el paso 1 no es opcional ni se hace 'si suena a que hay algo'"
+    },
+    {
+      "regla": "SI HAY DUDA CONCRETA, SE DELEGA EN UN MINERO ENFOCADO",
+      "por_que": "una pregunta acotada devuelve una medida; una exploracion vaga devuelve prosa",
+      "consecuencia": "ask.py o el agente del tema, con la pregunta ya afilada"
+    },
+    {
+      "regla": "LO APRENDIDO VUELVE A LOS DOS GRAFOS",
+      "por_que": "actualizar solo el conocimiento deja la herramienta vieja; solo la herramienta deja el hallazgo sin evidencia",
+      "consecuencia": "el paso 5 tiene dos mitades y las dos son obligatorias"
+    },
+    {
+      "regla": "A LA SEGUNDA VEZ, SKILL",
+      "por_que": "si no, el coste por caso no baja nunca -- es la regla #172 aplicada al metodo",
+      "consecuencia": "el paso 6 se dispara por REPETICION, no por tamaño"
+    }
+  ],
+
+  "_medido_utc": "2026-08-26",
+  "_generado_por": "escrito leyendo los ultimos incidentes de brain_v2/incidents/incidents.json y la auditoria de 24 puertas del 2026-08-26",
+  "_quien_lo_usa": [
+    "cualquier sesion al empezar un caso",
+    "brain_v2/graph_queries.py tool -- implementa el paso 1 y parte del 3",
+    ".agents/skills/sap_incident_analyst/SKILL.md -- manda en el QUE hacer; esto en el de donde"
+  ]
+}

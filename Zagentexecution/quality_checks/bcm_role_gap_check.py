@@ -48,7 +48,8 @@ Exit code:
 # An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
 # a central registry is a list someone forgets to update.
 QUALITY_CHECK = {
-    "tier": "live",      # gate | live | analysis | quarantined
+    "tier": "live",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "rfc_p01",    # gold_db | rfc_p01 | files
     "what": "needs a live P01 RFC session to read the role assignments",
 }

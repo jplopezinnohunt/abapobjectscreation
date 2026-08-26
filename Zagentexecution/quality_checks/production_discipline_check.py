@@ -43,6 +43,7 @@ desconectada.
 # --- self-declaration, read by quality_checks/run_all.py -------------------
 QUALITY_CHECK = {
     "tier": "gate",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "files",
     "what": "retiradas sin evidencia + ficheros creados que nadie referencia (el sesgo a producir, medido)",
 }

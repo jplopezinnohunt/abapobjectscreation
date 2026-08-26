@@ -31,7 +31,8 @@ Uso:  python Zagentexecution/quality_checks/knowledge_connectivity_check.py [--j
 Salida: exit 0 limpio · exit 1 si hay conocimiento desconectado
 """
 QUALITY_CHECK = {
-    "tier": "gate",      # gate | live | analysis | quarantined
+    "tier": "gate",
+    "sobre": "conocimiento",  # datos_sap | conocimiento | herramientas
     "needs": "files",    # gold_db | rfc_p01 | files
     "what": ("conocimiento guardado que no se puede ENCONTRAR: claims en un campo que el store "
              "no lee, sin enganche al grafo, interfaces sin dominio, canales descubiertos y no "

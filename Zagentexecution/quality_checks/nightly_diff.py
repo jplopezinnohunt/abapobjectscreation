@@ -7,7 +7,8 @@ Emit an alert CSV listing pairs that flipped INTO HARD-BLOCK state today.
 # An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
 # a central registry is a list someone forgets to update.
 QUALITY_CHECK = {
-    "tier": "quarantined",      # gate | live | analysis | quarantined
+    "tier": "quarantined",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "files",    # gold_db | rfc_p01 | files
     "what": "consumes committed_vs_available_*.csv -- downstream of a refuted method (claim 259)",
 }

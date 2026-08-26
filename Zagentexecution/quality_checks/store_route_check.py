@@ -29,6 +29,7 @@ Salida: exit 0 limpio · exit 1 si alguna ruta no resuelve
 """
 QUALITY_CHECK = {
     "tier": "gate",
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
     "needs": "files",
     "what": ("rutas declaradas hacia un store que no existen en el store: el extractor cae en "
              "su fallback y publica ceros creibles"),

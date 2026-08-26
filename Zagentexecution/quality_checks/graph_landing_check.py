@@ -29,7 +29,8 @@ Uso:  python Zagentexecution/quality_checks/graph_landing_check.py [--json]
 Salida: exit 0 limpio · exit 1 si hay conocimiento que no llega al grafo
 """
 QUALITY_CHECK = {
-    "tier": "gate",      # gate | live | analysis | quarantined
+    "tier": "gate",
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
     "needs": "files",    # gold_db | rfc_p01 | files
     "what": ("stores que no llegan a brain_state (JSON al lado del grafo), algoritmos sin "
              "llamador y agentes que no ejecutan ni depositan nada"),

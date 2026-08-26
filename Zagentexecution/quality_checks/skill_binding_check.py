@@ -36,6 +36,11 @@ Salida: exit 0 limpio · exit 1 si alguien trabaja a ciegas sobre un tema que ti
 QUALITY_CHECK = {
     "tier": "gate",
     "needs": "files",
+    # `sobre` dice SOBRE QUE comprueba, que es un eje distinto de `tier` (que dice COMO corre).
+    # Tres familias: datos_sap (el sistema de verdad), conocimiento (lo que hemos escrito) y
+    # herramientas (nuestros propios instrumentos). Mezclarlas hace que un fallo NUESTRO se lea
+    # como un fallo de SAP, y al reves.
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
     "what": ("agentes y algoritmos que operan sobre un dominio con SKILL y no lo nombran: "
              "re-derivan metodo ya escrito"),
 }

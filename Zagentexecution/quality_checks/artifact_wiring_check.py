@@ -37,6 +37,7 @@ Read-only. Exit 0 = todo tiene quien lo dispare. Exit 1 = hay huerfanos.
 # --- self-declaration, read by quality_checks/run_all.py -------------------
 QUALITY_CHECK = {
     "tier": "gate",
+    "sobre": "herramientas",  # datos_sap | conocimiento | herramientas
     "needs": "files",
     "what": "artefactos que nadie invoca: scripts sin llamador, agentes sin mencion, JSON que nadie lee ni su autor",
 }

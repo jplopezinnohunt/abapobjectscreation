@@ -42,7 +42,8 @@ Salida: exit 1 si hay candidatas con divisa abierta.
 """
 
 QUALITY_CHECK = {
-    "tier": "live",   # gate | live | analysis | quarantined
+    "tier": "live",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "rfc_p01",
     "what": "cuentas fuera de variante TENIENDO iguales dentro de su posicion de balance",
     "args": "[--bukrs UNES]",

@@ -44,7 +44,8 @@ Claim 526.
 # tier=analysis y no gate a proposito: esto se corre ANTES DE LIBERAR un transporte
 # concreto, no en cada ciclo -- necesita un TRKORR y no tiene sentido sin el.
 QUALITY_CHECK = {
-    "tier": "analysis",   # gate | live | analysis | quarantined
+    "tier": "analysis",
+    "sobre": "datos_sap",  # datos_sap | conocimiento | herramientas
     "needs": "rfc_p01",   # gold_db | rfc_p01 | files
     "what": "transporte de customizing: diff de la TABLA ENTERA origen vs destino antes de liberar",
     "args": "<TRKORR> [--src D01 --dst P01]",
