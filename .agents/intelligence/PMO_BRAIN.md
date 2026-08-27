@@ -223,6 +223,40 @@ Each layer FEEDS the others:
 
 ### ðŸŸ¡ HIGH â€” Next available session
 
+**H140 -- HAY AGENTES QUE EL MODELO NO VE, Y EL HUECO ES BIDIRECCIONAL (medido 2026-08-27,
+peticion del dueno: "hay mas agentes que no ves... seria un nuevo agente, agent finder").**
+
+    en disco (.claude/agents)      14
+    ofrecidos por el harness       18
+    EN EL MODELO (toolgraph)       14        universo real de este proyecto: 20 -> ve el 70%
+
+    ofrecidos y NO en disco : Explore · Plan · general-purpose · claude ·
+                              claude-code-guide · statusline-setup
+    en disco y NO ofrecidos : log-process-discovery · process-guardian
+
+Y en `unescrp` hay 17 definiciones mas que no vemos. La ilustracion que lo cierra: **Explore
+hizo hoy dos de los tres mejores trabajos de la sesion** -- encontro la fractura en 4 piezas del
+circuito P2P, midio el punto ciego del grafo de companions, y corrigio texto que yo habia
+escrito esa misma manana. **Y no existe en nuestro modelo.** El instrumento que mide nuestra
+colaboracion es ciego al agente que mas colaboro.
+
+**LA FORMA DEL INSTRUMENTO, por el criterio de corte de la propia caja** (si es para leer es
+skill; si decide es agente; si descubre es minero):
+- **enumerar** definiciones de agente por el ecosistema = DETERMINISTA -> **MINERO**
+- **decidir** si uno hallado es nuestro, si duplica a otro, si se adopta o solo se registra =
+  CRITERIO -> **AGENTE**. Precedente exacto: `miner-onboarding` hace esto para mineros.
+
+**LA FRONTERA QUE NO SE PUEDE SALTAR, y es la parte importante:** los 6 del harness **no son
+enumerables desde disco por ningun script**. Un minero encontraria 31 ficheros y seguiria
+estructuralmente ciego a Explore y companyia. Si reporta "hay 14" comete exactamente el defecto
+de H134. **Tiene que emitir UNOBSERVABLE para esa mitad**, no una cifra confiada -- claim 616:
+una frontera del instrumento invalida TODA conclusion sacada de su silencio. La unica via de
+observarla es que una SESION declare el roster que recibio, porque el harness se lo da a la
+sesion y no al disco.
+
+**Alcance:** empezar por este proyecto (20) y unescrp (17); el registro debe distinguir
+PROPIO / DE OTRO PROYECTO / DEL HARNESS, porque adoptar no es lo mismo que conocer.
+
 **H138 -- `braintoolbox.yaml` NO SE PUEDE PARSEAR COMO YAML, Y SU PUERTA NO SE ENTERA
 (medido 2026-08-27, defecto PRE-EXISTENTE -- comprobado contra HEAD antes de tocarlo).**
 `yaml.safe_load` falla: escalares PLANOS que contienen `: ` sin comillas. Dos confirmados y

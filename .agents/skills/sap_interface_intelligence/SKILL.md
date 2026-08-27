@@ -68,8 +68,41 @@ being, per its owning project, a live production dependency.
 - **What it is:** the registry of *who may act*. SOAP 1.1, `http://unesco.org/rolemanagement`,
   binding `BasicHttpBinding_Facade`, 4 operations (`GetRoleMembers`,
   `GetCertifyingOfficersByEmployeeEmail`, `GetPlaces`, `GetEmployeeMemberships`).
-- **Who calls it:** the CRP app on D01 clnt 350, package ZCRP — via the `CallUnesdir` FunctionImport
+- **Who calls it — TWO consumers, not one.** This list said "CRP" until s106 and was incomplete;
+  the second one was found by reading ABAP, not docs:
+  1. the CRP app on D01 clnt 350, package ZCRP — via the `CallUnesdir` FunctionImport
   on OData service `ZPSM_PROC_FORMS_SRV` → SM59 `UNESDIR_PROD` → `cl_http_client`.
+  2. **the FI payment-release workflow** — `WS90000003`/`WS90000002`, rule `90000001`, doc types
+     `KR/KA/KT/ER/IT`. Chain: invoice posted with payment block `BSEG-ZLSPR` → event `BSEGCREATED`
+     → `Z_GET_CERTIF_OFFICER_UNESDIR` → **typed SOAP proxy** `zrole_mgtco_facade` with
+     `logical_port_name = 'LP_ROLE_MGT'` → RM → approval lifts the block → F110 picks it up.
+     Source: `extracted_code/FI/Payment_Workflow/Z_GET_CERTIF_OFFICER_UNESDIR.abap`. Fallback when
+     no actor resolves: table `ZFI_PAYREL_EMAIL` — **2 rows**.
+
+- ⛔ **THE NAME LIES, AND THAT IS WHY NOBODY FOUND THIS CONSUMER.** Every FI artefact labels this
+  dependency **UNESDIR** — the FM is `Z_GET_CERTIF_OFFICER_UNESDIR`, the trace field is
+  `unesdir_subrc` — **and it is RM.** The discriminator is technical and admits no doubt: UNESDIR
+  is reached by **DBCON/SQL** (`YHR_CREATE_MAIL_FROM_UNESDIR`); this is a **SOAP consumer proxy
+  with a logical port**, and its operation (`get_certifying_officers_by_emp`), binding
+  (`…_facade`) and namespace match RM exactly. Two artefacts state it wrongly and are corrected
+  here rather than in place, because they are owned elsewhere:
+  `companions/payment_bcm_companion.html` ("SharePoint WCF + SQL" — imprecise) and
+  `.agents/skills/sap_payment_bcm_agent/SKILL.md:277` ("reads **UNESCO LDAP (UNESdir)**" —
+  **incorrect**). This is *the alias that gives zero* INVERTED: the false name does not hide a
+  file's existence, it hides **the identity of the dependency**. Searching for RM consumers by the
+  name "RM" could never have found this one.
+
+- 💡 **A SECOND EVIDENCE SOURCE FOR TRAFFIC, independent of the RFC audit log — LEAD, NOT DATA.**
+  `Z_WF_GET_CERTIFYING_OFFICER.abap` writes a trace row per call attempt:
+  `ycl_bc_trace_table( iv_tr_obj = 'WF_PAYMENT' )` carrying `unesdir_subrc`. If table
+  `ysbc_trace_payment` has rows, RM→FI traffic can be **counted without `PARAMX`** — which would
+  turn part of the `UNOBSERVABLE` bucket (see the section above / claim 620) into a measured
+  number for this one consumer. **Nobody has read that table**; only the code that writes it.
+  Verify before citing.
+
+- ❓ **Still unverified:** that `LP_ROLE_MGT` resolves to `svc-prod-role.hq.int.unesco.org`. The
+  logical port is configured in SOAMANAGER and that config is not in the repo. RM's identity here
+  rests on operation + binding + namespace, **not** on the host.
 - ⛔ **Bank signatories do NOT go through RM.** RM's role catalogue happens to contain a role *named*
   `BANK_SIGNATORY`; that is a name, not a mechanism. UNESCO bank signature authority is **SAP
   standard** — RY nodes, `HRP1001` RELAT 007, role `BNK_APP`, execution via `OOCU_RESP` — and is

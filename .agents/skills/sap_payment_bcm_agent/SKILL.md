@@ -274,7 +274,13 @@ The **coordinator** should route to this agent when the user asks about:
 
 ### Certifying Officer Resolution
 - For KR/KA/KT/ER/IT: workflow calls **Rule 90000001** → ABAP FM `Z_GET_CERTIF_OFFICER_UNESDIR`
-- FM gets posting user's email → calls `Z_WF_GET_CERTIFYING_OFFICER` → reads **UNESCO LDAP** (UNESdir)
+- FM gets posting user's email → calls `Z_WF_GET_CERTIFYING_OFFICER` → **calls the RoleManagement
+  (RM) SOAP service** — CORRECTED s106. This line said "reads UNESCO LDAP (UNESdir)" and was
+  **wrong**: it is a typed SOAP consumer proxy `zrole_mgtco_facade` with
+  `logical_port_name = 'LP_ROLE_MGT'`, operation `get_certifying_officers_by_emp`. UNESDIR is a
+  DIFFERENT service reached by DBCON/SQL. The FM's own name (`…_UNESDIR`) and its trace field
+  (`unesdir_subrc`) carry the same mislabel — the name lies, so believing it hides the real
+  dependency. Full entry: `.agents/skills/sap_interface_intelligence/SKILL.md` (RM section).
 - LDAP returns certifying officer for the user's sector/unit
 - Fallback: if no officer found → reads custom table **`ZFI_PAYREL_EMAIL`** for default backup users
 - **Role Management app**: `https://role.hq.int.unesco.org/organizational-unit-overview/adm`
