@@ -154,8 +154,19 @@ def main():
             print("no existe el nodo %s" % a.nodo)
             return 2
         origen, titulo = a.nodo, str(n.get("tipo"))
-        sujetos = {a.nodo} | set(re.findall(r"\b[A-Z][A-Z0-9_]{3,}\b",
-                                            json.dumps(n, ensure_ascii=False)))
+        # DOS correcciones. (1) El filtro de forma se aplicaba SOLO a los claims, asi que aqui
+        # emparejaba por STRONG y OURS -- metadato, no sujeto. (2) Y mas grave: el NODO del
+        # toolgraph es una SOMBRA del algoritmo -- lleva state/bound_in/lands_in y NO lleva
+        # `does`, que es donde estan los sujetos. Propagar desde el nodo era propagar desde
+        # casi nada. Si el origen es un algoritmo, se lee su ENTRADA COMPLETA.
+        _full = (cargar("brain_v2/methods/algorithms.json").get("algorithms") or {}).get(a.nodo)
+        _n = dict(n, **(_full or {}))
+        _n = {k: v for k, v in _n.items()
+              if k not in ("state", "origin", "tipo", "tipo_mineria", "mina", "generaliza")}
+        sujetos = {a.nodo} | {x for x in re.findall(r"\b[A-Z][A-Z0-9_]{3,}\b",
+                                                    json.dumps(_n, ensure_ascii=False))
+                              if _parece_objeto(x)}
+        sujetos |= set(re.findall(r"\b[A-Z]\d{1,3}_[a-z_]+\b", json.dumps(_n, ensure_ascii=False)))
     else:
         ap.error("da --claim o --nodo")
 
@@ -180,10 +191,24 @@ def main():
         print("   %s" % pregunta)
         print("   porque: %s" % porque)
         if a.publicar:
+            # UNA pregunta por destinatario, NO la misma repetida. El bus deduplica por
+            # (minero, sujeto, pregunta) SIN incluir `para`: publicar el mismo texto a quince
+            # destinatarios dejaba UNO -- medido, de 22 publicaciones sobrevivieron 3. El bus
+            # ya esta disenado para esto ("`para` puede ser un minero concreto o un
+            # mining_kind"), asi que se nombra al destinatario DENTRO de la pregunta y cada una
+            # es distinta. Y se dice POR QUE le toca a el: sin el sujeto compartido, una
+            # pregunta dirigida es ruido dirigido.
             from mining_bus import preguntar
-            for k in sorted(vecinos)[:15]:
-                preguntar("knowledge_propagation", origen, pregunta, para=k, porque=porque)
-            print("\n   publicada a %d instrumentos en el bus" % min(15, len(vecinos)))
+            n = 0
+            for k, comun in sorted(vecinos.items())[:15]:
+                # El destinatario va DELANTE a proposito: el bus deduplica por los primeros 80
+                # caracteres de la pregunta, asi que un sufijo distinto no basta -- medido, 22
+                # publicaciones se quedaron en 8 porque el prefijo era identico.
+                preguntar("knowledge_propagation", origen,
+                          "[%s] %s (comparte %s)" % (k, pregunta, ", ".join(comun[:3])),
+                          para=k, porque=porque)
+                n += 1
+            print("\n   publicadas %d preguntas dirigidas en el bus" % n)
         else:
             print("\n   (no publicada — anade --publicar)")
     else:
