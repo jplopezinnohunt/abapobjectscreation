@@ -5697,5 +5697,18 @@
     "rule": "SI EL REPO CAMBIO DESDE TU ULTIMA FOTO, DI ESO -- NO INVENTES QUIEN LO TOCO. No hay sesiones paralelas salvo que JP haya lanzado algo. Observar que un fichero cambio es un HECHO; atribuirlo a un actor es una HIPOTESIS.",
     "why": "El 2026-08-26, al reanudar tras cuatro dias, vi ficheros mios modificados y conclui 'otras sesiones han tocado el repo'. Me lo invente. Es el mismo modo de fallo que costo seis falsos positivos en la sesion 102 -- afirmar una causa sin comprobarla -- solo que aplicado a la historia del repositorio en vez de a datos de SAP, y ademas siembra desconfianza sobre un mecanismo que no existe.",
     "how_to_apply": "Di 'mi ultima foto es del <fecha>; el repo cambio y no tengo memoria de esos cambios'. Luego LEE (git log --since, mtimes) o PREGUNTA. Nunca nombres un actor que no has verificado."
+  },
+  {
+    "id": "feedback_declare_the_denominator_before_publishing_a_number",
+    "severity": "CRITICAL",
+    "created_session": 105,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "ANTES DE PUBLICAR UNA CIFRA, DECLARA CONTRA QUE LA MIDES Y DE DONDE SACASTE ESE DENOMINADOR. Es el modo de fallo mas repetido que tenemos: el 26-27 de agosto se corrigieron CUATRO sondas del MISMO check por lo mismo, mas otras seis en la sesion 102. Las cuatro: (1) marcar cuentas de mayor 'sin sitio' mirando tres registros y no el indice de entidades; (2) exigir registro a un PERNR y a un numero de pedido como si fueran estructura -- 33 huecos falsos en INC-000006313, que eran los firmantes del panel; (3) resolver `Treasury` a su canonico `Treasury_EBS`, que NO es la clave del registro, con lo que el dominio entero salia vacio y sus dos incidentes decian 'falta doc de proceso' teniendo runbook, solution design y ocho companions; (4) marcar tres arboles DMEE 'sin sitio' estando anotados desde hace meses en annotations.json.",
+    "why": "Las cuatro publican un CERO o un HUECO que no existe, y un cero se lee como hallazgo. Ninguna da error -- por eso sobreviven: un instrumento que mide mal contra un denominador incompleto CORRE PERFECTAMENTE y devuelve una alarma inventada. El caso (3) es el peor porque el fallo esta en la RESOLUCION DE NOMBRES: un alias mal resuelto no falla, devuelve el conjunto vacio.",
+    "how_to_apply": "1) Todo instrumento que publique un recuento imprime PRIMERO su denominador y COMO lo derivo -- `fsv_coverage_check.py` deriva del uso real la version de balance y se niega a llamar hueco a lo que no se ejecuta; copia ese patron. 2) Si resuelves un nombre por alias, ten fallback al crudo y ASEVERA que encontraste registro: si `rec` sale vacio, es DESCONOCIDO, nunca cero. 3) Antes de exigirle registro a algo, pregunta si es ESTRUCTURA o INSTANCIA: un PERNR, un documento o una cuenta no tienen por que estar en ningun registro estructural. 4) Enumera TODAS las casas posibles de un objeto antes de decir que no tiene ninguna. 5) Y si una cifra te sorprende por grande, sospecha del denominador ANTES que del sistema: en las diez veces medidas, el defecto estuvo siempre en la medida."
   }
 ]
