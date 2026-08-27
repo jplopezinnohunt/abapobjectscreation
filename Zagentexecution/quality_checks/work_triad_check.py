@@ -126,7 +126,15 @@ def main():
     algos = texto("brain_v2/methods/algorithms.json")
     entidades = texto("brain_v2/entity_index.json")
     codigo = texto("brain_v2/code_inventory.json")
-    CASAS = perfil + interf + algos + entidades + codigo
+    # CUARTA correccion de esta misma sonda, y siempre por lo mismo: la lista de casas estaba
+    # incompleta. Los tres arboles DMEE de INC-PSTLADR salian "sin sitio" y estan en
+    # annotations.json, known_unknowns.json y feedback_rules.json desde hace meses. Un objeto
+    # anotado ESTA aterrizado; que yo no mirara ahi no lo desaterriza.
+    anotado = (texto("brain_v2/annotations/annotations.json")
+               + texto("brain_v2/known_unknowns.json")
+               + texto("brain_v2/agent_rules/feedback_rules.json")
+               + texto("brain_v2/claims/claims.json"))
+    CASAS = perfil + interf + algos + entidades + codigo + anotado
 
     casos = [x for x in inc if not a.incident or x.get("id") == a.incident]
     if not casos:
