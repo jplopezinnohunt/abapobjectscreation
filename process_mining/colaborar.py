@@ -281,6 +281,52 @@ def contestar(minero, sujeto, respuesta, evidencia="", para=None, a_todas=False)
     return len(cand)
 
 
+def _respuesta_desde_lo_publicado(minero, pregunta, d=None):
+    """LA RESPUESTA POR DEFECTO: lo que este minero ACABA DE PUBLICAR sobre ese sujeto.
+
+    s107. Medido antes de escribirla: de 72 mineros, 49 PUBLICAN en el bus y UNO pasa
+    `puedo_contestar`. 47 preguntas, 14 respuestas. El foro era un megafono.
+
+    La causa no era desgana: era que la tarea estaba mal definida. «Implementa una funcion que
+    reciba una pregunta y decida» obliga a cada minero a inventar su criterio, asi que ninguno
+    lo hizo -- es el fallo de DESCRIPCION DE TAREA VAGA que Anthropic midio como el numero uno
+    de la delegacion orquestador->subagente.
+
+    Aqui no hay criterio nuevo que inventar: si el minero YA emitio un hallazgo sobre ese
+    sujeto, ese hallazgo ES su respuesta. Solo hay que dejar de tirarlo.
+
+    NO RAZONA, y por eso es segura: si no publico nada del sujeto, devuelve None y el minero
+    queda registrado como «pudo y no contesto». Un foro que responde por responder miente.
+    """
+    d = d or _cargar()
+    suj = str(pregunta.get("sujeto") or "").strip().lower()
+    if not suj:
+        return None
+    mios = [h for h in (d.get("hallazgos") or [])
+            if str(h.get("minero")) == str(minero)]
+    if not mios:
+        return None
+
+    # 1) mismo sujeto, que es el caso limpio
+    exactos = [h for h in mios if str(h.get("sujeto") or "").strip().lower() == suj]
+    # 2) si no, el sujeto de la pregunta aparece en lo que publico
+    if not exactos:
+        exactos = [h for h in mios
+                   if suj in str(h.get("hallazgo") or "").lower()
+                   or suj in str(h.get("sujeto") or "").lower()]
+    if not exactos:
+        return None
+
+    h = max(exactos, key=lambda x: len(str(x.get("hallazgo") or "")))
+    resp = ("RESPUESTA AUTOMATICA desde lo que este minero publico en su ultima corrida "
+            "(no es un juicio nuevo, es su hallazgo sobre ese sujeto): %s"
+            % str(h.get("hallazgo"))[:900])
+    ev = "%s · aspecto=%s · autoridad=%s · %s" % (
+        minero, h.get("aspecto"), h.get("autoridad"),
+        str(h.get("evidencia") or "")[:200])
+    return resp, ev
+
+
 def cerrar_colaborando(minero, puedo_contestar=None):
     """LO QUE TODO MINERO HACE AL TERMINAR. No es opcional.
 
@@ -292,7 +338,10 @@ def cerrar_colaborando(minero, puedo_contestar=None):
     mias = para_mi(minero)
     contestadas = []
     for p in mias:
-        r = puedo_contestar(p) if puedo_contestar else None
+        # POR DEFECTO SE CONTESTA. Antes, sin `puedo_contestar` esto valia None y el
+        # minero pasaba de largo -- de 72, uno solo la pasaba. Ahora el silencio hay que
+        # ganarselo: si publicaste algo del sujeto, contestas.
+        r = puedo_contestar(p) if puedo_contestar else _respuesta_desde_lo_publicado(minero, p)
         if r:
             resp, ev = (r if isinstance(r, tuple) else (r, ""))
             # `para=minero`: estas son SUS preguntas. Sin esto, un sujeto compartido por
