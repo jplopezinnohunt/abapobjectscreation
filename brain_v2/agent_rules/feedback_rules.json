@@ -5645,5 +5645,57 @@
         "cross-cutting"
       ]
     }
+  },
+  {
+    "id": "feedback_every_work_leaves_three_things",
+    "severity": "CRITICAL",
+    "created_session": 105,
+    "derives_from_core_principle": "CP-001",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "DE CADA TRABAJO QUEDAN TRES COSAS Y HAY QUE COMPROBAR LAS TRES: (1) EL OBJETO que descubriste -- ¿esta clasificado donde PERTENECE, y en TODOS los sitios a los que pertenece? (2) EL PROCESO -- ¿hay doc de proceso y companion que expliquen como funciona? (3) EL METODO con que lo descubriste -- ¿esta registrado como minero o algoritmo? Mecanizado en Zagentexecution/quality_checks/work_triad_check.py (tier gate). Primera corrida 2026-08-26: 14 de 15 trabajos con alguna pieza sin aterrizar.",
+    "why": "Se pierden POR SEPARADO y solo se echa de menos el proceso, porque es el entregable. Medido en INC-000016471: el proceso quedo completo (document_output_model.md + su companion); el OBJETO a medias -- hq-sap-sbp figura como el otro extremo de un destino y NO como sistema del paisaje, asi que el modelo sigue creyendo que hay tres maquinas cuando por la cuarta sale todo PDF de la casa; y el METODO casi entero -- tres scripts que llevaban un dia existiendo solo en disco. Lo que se nota se guarda; lo que no se nota, no. Y un objeto puede ser VARIAS cosas a la vez: registrarlo como interfaz no lo registra como sistema, y el hueco no se ve mirando el sitio donde dolio.",
+    "how_to_apply": "Al cerrar cualquier trabajo, corre work_triad_check.py --incident <id>. Si el objeto sale 'sin sitio', pregunta DONDE pertenece -- puede ser mas de un registro. Si el metodo sale 'script sin registrar', dalo de alta en algorithms.json antes de cerrar, no despues."
+  },
+  {
+    "id": "feedback_register_the_method_generic_not_the_case",
+    "severity": "HIGH",
+    "created_session": 105,
+    "derives_from_core_principle": "CP-002",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "EL METODO SE REGISTRA GENERICO, NO COMO EL CASO QUE LO ORIGINO. Lo que se aprende resolviendo un incidente no es 'como medir ADS': es 'como buscar en el log la huella de una capacidad y separar NO DEJA HUELLA de NO OCURRE'. Registrado asi (A61) sirve para cualquier transaccion que creas muerta, cualquier canal de salida y cualquier herramienta satelite que sospeches. Registrado como el caso, muere con el caso.",
+    "why": "Un instrumento atado a su caso es un expediente; atado a su PREGUNTA es una capacidad. La prueba esta en el enunciado: si el nombre del algoritmo lleva el nombre del incidente o del objeto concreto, todavia no has encontrado el metodo.",
+    "how_to_apply": "Antes de registrar, formula la PREGUNTA que contesta el instrumento sin nombrar el caso. Si no puedes, no tienes un metodo todavia. Y declara su failure_mode: A61 vale porque dice que leer el silencio como ausencia es el error que retira un canal vivo."
+  },
+  {
+    "id": "feedback_check_the_toolgraph_before_proposing_an_instrument",
+    "severity": "CRITICAL",
+    "created_session": 105,
+    "derives_from_core_principle": "CP-002",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "ANTES DE PROPONER UN INSTRUMENTO NUEVO, MIRA EL TOOLGRAPH. brain_v2/toolgraph.json es un grafo REAL -- 262 nodos (SKILL 50 · ALGORITMO 88 · STORE 57 · GATE 53 · AGENTE 14) y 653 aristas (DEBERIA_LEER 293 · ATERRIZA_EN 100 · RECUERDA 94 · LEE 72 · VIGILA 62 · INVOCA 32) -- con su seccion de SALUD ya calculada: skills sin lector, algoritmos que no leen ningun skill, agentes sin instrumento declarado.",
+    "why": "El 2026-08-26 propuse escribir un 'capability_wiring_check' que cruzara instrumentos x algoritmos x agentes x dominios. Eso YA EXISTE y con mas resolucion: es este grafo. Iba a reinventar la rueda por no mirar, que es exactamente lo que el bloque STOP del CLAUDE.md advierte. Y ademas mi diagnostico a mano ('7 agentes huerfanos') era mas grosero que el que el grafo ya publica ('5 agentes sin instrumento declarado').",
+    "how_to_apply": "1) Consulta toolgraph.json y su seccion `salud` ANTES de proponer cualquier censo, cruce o gate de cableado. 2) Si el hueco ya lo mide, no escribas nada: cierra el hueco. 3) Si de verdad falta, extiende el generador del grafo -- no crees un registro paralelo."
+  },
+  {
+    "id": "feedback_do_not_invent_who_changed_the_repo",
+    "severity": "HIGH",
+    "created_session": 105,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "rule": "SI EL REPO CAMBIO DESDE TU ULTIMA FOTO, DI ESO -- NO INVENTES QUIEN LO TOCO. No hay sesiones paralelas salvo que JP haya lanzado algo. Observar que un fichero cambio es un HECHO; atribuirlo a un actor es una HIPOTESIS.",
+    "why": "El 2026-08-26, al reanudar tras cuatro dias, vi ficheros mios modificados y conclui 'otras sesiones han tocado el repo'. Me lo invente. Es el mismo modo de fallo que costo seis falsos positivos en la sesion 102 -- afirmar una causa sin comprobarla -- solo que aplicado a la historia del repositorio en vez de a datos de SAP, y ademas siembra desconfianza sobre un mecanismo que no existe.",
+    "how_to_apply": "Di 'mi ultima foto es del <fecha>; el repo cambio y no tengo memoria de esos cambios'. Luego LEE (git log --since, mtimes) o PREGUNTA. Nunca nombres un actor que no has verificado."
   }
 ]
