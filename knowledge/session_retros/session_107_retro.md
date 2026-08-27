@@ -172,6 +172,85 @@ artefacto y lo declaró) **más medida** (la puerta comprueba que sigue siendo c
 
 ---
 
+## 4d. LA SEGUNDA MITAD — el día que descubrimos que las skills no eran skills
+
+Todo lo anterior fue arreglar instrumentos. Lo que vino después cambió el suelo.
+
+### El hallazgo, y lo destapó una pregunta del dueño
+
+*«¿esto era prosa sólo para vos? No skills reales en términos de Anthropic»*. Medido:
+
+| | dónde | cuántas | ¿el harness las ve? |
+|---|---|---|---|
+| Skills reales | `~/.claude/skills/` | 11 | sí |
+| **Las nuestras** | `.agents/skills/` | **50** | **NINGUNA** |
+
+Estaban **bien escritas** —front-matter con `name` y `description`, mejor formadas que varias
+de las 11 reales— **en un directorio que el harness no escanea**. 106 KB de método de banca
+que el modelo no podía cargar salvo que alguien abriera la ruta a mano.
+
+**Y explica retroactivamente la métrica que llevábamos midiendo mal toda la sesión:**
+«24 skills sin ningún lector» **no era desidia de los consumidores. Era imposibilidad.**
+
+`git mv` a `.claude/skills/`, 50 de 50 verificadas, 542 referencias reencaminadas.
+**Disponibles en la MISMA sesión** — me equivoqué al decir que haría falta reiniciar.
+
+### Lo que se hizo encima
+
+- **12 skills por clase de exploración**, generadas desde la ficha de cada minero →
+  **72/72 mineros alcanzables** (antes 49 sin invocador). Coste medido: 1.200 tokens/sesión
+  frente a 7.200 si fuera una por minero.
+- **`braintoolbox` es ahora una skill** — era un YAML de 25 KB que sólo se leía si alguien se
+  acordaba. Es el caso más claro del repo.
+- **10 skills grandes partidas**: `sap_payment_bcm_agent` de 1.725 → 690 líneas + referencia.
+- **El Stop hook de durabilidad BLOQUEA** (`exit 2`). Teníamos nueve y ninguno bloqueaba.
+- **`CLAUDE.md` −15%**: el método WebGUI al skill que ya existía.
+
+### Y el límite que casi se cuela sin verse
+
+`.claude/skills` estaba en **`.gitignore`**. Las 50 migradas sobrevivieron sólo porque
+`git mv` conserva lo ya rastreado — **la primera skill nueva nació fuera de git**. Excepción
+añadida.
+
+---
+
+## 4e. LOS AGENTES COLABORARON — y me auditaron
+
+**El foro pasó de 14 respuestas a 43 de 47.** Cinco las escribieron los agentes:
+
+- **`variant-intelligence`**: ningún job periódico depende de ADS; el candidato que lo parecía
+  usa SAPScript (`PAR_APDF` vacío en 60/60 variantes vivas).
+- **`mining-arbiter`**: cerró las cuatro declaraciones de límite. La mejor — A33 decía cubrir
+  127 de 29.190 pares, pero **28.903 (99,0%) son variantes temporales `&`**; el universo real
+  son 266 y su cobertura **30,5%, no 0,4%**. Dos órdenes de magnitud.
+
+**Y encontraron DOS defectos en el mecanismo que yo acababa de escribir:**
+
+1. **El bus borraba sin avisar.** *«Mis respuestas sobrevivieron por orden de escritura, no
+   por diseño.»* ADR-008 incumplido justo donde dos mineros escriben a la vez **por diseño**.
+   Arreglado: relee + funde + `os.replace`. Consecuencia declarada: el bus queda append-only.
+2. **Una pregunta no tenía identidad.** `(sujeto, para)` deja de identificar en cuanto se
+   re-enruta. Arreglado con `qid` estable derivado de *(quién pregunta, sujeto, texto)*.
+
+**Eso es lo que debía pasar:** el agente no sólo hizo el trabajo, auditó al que se lo mandó.
+
+---
+
+## 4f. DOS VECES ME FRENÓ EL DUEÑO, Y LAS DOS TENÍA RAZÓN
+
+- **«¿estás seguro? una cosa es una herramienta de Anthropic y otra custom»** — había
+  descartado `claude -p` comparándolo con `mining_collaboration_check`, que es **nuestro** y
+  hace otra cosa: uno **ejecuta**, el otro **mide**. Al investigarlo bien aparecieron
+  `--json-schema` (cierra nuestra regla `a_workflow_that_returns_text_lands_nothing`) y
+  **`total_cost_usd` por invocación** — el dato que nuestra propia investigación decía que
+  no teníamos para juzgar el 15× de Anthropic.
+- **«el límite de 500 líneas… ¿es real ahora?»** — es un `<Tip>`, no un límite. El límite de
+  verdad estaba en otro sitio: **el listado de skills tiene presupuesto** y al desbordar
+  recorta **empezando por las menos invocadas**, que son nuestras 50 con cero invocaciones.
+  Medido: 74 skills, 28.400 caracteres, 71% del presupuesto. No lo habría mirado sin la duda.
+
+---
+
 ## 7. Estado al cierre
 
 Claims **627** (nada perdido, faltaba el orden), **628** (la similitud no expresa secuencia) y
