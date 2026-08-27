@@ -36,8 +36,8 @@ Uso:
 """
 
 QUALITY_CHECK = {
-    "tier": "conocimiento",
-    "sobre": "conocimiento",
+    "tier": "gate",           # vocabulario real: gate | analysis | live | quarantined | library
+    "sobre": "conocimiento",  # datos_sap | conocimiento | herramientas
     "needs": "nada",
     "what": "las 3 fuentes del eje de proceso declaran los mismos dominios por proceso",
     "args": "(ninguno)",
