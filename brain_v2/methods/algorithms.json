@@ -1948,6 +1948,81 @@
    ],
    "created_session": 105,
    "evidence": "corrida sobre INC-000011781: detecta la baja de 10108464 que el correo omitia."
+  },
+  "A65_authorised_panel_reconciliation": {
+   "operates_on": "los nodos RY de una entidad (HRP1001 A007->P, TODOS los periodos) contra el panel autorizado que viene del carton, mas el rol de firma en PFCG",
+   "origin": "OURS",
+   "state": "STRONG",
+   "tipo_mineria": [
+    "CONFORMIDAD"
+   ],
+   "generaliza": true,
+   "does": "RECONCILIAR QUIEN PUEDE FIRMAR CONTRA QUIEN ESTA AUTORIZADO A FIRMAR, y separar las cuatro salidas que no son lo mismo: en el carton y activo (keep) · en el carton y ausente (ADD, si la carta lo pide; si no, hueco para el negocio) · la carta pide baja y sigue activo (DELIMIT) · activo y en NINGUN carton (SOBRE-AUTORIZACION, que se aparca y nunca se ejecuta sin permiso expreso). Detecta ademas el PERNR fantasma -- existe en PA0002 y no tiene PA0105/0001, asi que esta en el nodo y no puede firmar -- y el desajuste de roles entre iniciar y comprometer.",
+   "bound_in": [
+    "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py",
+    "Zagentexecution/quality_checks/bcm_role_gap_check.py"
+   ],
+   "failure_mode": "LLAMAR DERIVA A UN EXTRA SIN TENER TODOS LOS CARTONES. El grupo de responsabilidad es de ENTIDAD y un carton es de UN banco: si falta el carton de algun banco de la entidad, alguien que sobra aqui puede estar perfectamente autorizado alli. Sin el gate de completitud la conclusion 'sobra' es una acusacion sin prueba. Segundo modo: concluir desde una pantalla de OOCU_RESP -- 'Other period' esconde filas activas, medido en INC-000011781 con Martin.",
+   "checks_first": "estar en el nodo NO es poder firmar: hace falta el rol BNK_APP. Renata quedo en los cuatro nodos y seguia sin poder firmar (INC-000011781).",
+   "lands_in": [
+    "knowledge/incidents/INC-*.md",
+    "el spec de ejecucion para DBS"
+   ],
+   "relates_to": [
+    "A64_authority_vs_request_delta"
+   ],
+   "created_session": 105,
+   "evidence": "INC-000006313 (UIS): destapo un PERNR fantasma de 6 meses, 2 extras y 2 huecos de rol. INC-000011781 (UBO): 18 meses de sobre-autorizacion que nadie pidio mirar."
+  },
+  "A66_master_data_replication_by_standard_api": {
+   "operates_on": "el maestro en P01 (fuente) y el mismo objeto en D01/V01 (destino), por la API estandar del objeto -- nunca por INSERT plano",
+   "origin": "OURS",
+   "state": "STRONG",
+   "tipo_mineria": [
+    "CONFORMIDAD"
+   ],
+   "generaliza": true,
+   "does": "MEDIR EL HUECO REAL LEYENDO LOS DOS SISTEMAS EN VIVO Y REPLICAR POR LA API DEL OBJETO, con readback campo a campo. Tres reglas que no se negocian: P01 es FUENTE y jamas destino; la API estandar y nunca un INSERT plano sobre tabla estandar -- eso salta derivacion, rangos de numeracion, validez, jerarquia y consistencia, y deja un registro que PARECE bien en la tabla y esta roto para el proceso; y verificar releyendo, porque un BAPIRET2 sin errores no prueba que se escribio.",
+   "bound_in": [
+    "Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_master_sync.py",
+    "Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_alignment_check.py"
+   ],
+   "failure_mode": "CREER AL CODIGO DE RETORNO. Un BAPIRET2 limpio no es evidencia de escritura: la evidencia es el readback. Segundo modo: mandar campos planos a una API que espera ESTRUCTURAS ANIDADAS -- GL_ACCT_MASTER_SAVE_RFC necesita ACCOUNT_COA con KEYY dentro y ACTION='I', y sin ACTION falla con FH502 'Import of table SKA1 not possible'. Tercero: fechar el hueco. Una cuenta ausente en V01 desde hace dos anos y otra de ayer son problemas distintos, y SKA1-ERDAT los separa.",
+   "checks_first": "el maestro NACE en P01 y solo se avisa si hay revaluacion: el hueco no se detecta por notificacion, se detecta BARRIENDO. Medido: 2 cuentas en D01, 33 en V01.",
+   "lands_in": [
+    "el maestro de D01/V01",
+    "knowledge/domains/Master_Data_Governance/"
+   ],
+   "relates_to": [
+    "A64_authority_vs_request_delta"
+   ],
+   "created_session": 105,
+   "evidence": "INC-000016262: 2 cuentas replicadas a D01 y 33 a V01, verificadas por relectura."
+  },
+  "A67_variant_write_safety": {
+   "operates_on": "una variante de programa que se copia entre sistemas: su contenido completo leido con RS_VARIANT_CONTENTS_RFC y escrito con RS_CREATE_VARIANT_RFC",
+   "origin": "OURS",
+   "state": "STRONG",
+   "tipo_mineria": [
+    "TECNICA_DE_LECTURA"
+   ],
+   "generaliza": true,
+   "does": "COPIAR UNA VARIANTE SIN ROMPERLA, sabiendo que las dos formas de romperla NO DAN ERROR. (1) La lectura devuelve fechas en formato EXTERNO (31.07.2026) y la escritura las quiere INTERNO (20260731): mandarlas tal cual escribe basura -- '20.7..31.0' -- y el sistema acepta. (2) Lo que no se envia se rellena con DEFECTOS en silencio: copiar solo la seleccion de cuentas pierde el metodo de valoracion, las fechas y los flags de modo. Lo que salva no es la suerte: snapshot PRE a fichero antes de tocar y readback POST campo a campo despues.",
+   "bound_in": [
+    "Zagentexecution/tasks/2026_08_21_variant_alignment/variant_align.py"
+   ],
+   "failure_mode": "ESCRIBIR SIN SNAPSHOT PREVIO. Los dos modos de rotura son SILENCIOSOS, asi que sin el PRE no hay a que volver: medido en V01, tres variantes cuyas fechas eran IDENTICAS a P01 quedaron corruptas por copiarlas sin convertir, y se repararon solo porque existia el snapshot. Segundo modo: confundir el rango OBSERVADO en los datos con el CONFIGURADO en la variante -- analisis previos describian UNES_UNBA como 1001604-1098174 (lo que valoro) cuando lo configurado son tres bloques BT.",
+   "checks_first": "el mecanismo de seleccion cambia entre variantes del MISMO programa: UNES_DEPOSIT usa valores EQ sueltos y las otras tres rangos BT. Decir 'se anade por rangos' es falso la mitad de las veces. Lee la variante antes de decir como se anade.",
+   "lands_in": [
+    "la variante del sistema destino",
+    "PRE_*.json como evidencia"
+   ],
+   "relates_to": [
+    "A33_variant_content_mining",
+    "A47_ob09_vs_variant_check"
+   ],
+   "created_session": 105,
+   "evidence": "s102: 21/21 variantes identicas a P01 en D01 y V01 tras reparar las 3 corruptas."
   }
  },
  "_portfolio": {
