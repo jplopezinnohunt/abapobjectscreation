@@ -85,6 +85,61 @@ por intención. Va a H143.
 
 ---
 
+## 4b. LOS OTROS CUATRO DE LA LISTA — cerrados, y el mismo patrón en todos
+
+**H138 — el documento que define cómo trabajamos llevaba desde s105 sin parsear.**
+Un valor plano con `: ` dentro (`...NO DA ERROR: da un cero...`) y cuatro casos más. **Su
+puerta no se enteraba porque lee con regex:** encuentra sus 16 cifras igual y devuelve verde
+sobre un fichero que ningún consumidor de YAML puede leer. Arreglado con **5 cambios
+quirúrgicos, cero contenido perdido**; la puerta ahora comprueba el parseo *antes* de mirar
+ninguna cifra. La sesión anterior lo intentó guiada por el parser, paró en la línea 210 y lo
+revirtió entero — el método que funcionó fue **automatizar el bucle del parser** con la regla
+correcta: *una clave es un identificador, no cualquier cosa con dos puntos*.
+
+**H139 — el foro daba por cerrado lo que dejaba abierto.** `contestar()` casaba por sujeto y
+contestaba la primera. Medido: 47 preguntas, 4 sujetos repetidos, y **`CLAIM 616` son 15
+preguntas con 15 destinatarios y 15 textos distintos**. La identidad es `(sujeto, para)`:
+ahora contesta la única, la de `para=`, **todas** con `a_todas=True`, o **se niega** diciendo
+cuántas hay y a quién. Nunca en silencio.
+
+**H136 — 788 secuencias mojibake** en el PMO. Decodificaba como UTF-8 sin error, por eso nadie
+se quejó nunca. Reparadas todas, 0 restantes.
+
+**H135 — cerrado como declaración, no como renumeración.** 134 cabeceras, 111 números, 19
+repetidos: **5 son un item vivo con varias secciones** (correcto) y **14 son dos items con un
+número**, de dos sesiones repartiendo sin mirar las del otro — ADR-008 aplicado al contador
+del PMO. **No se renumeran, y la razón está medida:** H113 y H112 se citan en 5 ficheros cada
+uno, H110 en 4, y el historial de git no se reescribe.
+
+**H140 — el agent-finder ya tiene minero:** `A69_agent_roster_enumeration`, con `UNOBSERVABLE`
+en su salida y en su `lo_que_NO_puede` para la mitad del harness, que no es enumerable desde
+disco *por construcción*.
+
+---
+
+## 4c. EL HALLAZGO DE MÉTODO — cuatro instrumentos, cuatro veces el mismo fallo
+
+Claim **629**. Los **cuatro** instrumentos escritos o tocados hoy fallaron, en su primera
+corrida, el criterio que ellos mismos aplican:
+
+| instrumento | lo que hizo mal |
+|---|---|
+| `process_circuit_check` | dio el circuito por cosido con un companion de **transportes** |
+| `companion_as_skill_sweep` | ranking dominado por vocabulario ubicuo; e ignoró el **nombre** |
+| `pmo_id_integrity_check` | clasificó por parecido de título — falló en las dos direcciones |
+| `braintoolbox_check` | verde durante dos días sobre un fichero que no parseaba |
+
+Y `pmo_id_integrity_check` tenía además un defecto propio — `re.S` con `.{0,120}` goloso se
+tragaba la cabecera siguiente — que **se cazó exactamente con el caso que debía fallar**.
+
+**La lección, y es incómoda: escribir la advertencia en el docstring no protege de cometerla.**
+`process_circuit_check` avisaba de la cita-que-no-es-narración en su propia cabecera y la
+cometió igual. Lo que protege es que el criterio esté **en el `if`**. La forma concreta que
+quedó en el código, dos veces: una relación se da por buena con **juicio** (alguien abrió el
+artefacto y lo declaró) **más medida** (la puerta comprueba que sigue siendo cierto).
+
+---
+
 ## 5. LO QUE QUEDA ABIERTO de H137 — dicho, no dado por hecho
 
 - **El skill `presupuesto-al-pago`**: no creado. Las 11 etapas son su índice; crearlo es trabajo aparte.
@@ -92,7 +147,14 @@ por intención. Va a H143.
   está minado) y no a minero nuevo, pero eso lo decide `miner-onboarding` con la cadena delante.
 - **Las etapas 1-3 no producen arista `SIGUE_A`** porque las tres viven en el mismo fichero:
   son bucles, y un bucle no es travesía. Correcto, pero el grafo no muestra compras como cadena.
-- **H138–H142** intactos: no se tocaron.
+- **H141** (`document-output-discovery` aislado, 0 aristas DELEGA) y **H142** (los helpers no
+  son nodo del toolgraph): **no se tocaron.** No estaban en la lista que el dueño pasó.
+- **H143 nuevo, y es mío:** el guardia de escritura sobre stores solo casa
+  `Write|Edit|MultiEdit`. Una escritura por Bash no lo dispara — y esta sesión trabaja por
+  Bash por instrucción del harness, así que la vía más usada es la única sin vigilar. Escribí
+  `domains.json` y `claims.json` así. No hubo daño (lock `FREE` comprobado a mano, escrituras
+  atómicas con `os.replace`), pero eso fue **disciplina**, que es justo de lo que un guardia
+  existe para no depender.
 
 ---
 
@@ -112,6 +174,8 @@ por intención. Va a H143.
 
 ## 7. Estado al cierre
 
-Claims **627** (nada perdido, faltaba el orden) y **628** (la similitud no expresa secuencia).
-Commit `9e9c432`, enfocado. **Copia de seguridad NO hecha: `D:\claude_backups` desconectado** —
+Claims **627** (nada perdido, faltaba el orden), **628** (la similitud no expresa secuencia) y
+**629** (los cuatro instrumentos). Tres commits enfocados: `9e9c432` · `34b7348` · `36e94b6`.
+Cinco H cerrados: **H137** (tramo principal + barrido), **H138**, **H139**, **H135**, **H136**,
+**H140**. Uno nuevo abierto: **H143**. **Copia de seguridad NO hecha: `D:\claude_backups` desconectado** —
 Golden DB 21,25 GB y `~/.claude` 1,96 GB existen sólo en este disco.
