@@ -223,6 +223,65 @@ Each layer FEEDS the others:
 
 ### ðŸŸ¡ HIGH â€” Next available session
 
+**H134 -- EL BOUNDARY LLAMA DEAD A 38 DESTINOS QUE SU EVIDENCIA NO PUEDE VER (medido 2026-08-27,
+claim 620).** `process_mining/interface_boundary.py` correlaciona `RFCDES` contra
+`rsau_audit_history.PARAMX`, que registra llamadas **RFC**. Un `cl_http_client=>create_by_destination`
+no es RFC y no deja fila ahi. De los 227 destinos DEAD, **38 son `HTTP external` (tipo G)**: para
+esos, `observed_calls: 0` mide *sin trafico RFC*, no *sin uso*.
+
+El script declara en su comentario que "DEAD is now a fact rather than an artefact" tras quitar el
+muestreo de 400.000 filas. Cierto para tipo 3; **sobreextendido para tipo G** -- quitar el muestreo
+arregla la COBERTURA de la fuente, no su APLICABILIDAD. Es DENOMINADOR INCOMPLETO
+(`braintoolbox.yaml`) sobre nuestro propio instrumento, y contradice la consigna del `BRAIN_INDEX`:
+*MISSING_INPUT significa NO PODEMOS VER, nunca NO HAY NADA*.
+
+**Arreglo (pequeno y determinista):** tercer cubo `UNOBSERVABLE` para los tipo G (y revisar `driver`
+e `internal`, que tampoco esta claro que emitan PARAMX). Que el `findings` diga por que no se puede
+concluir, en vez de concluir. Mientras no se haga, **no citar la cifra "227 dead" sin partirla por
+tipo** -- hoy el `BRAIN_INDEX` publica "238 configuradas, 11 vivas, 227 muertas" sin ese corte.
+
+**Caso que lo destapo:** `svc-prod-role.hq.int.unesco.org` (host de RoleManagement, claim 619) figura
+DEAD con 0 llamadas. **No se afirma que este vivo** -- ese destino esta en P01 y quien llama a RM
+corre en D01, asi que no hay contradiccion de dato. Lo que falla es la licencia para pronunciarse.
+
+**H135 -- LOS IDs DEL PMO COLISIONAN: 18 NUMEROS REPETIDOS, Y YA HAY REFERENCIAS AMBIGUAS
+(medido 2026-08-27).** 121 marcas `**H<n>`, solo **102 distintas**. Repetidos: H41, H50, H67, H68,
+H91, H92, H93 y **el bloque entero H104-H114**. Son dos flujos de numeracion que no se ven entre si:
+los items de seccion (`^**H<n>`) y la lista citada de pendientes de sesion (`> - **H<n>`), cada uno
+contando por su cuenta.
+
+**No es cosmetico: ya rompio una referencia.** La linea de H124 dice *"Ver H106 y H112, que dependen
+de el"* -- y H106 y H112 existen **dos veces cada uno**, con contenidos sin relacion (H112 es a la vez
+*el disco de copias desconectado* y *la alineacion de la FSV*). Un lector no puede resolver a cual
+apunta, y un agente tampoco.
+
+**Como se cazo:** al insertar H134 la guarda del script fallo (`H112 ya existe`) en vez de escribir
+encima. El defecto llevaba ahi desde antes; lo que faltaba era que alguien asertara antes de tocar --
+regla #180, *un replace silencioso es un defecto silencioso*.
+
+**Arreglo:** asignar el siguiente id desde el **maximo global** (hoy 133), no desde el maximo de una
+seccion; y una puerta que cuente marcas frente a distintas y falle. Sin eso, cada sesion que numere
+mirando su propia lista vuelve a colisionar. Renumerar lo viejo es aparte y puede no compensar -- lo
+urgente es dejar de crear colisiones nuevas.
+
+**H136 -- EL PMO ESTA DOBLE-CODIFICADO: EL FICHERO CONTIENE MOJIBAKE, NO SOLO SE VE MAL
+(medido 2026-08-27).** El guion largo de `**H111 -- EL BRAIN_STATE` no es U+2014: son **tres
+caracteres**, `U+00E2 U+20AC U+201D`. Es decir, los bytes UTF-8 del guion (E2 80 94) fueron
+**decodificados como cp1252 y regrabados como UTF-8**. Lo mismo les pasa a los emoji de las
+cabeceras de seccion. **Esta en el disco**, no es un artefacto del terminal: se comprobo imprimiendo
+los codepoints.
+
+**Por que importa:** cualquier busqueda o edicion por texto que use el caracter correcto **no
+encuentra nada y falla en silencio** si no hay asercion -- que es exactamente lo que paso dos veces
+al intentar insertar H134. Y afecta al fichero que declaramos *single source of truth* de todo el
+trabajo pendiente.
+
+**Arreglo:** una pasada de reparacion (`s.encode('cp1252','ignore').decode('utf-8')` sobre los tramos
+afectados) **con diff revisado antes de grabar**, no a ciegas -- hay texto legitimamente acentuado y
+un arreglo mal aplicado lo destroza. **Decision del dueno**, porque toca el fichero entero. Mientras
+no se haga: los bloques nuevos se escriben en **ASCII puro** (H134/H135/H136 lo estan) para no anadir
+mas corrupcion.
+
 **H111 â€” EL BRAIN_STATE YA NO CABE EN CONTEXTO: 1.396.967 TOKENS, EL 139,7% DE UN MILLON
 (medido por el propio rebuild, 2026-08-24).** 5.587.869 bytes. La progresion es **4 MB el
 20-ago, 5 el 21, 5,5 el 24**: medio mega al dia.

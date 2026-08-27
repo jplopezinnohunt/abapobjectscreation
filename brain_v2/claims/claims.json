@@ -29267,5 +29267,98 @@
     "created_session": 105,
     "resolved_session": 105,
     "resolution_notes": ""
+  },
+  {
+    "id": 619,
+    "claim": "ROLEMANAGEMENT (RM) ES UN SISTEMA EXTERNO CON EL QUE SAP SE INTEGRA, Y NO ESTA EN NUESTRO INVENTARIO DE INTERFACES. Es el registro de QUIEN PUEDE ACTUAR: 13 roles activos en 2 niveles (6 a nivel UNESCO global, 7 a nivel Unidad Organizativa), SOAP 1.1 sobre https://svc-prod-role.hq.int.unesco.org/facade.svc (IP interna 10.101.32.43), namespace http://unesco.org/rolemanagement, binding BasicHttpBinding_Facade, 4 operaciones (GetRoleMembers, GetCertifyingOfficersByEmployeeEmail, GetPlaces, GetEmployeeMemberships). NO ES UNESDIR: en el arbol SoapUI de UNESCO, RoleManagement y Unesdir son servicios HERMANOS, y confundirlos es un anti-patron declarado del skill. Nuestro mapa SI conoce UNESDIR (el directorio) con 2 flujos -- ZLFNA1_DOWNLOAD_FOR_UNESDIR (FILE saliente, maestro de proveedores, diario) y YHR_CREATE_MAIL_FROM_UNESDIR (DBCON entrante, 93% de fallo) -- pero RoleManagement no figura como flujo, y el nombre de destino UNESDIR_PROD da 0 hits en interface_boundary.json. Su unico rastro nuestro es un destino con nombre GUID 005056BE59091ED9BEFB8CB619545146 hacia ese host, en P01, clasificado DEAD. La cadena que lo llama de verdad corre en D01 clnt 350, paquete ZCRP: FunctionImport CallUnesdir del servicio OData ZPSM_PROC_FORMS_SRV -> ZCL_ZPSM_PROC_FORMS_DPC_EXT:5214 -> cl_http_client=>create_by_destination(UNESDIR_PROD) -> /facade.svc. OJO CON EL TIER: yo NO lei el ABAP. Esto viene del skill crp/unesdir-role-management de unescrp, cuyo README fue reescrito y validado contra hooks + DPC en la sesion CRP S-208 (2026-08-27) con D01 no alcanzable, o sea prueba FORMA no runtime. Verificarlo de primera mano requiere leer la clase.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_2",
+    "status": "VERIFIED",
+    "domain": "Integration",
+    "domain_axes": {
+      "functional": "Integration",
+      "process": "cross-cutting"
+    },
+    "evidence_for": [
+      "c:/Users/jp_lopez/projects/unescrp/.claude/skills/crp/unesdir-role-management/README.md (frontmatter + s1.1 + s3 + s3a)",
+      "c:/Users/jp_lopez/projects/unescrp/.claude/skills/crp/unesdir-role-management/wsdl-reference.md (endpoints, IP, operaciones)",
+      "c:/Users/jp_lopez/projects/unescrp/brain/sessions/s208-three-mining-knowledges-closed.md (K1, validado contra codigo, CODE-READ)",
+      "brain_v2/interface_boundary.json dead[] destino 005056BE59091ED9BEFB8CB619545146 host svc-prod-role.hq.int.unesco.org",
+      "brain_v2/integration_channels.json filas 4.11 y 7.2 (UNESDIR, no RM)"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "RoleManagement",
+      "UNESDIR",
+      "UNESDIR_PROD",
+      "ZPSM_PROC_FORMS_SRV",
+      "ZCL_ZPSM_PROC_FORMS_DPC_EXT",
+      "CallUnesdir",
+      "ZLFNA1_DOWNLOAD_FOR_UNESDIR",
+      "YHR_CREATE_MAIL_FROM_UNESDIR",
+      "svc-prod-role.hq.int.unesco.org"
+    ],
+    "created_session": 106,
+    "resolved_session": 106,
+    "resolution_notes": "OJO PARA QUIEN LEA EL CATALOGO DE 13 ROLES: que RM liste un rol llamado BANK_SIGNATORY NO significa que gobierne la firma bancaria de UNESCO. Refutado por el dueno 2026-08-27: la firma bancaria usa SAP ESTANDAR (nodos RY, HRP1001 RELAT 007, rol BNK_APP, ejecucion OOCU_RESP) y no pasa por RM. Ver KU-2026-106-RM-BANK-SIGNATORY (CLOSED_REFUTED) y su leccion sobre el alias que da cero. Los roles de RM cuyo consumo esta PROBADO son los 4 que usa CRP: CERTIFYING, OFFICER_IN_CHARGE, APPROVING, BUDGET_OFFICER."
+  },
+  {
+    "id": 620,
+    "claim": "NUESTRO INSTRUMENTO DE FRONTERA NO PUEDE VER TRAFICO HTTP SALIENTE, Y AUN ASI LLAMA DEAD A 38 DESTINOS POR ESO (medido 2026-08-27 leyendo el script y recontando los cubos). process_mining/interface_boundary.py correlaciona la configuracion RFCDES contra rsau_audit_history.PARAMX, que registra LLAMADAS RFC. Una llamada cl_http_client=>create_by_destination NO es una llamada RFC y no escribe ese registro. Reparto real de los 227 destinos DEAD: 72 ABAP (RFC), 64 internal, 48 TCP/IP, 38 HTTP external (tipo G), 2 driver, 2 HTTP, 1 logical. Para los 38 de tipo G, observed_calls:0 mide SIN TRAFICO RFC, no SIN USO. El propio script declara en su comentario 'DEAD is now a fact rather than an artefact' tras quitar el muestreo de 400.000 filas: eso es cierto para tipo 3, y SOBREEXTENDIDO para tipo G, porque quitar el muestreo arregla la COBERTURA de la fuente pero no su APLICABILIDAD. Es el modo de fallo DENOMINADOR INCOMPLETO del braintoolbox aplicado a nuestro propio instrumento, y contradice la propia consigna del BRAIN_INDEX: MISSING_INPUT significa NO PODEMOS VER, nunca NO HAY NADA. El caso que lo destapa es svc-prod-role.hq.int.unesco.org, host de RoleManagement (claim 619), que aparece DEAD con 0 llamadas. NO SE AFIRMA que ese destino este vivo: esta en P01 y quien llama a RM corre en D01, asi que no hay contradiccion de dato. Lo que se afirma es que el instrumento no tiene evidencia para pronunciarse sobre ningun tipo G. Arreglo: clasificar los tipo G como UNOBSERVABLE, no DEAD. Ver H112.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Integration",
+    "domain_axes": {
+      "functional": "Integration",
+      "process": "cross-cutting"
+    },
+    "evidence_for": [
+      "process_mining/interface_boundary.py:100-147 (fuente = rsau_audit_history.PARAMX, comentario PATTERN D6)",
+      "process_mining/interface_boundary.py:48 (RFCTYPE G = HTTP external)",
+      "brain_v2/interface_boundary.json summary + recuento por tipo de los cubos live/dead/undeclared",
+      "brain_v2/BRAIN_INDEX.md seccion SEGURIDAD (MISSING_INPUT means WE CANNOT SEE, never there is nothing)",
+      "brain_v2/braintoolbox.yaml modos_de_fallo -> DENOMINADOR INCOMPLETO"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "interface_boundary.py",
+      "interface_boundary.json",
+      "RFCDES",
+      "rsau_audit_history",
+      "cl_http_client",
+      "RoleManagement"
+    ],
+    "created_session": 106,
+    "resolved_session": 106,
+    "resolution_notes": ""
+  },
+  {
+    "id": 621,
+    "claim": "EXISTE UNA CLASE DE CANAL QUE NUESTRO INVENTARIO NO TIENE: EL PROXY HTTP GENERICO EXPUESTO COMO FUNCTIONIMPORT ODATA. En ZCRP (D01 clnt 350) el FunctionImport CallUnesdir de ZPSM_PROC_FORMS_SRV recibe del llamador TRES cosas -- destino, SOAPAction y el envelope entero -- y ABAP las reenvia por cl_http_client. Su gemelo CallSalesforce usa la misma forma, y el comentario de la clase lo declara explicitamente 'a modern reusable pattern for any future external connection' (dpc_ext:5210). El unico control es una allowlist por SUBCADENA: si el destino no casa UNESDIR_*, se fuerza a UNESDIR_PROD (dpc_ext:5245-5247). Ninguno de nuestros 10 canales declarados en interface_inventory.json (RFC_INBOUND_OBSERVED, RFC_DESTINATION, RFC_CUSTOM_FM, BATCH_INPUT, FILE, IDOC, WEB_SERVICE, WEBSERVICE, DBCON, HTTP_SERVICE) describe esta forma. Importa por dos motivos independientes: (a) de INVENTARIO, un canal donde el cuerpo lo aporta el llamador no se puede caracterizar leyendo el codigo del canal, asi que la pregunta 'que sale por aqui' no tiene respuesta estatica; (b) de SEGURIDAD, es superficie de diputado confundido, y vive en un paquete NUESTRO. Concuerda con lo ya sabido en H71: el control no puede vivir en la capa de rol, tiene que vivir en la capa de LLAMADA y DATO. TIER_2: leido en la documentacion del skill de unescrp validada en S-208, no en la clase ABAP.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_2",
+    "status": "VERIFIED",
+    "domain": "Integration",
+    "domain_axes": {
+      "functional": "Integration",
+      "process": "cross-cutting"
+    },
+    "evidence_for": [
+      "c:/Users/jp_lopez/projects/unescrp/.claude/skills/crp/unesdir-role-management/README.md s1.1 (cadena + allowlist por subcadena + cita dpc_ext:5210)",
+      "brain_v2/interface_inventory.json (las 10 clases de canal declaradas)",
+      "brain_v2/BRAIN_INDEX.md seccion SEGURIDAD (H71: el control vive en la capa de llamada y dato)"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "CallUnesdir",
+      "CallSalesforce",
+      "ZPSM_PROC_FORMS_SRV",
+      "ZCL_ZPSM_PROC_FORMS_DPC_EXT",
+      "interface_inventory.json"
+    ],
+    "created_session": 106,
+    "resolved_session": 106,
+    "resolution_notes": ""
   }
 ]

@@ -867,6 +867,56 @@
       "why": "Tres instrumentos dan tres numeros y ninguno explica que mide. Importa porque el tamano es el argumento para decidir si un backup se puede correr en linea, y porque una cifra desactualizada en MEMORY.md se cita como si fuera actual. El 22,27 no se puede localizar grepeando el repo: es salida de ejecucion, no un fichero.",
       "how_to_resolve": "Comparar en la misma corrida: tamano del fichero en disco, tamano tras VACUUM INTO, y lo que declara golden_manifest.json. Luego actualizar MEMORY.md, que es donde la cifra se cita de memoria.",
       "status": "OPEN"
+    },
+    {
+      "id": "KU-2026-106-RM-BANK-SIGNATORY",
+      "opened_at": "2026-08-27",
+      "session": 106,
+      "severity": "HIGH",
+      "domain": "Payment_BCM",
+      "question": "El servicio RoleManagement tiene un rol BANK_SIGNATORY a nivel Unidad Organizativa. Esta POBLADO? Y si lo esta, coincide con quien SAP autoriza a firmar (nodos RY 90000004/90000005 + HRP1001 RELAT 007 + rol BNK_APP) y con los cartones de los bancos?",
+      "why": "Nuestro agente bcm-signatory-panel triangula TRES fuentes para la pregunta de quien puede firmar pagos: el PDF que autoriza (carta + carton), la realidad en SAP, y el pedido del correo. RoleManagement seria una CUARTA, fuera de SAP, y no aparece en el modelo: grep -ril BANK_SIGNATORY sobre brain_v2/, knowledge/ y .claude/ da 0 hits (medido 2026-08-27). Si esta poblada y diverge, la deriva que el agente mide contra 3 fuentes esta medida contra un denominario incompleto. Si esta vacia, se cierra en una llamada y deja de ser una incognita. Es la misma forma que el caso Egipto: preguntar por el MODELO del canal antes de disenar o de concluir sobre cobertura.",
+      "how_to_resolve": "Una llamada GetRoleMembers(Place=<lugar de la entidad>, Role='BANK_SIGNATORY') contra https://svc-prod-role.hq.int.unesco.org/facade.svc, y luego GetPlaces() para saber que lugares existen. El catalogo del skill declara Limit='Unknown' y ningun consumidor en CRP, asi que hoy NO se sabe si tiene miembros. Cruzar el resultado contra extract_bcm_signatories.py.",
+      "status": "CLOSED_REFUTED",
+      "related_claims": [
+        619
+      ],
+      "related_objects": [
+        "RoleManagement",
+        "BANK_SIGNATORY",
+        "BNK_APP",
+        "HRP1001",
+        "bcm-signatory-panel",
+        "extract_bcm_signatories.py"
+      ],
+      "closed_at": "2026-08-27",
+      "closed_session": 106,
+      "resolution": "REFUTADA POR EL DUENO EL MISMO DIA QUE SE ABRIO. La firma bancaria (BANK_SIGNATORY) usa SAP ESTANDAR y NO pasa por RoleManagement. No hay cuarta fuente de autoridad: el cruce a tres bandas del agente bcm-signatory-panel -- PDF (carta + carton) / SAP (nodos RY 90000004-90000005, HRP1001 RELAT 007, rol BNK_APP, ejecucion por OOCU_RESP) / correo -- esta COMPLETO, y el lado SAP es estandar de punta a punta. Que el catalogo de RM liste un rol LLAMADO BANK_SIGNATORY no implica que gobierne nuestra firma bancaria.",
+      "lesson": "ES 'EL ALIAS QUE DA CERO' (modo de fallo declarado en braintoolbox.yaml), y me lo hice a mi mismo. Busque BANK_SIGNATORY -- que es la clave de OTRO sistema -- contra un cerebro que modela ese mismo concepto bajo las claves de SAP (HRP1001, BNK_APP, nodos RY, OOCU_RESP). El grep dio 0 y lei el 0 como HUECO DE CONOCIMIENTO cuando era HUECO DE CLAVE. Un alias mal resuelto no da error: da un cero, que es peor. Regla operativa: antes de declarar que falta algo porque un nombre no aparece, comprobar si el concepto ya vive bajo el nombre CANONICO DE ESTE SISTEMA. Es ademas el gemelo del fallo que unescrp registro el mismo dia en S-208 (existence-concluded-from-a-name-grep): alli se concluyo que no habia companion porque el nombre no casaba; aqui se concluyo que faltaba una fuente de autoridad porque el nombre no casaba.",
+      "evidence_against": [
+        "Correccion directa del dueno (JP), 2026-08-27: 'Bank_Signatory usa sap estandard. no tiene Roles management.'",
+        ".claude/agents/bcm-signatory-panel.md:40-56 (el cruce a tres bandas, ya completo, todo SAP estandar del lado SAP)"
+      ]
+    },
+    {
+      "id": "KU-2026-106-UNESCRP-ECOSYSTEM-NODE",
+      "opened_at": "2026-08-27",
+      "session": 106,
+      "severity": "LOW",
+      "domain": "Brain_Architecture",
+      "question": "El proyecto unescrp (la aplicacion CRP: React + UI5 sobre D01 clnt 350, paquete ZCRP) es un nodo del ecosistema o queda deliberadamente fuera?",
+      "why": "ecosystem_link.md y refs_external.json dan 0 menciones de unescrp (medido 2026-08-27), y nuestro CLAUDE.md declara 4 proyectos sin incluirlo. Y sin embargo Cost_Recovery_CRP es dominio NUESTRO (TIER_1, claims 268-277, pool 633CRP9003): modelamos el mecanismo financiero mientras unescrp construye la aplicacion del mismo proceso de negocio, sin arista declarada entre los dos. Puede ser deliberado; hoy no esta escrito ni que si ni que no.",
+      "how_to_resolve": "Decision del dueno. Si es nodo, declararlo en ecosystem_link.md + refs_external.json + ecosystem-coordinator/ecosystem/data-capability-registry.md con la direccion de consumo (quien lee a quien, ADR-007 read-only). Si no lo es, escribir el porque.",
+      "status": "OPEN",
+      "related_claims": [
+        619
+      ],
+      "related_objects": [
+        "unescrp",
+        "Cost_Recovery_CRP",
+        "ecosystem_link.md",
+        "refs_external.json"
+      ]
     }
   ]
 }
