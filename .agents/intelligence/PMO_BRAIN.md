@@ -315,6 +315,22 @@ esta tarea.
 4. Cerrar la pregunta general: barrer los 44 companions y marcar cuales son de facto un skill
    de dominio sin declarar. Eso es una respuesta MEDIDA a la tesis del dueno, no una opinion.
 
+**TRES REQUISITOS DEL DUENO (2026-08-27), que acotan como se resuelve esto:**
+1. **NO PERDER NADA.** Ni skills ni companions. Lo que se reorganice se PRESERVA (CP-002);
+   lo obsoleto se SUPERSEDE, no se borra. Si un companion resulta ser un skill de dominio,
+   el companion NO desaparece: gana una declaracion, no pierde su fichero.
+2. **SKILLS *Y* COMPANIONS**, los dos ejes. La tesis es que el companion contiene el skill
+   implicito; el entregable no es elegir uno, es declarar la relacion entre ambos.
+3. **SI HAY OPORTUNIDAD, UN MINERO DEL END-TO-END.** El circuito completo no lo mina hoy
+   nadie: hay mineros por tramo (A21 caso, B1_B2_B3 flujo, B4 conformidad P2P,
+   A24 ciclo de vida) y cada uno declara que NO puede solo. Puede que lo que falte sea la
+   COMPOSICION y no un minero nuevo -- decidirlo con evidencia, no por gusto.
+4. **QUE COLABOREN LOS AGENTES.** Enfasis explicito del dueno tras un fallo mio: conteste
+   yo las preguntas del bus como agente principal, y eso NO es que los agentes colaboren.
+   Se lanzaron 3 en paralelo (Explore para localizar por CONTENIDO, bank-process-discovery
+   para el criterio de dominio, miner-onboarding para el veredicto del minero), con el bus
+   como canal entre ellos.
+
 **No confundir con H135/H136**, que son defectos del propio PMO. Esto es conocimiento de
 negocio potencialmente perdido, y vale mas.
 
