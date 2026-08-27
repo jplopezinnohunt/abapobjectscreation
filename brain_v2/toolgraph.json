@@ -6,19 +6,19 @@
   "resumen": {
     "nodos": {
       "SKILL": 50,
-      "MINERO": 70,
+      "MINERO": 71,
       "STORE": 57,
       "ALGORITMO": 24,
       "CLASE_MINERIA": 12,
       "AGENTE": 14,
-      "GATE": 56,
+      "GATE": 59,
       "MEMORIA": 94
     },
     "aristas": {
-      "LEE": 78,
-      "DEBERIA_LEER": 79,
-      "ATERRIZA_EN": 103,
-      "DESCUBRE": 81,
+      "LEE": 82,
+      "DEBERIA_LEER": 86,
+      "ATERRIZA_EN": 105,
+      "DESCUBRE": 83,
       "INVOCA": 42,
       "DELEGA": 26,
       "VIGILA": 73,
@@ -91,9 +91,9 @@
       "cuales": []
     },
     "aristas_que_faltan_frente_a_las_que_hay": {
-      "LEE": 78,
-      "DEBERIA_LEER": 79,
-      "conectividad_pct": 49.7,
+      "LEE": 82,
+      "DEBERIA_LEER": 86,
+      "conectividad_pct": 48.8,
       "_que_significa": "de todo el conocimiento que un instrumento DEBERIA leer, que porcentaje lee de verdad. Es el termometro del bucle: si una sesion no lo sube, conecto menos de lo que solto"
     },
     "colaboracion_entre_agentes": {
@@ -108,7 +108,7 @@
       "_que_significa": "un agente que no nombra a ningun otro trabaja solo. Hasta 2026-08-26 esto valia CERO y el grafo publicaba 10 por contar bucles de memoria como colaboracion"
     },
     "exploracion": {
-      "mineros": 70,
+      "mineros": 71,
       "clases_de_mineria_cubiertas": [
         "CANAL_Y_ACTOR",
         "CASO",
@@ -752,7 +752,7 @@
     "sap_interface_intelligence": {
       "tipo": "SKILL",
       "nombre": "sap_interface_intelligence",
-      "bytes": 26628,
+      "bytes": 29167,
       "fichero": ".agents/skills/sap_interface_intelligence/SKILL.md",
       "de_que_habla": [
         "Purpose",
@@ -770,7 +770,7 @@
         "8. Known Cross-System Connections (UNESCO)",
         "Extraction Plan (Priority Order)"
       ],
-      "cubre_tablas": 7
+      "cubre_tablas": 8
     },
     "sap_job_intelligence": {
       "tipo": "SKILL",
@@ -857,7 +857,7 @@
     "sap_payment_bcm_agent": {
       "tipo": "SKILL",
       "nombre": "sap_payment_bcm_agent",
-      "bytes": 105941,
+      "bytes": 106477,
       "fichero": ".agents/skills/sap_payment_bcm_agent/SKILL.md",
       "de_que_habla": [
         "Metadata",
@@ -875,7 +875,7 @@
         "Process Mining Results",
         "Payment Release Workflow (Pre-F110) [VERIFIED from handover docs]"
       ],
-      "cubre_tablas": 36
+      "cubre_tablas": 37
     },
     "sap_payment_e2e": {
       "tipo": "SKILL",
@@ -2787,6 +2787,22 @@
       ],
       "generaliza": true
     },
+    "A68_payment_lifecycle_e2e": {
+      "tipo": "MINERO",
+      "nombre": "A68_payment_lifecycle_e2e",
+      "state": "WORKS",
+      "mining_kind": "FLUJO_DE_CONTROL",
+      "bound_in": [
+        "Zagentexecution/mcp-backend-server-python/payment_process_mining.py"
+      ],
+      "lands_in": "PARCIAL. Escribe Zagentexecution/mcp-backend-server-python/payment_event_log.csv (211 MB en git-LFS; en el arbol local es un puntero de 134 bytes) y payment_process_mining.html. NO escribe ningun store del brain, NO publica en mining_bus y NO deja claims: sus cifras llegaron al conocimiento A MANO, via el skill sap_payment_e2e, y por eso envejecen sin que nadie se entere. El store que le falta: process_mining/mining_findings.json + brain_v2/claims/claims.json.",
+      "tiene_defecto_vivo": false,
+      "mina": [
+        "FLUJO_DE_CONTROL",
+        "CASO"
+      ],
+      "generaliza": false
+    },
     "clase:TECNICA_DE_LECTURA": {
       "tipo": "CLASE_MINERIA",
       "nombre": "clase:TECNICA_DE_LECTURA"
@@ -2905,6 +2921,11 @@
       "nombre": "variant-intelligence",
       "bytes": 8722
     },
+    "agent_invocation_check": {
+      "tipo": "GATE",
+      "nombre": "agent_invocation_check",
+      "tier": "analysis"
+    },
     "algorithm_landing_check": {
       "tipo": "GATE",
       "nombre": "algorithm_landing_check",
@@ -2963,6 +2984,11 @@
     "budget_rate_consumption_audit": {
       "tipo": "GATE",
       "nombre": "budget_rate_consumption_audit",
+      "tier": "analysis"
+    },
+    "canonical_usage_lint": {
+      "tipo": "GATE",
+      "nombre": "canonical_usage_lint",
       "tier": "analysis"
     },
     "capability_ownership_check": {
@@ -3113,6 +3139,11 @@
     "ppc_country_consistency_check": {
       "tipo": "GATE",
       "nombre": "ppc_country_consistency_check",
+      "tier": "gate"
+    },
+    "process_axis_consistency_check": {
+      "tipo": "GATE",
+      "nombre": "process_axis_consistency_check",
       "tier": "gate"
     },
     "production_discipline_check": {
@@ -3873,6 +3904,16 @@
       "n": 3
     },
     {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "DEBERIA_LEER",
+      "a": "fi_domain_agent",
+      "tablas_en_comun": [
+        "BSAK",
+        "REGUH"
+      ],
+      "n": 2
+    },
+    {
       "de": "batch-input-explorer",
       "rel": "LEE",
       "a": "hcm_domain_agent"
@@ -4018,9 +4059,30 @@
       "n": 2
     },
     {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "DEBERIA_LEER",
+      "a": "sap_bank_statement_recon",
+      "tablas_en_comun": [
+        "REGUH",
+        "T012K"
+      ],
+      "n": 2
+    },
+    {
       "de": "bcm-signatory-panel",
       "rel": "LEE",
       "a": "sap_bcm_signatory_maintenance"
+    },
+    {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "DEBERIA_LEER",
+      "a": "sap_bcm_signatory_maintenance",
+      "tablas_en_comun": [
+        "BNK_BATCH_HEADER",
+        "T012",
+        "T012K"
+      ],
+      "n": 3
     },
     {
       "de": "A65_authorised_panel_reconciliation",
@@ -4071,6 +4133,17 @@
         "SKA1",
         "SKAT",
         "SKB1"
+      ],
+      "n": 3
+    },
+    {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "DEBERIA_LEER",
+      "a": "sap_company_code_copy",
+      "tablas_en_comun": [
+        "T012",
+        "T012K",
+        "T042"
       ],
       "n": 3
     },
@@ -4211,6 +4284,11 @@
     },
     {
       "de": "A61_capability_footprint_in_log",
+      "rel": "LEE",
+      "a": "sap_data_extraction"
+    },
+    {
+      "de": "A68_payment_lifecycle_e2e",
       "rel": "LEE",
       "a": "sap_data_extraction"
     },
@@ -4427,6 +4505,16 @@
       "tablas_en_comun": [
         "SETHEADER",
         "SETLEAF"
+      ],
+      "n": 2
+    },
+    {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "DEBERIA_LEER",
+      "a": "sap_house_bank_configuration",
+      "tablas_en_comun": [
+        "T012",
+        "T012K"
       ],
       "n": 2
     },
@@ -4703,6 +4791,11 @@
       "a": "sap_payment_bcm_agent"
     },
     {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "LEE",
+      "a": "sap_payment_bcm_agent"
+    },
+    {
       "de": "A65_authorised_panel_reconciliation",
       "rel": "DEBERIA_LEER",
       "a": "sap_payment_bcm_agent",
@@ -4714,6 +4807,11 @@
     },
     {
       "de": "bank-process-discovery",
+      "rel": "LEE",
+      "a": "sap_payment_e2e"
+    },
+    {
+      "de": "A68_payment_lifecycle_e2e",
       "rel": "LEE",
       "a": "sap_payment_e2e"
     },
@@ -4766,6 +4864,11 @@
     },
     {
       "de": "A46_mine_domain",
+      "rel": "LEE",
+      "a": "sap_process_mining"
+    },
+    {
+      "de": "A68_payment_lifecycle_e2e",
       "rel": "LEE",
       "a": "sap_process_mining"
     },
@@ -4900,6 +5003,16 @@
       "n": 2
     },
     {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "DEBERIA_LEER",
+      "a": "sap_transport_companion",
+      "tablas_en_comun": [
+        "T012K",
+        "T042"
+      ],
+      "n": 2
+    },
+    {
       "de": "miner-onboarding",
       "rel": "LEE",
       "a": "sap_transport_intelligence"
@@ -4962,6 +5075,17 @@
         "SKA1",
         "T011",
         "T012K"
+      ],
+      "n": 3
+    },
+    {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "DEBERIA_LEER",
+      "a": "sap_transport_intelligence",
+      "tablas_en_comun": [
+        "T012",
+        "T012K",
+        "T042"
       ],
       "n": 3
     },
@@ -5582,6 +5706,16 @@
       "a": "mining_findings.json"
     },
     {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "ATERRIZA_EN",
+      "a": "mining_findings.json"
+    },
+    {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "ATERRIZA_EN",
+      "a": "claims.json"
+    },
+    {
       "de": "A1_chunked_temporal_read",
       "rel": "DESCUBRE",
       "a": "clase:TECNICA_DE_LECTURA"
@@ -5987,6 +6121,16 @@
       "a": "clase:TECNICA_DE_LECTURA"
     },
     {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "DESCUBRE",
+      "a": "clase:FLUJO_DE_CONTROL"
+    },
+    {
+      "de": "A68_payment_lifecycle_e2e",
+      "rel": "DESCUBRE",
+      "a": "clase:CASO"
+    },
+    {
       "de": "authority-doc-reader",
       "rel": "INVOCA",
       "a": "A64_authority_vs_request_delta",
@@ -5995,14 +6139,14 @@
     {
       "de": "bank-process-discovery",
       "rel": "INVOCA",
-      "a": "A44_model_gap_exploration",
-      "via": "bank_model_explorer.py"
+      "a": "A53_skill_binding_gate",
+      "via": "skill_binding_check.py"
     },
     {
       "de": "bank-process-discovery",
       "rel": "INVOCA",
-      "a": "A53_skill_binding_gate",
-      "via": "skill_binding_check.py"
+      "a": "A44_model_gap_exploration",
+      "via": "bank_model_explorer.py"
     },
     {
       "de": "batch-input-explorer",
@@ -6020,13 +6164,13 @@
       "de": "bcm-signatory-panel",
       "rel": "INVOCA",
       "a": "A65_authorised_panel_reconciliation",
-      "via": "bcm_role_gap_check.py"
+      "via": "bcm_signatory_reconciliation_check.py"
     },
     {
       "de": "bcm-signatory-panel",
       "rel": "INVOCA",
       "a": "A65_authorised_panel_reconciliation",
-      "via": "bcm_signatory_reconciliation_check.py"
+      "via": "bcm_role_gap_check.py"
     },
     {
       "de": "bcm-signatory-panel",
@@ -6055,6 +6199,12 @@
     {
       "de": "document-output-discovery",
       "rel": "INVOCA",
+      "a": "A52_toolgraph",
+      "via": "graph_queries.py"
+    },
+    {
+      "de": "document-output-discovery",
+      "rel": "INVOCA",
       "a": "A60_outbound_channel_availability",
       "via": "outbound_channel_availability_check.py"
     },
@@ -6063,12 +6213,6 @@
       "rel": "INVOCA",
       "a": "A30_mining_bus",
       "via": "mining_bus.py"
-    },
-    {
-      "de": "document-output-discovery",
-      "rel": "INVOCA",
-      "a": "A52_toolgraph",
-      "via": "graph_queries.py"
     },
     {
       "de": "document-output-discovery",
@@ -6091,20 +6235,32 @@
     {
       "de": "fx-revaluation-scope",
       "rel": "INVOCA",
-      "a": "A39_fx_revaluation_scope_by_nature",
-      "via": "fx_revaluation_scope_check.py"
+      "a": "A47_ob09_vs_variant_check",
+      "via": "ob09_vs_variant_check.py"
     },
     {
       "de": "fx-revaluation-scope",
       "rel": "INVOCA",
-      "a": "A47_ob09_vs_variant_check",
-      "via": "ob09_vs_variant_check.py"
+      "a": "A39_fx_revaluation_scope_by_nature",
+      "via": "fx_revaluation_scope_check.py"
     },
     {
       "de": "incident-analyst",
       "rel": "INVOCA",
       "a": "A65_authorised_panel_reconciliation",
       "via": "bcm_signatory_reconciliation_check.py"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "INVOCA",
+      "a": "A4_ordered_classifier_ladder",
+      "via": "executed_objects_domain_map.py"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "INVOCA",
+      "a": "A6_frontier_with_substrate_tier",
+      "via": "executed_objects_domain_map.py"
     },
     {
       "de": "log-process-discovery",
@@ -6131,18 +6287,6 @@
       "via": "accumulate_logs.py"
     },
     {
-      "de": "log-process-discovery",
-      "rel": "INVOCA",
-      "a": "A4_ordered_classifier_ladder",
-      "via": "executed_objects_domain_map.py"
-    },
-    {
-      "de": "log-process-discovery",
-      "rel": "INVOCA",
-      "a": "A6_frontier_with_substrate_tier",
-      "via": "executed_objects_domain_map.py"
-    },
-    {
       "de": "master-data-sync",
       "rel": "INVOCA",
       "a": "A66_master_data_replication_by_standard_api",
@@ -6163,8 +6307,26 @@
     {
       "de": "miner-onboarding",
       "rel": "INVOCA",
-      "a": "A32_mining_capability_census",
-      "via": "mining_capability_census.py"
+      "a": "A35_mining_artifact_detector",
+      "via": "mining_artifact_detector.py"
+    },
+    {
+      "de": "miner-onboarding",
+      "rel": "INVOCA",
+      "a": "A35_mining_artifact_detector",
+      "via": "mining_artifact_detector.py"
+    },
+    {
+      "de": "miner-onboarding",
+      "rel": "INVOCA",
+      "a": "A28_graph_landing",
+      "via": "graph_landing_check.py"
+    },
+    {
+      "de": "miner-onboarding",
+      "rel": "INVOCA",
+      "a": "A53_skill_binding_gate",
+      "via": "skill_binding_check.py"
     },
     {
       "de": "miner-onboarding",
@@ -6181,26 +6343,8 @@
     {
       "de": "miner-onboarding",
       "rel": "INVOCA",
-      "a": "A35_mining_artifact_detector",
-      "via": "mining_artifact_detector.py"
-    },
-    {
-      "de": "miner-onboarding",
-      "rel": "INVOCA",
-      "a": "A53_skill_binding_gate",
-      "via": "skill_binding_check.py"
-    },
-    {
-      "de": "miner-onboarding",
-      "rel": "INVOCA",
-      "a": "A28_graph_landing",
-      "via": "graph_landing_check.py"
-    },
-    {
-      "de": "miner-onboarding",
-      "rel": "INVOCA",
-      "a": "A35_mining_artifact_detector",
-      "via": "mining_artifact_detector.py"
+      "a": "A32_mining_capability_census",
+      "via": "mining_capability_census.py"
     },
     {
       "de": "mining-arbiter",
@@ -6376,32 +6520,7 @@
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "claims.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "comprehension_index.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
       "a": "learned_rules.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "job_classification.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "case_spine.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "algorithms.json"
     },
     {
       "de": "artifact_reachability_check",
@@ -6411,12 +6530,12 @@
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "domain_composition.json"
+      "a": "incidents.json"
     },
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "incidents.json"
+      "a": "case_spine.json"
     },
     {
       "de": "artifact_reachability_check",
@@ -6426,7 +6545,17 @@
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "log_reality.json"
+      "a": "comprehension_index.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
+      "a": "algorithms.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
+      "a": "claims.json"
     },
     {
       "de": "artifact_reachability_check",
@@ -6434,14 +6563,19 @@
       "a": "code_sections.json"
     },
     {
-      "de": "artifact_wiring_check",
+      "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "algorithms.json"
+      "a": "domain_composition.json"
     },
     {
-      "de": "artifact_wiring_check",
+      "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "skill_registry.json"
+      "a": "job_classification.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
+      "a": "log_reality.json"
     },
     {
       "de": "artifact_wiring_check",
@@ -6451,7 +6585,7 @@
     {
       "de": "artifact_wiring_check",
       "rel": "VIGILA",
-      "a": "companions.json"
+      "a": "skill_registry.json"
     },
     {
       "de": "artifact_wiring_check",
@@ -6459,9 +6593,24 @@
       "a": "algorithm_memory.json"
     },
     {
+      "de": "artifact_wiring_check",
+      "rel": "VIGILA",
+      "a": "companions.json"
+    },
+    {
+      "de": "artifact_wiring_check",
+      "rel": "VIGILA",
+      "a": "algorithms.json"
+    },
+    {
       "de": "brain_state_enrichment_check",
       "rel": "VIGILA",
       "a": "quality_checks_state.json"
+    },
+    {
+      "de": "braintoolbox_check",
+      "rel": "VIGILA",
+      "a": "mining_findings.json"
     },
     {
       "de": "braintoolbox_check",
@@ -6474,19 +6623,9 @@
       "a": "toolgraph.json"
     },
     {
-      "de": "braintoolbox_check",
-      "rel": "VIGILA",
-      "a": "mining_findings.json"
-    },
-    {
       "de": "config_transport_prerelease_check",
       "rel": "VIGILA",
       "a": "algorithm_memory.json"
-    },
-    {
-      "de": "finding_promotion_check",
-      "rel": "VIGILA",
-      "a": "drift_signals.json"
     },
     {
       "de": "finding_promotion_check",
@@ -6499,14 +6638,19 @@
       "a": "algorithms.json"
     },
     {
-      "de": "fsv_alignment_check",
+      "de": "finding_promotion_check",
       "rel": "VIGILA",
-      "a": "algorithm_memory.json"
+      "a": "drift_signals.json"
     },
     {
       "de": "fsv_alignment_check",
       "rel": "VIGILA",
       "a": "quality_checks_state.json"
+    },
+    {
+      "de": "fsv_alignment_check",
+      "rel": "VIGILA",
+      "a": "algorithm_memory.json"
     },
     {
       "de": "fsv_coverage_check",
@@ -6526,22 +6670,37 @@
     {
       "de": "graph_landing_check",
       "rel": "VIGILA",
-      "a": "claims.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
       "a": "quality_checks_state.json"
     },
     {
       "de": "graph_landing_check",
       "rel": "VIGILA",
-      "a": "interface_inventory.json"
+      "a": "capability_model.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "algorithm_memory.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "incidents.json"
     },
     {
       "de": "graph_landing_check",
       "rel": "VIGILA",
       "a": "trigger_state.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "code_inventory.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "claims.json"
     },
     {
       "de": "graph_landing_check",
@@ -6556,22 +6715,7 @@
     {
       "de": "graph_landing_check",
       "rel": "VIGILA",
-      "a": "incidents.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "code_inventory.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "algorithm_memory.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "capability_model.json"
+      "a": "interface_inventory.json"
     },
     {
       "de": "incident_domain_knowledge_check",
@@ -6641,12 +6785,17 @@
     {
       "de": "mining_collaboration_check",
       "rel": "VIGILA",
-      "a": "toolgraph.json"
+      "a": "algorithms.json"
     },
     {
       "de": "mining_collaboration_check",
       "rel": "VIGILA",
-      "a": "algorithms.json"
+      "a": "toolgraph.json"
+    },
+    {
+      "de": "ob09_vs_variant_check",
+      "rel": "VIGILA",
+      "a": "quality_checks_state.json"
     },
     {
       "de": "ob09_vs_variant_check",
@@ -6654,9 +6803,9 @@
       "a": "algorithm_memory.json"
     },
     {
-      "de": "ob09_vs_variant_check",
+      "de": "production_discipline_check",
       "rel": "VIGILA",
-      "a": "quality_checks_state.json"
+      "a": "algorithms.json"
     },
     {
       "de": "production_discipline_check",
@@ -6667,11 +6816,6 @@
       "de": "production_discipline_check",
       "rel": "VIGILA",
       "a": "incidents.json"
-    },
-    {
-      "de": "production_discipline_check",
-      "rel": "VIGILA",
-      "a": "algorithms.json"
     },
     {
       "de": "run_all",
@@ -6701,21 +6845,6 @@
     {
       "de": "work_triad_check",
       "rel": "VIGILA",
-      "a": "claims.json"
-    },
-    {
-      "de": "work_triad_check",
-      "rel": "VIGILA",
-      "a": "interface_inventory.json"
-    },
-    {
-      "de": "work_triad_check",
-      "rel": "VIGILA",
-      "a": "algorithms.json"
-    },
-    {
-      "de": "work_triad_check",
-      "rel": "VIGILA",
       "a": "incidents.json"
     },
     {
@@ -6726,12 +6855,27 @@
     {
       "de": "work_triad_check",
       "rel": "VIGILA",
+      "a": "interface_boundary.json"
+    },
+    {
+      "de": "work_triad_check",
+      "rel": "VIGILA",
+      "a": "claims.json"
+    },
+    {
+      "de": "work_triad_check",
+      "rel": "VIGILA",
       "a": "annotations.json"
     },
     {
       "de": "work_triad_check",
       "rel": "VIGILA",
-      "a": "interface_boundary.json"
+      "a": "algorithms.json"
+    },
+    {
+      "de": "work_triad_check",
+      "rel": "VIGILA",
+      "a": "interface_inventory.json"
     },
     {
       "de": "D6_aggregate_before_resolve",

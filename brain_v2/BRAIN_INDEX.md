@@ -45,11 +45,11 @@ capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid
 ## 🎯 THE PROCESS SPINE — B2R is the heart, and it is measured that way
 Ranked by domains served, not by opinion. This tenant exists to run **budget-to-report**:
 public-sector finance, not manufacturing or sales.
-- **B2R** — 7 domains: CO, Closing_Activities, Cost_Recovery_CRP, FI, PBC, PS, PSM · avg coverage 61%
+- **B2R** — 8 domains: CO, Closing_Activities, Cost_Recovery_CRP, FI, PBC, PS, PSM, Treasury · avg coverage 64%
+- **H2R** — 7 domains: FI, HCM, HR-Workflows, PBC, PY-Finance, Payment_BCM, Travel · avg coverage 60%
 - **T2R** — 5 domains: Closing_Activities, FI, Payment_BCM, TRM, Treasury · avg coverage 69%
 - **P2P** — 5 domains: FI, PM, Payment_BCM, Procurement, Treasury · avg coverage 65%
-- **H2R** — 5 domains: HCM, HR-Workflows, PBC, PY-Finance, Travel · avg coverage 56%
-- **P2D** — 2 domains: BusinessPartner, Master_Data_Governance · avg coverage 48%
+- **P2D** — 3 domains: BusinessPartner, FI, Master_Data_Governance · avg coverage 54%
 - **A2R** — 1 domains: FI_AA · none measured
 - **O2C** — 1 domains: SD · none measured
 - **Cross-cutting by construction** (serve NO single process because they touch all): Integration, Output, Support, Transport_Intelligence
@@ -119,11 +119,11 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 623 | `python brain_v2/graph_queries.py search <termino>` |
+| **claims** | 625 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 145 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 15 | `python brain_v2/graph_queries.py incident <id>` |
-| **reglas** | 252 | `brain_v2/agent_rules/feedback_rules.json` |
+| **reglas** | 254 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 168 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
 | **algoritmos** | 95 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
@@ -517,7 +517,7 @@ _5 more open, drill by id:_ `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4597 objects · 252 rules · 620 claims · 18 incidents · 9 closed researches)
+## Brain at a glance (4633 objects · 254 rules · 625 claims · 18 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -552,7 +552,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 252 total)
+## Rules to load first (behavioral DNA — 254 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
