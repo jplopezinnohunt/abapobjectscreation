@@ -25,13 +25,18 @@ QUE ES, Y QUE NO ES
     NO duplica los stores: cada uno sigue siendo la fuente de su tipo de nodo. Esto construye
     las ARISTAS, que es lo que no existia en ningun sitio, y las mide.
 
-    NODOS      SKILL · AGENTE · ALGORITMO · GATE · STORE · MEMORIA
+    NODOS      SKILL · AGENTE · ALGORITMO · MINERO · GATE · STORE · MEMORIA · CLASE_MINERIA
+               MINERO se separa de ALGORITMO porque EXPLORAR no es CALCULAR: un minero
+               descubre lo que no sabias que existia. Sin la distincion, "¿que parte del
+               paisaje no ha mirado nadie?" no es una pregunta que el grafo pueda contestar.
     ARISTAS    LEE            agente/algoritmo -> skill  (existe)
                DEBERIA_LEER   opera sobre sus tablas y no lo nombra  (LA QUE FALTA)
                ATERRIZA_EN    algoritmo -> store
                VIGILA         gate -> store
                RECUERDA       memoria -> algoritmo
                INVOCA         cualquiera -> el script de otro
+               DELEGA         agente -> AGENTE que nombra en su prompt (la colaboracion)
+               DESCUBRE       minero -> clase de mineria que cubre
 
 Uso:  python brain_v2/build_toolgraph.py [--json]
 Aterriza en: brain_v2/toolgraph.json  ·  drill: graph_queries.py tool <nombre>
@@ -90,6 +95,25 @@ def main():
             nodos.setdefault(store, {"tipo": "STORE", "nombre": store})
             arista(k, "ATERRIZA_EN", store)
 
+    # ---- MINEROS: explorar NO es calcular ---------------------------------------------
+    # Un MINERO descubre lo que no sabias que existia; un ALGORITMO contesta lo que ya sabes
+    # preguntar. Colapsados en un solo tipo, la pregunta "¿que parte del paisaje no ha mirado
+    # nadie?" no se puede hacer -- y por eso "comparar tablas entre sistemas" no estaba
+    # registrado como nada. Se distinguen por `tipo_mineria`/`mining_kind`, que ya viven en
+    # algorithms.json y hasta ahora solo eran una etiqueta que nadie leia.
+    for k, v in A.items():
+        tm = v.get("tipo_mineria") or v.get("mining_kind")
+        tm = [tm] if isinstance(tm, str) else (tm or [])
+        if not tm:
+            continue
+        nodos[k]["tipo"] = "MINERO"
+        nodos[k]["mina"] = tm
+        nodos[k]["generaliza"] = bool(v.get("generaliza"))
+        for t in tm:
+            clase = "clase:" + t
+            nodos.setdefault(clase, {"tipo": "CLASE_MINERIA", "nombre": clase})
+            arista(k, "DESCUBRE", clase)
+
     # ---- AGENTES ---------------------------------------------------------------------
     for f in sorted(os.listdir(AGENTS)) if os.path.isdir(AGENTS) else []:
         if not f.endswith(".md"):
@@ -102,6 +126,20 @@ def main():
             for k, v in A.items():
                 if any(base in str(b) for b in (v.get("bound_in") or [])):
                     arista(f[:-3], "INVOCA", k, via=base)
+
+    # ---- DELEGA: la colaboracion REAL entre agentes ----------------------------------
+    # Hasta 2026-08-26 el grafo publicaba 10 aristas AGENTE->AGENTE y las 10 eran BUCLES: un
+    # agente recordando su propia leccion. La colaboracion no era escasa, era CERO. Aqui se
+    # deriva de verdad: un agente que NOMBRA a otro en su prompt le esta pasando trabajo.
+    _ag = [n for n, v in nodos.items() if v["tipo"] == "AGENTE"]
+    for f in sorted(os.listdir(AGENTS)) if os.path.isdir(AGENTS) else []:
+        if not f.endswith(".md"):
+            continue
+        yo = f[:-3]
+        t = open(os.path.join(AGENTS, f), encoding="utf-8", errors="ignore").read()
+        for otro in _ag:
+            if otro != yo and re.search(r"\b%s\b" % re.escape(otro), t):
+                arista(yo, "DELEGA", otro)
 
     # ---- GATES -----------------------------------------------------------------------
     for f in sorted(os.listdir(GATES)) if os.path.isdir(GATES) else []:
@@ -117,11 +155,17 @@ def main():
                 arista(f[:-3], "VIGILA", m)
 
     # ---- MEMORIAS DE METODO ----------------------------------------------------------
-    for m in (cargar(MEM).get("memories") or []):
+    # Una memoria es una LECCION que un instrumento aprendio. Modelarla como arista de un nodo
+    # a SI MISMO no dice nada: no hay travesia posible. Se modela como nodo MEMORIA propio, y
+    # las 94 aristas dejan de ser bucles.
+    for i, m in enumerate((cargar(MEM).get("memories") or [])):
         quien = m.get("learned_by")
-        if quien and quien in nodos:
-            arista(quien, "RECUERDA", quien, kind=m.get("kind"),
-                   hecho=str(m.get("fact"))[:90])
+        if not (quien and quien in nodos):
+            continue
+        mid = "mem:%s#%d" % (quien, i)
+        nodo("MEMORIA", mid, kind=m.get("kind"), de=quien,
+             hecho=str(m.get("fact"))[:160])
+        arista(quien, "RECUERDA", mid, kind=m.get("kind"))
 
     # ---- SALUD: lo que el grafo DELATA ------------------------------------------------
     por_rel = Counter(a["rel"] for a in aristas)
@@ -169,7 +213,36 @@ def main():
                                    "prompt y muere con el")},
             "instrumentos_rotos_o_con_defecto_vivo": {"cuantos": len(rotos), "cuales": rotos},
             "aristas_que_faltan_frente_a_las_que_hay": {
-                "LEE": por_rel.get("LEE", 0), "DEBERIA_LEER": por_rel.get("DEBERIA_LEER", 0)},
+                "LEE": por_rel.get("LEE", 0), "DEBERIA_LEER": por_rel.get("DEBERIA_LEER", 0),
+                "conectividad_pct": round(100.0 * por_rel.get("LEE", 0)
+                                          / max(1, por_rel.get("LEE", 0)
+                                                + por_rel.get("DEBERIA_LEER", 0)), 1),
+                "_que_significa": ("de todo el conocimiento que un instrumento DEBERIA leer, "
+                                   "que porcentaje lee de verdad. Es el termometro del bucle: "
+                                   "si una sesion no lo sube, conecto menos de lo que solto")},
+            "colaboracion_entre_agentes": {
+                "delega": por_rel.get("DELEGA", 0),
+                "agentes_que_no_delegan_en_nadie": sorted(
+                    n for n, v in nodos.items() if v["tipo"] == "AGENTE"
+                    and not any(x["rel"] == "DELEGA" and x["de"] == n for x in aristas)),
+                "_que_significa": ("un agente que no nombra a ningun otro trabaja solo. Hasta "
+                                   "2026-08-26 esto valia CERO y el grafo publicaba 10 por "
+                                   "contar bucles de memoria como colaboracion")},
+            "exploracion": {
+                "mineros": sum(1 for v in nodos.values() if v["tipo"] == "MINERO"),
+                "clases_de_mineria_cubiertas": sorted(
+                    v["nombre"].split(":", 1)[1] for v in nodos.values()
+                    if v["tipo"] == "CLASE_MINERIA"),
+                "declaran_que_generalizan": sum(1 for v in nodos.values()
+                                                if v["tipo"] == "MINERO" and v.get("generaliza")),
+                "_ojo_con_esa_cifra": ("`generaliza` es un campo NUEVO (s105): un 1 aqui NO "
+                                       "significa que los otros 58 esten atados a su caso, "
+                                       "significa que nadie lo ha declarado todavia. Es adopcion "
+                                       "del campo, no genericidad medida. Confundirlo seria "
+                                       "publicar una alarma inventada."),
+                "_que_significa": ("un minero atado a su caso muere con el caso. Declarar que "
+                                   "generaliza obliga a formular la PREGUNTA sin nombrar el "
+                                   "caso, que es donde se ve si hay metodo o solo un script")},
         },
         "nodos": nodos,
         "aristas": aristas,
