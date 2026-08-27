@@ -5708,7 +5708,56 @@
       "process": "P2D"
     },
     "rule": "ANTES DE PUBLICAR UNA CIFRA, DECLARA CONTRA QUE LA MIDES Y DE DONDE SACASTE ESE DENOMINADOR. Es el modo de fallo mas repetido que tenemos: el 26-27 de agosto se corrigieron CUATRO sondas del MISMO check por lo mismo, mas otras seis en la sesion 102. Las cuatro: (1) marcar cuentas de mayor 'sin sitio' mirando tres registros y no el indice de entidades; (2) exigir registro a un PERNR y a un numero de pedido como si fueran estructura -- 33 huecos falsos en INC-000006313, que eran los firmantes del panel; (3) resolver `Treasury` a su canonico `Treasury_EBS`, que NO es la clave del registro, con lo que el dominio entero salia vacio y sus dos incidentes decian 'falta doc de proceso' teniendo runbook, solution design y ocho companions; (4) marcar tres arboles DMEE 'sin sitio' estando anotados desde hace meses en annotations.json.",
-    "why": "Las cuatro publican un CERO o un HUECO que no existe, y un cero se lee como hallazgo. Ninguna da error -- por eso sobreviven: un instrumento que mide mal contra un denominador incompleto CORRE PERFECTAMENTE y devuelve una alarma inventada. El caso (3) es el peor porque el fallo esta en la RESOLUCION DE NOMBRES: un alias mal resuelto no falla, devuelve el conjunto vacio.",
+    "why": "Las cuatro publican un CERO o un HUECO que no existe, y un cero se lee como hallazgo. Ninguna da error -- por eso sobreviven: un instrumento que mide mal contra un denominador incompleto CORRE PERFECTAMENTE y devuelve una alarma inventada. El caso (3) es el peor porque el fallo esta en la RESOLUCION DE NOMBRES: un alias mal resuelto no falla, devuelve el conjunto vacio. ACTUALIZACION s106 (2026-08-27), TRES VECES MAS EN LA MISMA SESION PESE A QUE ESTA REGLA YA EXISTIA: (5) se busco BANK_SIGNATORY (clave de OTRO sistema, RoleManagement) contra un cerebro que modela el mismo concepto bajo claves de SAP (HRP1001, BNK_APP, nodos RY) -- el grep dio 0 y se leyo como hueco de conocimiento cuando era hueco de clave, hasta que el dueno lo refuto el mismo dia (KU-2026-106-RM-BANK-SIGNATORY); (6) se reportaron \"5 referencias rotas\" en process_map cuando `Payment` y `BCM` eran ALIAS declarados de `Payment_BCM` -- la medida solo canonicalizaba UNA de las tres fuentes del eje de proceso (domains[X].primary_processes, process_map[P].domains, ontology[i].process_axis); (7) casi se \"corrige\" `parent: Treasury_EBS` en la ontologia, que es la clave CORRECTA -- Treasury_EBS es el canonico y Treasury su alias, exactamente al reves de lo que se iba a hacer. Las tres se evitaron ANTES de escribir nada porque se comparo contra la tabla de alias antes de concluir, no porque la regla se hubiera interiorizado -- persistir el patron en `why` es la unica correccion que queda pendiente. Ver braintoolbox.yaml modo_de_fallo \"EL ALIAS QUE DA CERO\" y su gemelo invertido (feedback_a_misleading_name_can_hide_dependency_identity_not_existence): un alias mal resuelto esconde EXISTENCIA; un nombre que miente esconde IDENTIDAD -- son dos fallos distintos con la misma raiz, comparar dos vocabularios sin canonicalizar.",
     "how_to_apply": "1) Todo instrumento que publique un recuento imprime PRIMERO su denominador y COMO lo derivo -- `fsv_coverage_check.py` deriva del uso real la version de balance y se niega a llamar hueco a lo que no se ejecuta; copia ese patron. 2) Si resuelves un nombre por alias, ten fallback al crudo y ASEVERA que encontraste registro: si `rec` sale vacio, es DESCONOCIDO, nunca cero. 3) Antes de exigirle registro a algo, pregunta si es ESTRUCTURA o INSTANCIA: un PERNR, un documento o una cuenta no tienen por que estar en ningun registro estructural. 4) Enumera TODAS las casas posibles de un objeto antes de decir que no tiene ninguna. 5) Y si una cifra te sorprende por grande, sospecha del denominador ANTES que del sistema: en las diez veces medidas, el defecto estuvo siempre en la medida."
+  }
+,
+  {
+    "id": "feedback_a_misleading_name_can_hide_dependency_identity_not_existence",
+    "severity": "HIGH",
+    "created_session": 106,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Brain_Architecture"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "rule": "UN NOMBRE QUE MIENTE NO ESCONDE QUE UN FICHERO EXISTA -- ESCONDE LA IDENTIDAD DE LA DEPENDENCIA. Es el gemelo invertido de 'el alias que da cero' (feedback_declare_the_denominator_before_publishing_a_number): alli un alias mal resuelto produce un CERO (parece que no hay nada); aqui un nombre BIEN resuelto apunta al concepto EQUIVOCADO (parece que hay algo distinto de lo que hay). Medido 2026-08-27: todo el codigo FI etiqueta una dependencia como UNESDIR -- el FM se llama Z_GET_CERTIF_OFFICER_UNESDIR, el campo de traza es unesdir_subrc -- y la dependencia real es RoleManagement (RM). El discriminador tecnico es inequivoco: UNESDIR se lee por DBCON/SQL (YHR_CREATE_MAIL_FROM_UNESDIR); esto es un proxy SOAP tipado (zrole_mgtco_facade, logical_port_name=LP_ROLE_MGT) cuya operacion/binding/namespace casan con RM. Buscar 'consumidores de RM' por el texto RM jamas habria encontrado este consumidor -- lo encontro el agente Explore leyendo el ABAP, no grepeando docs.",
+    "why": "Un grep o una busqueda semantica por el NOMBRE del sistema objetivo (RM, UNESDIR, cualquier dependencia) es ciego a todo consumidor cuyo autor original etiqueto mal la dependencia -- y esa etiqueta se propaga a companions y skills, que la citan sin verificar (payment_bcm_companion.html decia 'SharePoint WCF + SQL'; sap_payment_bcm_agent:277 decia 'reads UNESCO LDAP (UNESdir)', ambos incorrectos). El coste no es solo el consumidor perdido: es que dos artefactos DERIVADOS heredan y refuerzan el error.",
+    "how_to_apply": "1) Cuando midas 'quien llama a X', no te fies del NOMBRE del FM/variable/campo -- verifica el MECANISMO TECNICO (tipo de canal: DBCON/SQL vs SOAP proxy vs RFC vs HTTP; operacion, binding, namespace, puerto logico). 2) Si el nombre y el mecanismo no casan, el nombre miente y hay que corregir CADA artefacto que lo cita, no solo el que se esta editando (regla de referencia cruzada). 3) Un agente que LEE CODIGO (no solo docs/skills) es el que encuentra este defecto -- si un inventario de interfaces se construye solo grepeando skills/companions, hereda la mentira del nombre en vez de descubrirla.",
+    "evidence": "extracted_code/FI/Payment_Workflow/Z_GET_CERTIF_OFFICER_UNESDIR.abap; .agents/skills/sap_interface_intelligence/SKILL.md (seccion 'THE NAME LIES'); commit 8854707",
+    "source_file": ".agents/skills/sap_interface_intelligence/SKILL.md"
+  },
+  {
+    "id": "feedback_reconcile_divergent_sources_by_union_with_provenance_not_derivation",
+    "severity": "HIGH",
+    "created_session": 106,
+    "derives_from_core_principle": "CP-002",
+    "domain_axes": {
+      "functional": [
+        "Brain_Architecture"
+      ],
+      "process": [
+        "B2R",
+        "T2R",
+        "H2R",
+        "P2P",
+        "P2D",
+        "A2R",
+        "O2C"
+      ]
+    },
+    "rule": "AL RECONCILIAR DOS FUENTES QUE MODELAN EL MISMO EJE, UNE -- NO DERIVES UNA DE LA OTRA -- Y REGISTRA QUE FUENTE AFIRMO CADA DATO. Medido 2026-08-27 reconciliando el eje de proceso (B2R/T2R/P2P/H2R/P2D/A2R/O2C), que vivia en TRES sitios sin puerta entre ellos: domains[X].primary_processes, process_map[P].domains, ontology[i].process_axis -- los siete procesos discrepaban y ninguno era subconjunto de otro. La primera propuesta fue DERIVAR process_map desde primary_processes; la procedencia demostro que eso habria BORRADO conocimiento: la pertenencia de Payment_BCM a H2R (la regla del dueno -- 'en payroll, si hay que pagar, tendras Payment BCM') la sabia UNICAMENTE la lista escrita a mano de process_map. Derivar la habria eliminado sin aviso.",
+    "why": "Es un matiz importante sobre 'lo que se mantiene a mano se degrada' (braintoolbox.yaml, modo EL HUERFANO PROPIO): degrada -- puede quedar incompleta, puede tener mojibake, puede no actualizarse -- pero eso NO la vuelve despreciable frente a una fuente derivada y mas reciente. Una lista a mano puede ser la UNICA que tenga razon en un dato concreto. Descartarla por 'no es la fuente sistematica' pierde exactamente el conocimiento que una derivacion automatica no puede reconstruir.",
+    "how_to_apply": "1) Antes de reconciliar, enumera TODAS las fuentes que afirman el mismo eje/campo -- no asumas que una es la maestra. 2) Unelas por UNION (superset), nunca por interseccion ni por sustituir unas por otras. 3) Anade un campo `_provenance` (o equivalente) por valor, diciendo QUE fuente lo afirmo -- eso es lo que permite despues auditar si una fuente estaba sola en lo correcto. 4) Construye una PUERTA que compare las fuentes en cada rebuild (aqui: process_axis_consistency_check.py, exit 1 si discrepan) -- sin puerta, la discrepancia puede vivir meses sin que nadie la mire, que es exactamente como se acumularon los 7 procesos discrepantes. 5) Si la union pierde una distincion que una fuente SI representaba (aqui: process_map distinguia PASO DE PAGO de PASO DE CONTROL, y el modelo unido no sabe representar eso), preserva la version previa en un campo `_antes_de_<sesion>` en vez de descartarla en silencio.",
+    "evidence": "commit 27fb67a (\"el eje de proceso: reconciliado por UNION y con puerta\"); brain_v2/domains/domains.json (_provenance por proceso); Zagentexecution/quality_checks/process_axis_consistency_check.py",
+    "source_file": "brain_v2/domains/domains.json"
   }
 ]

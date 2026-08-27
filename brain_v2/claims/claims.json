@@ -29470,5 +29470,54 @@
     "created_session": 107,
     "resolved_session": null,
     "resolution_notes": "ABIERTO. Verificar de primera mano requiere leer Z_GET_CERTIF_OFFICER_UNESDIR en D01/P01 (ADT, solo lectura) o correr una factura KR de prueba con bloqueo de pago y mirar SWI2_DIAG. Publicado como pregunta en el bus de mineria dirigida a quien pueda leer ese ABAP."
+  },
+  {
+    "id": 625,
+    "claim": "EL MAYOR HUECO DE DOBLE CONTROL DE BCM QUEDA DIBUJADO COMO UNA VARIANTE NORMAL DEL PROCESO, PORQUE EL EVENTO 'BCM Batch Approved' SOLO SE EMITE SI CHUSR!=CRUSR. Medido el 2026-08-27 corriendo A68_payment_lifecycle_e2e en modo SOLO LECTURA sobre BNK_BATCH_HEADER (Gold DB, p01_gold_master_data.db): de 5,757 lotes de pago BCM creados, 2,394 fueron aprobados por un usuario distinto del creador (CHUSR != CRUSR, doble control real) y 3,359 (58.4%) tienen CHUSR = CRUSR -- el mismo usuario crea y aprueba. El minero de proceso, al no tener una actividad propia para ese caso, emite esos 3,359 lotes como el camino 'Created -> Updated -> Completed', indistinguible en el mapa de proceso de un lote con doble control intacto. El defecto de doble control mas grande de la casa (ya conocido desde H13/s083, claim #213 con 32 usuarios sobre un corte mas antiguo del log de auditoria) queda invisible en la SEGUNDA fuente independiente que deberia confirmarlo -- el propio log de eventos BCM -- porque el vocabulario de actividades del minero no distingue 'aprobado por otro' de 'aprobado por el mismo'.",
+    "claim_type": "control_gap_measured",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "Payment_BCM",
+    "domain_axes": {
+      "functional": [
+        "Payment_BCM"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R",
+        "P2P"
+      ]
+    },
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db#BNK_BATCH_HEADER (CRUSR/CHUSR/BATCH_NO)",
+        "cite": "Corrida de solo lectura de build_event_log() (A68_payment_lifecycle_e2e), 2026-08-27: 5,757 lotes creados, 2,394 con CHUSR!=CRUSR (aprobados por otro), 3,359 con CHUSR=CRUSR.",
+        "added_session": 106
+      },
+      {
+        "type": "source_code",
+        "ref": "process_mining/ (script que construye A68), FORM/paso que emite 'BCM Batch Approved' solo cuando CHUSR!=CRUSR",
+        "cite": "La condicion de emision del evento esta cableada en el propio minero: sin ella, el camino de un lote CHUSR=CRUSR es Created->Updated->Completed, sin ninguna actividad de control.",
+        "added_session": 106
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BNK_BATCH_HEADER",
+      "CRUSR",
+      "CHUSR",
+      "BCM Batch Approved",
+      "A68_payment_lifecycle_e2e",
+      "A59_bcm_dual_control_mining"
+    ],
+    "related_claims": [
+      213
+    ],
+    "created_session": 106,
+    "resolved_session": null,
+    "resolution_notes": "ABIERTO como hallazgo de CONTROL, no solo de instrumento. El failure_mode de A68 en brain_v2/methods/algorithms.json (punto c) ya documenta el mecanismo; este claim promueve el numero a hecho verificable del sistema. Pendiente: decidir si UNESCO Treasury acepta 3,359 lotes de creador=aprobador como excepcion conocida (cuentas de servicio, RULE_ID=PAYROLL en solitario) o si es una brecha viva -- requiere separar OPERADOR HUMANO de CUENTA DE SERVICIO como ya hace A59 (owns_background_jobs / is_dialog_human) sobre estos 3,359 concretos, hoy no hecho."
   }
 ]

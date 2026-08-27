@@ -909,5 +909,28 @@
       "YRGGBS00_SOURCE"
     ],
     "domain": "Payment"
+  },
+  {
+    "id": "DQ-s106-RESEARCH-CAVEATS-SCALAR-VS-LIST",
+    "source": "brain_v2/research/*.json (las 9 investigaciones CERRADAS)",
+    "issue": "El campo 'caveats' de cada research es un STRING PLANO en 8 de las 9 investigaciones cerradas (medido: 1998-2327 caracteres cada uno; la 9na, wegppc001_egypt_ppc_iso20022.json, sigue un schema distinto sin campo caveats), mientras que 'findings', 'refuted' y 'openQuestions' del MISMO fichero son LISTAS. No es corrupcion de datos -- el contenido del string es legible y correcto (prosa de advertencia de alcance) -- es una INCONSISTENCIA DE TIPO dentro del mismo schema.",
+    "severity": "LOW",
+    "status": "open",
+    "discovered_session": 106,
+    "impact": "Un consumidor que trate los 4 campos de forma uniforme (por ejemplo iterando 'for c in research[campo]' asumiendo que todos son listas, como findings/refuted/openQuestions) recibe 2050 (o 1998/1664/...) entradas de UN caracter al iterar 'caveats' en vez de un bloque de texto. Hoy NINGUN script en brain_v2/ o process_mining/ accede a la clave 'caveats' (grep 0 hits, 2026-08-27) -- es un riesgo LATENTE, no un defecto ya manifestado en ningun artefacto generado.",
+    "detected_by": "Inspeccion manual de tipos (2026-08-27): findings=list, refuted=list, caveats=str, openQuestions=list en los 9 ficheros de brain_v2/research/.",
+    "fix_path": "Decision del propietario del research loader: (a) dejar 'caveats' como prosa deliberada y documentar el contrato para que ningun consumidor futuro lo trate como lista, o (b) migrar los 9 ficheros a 'caveats': [str, ...] por consistencia estructural con los otros 3 campos. Ninguna opcion se aplico aqui -- el steward no redisena el schema de un store sin evidencia de que el defecto ya ocurrio (CP-003); se deja registrado para quien construya el primer consumidor de 'caveats'.",
+    "related": [
+      "brain_v2/research/w3os0wwlx_code_mining_static.json",
+      "brain_v2/research/w3t7ufrbg_process_mining_objectcentric.json",
+      "brain_v2/research/w5v0r0akw_s4hana_finance_pillars.json",
+      "brain_v2/research/wc36ii0um_competitors_connectors.json",
+      "brain_v2/research/wgrqpmt9f_competitive_landscape.json",
+      "brain_v2/research/wh5gw9exu_s4hana_readiness_bpcvi.json",
+      "brain_v2/research/wwrqcozf1_agent_memory_continuity.json",
+      "brain_v2/research/wwyujjqyk_auth_roles_sod.json"
+    ],
+    "affected_count": 8,
+    "domain": "Brain_Architecture"
   }
 ]

@@ -917,6 +917,29 @@
         "ecosystem_link.md",
         "refs_external.json"
       ]
+    },
+    {
+      "id": "KU-2026-106-YSBC-TRACE-PAYMENT-UNREAD",
+      "opened_at": "2026-08-27",
+      "session": 106,
+      "severity": "MEDIUM",
+      "domain": "Integration",
+      "question": "La tabla ysbc_trace_payment (ycl_bc_trace_table, objeto WF_PAYMENT) tiene filas? Si las tiene, se puede CONTAR el trafico RM->FI (via Z_WF_GET_CERTIFYING_OFFICER / Z_GET_CERTIF_OFFICER_UNESDIR, campo unesdir_subrc) sin depender de PARAMX?",
+      "why": "Z_WF_GET_CERTIFYING_OFFICER.abap escribe una fila de traza por INTENTO de llamada a RoleManagement (iv_tr_obj='WF_PAYMENT'). Si la tabla tiene filas, parte del cubo UNOBSERVABLE (claim 620, 40 destinos HTTP salientes que el instrumento de frontera no puede ver) se convierte en un numero MEDIDO para este consumidor concreto -- el workflow de liberacion de pago FI (WS90000003, ver claim 624). Es un LEAD encontrado leyendo ABAP el 2026-08-27 (aterrizado en .agents/skills/sap_interface_intelligence/SKILL.md), NO un dato: nadie ha leido esa tabla todavia, solo el codigo que la escribe.",
+      "how_to_resolve": "Leer ysbc_trace_payment via RFC_READ_TABLE (o incluirla en el Gold DB si tiene volumen manejable), filtrar WHERE iv_tr_obj='WF_PAYMENT', y cruzar unesdir_subrc contra los resultados esperados de zrole_mgtco_facade. Verificar primero si la tabla existe en P01 (puede ser solo D01) y su retencion (puede purgarse como un log tecnico).",
+      "status": "OPEN",
+      "related_claims": [
+        620,
+        624
+      ],
+      "related_objects": [
+        "ysbc_trace_payment",
+        "ycl_bc_trace_table",
+        "Z_WF_GET_CERTIFYING_OFFICER",
+        "Z_GET_CERTIF_OFFICER_UNESDIR",
+        "WF_PAYMENT",
+        "unesdir_subrc"
+      ]
     }
   ]
 }

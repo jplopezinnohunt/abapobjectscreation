@@ -223,6 +223,31 @@ Each layer FEEDS the others:
 
 ### ðŸŸ¡ HIGH â€” Next available session
 
+**H141 -- EL AGENTE document-output-discovery ESTA AISLADO EN SU PROPIO GRAFO: 0 ARISTAS
+DELEGA DE ENTRADA Y 0 DE SALIDA (medido 2026-08-27 sobre brain_v2/toolgraph.json).** Tiene
+5 aristas INVOCA hacia instrumentos (A60, A30, A52 x2) -- no esta ocioso -- pero en la
+capa de COLABORACION ENTRE AGENTES (26 aristas DELEGA en todo el toolgraph) nadie lo nombra
+y el no nombra a nadie.
+
+Y es ironico de la forma mas literal posible: `.claude/agents/document-output-discovery.md`
+declara su propio origen en su primera linea -- "Nace de INC-000016471 (2026-08-26), donde
+el canal por el que sale TODO PDF de la casa estuvo caido tres dias laborables sin que nadie
+lo supiera, PORQUE NADIE ERA SU DUENO." El agente que existe para que un canal huerfano nunca
+mas quede sin dueno es el, hoy, un nodo huerfano del grafo que mide colaboracion.
+
+No es un caso aislado: `otras_senales.agentes_que_no_delegan_en_nadie` en
+brain_v2/braintoolbox.yaml ya contaba 5 -- pero el agregado no dice CUALES, y sin el nombre
+el hallazgo no se puede accionar. Es el mismo modo de fallo que "EL HUERFANO PROPIO"
+(braintoolbox.yaml, seccion 6): "se crea un instrumento y no se declara... es el mismo
+defecto que le achacamos a UNES_DEPOSIT -- lo que se mantiene a mano se degrada -- aplicado
+a nuestro propio trabajo."
+
+**Accion:** decidir un DUENO declarado para document-output-discovery en el toolgraph (quien
+lo invoca cuando se rompe una salida de documentos -- hoy nadie lo hace desde otro agente,
+solo bajo demanda directa del usuario) y para los otros 4 agentes huerfanos del mismo
+`otras_senales`, nombrandolos. No mecanizar la deteccion otra vez: ya existe (`A52_toolgraph`
++ braintoolbox `salud`); falta la DECISION, que es trabajo de agente, no de minero.
+
 **H140 -- HAY AGENTES QUE EL MODELO NO VE, Y EL HUECO ES BIDIRECCIONAL (medido 2026-08-27,
 peticion del dueno: "hay mas agentes que no ves... seria un nuevo agente, agent finder").**
 
