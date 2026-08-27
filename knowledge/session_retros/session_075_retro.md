@@ -32,7 +32,7 @@ Investigation arc:
   - BASIS ticket template
 
 ### abapobjectscreation skill update
-- `.agents/skills/sap_adt_api/SKILL.md` — added warning banner: "STATUS 2026-05-13 — D01 HTTP/ADT IS RETURNING 401 FOR jp_lopez". Added RFC alternative table for every previously-recommended ADT operation. Documented the silent-401 bug in `sap_adt_client.py::_request` (catches HTTPError, returns empty CSRF without flagging caller).
+- `.claude/skills/sap_adt_api/SKILL.md` — added warning banner: "STATUS 2026-05-13 — D01 HTTP/ADT IS RETURNING 401 FOR jp_lopez". Added RFC alternative table for every previously-recommended ADT operation. Documented the silent-401 bug in `sap_adt_client.py::_request` (catches HTTPError, returns empty CSRF without flagging caller).
 
 ### Empirical evidence gathered
 - `pyrfc.Connection` to D01 port 3300 with `.env` password → ✓ T000 read works

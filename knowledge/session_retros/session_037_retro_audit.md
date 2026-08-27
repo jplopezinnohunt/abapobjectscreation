@@ -5,7 +5,7 @@
 **Audit timestamp:** 2026-04-05T (close phase)
 **Previous session:** #036 (incomplete close — never indexed in SESSION_LOG, never committed. #037 attempts to backfill; partially done — see conditions.)
 
-This is the first automatic invocation of the audit gate created in Session #036. The audit is adversarial by design and applies the 10 principles from `.agents/skills/agi_retro_agent/SKILL.md` as hard gates. Evidence cited inline.
+This is the first automatic invocation of the audit gate created in Session #036. The audit is adversarial by design and applies the 10 principles from `.claude/skills/agi_retro_agent/SKILL.md` as hard gates. Evidence cited inline.
 
 ---
 

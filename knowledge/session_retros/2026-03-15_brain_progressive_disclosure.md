@@ -19,7 +19,7 @@
 | Brain candidate_paths | Simplified to single canonical path — no fallback to stale copies |
 | JOINS_VIA edge type | 8 new edges modeling table-to-table foreign keys (FMIFIIT->FMFCT, FMIFIIT->BKPF, etc.) |
 | Deprecated tables dropped | `fmifiit_raw_data`, `projects`, `wbs_elements` dropped + VACUUM |
-| L2 Skill created | `.agents/skills/sap_data_extraction/SKILL.md` — extraction protocol, schemas, join docs |
+| L2 Skill created | `.claude/skills/sap_data_extraction/SKILL.md` — extraction protocol, schemas, join docs |
 | meta.sources fixed | 5 -> 6 (process model was uncounted) |
 | Model routing | Coordinator updated: Opus/Sonnet/Haiku routing by task complexity |
 | Coordinator update | Session Start Protocol now uses progressive disclosure + auto-detection |

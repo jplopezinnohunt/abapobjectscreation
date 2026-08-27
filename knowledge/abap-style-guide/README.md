@@ -43,7 +43,7 @@ Use this guide when creating any new ABAP object for a UNESCO SAP project, or wh
 
 ## Agent invocation
 
-This knowledge is wired to the agent skill **`.agents/skills/sap_abap_style/SKILL.md`** — it MUST be
+This knowledge is wired to the agent skill **`.claude/skills/sap_abap_style/SKILL.md`** — it MUST be
 invoked for any ABAP **execution** (create/modify/deploy) or **analysis** (review/reverse-engineering)
 task, before the first line of code and before any deploy.
 

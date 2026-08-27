@@ -8,7 +8,7 @@ A living visual map connecting all analyzed SAP objects (programs, tables, filte
 
 ## 🔍 Filter Logic Registry (Skill)
 Reusable database of all filter/grouping logic discovered inside UNESCO SAP programs.
-- **Reference**: [UNESCO Filter Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.agents/skills/unesco_filter_registry/SKILL.md)
+- **Reference**: [UNESCO Filter Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.claude/skills/unesco_filter_registry/SKILL.md)
 
 ---
 

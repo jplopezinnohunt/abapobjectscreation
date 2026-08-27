@@ -41,7 +41,7 @@ Source = the execution-evidence logs already in the Gold DB. For each object, at
 > Dice `PARAM1`, literal y sin ambigüedad, y separa además el campo de **OBJETO** (`PARAM1`) del de
 > **ACTOR** (`SLGUSER`) — exactamente la distinción que el claim 216 pisoteó al atribuir recuentos de
 > usuarios a un script que no lee `SLGUSER`. Su gemela es
-> `.agents/skills/sap_process_mining/SKILL.md:94` («Transaction Start → `PARAM1`, Report Start →
+> `.claude/skills/sap_process_mining/SKILL.md:94` («Transaction Start → `PARAM1`, Report Start →
 > `SLGREPNA`, RFC Function Call → `PARAM3`»).
 > **Lo que hay que decir en voz alta:** `process_mining/semantic_activity_map.py` agrupa por `SLGTC`
 > (el tcode LANZADOR) y **contradice esta documentación desde su primer commit**. No fue un hueco de

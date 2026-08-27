@@ -14,7 +14,7 @@
 | **SAP golden DB** | `Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db` (6.4 GB, 205 tables, P01 PROD) | `unesco-sap-brain`, `FINCLOSSING`, `unescore20-PPM-brain` (monitoring scope) |
 | **SAP Intelligence brain** | `brain_v2/brain_state.json` (objects/claims/incidents/rules/domains; `brain_v2_index.db` 86 MB) | `FINCLOSSING` (and `unesco-sap-brain` for cross-validation), `unescore20-PPM-brain` (monitor — brain metrics) |
 | **Domain knowledge** (FI / PSM / Treasury / HCM) | `knowledge/domains/{FI,PSM,Treasury,HCM}/` | `FINCLOSSING`, `unescore20-PPM-brain` (monitor scope) |
-| **28 skills, 7 layers** (RFC extraction, ADT REST, ABAP class/SEGW deploy, transport intelligence, domain agents) | `.agents/skills/` | `FINCLOSSING` (10 skills), any SAP-touching project |
+| **28 skills, 7 layers** (RFC extraction, ADT REST, ABAP class/SEGW deploy, transport intelligence, domain agents) | `.claude/skills/` | `FINCLOSSING` (10 skills), any SAP-touching project |
 | **Extracted code** | `extracted_code/` | `FINCLOSSING` |
 
 **Read-only contract for consumers:** peers never write here. Cross-project reads must resolve through the consumer's own `refs_external.json` (see `FINCLOSSING/brain_v2/refs_external.json`, `unesco-sap-brain/refs_external.json`, `unescore20-PPM-brain/refs_external.json`).

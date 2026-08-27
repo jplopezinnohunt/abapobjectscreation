@@ -32,4 +32,4 @@ The goal is to extract enough technical metadata from the SAP Backend (via RFC) 
 
 ## 4. Continuity & Updates
 - This strategy is updated after every successful app analysis to incorporate new discovery patterns (e.g., handling deep-nested HR workflows).
-- The corresponding **Skill** in `.agents/skills/sap_reverse_engineering` implements the technical automation for this strategy.
+- The corresponding **Skill** in `.claude/skills/sap_reverse_engineering` implements the technical automation for this strategy.

@@ -121,8 +121,8 @@
 - `sap_brain.py` — Updated: +11 EBS nodes (73,948 total)
 - `sap_brain.json` — Rebuilt: 73,948 nodes / 65,953 edges
 - `sap_knowledge_graph.html` — Rebuilt
-- `.agents/skills/sap_payment_bcm_agent/SKILL.md` — CORRECTED: FEBEP=0 claim
-- `.agents/skills/sap_payment_e2e/SKILL.md` — CORRECTED: FEBEP row count + status
+- `.claude/skills/sap_payment_bcm_agent/SKILL.md` — CORRECTED: FEBEP=0 claim
+- `.claude/skills/sap_payment_e2e/SKILL.md` — CORRECTED: FEBEP row count + status
 
 **Gold DB new tables:** FEBEP_2024_2026 (223,710), FEBKO_2024_2026 (84,972), T028B (169), T028G (1,025), T028D (331), YBASUBST (752), YTFI_BA_SUBST (129)
 

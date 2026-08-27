@@ -71,7 +71,7 @@ TREASURY (BFM-TRS)
 - **Rules / data model:** [bcm_signatory_rules.md](bcm_signatory_rules.md) — RY nodes 90000004 (commit) / 90000005 (validate), members in `HRP1001`, change process via `OOCU_RESP`.
 - **Solution & routine (read first):** [bcm_signatory_change_solution_design.md](bcm_signatory_change_solution_design.md) — 3-level model (entity→banks→nodes), **node selection in IT1218** (`HRP1218`/`HRT1218` expressions on `BNK_STR_BATCH_REL_APPR`: ZBUKR + amount band, never bank), reconciliation + gates, mandatory output table.
 - **Companion (visual):** `companions/bcm_signatory_companion.html`.
-- **Skill (routing):** `.agents/skills/sap_payment_bcm_agent/` — Reconciliation Protocol + mandatory output (Step 7).
+- **Skill (routing):** `.claude/skills/sap_payment_bcm_agent/` — Reconciliation Protocol + mandatory output (Step 7).
 - **Incidents:** [INC-000006313](../../incidents/INC-000006313_uis_bcm_add_voffal.md) (UIS, precedent) · [INC-000011781](../../incidents/INC-000011781_ubo_bcm_add_ritter.md) (UBO / Renata Ritter).
 - **Key facts:** node = entity × amount-tier people-bucket, **bank-agnostic**; selection by ZBUKR + amount (IT1218), never by bank; P01 is **read-only** for the agent — DBS executes in `OOCU_RESP`.
 
@@ -79,12 +79,12 @@ TREASURY (BFM-TRS)
 
 | Skill | Domain Area | Location |
 |-------|------------|----------|
-| `sap_house_bank_configuration` | Bank Account Management | `.agents/skills/sap_house_bank_configuration/` |
-| `sap_account_comparison` | G/L Account Validation | `.agents/skills/sap_account_comparison/` |
-| `sap_bank_statement_recon` | Bank Statement / EBS | `.agents/skills/sap_bank_statement_recon/` |
-| `sap_payment_bcm_agent` | Payment / BCM | `.agents/skills/sap_payment_bcm_agent/` |
-| `sap_payment_e2e` | Payment Process Mining | `.agents/skills/sap_payment_e2e/` |
-| `sap_master_data_sync` | G/L Sync P01→D01 | `.agents/skills/sap_master_data_sync/` |
+| `sap_house_bank_configuration` | Bank Account Management | `.claude/skills/sap_house_bank_configuration/` |
+| `sap_account_comparison` | G/L Account Validation | `.claude/skills/sap_account_comparison/` |
+| `sap_bank_statement_recon` | Bank Statement / EBS | `.claude/skills/sap_bank_statement_recon/` |
+| `sap_payment_bcm_agent` | Payment / BCM | `.claude/skills/sap_payment_bcm_agent/` |
+| `sap_payment_e2e` | Payment Process Mining | `.claude/skills/sap_payment_e2e/` |
+| `sap_master_data_sync` | G/L Sync P01→D01 | `.claude/skills/sap_master_data_sync/` |
 
 ## Companions (HTML Dashboards)
 

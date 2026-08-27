@@ -15,7 +15,7 @@
 | `Zagentexecution/mcp-backend-server-python/probe_bor_caller.py` | BOR-caller hunt — TADIR/TFDIR/WBCROSSGT scan for custom BOR/SALESFORCE/SFDC/MULE objects |
 
 ### Skill updated
-`.agents/skills/sap_interface_intelligence/SKILL.md` — new "Session #055 Integration Element Audit" section with:
+`.claude/skills/sap_interface_intelligence/SKILL.md` — new "Session #055 Integration Element Audit" section with:
 - No-GUI equivalents table (SM58/SMQ1/WE02/WE20/WE21/SICF/DBCON)
 - IDoc status code reference
 - EDIDS status-trail detective pattern
@@ -94,7 +94,7 @@ Net-negative on reward. Justification: the two added items (H52, H53) are **fore
 ## 5. Commit scope
 
 - `memory/project_integration_elements_gap.md` (new)
-- `.agents/skills/sap_interface_intelligence/SKILL.md` (appended "Session #055 Integration Element Audit" section)
+- `.claude/skills/sap_interface_intelligence/SKILL.md` (appended "Session #055 Integration Element Audit" section)
 - `.agents/intelligence/PMO_BRAIN.md` (H52 detail + counts)
 - `Zagentexecution/mcp-backend-server-python/probe_p01_integration.py` (new)
 - `Zagentexecution/mcp-backend-server-python/probe_bor_caller.py` (new)

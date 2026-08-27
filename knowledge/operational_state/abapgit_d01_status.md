@@ -95,8 +95,8 @@ These projects' agents should consult THIS file at session start whenever they c
 
 ## 🔗 Where this is referenced
 
-- `.agents/skills/sap_adt_api/SKILL.md` §16 status block
-- `.agents/skills/abapgit_integration/SKILL.md` (redirect skill quick reference)
+- `.claude/skills/sap_adt_api/SKILL.md` §16 status block
+- `.claude/skills/abapgit_integration/SKILL.md` (redirect skill quick reference)
 - `ecosystem-coordinator/ecosystem/priority-actions.md` BROADCAST-004
 - `brain_v2/claims/claims.json` claim #201 (active install) + #202 (kernel limitation)
 

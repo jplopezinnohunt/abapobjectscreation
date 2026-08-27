@@ -313,7 +313,7 @@ High-fidelity patterns derived from data created since **2024-01-01** to avoid l
 
 | Filter ID | Field | Config Table | Domain | Discovered In | Reuse Potential |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `WRTTP_FM` | `RWRTTP` | `YTFM_WRTTP_GR` | FM | `YCL_YFM1_BCS_BL` | **High** — Any FM report. Full reference in [Filter Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.agents/skills/unesco_filter_registry/SKILL.md#wrttp_fm--funds-management-value-type-grouping) |
+| `WRTTP_FM` | `RWRTTP` | `YTFM_WRTTP_GR` | FM | `YCL_YFM1_BCS_BL` | **High** — Any FM report. Full reference in [Filter Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.claude/skills/unesco_filter_registry/SKILL.md#wrttp_fm--funds-management-value-type-grouping) |
 
 ---
 
@@ -402,7 +402,7 @@ flowchart TB
 | `FINCODE` (Fund Master) | ✅ | ✅ | ✅ | ✅ | **Vital Link** `FINCODE` bridges FM and PS. Create shared OData entity |
 | `PROJ` / `PRPS` (WBS) | ✅ (YPS8) | ✅ | ✅ | ✅ | `PROJ-PSPID` matches `FMFINCODE-FINCODE`. Use PRPS for donor custom fields (`YYE_DONOR`, `USR02`, etc.) |
 | `FMCIT` (Commitment Items) | ✅ | — | ✅ | ✅ | **Create shared OData entity** — both domains need item data |
-| `WRTTP_FM` (Filter Logic) | ✅ | — | — | ✅ | **Any new FM report** should reuse this filter from the [Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.agents/skills/unesco_filter_registry/SKILL.md#wrttp_fm--funds-management-value-type-grouping) |
+| `WRTTP_FM` (Filter Logic) | ✅ | — | — | ✅ | **Any new FM report** should reuse this filter from the [Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.claude/skills/unesco_filter_registry/SKILL.md#wrttp_fm--funds-management-value-type-grouping) |
 | `ZXRSAU01/02` | ✅ | ✅ | — | ✅ | **Analytical Source of Truth**: Provides USD values and real posting dates not found in Pa/Fi tables. |
 | `YTFM_FUND_C5` | ✅ | — | — | ✅ | Reuse for any UNESCO Results-Based Budgeting report |
 
@@ -415,7 +415,7 @@ When analyzing a **new** SAP object (program, class, service, RFC, table), follo
 1. **Identify the object type** → Add it to the corresponding catalog section (2.1–2.7)
 2. **Map its connections** → Add edges in the End-to-End Data Model diagram (Section 1)
 3. **Check for reuse** → Update the Reuse Matrix (Section 4) if the object touches multiple domains
-4. **Register any filters** → Add to the [UNESCO Filter Registry skill](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.agents/skills/unesco_filter_registry/SKILL.md) if filter logic is found
+4. **Register any filters** → Add to the [UNESCO Filter Registry skill](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.claude/skills/unesco_filter_registry/SKILL.md) if filter logic is found
 5. **Map Field Connectivity** → Document the flow from UI to DB and Auth in the [HCM Connectivity Map](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Fiori Apps/hcm_connectivity_map.md)
 6. **Extract Configuration Rules** → Query the relevant T-tables or Manifest tables identified in the [SAP Configuration Reference](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/sap_configuration_reference.md).
 7. **Map Fiori Screens & Fields** → Create a blueprint connecting UI sections to OData properties and PA tables in the [Fiori Reverse Engineering Blueprint](file:///c:/Users/jp_lopez/projects/abapobjectscreation/artifacts/fiori_reverse_engineering_blueprint.md)

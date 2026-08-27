@@ -54,8 +54,8 @@ The universal parts (symmetry principle, state snapshot, plan file, closure math
 8. `knowledge/domains/BCM/h13_executive_summary.md` — One-pager for Finance Director / CFO
 
 ### Knowledge routing (G58, G59)
-9. `.agents/skills/sap_payment_bcm_agent/SKILL.md` — add "Dual Control Audit" section with H13 findings, query, reproduction steps (G58)
-10. `.agents/skills/sap_interface_intelligence/SKILL.md` — add "File-Based Integration Vector" section documenting 8,700 file-based job runs + COUPA channel (G59)
+9. `.claude/skills/sap_payment_bcm_agent/SKILL.md` — add "Dual Control Audit" section with H13 findings, query, reproduction steps (G58)
+10. `.claude/skills/sap_interface_intelligence/SKILL.md` — add "File-Based Integration Vector" section documenting 8,700 file-based job runs + COUPA channel (G59)
 
 ### Close-phase artifacts
 11. `knowledge/session_retros/session_037_retro_audit.md` — produced by `agi_retro_agent` subagent (first real invocation)

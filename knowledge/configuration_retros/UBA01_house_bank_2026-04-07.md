@@ -98,4 +98,4 @@ D01 = V01 = P01 identical across all 15 checks. Configuration complete.
 - `ybank_setleaf_sync.py` — YBANK set synchronization P01→D01
 - `uba01_fix_xintb_d01.py` — XINTB fix in D01
 
-See full skill: `.agents/skills/sap_house_bank_configuration/SKILL.md`
+See full skill: `.claude/skills/sap_house_bank_configuration/SKILL.md`

@@ -51,6 +51,6 @@
 - `Zagentexecution/mcp-backend-server-python/transport_adhoc_read.py` — RFC transport extractor
 - `Zagentexecution/mcp-backend-server-python/transport_bank_validate.py` — 6-check bank validation
 - `Zagentexecution/mcp-backend-server-python/transport_bank_detail.py` — Bank config reader
-- `.agents/skills/sap_company_code_copy/SKILL.md` — New skill
-- `.agents/skills/sap_transport_companion/SKILL.md` — New skill
+- `.claude/skills/sap_company_code_copy/SKILL.md` — New skill
+- `.claude/skills/sap_transport_companion/SKILL.md` — New skill
 - `skill-learnings/session019-transport-companion-learnings.md` — Session learnings

@@ -8,8 +8,8 @@
 
 ## What #036 actually did
 
-- Authored `.agents/skills/agi_retro_agent/SKILL.md` — 10 AGI-excellence principles, brutal honesty protocol, fresh-subagent audit model
-- Authored `.agents/skills/skill_coordinator/SKILL.md` — growth paradigm (skills never merge, route new knowledge to existing), 7 rules, routing protocol
+- Authored `.claude/skills/agi_retro_agent/SKILL.md` — 10 AGI-excellence principles, brutal honesty protocol, fresh-subagent audit model
+- Authored `.claude/skills/skill_coordinator/SKILL.md` — growth paradigm (skills never merge, route new knowledge to existing), 7 rules, routing protocol
 - Authored `.agents/workflows/session_close_protocol.md` — Phase 0 (agi_retro_agent) + Phase 0.5 (preflight --strict) + legacy Phases 1–7
 - Authored `scripts/session_preflight.py` — 10 executable checks converting prose feedback rules into hard preconditions
 - Authored `.agents/rules/hypothesis_before_extraction.md` — Principle 4 rule text

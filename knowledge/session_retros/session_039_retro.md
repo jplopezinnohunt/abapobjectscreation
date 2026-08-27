@@ -21,8 +21,8 @@
 
 | # | Deliverable | Status | Location |
 |---|---|---|---|
-| 1 | sap_class_deployment SKILL.md — 72-char subsection | SHIPPED | `.agents/skills/sap_class_deployment/SKILL.md` |
-| 2 | sap_data_extraction SKILL.md — reconnect patterns | SHIPPED | `.agents/skills/sap_data_extraction/SKILL.md` |
+| 1 | sap_class_deployment SKILL.md — 72-char subsection | SHIPPED | `.claude/skills/sap_class_deployment/SKILL.md` |
+| 2 | sap_data_extraction SKILL.md — reconnect patterns | SHIPPED | `.claude/skills/sap_data_extraction/SKILL.md` |
 | 3 | h18_dmee_tree_probe.py | SHIPPED | `Zagentexecution/mcp-backend-server-python/` |
 | 4 | h18_dmee_tree_findings.md | SHIPPED | `knowledge/domains/Payment/` |
 | 5 | h18_dmee_trees.csv (13 trees, P01) | SHIPPED | `knowledge/domains/Payment/` |

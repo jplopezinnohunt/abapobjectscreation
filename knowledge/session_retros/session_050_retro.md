@@ -23,7 +23,7 @@ The session pivoted twice during execution, both times because of user pushback 
 | 2 | [brain_v2/build_brain_state.py](../../brain_v2/build_brain_state.py) — added Layer 11 (incidents), Layer 12 (blind_spots), `_coverage` metric, force-include of referenced names | Tool |
 | 3 | Enriched `indexes.by_incident` from list-of-objects to dict with status, doc, root_cause_summary, fix_immediate, related_objects | Brain |
 | 4 | [Zagentexecution/quality_checks/vendor_master_integrity_check.py](../../Zagentexecution/quality_checks/vendor_master_integrity_check.py) — recurring DQ check with CLI args + GGB1 cross-check | Tool |
-| 5 | [.agents/skills/sap_incident_analyst/SKILL.md](../../.agents/skills/sap_incident_analyst/SKILL.md) — 7-step incident processing protocol with anti-patterns + checklist | Skill |
+| 5 | [.claude/skills/sap_incident_analyst/SKILL.md](../../.claude/skills/sap_incident_analyst/SKILL.md) — 7-step incident processing protocol with anti-patterns + checklist | Skill |
 | 6 | [.claude/agents/incident-analyst.md](../../.claude/agents/incident-analyst.md) — Opus-powered subagent owning the full workflow autonomously | Subagent |
 | 7 | [knowledge/incidents/INC-000006073_travel_busarea.md](../incidents/INC-000006073_travel_busarea.md) — moved from `domains/FI/`, canonical location | Reorg |
 | 8 | [knowledge/domains/FI/ggb1_substitution_tables_distinction.md](../domains/FI/ggb1_substitution_tables_distinction.md) — clears the YTFI_BA_SUBST vs GB901/GB922 confusion that bit me mid-session | Knowledge |

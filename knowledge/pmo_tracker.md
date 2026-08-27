@@ -65,8 +65,8 @@ Last Updated: 2026-03-26 | Session #017: Full project audit + protocol redesign
 | SAP Configuration Reference | ✅ Active | `knowledge/sap_configuration_reference.md` |
 | UNESCO Unified Fiori Design System | ✅ Done | `unesco_unified_fiori_design_system.md` |
 | Standard Fiori Extension Guide | ✅ Done | `standard_fiori_extension_guide.md` |
-| UNESCO Filter Registry Skill | ✅ Done | `.agents/skills/unesco_filter_registry/` |
-| Fiori Extension Architecture Skill | ✅ Done | `.agents/skills/sap_fiori_extension_architecture/SKILL.md` |
+| UNESCO Filter Registry Skill | ✅ Done | `.claude/skills/unesco_filter_registry/` |
+| Fiori Extension Architecture Skill | ✅ Done | `.claude/skills/sap_fiori_extension_architecture/SKILL.md` |
 | Session Open/Close checklists (CRP-style) | ✅ Done (#017) | `.agents/workflows/session_start.md` + `session_retro.md` |
 
 ### Pending

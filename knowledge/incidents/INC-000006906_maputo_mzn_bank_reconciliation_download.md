@@ -132,7 +132,7 @@ Full family inventory (15 programs, 3 families): see Treasury doc in §7.
 | Fix file (one-char change + rollout) | `Zagentexecution/fixes/INC-000006906/YTBAE002_fix.abap` |
 | Custom program source (3,422 lines) | `extracted_code/CUSTOM/YTBAE002/YTBAE002.abap` · mirror `extracted_code/CUSTOM/BANK_RECONCILIATION/YTBAE002/` |
 | Bank recon family inventory (15 programs) | `knowledge/domains/Treasury/bank_reconciliation_program_inventory.md` |
-| Bank recon skill (TCODE map, R1-R6 rules) | `.agents/skills/sap_bank_statement_recon/SKILL.md` |
+| Bank recon skill (TCODE map, R1-R6 rules) | `.claude/skills/sap_bank_statement_recon/SKILL.md` |
 | Brain claims | `brain_v2/claims/claims.json` — id 52 (YBANK coverage), 53 (empty-range), 54 (MODE 'E') |
 | Brain incident record | `brain_v2/incidents/incidents.json` — `INC-000006906` |
 | Intake JSON | `Zagentexecution/incidents/INC-000006906_intake.json` |

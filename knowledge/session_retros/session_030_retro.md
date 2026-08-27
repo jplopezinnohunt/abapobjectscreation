@@ -128,7 +128,7 @@
 ## Artifacts Created/Updated
 
 **New files:**
-- `.agents/skills/sap_bank_statement_recon/SKILL.md` — 561 lines, expert agent #34
+- `.claude/skills/sap_bank_statement_recon/SKILL.md` — 561 lines, expert agent #34
 - `Zagentexecution/mcp-backend-server-python/bank_statement_ebs_companion.html` — v3.0, 14 tabs
 - `Zagentexecution/mcp-backend-server-python/extract_bank_recon_full.py` — 5-task extraction script
 - `Zagentexecution/mcp-backend-server-python/fix_febep_missing_months.py` — split-field recovery
@@ -137,8 +137,8 @@
 - `memory/feedback_parallel_companion_build.md` — multi-tab companion pattern
 
 **Updated files:**
-- `.agents/skills/coordinator/SKILL.md` — added bank statement routing
-- `.agents/skills/sap_payment_bcm_agent/SKILL.md` — redirects bank statement questions
+- `.claude/skills/coordinator/SKILL.md` — added bank statement routing
+- `.claude/skills/sap_payment_bcm_agent/SKILL.md` — redirects bank statement questions
 - `.agents/intelligence/sap_brain.py` — +20 nodes (DOMAIN_BANK_STATEMENT + findings)
 - `.agents/intelligence/sap_brain.json` — 73,968 nodes / 65,977 edges
 - `.agents/intelligence/sap_knowledge_graph.html` — rebuilt

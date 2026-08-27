@@ -87,7 +87,7 @@ Not in PMO — flagged here for visibility only:
 
 ## 7. Commit scope
 
-One file on disk changed by this session: `companions/payment_bcm_companion.html`. Other modified files in the working tree (`brain_v2/*`, `.agents/skills/hcm_domain_agent/SKILL.md`, `.agents/skills/sap_fiori_extension_architecture/SKILL.md`) are carryover from prior sessions and are **not** part of this commit — scoping narrowly to avoid mixing unrelated work.
+One file on disk changed by this session: `companions/payment_bcm_companion.html`. Other modified files in the working tree (`brain_v2/*`, `.claude/skills/hcm_domain_agent/SKILL.md`, `.claude/skills/sap_fiori_extension_architecture/SKILL.md`) are carryover from prior sessions and are **not** part of this commit — scoping narrowly to avoid mixing unrelated work.
 
 Memory files live outside the repo (`~/.claude/projects/.../memory/`) and are not git-tracked here.
 

@@ -9,7 +9,7 @@ cross_links:
   - knowledge/domains/PSM/cost_recovery_avc_disponible_model.md      # the AVC/Disponible model (the "why")
   - knowledge/gold_db_table_catalog.md                                # gold table contract
   - Zagentexecution/tasks/2026_06_29_fm_model_sync/METHOD.md          # task-level run notes
-  - .agents/skills/sap_master_data_sync/SKILL.md                      # FM extension of the master-sync skill
+  - .claude/skills/sap_master_data_sync/SKILL.md                      # FM extension of the master-sync skill
   - claims: [#283, #284, #286, #287, #288, #289, #290, #291, #292, #347, #348, #349, #350]
 ---
 

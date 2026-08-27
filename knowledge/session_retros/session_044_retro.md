@@ -35,7 +35,7 @@
 | 10 | 3-system comparison script (D01/V01/P01) | SHIPPED | `uba01_3system_comparison.py` |
 | 11 | 680 GL cross-system comparison (SKA1/SKB1/SKAT) | SHIPPED | `all_gl_3system_compare.py` — 499 field differences found |
 | 12 | House bank configuration companion HTML | SHIPPED | `companions/house_bank_configuration_companion.html` |
-| 13 | SKILL.md rewritten with form fields, decision flow, OBA1 deep explanation | SHIPPED | `.agents/skills/sap_house_bank_configuration/SKILL.md` |
+| 13 | SKILL.md rewritten with form fields, decision flow, OBA1 deep explanation | SHIPPED | `.claude/skills/sap_house_bank_configuration/SKILL.md` |
 | 14 | **CRITICAL FINDING: T030H systemic gap** | SHIPPED | 213/219 non-USD bank accounts (3%) missing OBA1 valuation |
 
 **Closure math:** 14 deliverables shipped, 0 new PMO items added. Net closure: +14.
@@ -118,7 +118,7 @@ Three independent agents validated our claims against Gold DB. Key corrections: 
 - `companions/house_bank_configuration_companion.html` — Bank config intelligence companion with OBA1 deep dive
 
 ### Skill Updates
-- `.agents/skills/sap_house_bank_configuration/SKILL.md` — Major rewrite: 18 checks, 9 patterns, 9 controls, form fields, decision flow, OBA1 deep explanation, systemic gap finding
+- `.claude/skills/sap_house_bank_configuration/SKILL.md` — Major rewrite: 18 checks, 9 patterns, 9 controls, form fields, decision flow, OBA1 deep explanation, systemic gap finding
 
 ### Gold DB Additions
 - T030H (1,014 rows), T035D (151 rows), T018V (108 rows), T012T (1,049 rows)

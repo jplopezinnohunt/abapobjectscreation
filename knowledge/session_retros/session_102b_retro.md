@@ -158,7 +158,7 @@ qué deberíamos mecanizar.* Con números, no con impresiones.
 > que en este proyecto costó un incidente vivo en P01 (`T015L INA` con dos espacios, claim 529).
 > Además las **filas sobrantes no cuentan** para el veredicto.
 > Y el estado de `FAGL_011QT` en V01 **está en conflicto** con
-> `.agents/skills/sap_master_data_sync/SKILL.md:153`, que da V01 como parcial con `FAGL_011QT`
+> `.claude/skills/sap_master_data_sync/SKILL.md:153`, que da V01 como parcial con `FAGL_011QT`
 > pendiente: **se desconoce hasta re-medir**.
 
 ## 8. Qué logramos — lo que vale más que el inventario

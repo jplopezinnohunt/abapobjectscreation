@@ -35,7 +35,7 @@ User opened with the SAP tutorial link for "install ADT" and asked to evaluate. 
 - **TADIR-orphan fix:** every DDIF method emits `TR_TADIR_INTERFACE` ABAP call BEFORE `DDIF_*_PUT`. Post-creation `verify_tadir` flags `orphan: True` when DEVCLASS is blank.
 - **All 22 pre-existing methods preserved** (verified by introspection).
 
-### Skill (`.agents/skills/sap_adt_api/SKILL.md`)
+### Skill (`.claude/skills/sap_adt_api/SKILL.md`)
 
 - 254 → 586 lines, 13 → 20 sections.
 - New top sections (force-read): **🛑 SCOPE RULE D01 ONLY** and **🛑 ADT-FIRST PRINCIPLE qualified by kernel**.
@@ -256,8 +256,8 @@ That is the **workstation-bridge architecture**: workstation is the Git side, SA
 | Layer | Artifact | What it captures |
 |---|---|---|
 | Canonical state | `knowledge/operational_state/abapgit_d01_status.md` | NEW — single source of truth for what's active, NOT available, who uses it, verification commands. Cross-linked from skills + broadcast + claims |
-| Skill | `.agents/skills/sap_adt_api/SKILL.md` | §16/§17/§18/§19 updated — install status flipped INSTALLED; §19 rewritten as workstation-bridge playbook (Component 1 DONE, Components 2-3 next, no BASIS for any) |
-| Skill (redirect) | `.agents/skills/abapgit_integration/SKILL.md` | Cross-project "what this unblocks" table + 4-step how-to for any UNESCO project |
+| Skill | `.claude/skills/sap_adt_api/SKILL.md` | §16/§17/§18/§19 updated — install status flipped INSTALLED; §19 rewritten as workstation-bridge playbook (Component 1 DONE, Components 2-3 next, no BASIS for any) |
+| Skill (redirect) | `.claude/skills/abapgit_integration/SKILL.md` | Cross-project "what this unblocks" table + 4-step how-to for any UNESCO project |
 | Broadcast | `ecosystem-coordinator/ecosystem/priority-actions.md` | BROADCAST-004 + linked update note about dev edition deferred |
 | Brain claims | `brain_v2/claims/claims.json` | #197 superseded (with evidence_against entries); #201 NEW (installed) with UI-runtime evidence; #202 NEW (operational learnings: ADT REST source PUT broken on EhP8 $TMP + namespace bug + orphan inactive shell trap) |
 | Brain state | `brain_v2/brain_state.json` | Rebuilt — claims 199 → 201, superseded 14 → 15, FRESH |

@@ -173,9 +173,9 @@ flowchart TD
 | 1 | **FM Area** | `FIKRS` | `WHERE` clause on `FMIT` | Isolates one FM controlling area. All data belongs to one organizational unit. | Selection Screen |
 | 2 | **Fiscal Year** | `GJAHR` / `RYEAR` | `WHERE` clause on `FMIT` | Restricts to one fiscal year. No cross-year data. | Selection Screen |
 | 3 | **Budget Version** | `VERSN` | `WHERE` clause on `FMIT` | Selects version `0` (live data) vs. planning scenarios. | Selection Screen |
-| 4 | **Fund Type** | `FINCTYPE` | `JOIN` with `FMFINCODE` | ⭐ **Business Scope Filter.** Restricts to Regular Budget (`RB`) funds. Excludes Extrabudgetary, Trust Funds, Special Accounts. | [Filter Registry: FINCTYPE_FM](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.agents/skills/unesco_filter_registry/SKILL.md#finctype_fm--fund-type--budget-category-business-scope-filter) |
+| 4 | **Fund Type** | `FINCTYPE` | `JOIN` with `FMFINCODE` | ⭐ **Business Scope Filter.** Restricts to Regular Budget (`RB`) funds. Excludes Extrabudgetary, Trust Funds, Special Accounts. | [Filter Registry: FINCTYPE_FM](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.claude/skills/unesco_filter_registry/SKILL.md#finctype_fm--fund-type--budget-category-business-scope-filter) |
 | 5 | **Fund / Commitment Item** | `RFONDS` / `FIPEX` | `WHERE` clause on `FMIT` | Optional drill-down to specific funds or expenditure categories. | Selection Screen |
-| 6 | **Value Type Grouping** | `RWRTTP` | Post-retrieval grouping via `YTFM_WRTTP_GR` | Classifies each record as Budget, Actual, or Commitment. Drives columns J, K, L. | [Filter Registry: WRTTP_FM](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.agents/skills/unesco_filter_registry/SKILL.md#wrttp_fm--funds-management-value-type-grouping) |
+| 6 | **Value Type Grouping** | `RWRTTP` | Post-retrieval grouping via `YTFM_WRTTP_GR` | Classifies each record as Budget, Actual, or Commitment. Drives columns J, K, L. | [Filter Registry: WRTTP_FM](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.claude/skills/unesco_filter_registry/SKILL.md#wrttp_fm--funds-management-value-type-grouping) |
 
 #### Scope Definition Statement
 
@@ -238,7 +238,7 @@ The final results are stored in the internal table `MT_LIST` and displayed via `
 | O | **Utilization %** | Calculated | Calculated | **Virtual column**. Formula: `(Total Expenditure (M) / Initial Budget (J)) × 100`. Shows percentage of budget consumed. Displays 0 or blank if Budget = 0 to avoid division error. |
 
 > [!NOTE]
-> **⚠️ WRTTP Filter Reference**: For the complete list of WRTTP value type codes and their group assignments, see the [UNESCO Filter Logic Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.agents/skills/unesco_filter_registry/SKILL.md#wrttp_fm--funds-management-value-type-grouping).
+> **⚠️ WRTTP Filter Reference**: For the complete list of WRTTP value type codes and their group assignments, see the [UNESCO Filter Logic Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.claude/skills/unesco_filter_registry/SKILL.md#wrttp_fm--funds-management-value-type-grouping).
 
 ### 3. Calculation Engine
 The heart of the report is the dynamic accumulation of values from the `FMIT` table.

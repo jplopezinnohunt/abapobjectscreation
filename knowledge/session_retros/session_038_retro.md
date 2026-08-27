@@ -102,8 +102,8 @@ After ~30 successful batches, the RFC connection was reset (WSAECONNRESET / RFC_
 ### Skill routing for #038 lessons (Principle 5 compliance)
 Two patterns discovered this session are worth routing into the skills library:
 
-1. **ABAP 72-char line truncation silent corruption** → route to `.agents/skills/sap_class_deployment/SKILL.md` (the skill covering RFC_ABAP_INSTALL_AND_RUN patterns). Add a "Common failure modes" subsection with the `run_batch()` safety rail pattern. Deferred to next session to respect the "only updates this session" scope declaration.
-2. **RFC_CLOSED / WSAECONNRESET reconnect patterns** → route to `.agents/skills/sap_data_extraction/SKILL.md`. The extended RECONNECTABLE_ERRORS list is already in `rfc_helpers.py` (the canonical implementation), but the skill doc does not yet cite which patterns are caught. Deferred to next session.
+1. **ABAP 72-char line truncation silent corruption** → route to `.claude/skills/sap_class_deployment/SKILL.md` (the skill covering RFC_ABAP_INSTALL_AND_RUN patterns). Add a "Common failure modes" subsection with the `run_batch()` safety rail pattern. Deferred to next session to respect the "only updates this session" scope declaration.
+2. **RFC_CLOSED / WSAECONNRESET reconnect patterns** → route to `.claude/skills/sap_data_extraction/SKILL.md`. The extended RECONNECTABLE_ERRORS list is already in `rfc_helpers.py` (the canonical implementation), but the skill doc does not yet cite which patterns are caught. Deferred to next session.
 
 Both are **captured in code** (the actual fixes landed in-session) but **not yet in the skill docs**. The audit flagged this correctly as a Principle 5 gap. Treating the code change as authoritative and the skill doc as lagging documentation — to be reconciled in #039.
 

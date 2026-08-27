@@ -27,7 +27,7 @@
 | `knowledge/session_retros/session_052_retro.md` | Retro | This file. |
 
 ### Skill updates
-- `.agents/skills/sap_payment_bcm_agent/SKILL.md` — replaced the stub "BCM Signatory Management" section with:
+- `.claude/skills/sap_payment_bcm_agent/SKILL.md` — replaced the stub "BCM Signatory Management" section with:
   - Verified RY/HRP1001 schema
   - 7-group breakdown of rule 90000004 with current-active counts
   - 15-group breakdown of rule 90000005

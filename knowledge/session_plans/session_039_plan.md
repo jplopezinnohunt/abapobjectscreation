@@ -14,8 +14,8 @@
 
 ## Deliverables (shippable artifacts, named)
 
-1. `.agents/skills/sap_class_deployment/SKILL.md` — new "Common failure modes" subsection with: (a) 72-char ABAP line limit via RFC_ABAP_INSTALL_AND_RUN, (b) silent truncation symptom, (c) `SELECT SINGLE` + `UPDATE … FROM ls` replacement pattern, (d) `raise SystemExit` safety rail in batch loop. Evidence: `h29_skat_update.py` session #038.
-2. `.agents/skills/sap_data_extraction/SKILL.md` — new "Reconnect patterns" subsection citing the full RECONNECTABLE_ERRORS list from `rfc_helpers.py` with rationale per pattern. Reference the 141-batch H29 run as the validating case.
+1. `.claude/skills/sap_class_deployment/SKILL.md` — new "Common failure modes" subsection with: (a) 72-char ABAP line limit via RFC_ABAP_INSTALL_AND_RUN, (b) silent truncation symptom, (c) `SELECT SINGLE` + `UPDATE … FROM ls` replacement pattern, (d) `raise SystemExit` safety rail in batch loop. Evidence: `h29_skat_update.py` session #038.
+2. `.claude/skills/sap_data_extraction/SKILL.md` — new "Reconnect patterns" subsection citing the full RECONNECTABLE_ERRORS list from `rfc_helpers.py` with rationale per pattern. Reference the 141-batch H29 run as the validating case.
 3. `Zagentexecution/mcp-backend-server-python/h18_dmee_tree_probe.py` — read `DMEE_TREE_NODES` via RFC_READ_TABLE for DMEE formats matching UNESCO CGI (SEPA CT). Filter on attributes containing `Purp` / `Cd` / `PurposeCode`. Output CSV to `knowledge/domains/Payment/h18_dmee_tree_nodes.csv`.
 4. `knowledge/domains/Payment/h18_dmee_tree_findings.md` — short markdown with: format tree IDs found, count of Purp/Cd nodes, the literal value if located, and the follow-on path if not. Must either ship H18 as CLOSED (Cd literal found) or strike H18 as INVESTIGATED AND CLOSED with the honest "value is dynamic/field-referenced not literal" finding.
 5. `.session_state.json` updated with #039 baseline + end counts.

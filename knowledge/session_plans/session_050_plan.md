@@ -45,7 +45,7 @@ User reframed the session at the start:
 - Add KU-022 (triage blind spots), KU-023 (TADIR-wide coverage gap)
 
 ### Track E — Skill + subagent
-- Create `.agents/skills/sap_incident_analyst/SKILL.md` with the 7-step protocol
+- Create `.claude/skills/sap_incident_analyst/SKILL.md` with the 7-step protocol
 - Create `.claude/agents/incident-analyst.md` (Opus, owns full workflow autonomously)
 
 ### Track F — Close

@@ -78,7 +78,7 @@
 | 5 | Live data comparator (7 tables) | `Zagentexecution/mcp-backend-server-python/compare_p01_d01_objects.py` |
 | 6 | House bank text comparator | `Zagentexecution/mcp-backend-server-python/compare_house_banks.py` |
 | 7 | Table name resolver | `Zagentexecution/mcp-backend-server-python/check_t77hrfpm.py` |
-| 8 | Transport companion skill update | `.agents/skills/sap_transport_companion/SKILL.md` (Step 1b) |
+| 8 | Transport companion skill update | `.claude/skills/sap_transport_companion/SKILL.md` (Step 1b) |
 | 9 | Landscape violation memory | `memory/feedback_p01_landscape_violation.md` |
 | 10 | Comparison results JSON | `Zagentexecution/mcp-backend-server-python/p01_d01_comparison_results.json` |
 

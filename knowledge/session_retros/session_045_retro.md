@@ -110,7 +110,7 @@ The treasury_operations_companion_v1.html had wrong ECO09 benchmarks (XINTB=X, F
 - `companions/house_bank_configuration_companion.html` — UBA01 status OK, resolved issue, DISKB corrected, footer updated
 
 ### Skills
-- `.agents/skills/sap_house_bank_configuration/SKILL.md` — 13-step process fully expanded, MODIFY section with NTB01 example, transport strategy, DISKB rule corrected (4 locations)
+- `.claude/skills/sap_house_bank_configuration/SKILL.md` — 13-step process fully expanded, MODIFY section with NTB01 example, transport strategy, DISKB rule corrected (4 locations)
 
 ### Scripts
 - `Zagentexecution/mcp-backend-server-python/house_bank_compliance_checker.py` — Check 10 rewritten (T035D), Check 15 enhanced (currency-aware set validation)

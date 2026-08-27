@@ -462,7 +462,7 @@ Schedule SM36 jobs for SAPF100 per company code: valuation last business day 23:
 ## 8. Methodology Reference
 
 The reusable technique for analyzing any program's variants (pool-table extraction, naming-convention decode, account-block cross-reference, execution reconstruction from BKPF/BSIS) is documented separately:
-- Skill: `.agents/skills/sap_variant_analysis/SKILL.md`
+- Skill: `.claude/skills/sap_variant_analysis/SKILL.md`
 - Knowledge: `knowledge/domains/Closing_Activities/sap_variant_forensic_methodology.md`
 
 ## 9. Related

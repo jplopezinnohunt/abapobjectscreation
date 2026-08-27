@@ -5,7 +5,7 @@
 **Estado**: `EXECUTED_VERIFIED` — configuracion completa y **verificada por simulacion**.
 Un unico pendiente bloqueante: el rol `BNK_APP` de `B_REISS` (Security).
 **Abierto**: 2026-08-21 (Ingrid Wettie, BFM-TRS Middle Office) · **Ejecutado y verificado**: 2026-08-26
-**Procedimiento**: `.agents/skills/sap_bcm_signatory_maintenance/SKILL.md` — 3.a ocurrencia, la primera con el skill escrito
+**Procedimiento**: `.claude/skills/sap_bcm_signatory_maintenance/SKILL.md` — 3.a ocurrencia, la primera con el skill escrito
 **Mecanismo**: [bcm_amount_band_mechanism.md](../domains/Treasury/bcm_amount_band_mechanism.md) — nacio de este caso
 
 ---

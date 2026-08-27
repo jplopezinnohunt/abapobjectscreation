@@ -60,7 +60,7 @@ Preflight Check 5 independently flagged 4 zombies [VERIFIED].
 | Artifact | Type | Missing hypothesis |
 |----------|------|-------------------|
 | `scripts/session_preflight.py` | Executable | No hypothesis — but this is meta-infrastructure, arguably exempt |
-| `.agents/skills/agi_retro_agent/SKILL.md` | Meta skill | Same — meta-infrastructure |
+| `.claude/skills/agi_retro_agent/SKILL.md` | Meta skill | Same — meta-infrastructure |
 | Retroactive: `2026-04-04 CO extraction (3.45M rows)` | Data | Still has no hypothesis doc. The new rule was authored but not retro-applied. |
 
 Count: 1 legitimate ungrounded artifact from the prior session that this session chose not to remediate. Under 3-artifact block threshold.
@@ -72,7 +72,7 @@ Count: 1 legitimate ungrounded artifact from the prior session that this session
 | Rule file | Violation | Evidence |
 |-----------|-----------|----------|
 | `feedback_pmo_reconciliation.md` | PARTIAL — MEMORY.md count at line 238 of 239, past truncation threshold | Grep MEMORY.md line 238 [VERIFIED], CLAUDE.md header warns "lines after 200 silently truncated" |
-| `feedback_session_close_protocol.md` | No skills updated this session despite creating major infrastructure | git diff shows zero `.agents/skills/*/SKILL.md` modifications except new agi_retro_agent [VERIFIED] |
+| `feedback_session_close_protocol.md` | No skills updated this session despite creating major infrastructure | git diff shows zero `.claude/skills/*/SKILL.md` modifications except new agi_retro_agent [VERIFIED] |
 | `feedback_extraction_scope.md` | Superseded by `hypothesis_before_extraction.md` per its own text line 103 — but old rule not deleted | Both files coexist, confusing |
 
 ---
@@ -159,7 +159,7 @@ under the old paradigm:
 
 - **Principle 2 (Reusability) score**: The audit noted `SKILLS_CONSOLIDATION_PLAN.md`
   as a "140-line plan with zero tests run." The plan has been REJECTED and
-  REPLACED with `.agents/skills/skill_coordinator/SKILL.md` which encodes the
+  REPLACED with `.claude/skills/skill_coordinator/SKILL.md` which encodes the
   opposite paradigm: **skills grow, never merge**. The 140 lines are now a
   decision log, not pending work.
 

@@ -7,7 +7,7 @@
 > **Source:** Handover documentation + real config (NTB02/EUR02, Sogebank Haiti, UBA01 Mozambique)  
 > **Last Updated:** 2026-04-07 (enriched with ECO09 benchmark + UBA01 lessons)  
 > **Owner:** DBS Team — FAM  
-> **Skill:** `.agents/skills/sap_house_bank_configuration/SKILL.md`  
+> **Skill:** `.claude/skills/sap_house_bank_configuration/SKILL.md`  
 > **Compliance Checker:** `Zagentexecution/mcp-backend-server-python/house_bank_compliance_checker.py`  
 > **Config Reports:** `knowledge/configuration_retros/`  
 

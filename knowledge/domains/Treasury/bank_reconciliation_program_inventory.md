@@ -7,7 +7,7 @@ bank-account clearing/reconciliation at UNESCO on P01.
 **Source tree:** `extracted_code/CUSTOM/BANK_RECONCILIATION/` (+ the pre-existing `extracted_code/CUSTOM/YTBAE002/`)
 **Cross-ref incident:** [INC-000006906 — Maputo MZN bank reconciliation TIME_OUT](../../incidents/INC-000006906_maputo_mzn_bank_reconciliation_download.md)
 **Related claims:** Claim 50, 51, 52, 53, 54
-**Related skill:** `.agents/skills/sap_bank_statement_recon/SKILL.md`
+**Related skill:** `.claude/skills/sap_bank_statement_recon/SKILL.md`
 
 ---
 
@@ -265,7 +265,7 @@ Signatures we confirmed:
 
 - **Incident:** [INC-000006906 — Maputo MZN bank reconciliation download](../../incidents/INC-000006906_maputo_mzn_bank_reconciliation_download.md)
 - **Claims:** Claim 50 (YBANK sets coverage), 51 (uncovered GL count), 52 (233 HKONTs outside YBANK coverage), 53 (YTBAE002 empty-range bug), 54 (MODE 'E' + BDC network coupling)
-- **Skill:** [.agents/skills/sap_bank_statement_recon/SKILL.md](../../../.agents/skills/sap_bank_statement_recon/SKILL.md)
+- **Skill:** [.claude/skills/sap_bank_statement_recon/SKILL.md](../../../.claude/skills/sap_bank_statement_recon/SKILL.md)
 - **Fix file:** `Zagentexecution/fixes/INC-000006906/YTBAE002_fix.abap`
 - **Extractor used:** `Zagentexecution/mcp-backend-server-python/extract_bank_recon_family.py`
 - **Inventory artifact:** `extracted_code/CUSTOM/BANK_RECONCILIATION/_family_inventory.json`
