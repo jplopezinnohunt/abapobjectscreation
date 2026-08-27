@@ -76,6 +76,70 @@ roles:
     medido_hoy: 57 stores
 
 # -------------------------------------------------------------------------------------
+# 1a. LA PROCEDENCIA — el tercer eje, y el que explica por que faltaban agentes (s106)
+# -------------------------------------------------------------------------------------
+# Peticion del dueno: "registra los agentes del harness". Al ir a hacerlo aparecio que no
+# es un hueco de datos sino de EJE: los dos ejes de la seccion 2 (dominio x tipo de
+# exploracion) NO clasifican a un agente como `Explore`, que no es de ningun dominio ni de
+# ningun tipo de mineria. Lo que lo distingue es DE DONDE VIENE.
+procedencia:
+  _por_que_es_un_eje: >
+    Un instrumento PROPIO vive en el repo, se versiona y viaja con el proyecto. Uno DEL
+    HARNESS lo da el runtime a la SESION, no al disco: no se versiona, no viaja, y puede
+    cambiar entre sesiones sin que nadie lo note. Uno DE OTRO PROYECTO existe y no es
+    invocable desde aqui. Son tres regimenes distintos de durabilidad, y tratarlos igual
+    es lo que dejaba a seis agentes fuera del modelo.
+
+  PROPIO:
+    vive_en: .claude/agents/*.md — versionado
+    medido_hoy: 14
+    ojo: >
+      ser propio NO garantiza ser invocable. Medido en s106: `log-process-discovery` y
+      `process-guardian` estan en disco y NO fueron ofrecidos en esta sesion. El roster
+      es POR SESION, en los dos sentidos.
+
+  DEL_HARNESS:
+    vive_en: ninguna parte del repo — lo entrega el runtime a la sesion
+    medido_hoy: 6
+    quienes: [Explore, Plan, general-purpose, claude, claude-code-guide, statusline-setup]
+    que_son: >
+      Explore = barrido de lectura amplio, sin dominio: se especializa por ALCANCE, no por
+      tema. Plan = arquitecto, disena sin escribir. general-purpose y claude = cajon de
+      sastre. claude-code-guide = conocimiento sobre la propia herramienta, o sea un SKILL
+      servido como agente. statusline-setup = utilidad de configuracion.
+    ⛔_no_es_medible_desde_disco: >
+      ESTA LISTA NO SE PUEDE RECALCULAR desde ningun fichero, y por eso rompe la regla de
+      cabecera de este documento. Es lo unico aqui DECLARADO POR UNA SESION en vez de
+      medido. Un minero que enumere `.claude/agents/` encontrara 31 en el ecosistema y
+      seguira estructuralmente ciego a estos 6: si reporta "hay 14" comete el defecto de
+      H134. Debe emitir UNOBSERVABLE para esta mitad (claim 616).
+
+  DE_OTRO_PROYECTO:
+    medido_hoy: 17 en unescrp
+    quienes: >
+      crp-brain-steward, crp-coordinator, crp-process-guardian, crp-quality-auditor,
+      crp-services-expert, crp-test-{automation-expert,case-builder,coordinator,runner},
+      crp-ui-expert, crp-wf-expert, fi-posting, sap-asr-expert, sap-backend,
+      sap-standard-miner, sap-workflow, session-manager
+    ⛔_el_solape_es_por_ROL_no_por_NOMBRE: >
+      Comparados por NOMBRE, los 17 dan CERO solape con nuestros 14. Comparados por ROL
+      hay al menos dos duplicados: crp-brain-steward === brain-steward y
+      crp-process-guardian === process-guardian. Otra vez el alias que da cero: el prefijo
+      del proyecto hace que dos instrumentos con la misma funcion parezcan cosas
+      distintas. Antes de "adoptar" uno de fuera, comparar por lo que HACE.
+
+  el_defecto_que_esto_destapa_en_el_termometro: >
+    DELEGA se deriva de que un agente NOMBRE a otro en su fichero de prompt. Un agente del
+    harness NO TIENE fichero de prompt en nuestro repo, asi que no puede aparecer ni como
+    origen ni como destino de DELEGA — JAMAS, por construccion. Y no es un detalle: medido
+    en s106 por consumo, `Explore` gasto ~301K tokens en dos pasadas, MAS QUE NINGUN OTRO
+    agente (banca 222K, miner-onboarding 197K, brain-steward 200K), y produjo la fractura
+    en 4 piezas del circuito P2P, el punto ciego del grafo de companions y una correccion
+    a un skill escrito ese mismo dia. El instrumento que mide nuestra colaboracion es
+    ciego al agente que mas colaboro. Cualquier cifra de colaboracion se lee sabiendo esto.
+  se_trata_en: PMO H140 — minero para enumerar + agente para adoptar, con la frontera declarada
+
+# -------------------------------------------------------------------------------------
 # 1b. EL CONOCIMIENTO DRIVER — la teoria que MANDA sobre como clasificamos (s106)
 # -------------------------------------------------------------------------------------
 # Decision del dueno: esto no es una investigacion archivada, es un DRIVER. Se lee ANTES
