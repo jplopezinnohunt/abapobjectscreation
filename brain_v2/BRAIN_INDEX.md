@@ -119,13 +119,13 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 620 | `python brain_v2/graph_queries.py search <termino>` |
+| **claims** | 623 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 145 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 15 | `python brain_v2/graph_queries.py incident <id>` |
 | **reglas** | 252 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 168 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 94 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **algoritmos** | 95 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -134,7 +134,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 94 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 95 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -392,6 +392,12 @@ lo deja — solo que nadie lo publicaba.
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
 | `A63_discovery_raises_questions` | CONVERTIR UN HALLAZGO EN PREGUNTAS PARA QUIEN NO SABIA QUE LE AFECTABA. Un | Treasury | `['process_mining/mining_findings.json` |
+
+**el Gold DB p01_gold_ma...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A68_payment_lifecycle_e2e` | construir el log de eventos del ciclo de vida del PAGO -- factura contabil | Treasury | `process_mining/mining_findings.json` |
 
 **INSTRUMENTOS — contestan en PANTALLA, no dejan fichero**
 
