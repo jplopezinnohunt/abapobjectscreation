@@ -29711,5 +29711,37 @@
       "claim 404 (SEC-2-ATTRIBUTION-GAP)",
       "H71 write-channel SoD"
     ]
+  },
+  {
+    "id": 631,
+    "claim": "EL BUS DE COLABORACION DE MINEROS TENIA DOS DEFECTOS ESTRUCTURALES QUE NINGUNA REVISION DE CODIGO PROPIA CAZO -- LOS ENCONTRARON DOS AGENTES USANDOLO EN VIVO, CONTESTANDO PREGUNTAS REALES, EN s107 (2026-08-27/28). (1) PERDIDA POR ESCRITURA CONCURRENTE: `_guardar()` en process_mining/colaborar.py hacia read-modify-write del fichero process_mining/mining_findings.json ENTERO sin control de concurrencia -- incumplimiento de ADR-008 (un-solo-escritor) justo donde el diseno exige que varios mineros escriban a la vez. mining-arbiter lo reporto en caliente: mientras contestaba, otro proceso volco su copia y borro `_reenrutada_s107` de las cuatro preguntas de ADS; sus respuestas sobrevivieron por ORDEN DE ESCRITURA, no por diseno. El sintoma es el peor posible para un foro: no da error, borra sin avisar. (2) IDENTIDAD INESTABLE: las preguntas se identificaban por (sujeto, para) -- variant-intelligence perdio el acceso a su propia pregunta al ser re-enrutada, porque `para` es exactamente el campo que cambia al reenrutar. FIX 1: `_guardar()` RELEE y FUNDE por qid antes de escribir (las respuestas de dos escritores se UNEN, nunca se sustituyen), y escribe con fichero temporal + os.replace (atomico) -- el bus queda APPEND-ONLY; borrar una respuesta ajena exige ahora escritura directa y consciente. FIX 2: `qid` estable derivado de (de, sujeto, texto) -- nunca del destinatario -- con `contestar(qid=...)` como via preferente; 47 de 47 preguntas llevan qid, probado que contesta por qid y solo esa. MEDIDO EL EFECTO: el foro paso de 14 respuestas a 43 de 47, y 5 de esas respuestas las escribieron los propios agentes (variant-intelligence, mining-arbiter), no la sesion principal.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Support",
+    "domain_axes": {
+      "functional": "Support",
+      "process": "cross"
+    },
+    "evidence_for": [
+      "process_mining/colaborar.py:128-150 — _guardar(): releer + fundir por qid antes de escribir",
+      "process_mining/colaborar.py:188 — os.replace(tmp, BUS), escritura atomica",
+      "process_mining/colaborar.py:115 — _qid(p), identidad derivada de (de, sujeto, texto)",
+      "process_mining/colaborar.py:399-429 — contestar(..., qid=None): qid manda sobre (sujeto, para)",
+      "process_mining/mining_findings.json — 47/47 preguntas con campo qid; 43/47 respondidas (era 14/47)",
+      "commit 1e618ae 'LOS AGENTES COLABORARON — y encontraron DOS defectos en el mecanismo que yo escribi'"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "colaborar.py",
+      "mining_findings.json",
+      "mining-arbiter",
+      "variant-intelligence",
+      "A30_mining_bus",
+      "A54_collaboration_mechanism"
+    ],
+    "created_session": 107,
+    "resolved_session": 107,
+    "resolution_notes": "Encontrado por los propios consumidores del instrumento, no por quien lo escribio -- misma familia de hallazgo que claim 629 (una puerta que no se prueba contra un caso que debe fallar no esta probada), aplicado aqui a un ALMACEN concurrente en vez de a una puerta. Relacionado con la regla feedback_an_instrument_nobody_can_reach_is_documentation (misma sesion): un foro donde contestar borraba lo ajeno tampoco era colaboracion utilizable, aunque fuera alcanzable."
   }
 ]

@@ -650,6 +650,13 @@ FEBKO parcial ya es claim 535/536.
    UIL/UIS con BCM; Tier2 ICTP F110 sin BCM; Tier3 IBE/MGIE/ICBA sin F110); (b) cuantos
    firmantes y si hay 2a validacion en Coupa, dentro de las que si tienen BCM. Aterrizado
    en claim 623.
+   ⚠️ **SWEEP s107 (mas tarde el mismo dia):** esto describe QUE PASA una vez que un pago
+   ESTA enrutado a BCM (secuencia post-decision) -- no cierra QUE CONDICION dispara ese
+   enrutado. Esa pregunta quedo declarada DISPUTADA en `domains.json ->
+   process_map.P2P.stages[n=8, id=70_f110]."⛔_QUE_ENRUTA_A_BCM_ESTA_EN_DISPUTA"` (tres fuentes que no
+   concuerdan: `LAUFI=B*` del companion / `BCM*` literal del skill / `LAUFI='*'` de
+   `TFIBLMPAYBLOCK`+OBPM5). No leer este punto 1 como que la condicion de enrutado ya se
+   verifico -- NO se verifico (OPEN_QUESTION).
 
 2. **PPC: no re-derivado, ya esta medido.** Aplica a pagos CROSS-BORDER de proveedor/
    beneficiario en 9 paises (T015L), solo cuando la sociedad es FRANCESA (unica clase BAdI
@@ -657,6 +664,13 @@ FEBKO parcial ya es claim 535/536.
    distincion de "TIPO de factura" real medida es proveedor vs NOMINA (LAUF1 sufijo 'P' ->
    codigo SALA), no un campo de la factura. Ver `sap_payment_bcm_agent/SKILL.md` seccion
    PPC y `Zagentexecution/quality_checks/ppc_country_consistency_check.py`.
+   ⚠️ **SWEEP s107 (mas tarde el mismo dia): el "9 paises" de esta linea QUEDO EN DISPUTA,
+   no cerrado.** `sap_payment_bcm_agent/SKILL.md` dice "T015L configuration (73 rows, 8
+   countries) VERIFIED from P01 live query" y lista OCHO (AE/CN/ID/IN/JO/MA/MY/PH) -- un
+   pais menos que aqui. Declarado en `domains.json ->
+   process_map.P2P.stages[n=6, id=50_ppc]."⛔_cuantos_paises_NO_esta_cerrado"` (OPEN), con el comando de
+   cierre: `SELECT DISTINCT LAND1 FROM T015L` en P01 por RFC_READ_TABLE. No citar "9
+   paises" como numero cerrado hasta correr esa consulta.
 
 3. **RM: claim 619 se quedaba corto -- hay un TERCER consumidor, y es el que H137 pedia.**
    CRP (claim 619) NO es el workflow de facturas: es un Fiori app distinto (certificados de

@@ -517,7 +517,22 @@ primitivas:
         es un JSON de 96 fichas que nadie carga. Como skill por clase, el MODELO la elige
         cuando la descripcion encaja con la tarea. Deja de depender de acordarse, que es la
         misma cura que las skills de dominio.
-      estado: DECIDIDO, NO CONSTRUIDO — las 12 skills no existen todavia
+      estado: >
+        CONSTRUIDO despues de escribirse este parrafo (s107, commit 0fb64a6): las 12 skills
+        existen en `.claude/skills/mining-*`, generadas (no a mano) por
+        `scripts/build_mining_skills.py` desde la ficha de cada minero en `algorithms.json` --
+        que contesta, comando exacto, `failure_mode`, `lo_que_NO_puede`, `lands_in`. 72/72
+        mineros alcanzables por las 12 clases. Editar un SKILL.md a mano se pierde en la
+        proxima corrida del generador.
+      ⛔_la_metrica_49_de_72_queda_vieja_dila_asi: >
+        el "68% sin invocador" de arriba SIGUE PUBLICADO en este mismo parrafo y en claim/PMO
+        de sesiones previas, y NO SE RECALCULO tras la migracion porque `INVOCA` en el
+        toolgraph mide una arista DISTINTA (agente/script que llama al script del minero por
+        NOMBRE, `bound_in`), no si el modelo puede ELEGIR la skill de su clase por descripcion.
+        Son dos vias de alcanzabilidad diferentes: la nueva no sustituye a la vieja, la
+        complementa. Publicar "49/72" sin esta nota, ahora que las 12 skills existen, se lee
+        como que el arreglo no funciono -- y no es eso lo que paso. Recontar `INVOCA` post-
+        migracion es trabajo pendiente, no hecho en s107.
 
     GATE:
       primitiva: script + hook Stop (run_all.py los descubre por QUALITY_CHECK)
@@ -570,6 +585,11 @@ no_usamos:
       (leccion H131). Bloquear lo que es CIERRE DE ESTA SESION (commit, backup declarado);
       avisar lo que es deuda vieja.
     prioridad: 1
+    estado: >
+      APLICADO despues de escribirse este parrafo (s107, commit 27645ba): el hook de
+      durabilidad (`brain_v2/stop_durability_hook.py`) paso de avisar a bloquear con exit 2
+      sobre ficheros FUENTE sin commitear al cierre. Sigue avisando, no bloqueando, sobre
+      deuda vieja (regla H131 de arriba respetada).
 
   CLAUDE_MD_QUE_SE_MUEVE_A_SKILLS:
     que_dice_la_doc: >
@@ -586,6 +606,11 @@ no_usamos:
       con 8.000 tokens de instrucciones permanentes. Y buena parte de ese fichero es
       conocimiento de dominio -- exactamente lo que la doc dice que debe ser skill.
     prioridad: 2
+    estado: >
+      APLICADO despues de escribirse este parrafo (s107, commit d7ce6ed): el metodo WebGUI de
+      `CLAUDE.md` se movio al skill que ya existia, -15% medido sobre el fichero. No es el
+      adelgazamiento completo (28.625 caracteres siguen siendo mucho conocimiento de dominio
+      inline) -- es la primera pasada, no la ultima.
 
   GOAL:
     que_es: >
