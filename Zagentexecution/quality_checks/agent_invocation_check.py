@@ -125,21 +125,60 @@ def main():
           % (len(paradas), len(sin_atribuir)))
     print("     ^ no son la misma poblacion: NO dividir una por otra (ver docstring)")
 
-    corridos = [a for a in pob if a in veces]
-    nunca = [a for a in pob if a not in veces]
+    # TRES GRUPOS, no uno. La primera version publicaba "33% de cobertura" mezclandolos, y
+    # esa cifra es tan inutil como lo era "27 skills sin lector" antes del claim 618: junta
+    # poblaciones distintas y esconde la que importa.
+    #   GENERICOS DEL HARNESS  no son instrumentos de dominio (Plan, claude, statusline...).
+    #                          "nunca invocado" no significa nada para ellos: FUERA del %.
+    #   PROPIOS CABLEADOS      les delegan y declaran instrumentos: estan integrados en el
+    #                          grafo. Si no han corrido es la VENTANA, no abandono.
+    #   AISLADOS               ni les delegan ni delegan. Ahi si hay algo que mirar.
+    GENERICOS = {"Plan", "claude", "general-purpose", "claude-code-guide", "statusline-setup"}
+    try:
+        import json as _j
+        _tg = _j.load(open(os.path.join(ROOT, "brain_v2", "toolgraph.json"), encoding="utf-8"))
+        _ar = _tg.get("aristas") or []
+        din = Counter(a["a"] for a in _ar if a.get("rel") == "DELEGA")
+        dout = Counter(a["de"] for a in _ar if a.get("rel") == "DELEGA")
+    except (OSError, ValueError, KeyError):
+        din = dout = Counter()
+
+    medibles = [a for a in pob if a not in GENERICOS]
+    corridos = [a for a in medibles if a in veces]
+    nunca = [a for a in medibles if a not in veces]
+    aislados = [a for a in nunca if not din[a] and not dout[a]]
+    cableados = [a for a in nunca if a not in aislados]
+    genericos = [a for a in pob if a in GENERICOS]
     fuera = sorted(set(veces) - set(pob))
 
+    fechas = sorted(r.get("at", "")[:10] for r in lanz if r.get("at"))
+    ventana = ("%s -> %s" % (fechas[0], fechas[-1])) if fechas else "sin datos"
+
     print()
-    print("  HAN CORRIDO (%d de %d):" % (len(corridos), len(pob)))
+    print("  HAN CORRIDO (%d de %d medibles):" % (len(corridos), len(medibles)))
     for a in sorted(corridos, key=lambda x: -veces[x]):
         d = dias(ultima.get(a, ""))
         print("     %-28s %2d vez(ces)  ultima hace %s dia(s)"
               % (a, veces[a], d if d is not None else "?"))
     print()
-    print("  NUNCA se han invocado (%d):" % len(nunca))
-    for a in nunca:
+    print("  NUNCA corrieron, PERO ESTAN CABLEADOS (%d) — les delegan y declaran"
+          " instrumentos:" % len(cableados))
+    for a in cableados:
+        print("     %-26s le delegan %d · delega en %d" % (a, din[a], dout[a]))
+    print("     ^ NO es abandono: es la VENTANA. Con %d lanzamientos trazados en %s sobre"
+          % (len(lanz), ventana))
+    print("       %d agentes medibles, la mayoria saldria a cero AUNQUE TODOS estuvieran"
+          % len(medibles))
+    print("       sanos. Concluir 'no se usa' de aqui es un error de denominador.")
+    print()
+    print("  AISLADOS — ni les delegan ni delegan, y nunca corrieron (%d):" % len(aislados))
+    for a in aislados:
         print("     %s" % a)
-    print("     ^ 'nunca corrio' NO es 'no sirve': puede ser tema dormido. Rankea, no dicta.")
+    print("     ^ ESTOS si son el hallazgo: nadie los nombra y ellos no nombran a nadie.")
+    print()
+    print("  genericos del harness, FUERA del porcentaje (%d): %s"
+          % (len(genericos), ", ".join(genericos) or "-"))
+    print("     ^ no son instrumentos de dominio; 'nunca invocado' no les aplica.")
 
     if fuera:
         print()
@@ -147,9 +186,11 @@ def main():
         print("     ^ o el roster esta caduco, o son de otra sesion con otro harness")
 
     print("-" * 74)
-    pct = (100.0 * len(corridos) / len(pob)) if pob else 0.0
-    print("cobertura de invocacion: %.0f%% (%d/%d) — informativo, no es una puerta"
-          % (pct, len(corridos), len(pob)))
+    pct = (100.0 * len(corridos) / len(medibles)) if medibles else 0.0
+    print("cobertura de invocacion: %.0f%% (%d de %d MEDIBLES) — informativo, no es una puerta"
+          % (pct, len(corridos), len(medibles)))
+    print("  denominador declarado: %d del roster menos %d genericos del harness."
+          % (len(pob), len(genericos)))
     return 0
 
 
