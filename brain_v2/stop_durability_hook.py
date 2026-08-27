@@ -18,7 +18,8 @@ Design (matches the Claude Code Stop-hook contract):
     (brain_state.json, brain_v2/output|index, *.db, *.log) or the gitignored Golden DB.
   * Fail-safe — any error -> exit 0 silently; never breaks the session.
 """
-import json, sys, os, time, subprocess, hashlib
+import json
+import os, sys, os, time, subprocess, hashlib
 from pathlib import Path
 from datetime import datetime
 
@@ -117,6 +118,29 @@ def main():
         + unlanded_status()
         + local_only_status()
     )
+    # ---- DE AVISO A GATE (s107) ------------------------------------------------------
+    # La doc de Claude Code: un hook Stop «BLOCKS the turn from ending until it passes».
+    # Nueve hooks Stop y ninguno bloqueaba. Es «lo que depende de acordarse no pasa» con el
+    # mecanismo determinista al lado, sin usar.
+    #
+    # BLOQUEA solo la FUENTE sin commitear: es trabajo de ESTA sesion, se arregla con un
+    # comando, y perderlo es irreversible. La copia de seguridad, los descubrimientos sin
+    # aterrizar y la deuda vieja siguen siendo AVISO -- un gate en rojo permanente por deuda
+    # historica es como se consigue que un check se ignore (H131).
+    #
+    # Para bloquear, el contrato es stderr + exit 2; el texto vuelve al modelo como razon.
+    # Claude Code corta tras 8 bloqueos seguidos, asi que no puede secuestrar la sesion.
+    bloquear = os.environ.get("DURABILITY_GATE_BLOCKS", "1") not in ("0", "false", "no")
+    if bloquear:
+        sys.stderr.write(
+            msg
+            + "\n\nESTO BLOQUEA EL CIERRE (no es un aviso): son cambios en FUENTE de esta "
+              "sesion y perderlos es irreversible. Commitea enfocado y vuelve a terminar.\n"
+              "Si de verdad quieres cerrar sin commitear, dilo explicitamente y con el motivo "
+              "-- o exporta DURABILITY_GATE_BLOCKS=0 para esta corrida.\n"
+        )
+        sys.exit(2)
+
     print(json.dumps({
         "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg}
     }))
