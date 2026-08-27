@@ -1,0 +1,224 @@
+# =====================================================================================
+# EL OFICIO — el modelo canonico de COMO TRABAJAMOS
+# =====================================================================================
+# Se llamaba "el brain del brain", que dice DONDE vive y no QUE es. Esto es el oficio:
+# los roles, los instrumentos, el metodo y como mejora. Es el unico documento que se
+# describe a SI MISMO -- todo lo demas del cerebro habla de UNESCO; esto habla de
+# nosotros.
+#
+# NO es prosa: cada afirmacion de aqui se mide en un fichero real, y la columna `se_mide_en`
+# dice cual. Si una cifra de aqui no se puede recalcular, esa linea esta muerta.
+#
+# Fijado: 2026-08-27 (s105) · Autor del modelo: JP · Escrito por el agente.
+# =====================================================================================
+
+version: 1.0
+fijado: 2026-08-27
+sesion: 105
+se_regenera_con: python brain_v2/build_toolgraph.py
+grafo: brain_v2/toolgraph.json
+
+# -------------------------------------------------------------------------------------
+# 1. LOS TRES ROLES, y el criterio que los separa
+# -------------------------------------------------------------------------------------
+# "Si es para leer es SKILL; si decide, es AGENTE; si descubre, es MINERO."
+roles:
+  SKILL:
+    es: conocimiento curado de un dominio — como es, que trampas tiene
+    se_consume: se LEE
+    se_especializa_por: DOMINIO
+    vive_en: .agents/skills/*/SKILL.md
+    se_pierde_cuando: nadie lo lee
+    medido_hoy: 50 skills · 27 sin ningun lector
+    ojo: >
+      los 27 sin lector son DOS problemas distintos y juntarlos esconde el que importa.
+      DOCE tienen instrumentos que DEBERIAN leerlos y no lo hacen (fi_domain_agent 15,
+      sap_company_code_copy 14) — perdida real. QUINCE no los deberia leer nadie tampoco
+      — tema dormido, no hueco. Claim 618.
+
+  AGENTE:
+    es: un ROL CON CRITERIO — decide que aplicar y cuando, orquesta, se niega a concluir
+        sin evidencia
+    se_consume: se INVOCA
+    se_especializa_por: DOMINIO
+    vive_en: .claude/agents/*.md
+    se_pierde_cuando: su metodo vive solo en su prompt y muere con el
+    medido_hoy: 14 agentes · 0 sin instrumento declarado (eran 5)
+
+  MINERO:
+    es: un instrumento de EXPLORACION — descubre lo que no sabias que existia
+    se_consume: se EJECUTA
+    se_especializa_por: TIPO DE EXPLORACION      # <-- el otro eje
+    vive_en: brain_v2/methods/algorithms.json (bound_in apunta al script)
+    se_pierde_cuando: no esta registrado y muere con su caso
+    medido_hoy: 64 mineros sobre 11 clases de mineria
+
+  # Dos roles mas, que no son de conocimiento sino de control:
+  GATE:
+    es: una puerta que VIGILA un store y falla con exit 1
+    vive_en: Zagentexecution/quality_checks/*.py con QUALITY_CHECK declarado
+    se_pierde_cuando: no declara `tier` — el runner lo descubre y lo marca UNCLASSIFIED,
+                      o sea existe sin gatear nada
+    medido_hoy: 54 gates
+  STORE:
+    es: el sitio donde algo ATERRIZA. Cada store es la fuente de su tipo de nodo
+    medido_hoy: 57 stores
+
+# -------------------------------------------------------------------------------------
+# 2. LOS DOS EJES — por que un minero sirve a cualquier dominio
+# -------------------------------------------------------------------------------------
+ejes:
+  _idea: >
+    Agentes y skills se especializan por DOMINIO; los mineros, por TIPO DE EXPLORACION.
+    Son ORTOGONALES. Por eso un minero sirve a cualquier dominio: no es que sea general,
+    es que esta especializado en otro eje. Esto es lo que hace extraible un metodo que
+    vive dentro de un agente.
+  dominio: [Payment_BCM, Closing_Activities, Master_Data_Governance, Treasury, PSM_FM, ...]
+  tipo_de_exploracion:
+    - REALIDAD             # que ES cada nombre antes de contarlo
+    - CANAL_Y_ACTOR        # por donde entra el trabajo y quien lo mueve
+    - CASO                 # que documento es el caso
+    - FLUJO_DE_CONTROL     # que sigue a que
+    - CONFORMIDAD          # lo real contra lo que deberia ser
+    - OBJETO_CENTRICO      # varios objetos a la vez
+    - DERIVA               # como cambia en el tiempo
+    - RESTO_SIN_EXPLICAR   # lo que no sabemos nombrar todavia — el sensor
+    - TECNICA_DE_LECTURA   # no mina: hace posible minar
+    - COLABORACION
+    - ORQUESTACION
+
+  criterio_de_corte: >
+    Cuando un metodo vive dentro del prompt de un agente: LO QUE NECESITA CRITERIO se
+    queda en el agente; LO QUE ES DETERMINISTA sale como minero. Ejemplo medido: leer un
+    PDF de autoridad necesita criterio (se queda en authority-doc-reader); comparar lo
+    autorizado contra lo pedido es determinista (salio como A64, y ahora lo ejecuta
+    cualquiera).
+
+# -------------------------------------------------------------------------------------
+# 3. LA TRIADA — de cada trabajo quedan TRES cosas
+# -------------------------------------------------------------------------------------
+triada:
+  _idea: >
+    Todo trabajo que descubre algo deja tres piezas, y SE PIERDEN POR SEPARADO. Solo se
+    echa de menos el proceso, porque es el entregable. Lo que se nota se guarda; lo que
+    no se nota, no.
+  piezas:
+    - objeto:  lo que descubriste   — ¿esta clasificado donde PERTENECE, y en TODOS los
+               sitios a los que pertenece? Un objeto puede ser varias cosas a la vez:
+               Solution Manager es INTERFAZ y SISTEMA, y registrarlo como lo primero no
+               lo registra como lo segundo.
+    - proceso: como funciona eso    — ¿doc de proceso y companion en su dominio?
+    - metodo:  como lo descubriste  — ¿registrado como minero o algoritmo?
+  se_mide_en: Zagentexecution/quality_checks/work_triad_check.py
+  medido_hoy: 15 trabajos · 6 con las tres piezas · 9 incompletos
+  regla_derivada: feedback_every_work_leaves_three_things
+
+# -------------------------------------------------------------------------------------
+# 4. EL BUCLE — ejecutar, aprender, mejorar
+# -------------------------------------------------------------------------------------
+bucle:
+  _idea_de_JP: >
+    "Un nuevo conocimiento o descubrimiento agrega ARISTAS, que pueden llevar a nuevas
+    preguntas de todos. Basicamente es la naturaleza de la evolucion del conocimiento
+    humano."
+  _consecuencia: >
+    Un descubrimiento NO es un dato que se archiva: es un EVENTO QUE INTERROGA AL RESTO.
+    No crece el grafo por el nodo, crece por las aristas — y cada arista nueva puede
+    invalidar lo que otro instrumento daba por sabido. Ese segundo efecto se perdia entero.
+  aristas:
+    LEE:          quien lee de verdad un skill
+    DEBERIA_LEER: quien opera sobre sus mismas tablas y no lo nombra   # LA DEUDA
+    INVOCA:       agente -> algoritmo/minero
+    DELEGA:       agente -> AGENTE que nombra en su prompt              # LA COLABORACION
+    DESCUBRE:     minero -> clase de exploracion que cubre
+    ATERRIZA_EN:  algoritmo -> store
+    VIGILA:       gate -> store
+    RECUERDA:     instrumento -> memoria de metodo                      # LA MEJORA
+  propagacion:
+    instrumento: process_mining/knowledge_propagation.py  (A63)
+    formas: [EXISTE_ALGO_QUE_NO_ESTABA, EL_INSTRUMENTO_ES_CIEGO, UN_MODO_SE_DEGRADA]
+    aterriza_en: process_mining/mining_findings.json  (via mining_bus.preguntar)
+    medido_hoy: 22 preguntas dirigidas
+
+# -------------------------------------------------------------------------------------
+# 5. EL TERMOMETRO — la unica cifra que dice si el bucle cierra
+# -------------------------------------------------------------------------------------
+termometro:
+  conectividad_pct: 19.7
+  formula: LEE / (LEE + DEBERIA_LEER)
+  hoy: LEE 72 · DEBERIA_LEER 293
+  que_significa: >
+    De todo el conocimiento que un instrumento DEBERIA leer, que porcentaje lee de verdad.
+    SI UNA SESION NO SUBE ESA CIFRA, CONECTO MENOS DE LO QUE SOLTE.
+  se_mide_en: brain_v2/toolgraph.json -> salud.aristas_que_faltan_frente_a_las_que_hay
+  otras_senales:
+    skills_sin_ningun_lector: 27
+    agentes_sin_instrumento_declarado: 0
+    agentes_que_no_delegan_en_nadie: 5
+    instrumentos_rotos_o_con_defecto_vivo: 0
+
+# -------------------------------------------------------------------------------------
+# 6. LOS MODOS DE FALLO DEL PROPIO OFICIO — medidos, no temidos
+# -------------------------------------------------------------------------------------
+# Todos son la MISMA falta con caras distintas: afirmar sobre una poblacion sin comprobar
+# que el metodo de medida se le aplica. Se repitio ~10 veces el 26-27 de agosto.
+modos_de_fallo:
+  - nombre: DENOMINADOR INCOMPLETO
+    pasa_cuando: se mide una poblacion contra un patron sin demostrar que se le aplica
+    ejemplos_medidos:
+      - barrer cuentas de UNES contra FS11, que es la version de IIEP/ICTP -> 144 M EUR inventados
+      - exigir registro a un PERNR como si fuera estructura -> 33 huecos falsos
+      - lista de "casas" incompleta -> arboles DMEE marcados perdidos llevando meses anotados
+    defensa: el instrumento DERIVA su denominador; nunca lo supone
+
+  - nombre: EL ALIAS QUE DA CERO
+    pasa_cuando: una clave canonica no es la clave del registro
+    ejemplo_medido: Treasury -> Treasury_EBS, que no existe en domains.json -> el dominio
+                    entero parecia vacio
+    defensa: fallback al crudo. Un alias mal resuelto NO DA ERROR: da un cero, que es peor
+
+  - nombre: CREERSE EL PROPIO PRINT
+    pasa_cuando: se reporta exito por lo que se imprime en vez de por lo que queda escrito
+    ejemplo_medido: "publicada a 15 instrumentos" cuando en el bus habia 3
+    defensa: verificar LEYENDO EL DESTINO. Correr sin error no es validacion
+
+  - nombre: EL HUERFANO PROPIO
+    pasa_cuando: se crea un instrumento y no se declara
+    ejemplos_medidos: 6 checks sin tier · 5 agentes sin instrumento · un minero sin algoritmo
+    defensa: >
+      es el mismo defecto que le achacamos a UNES_DEPOSIT — lo que se mantiene a mano se
+      degrada — aplicado a nuestro propio trabajo. Cada vez lo cazo un gate, no yo
+
+  - nombre: REINVENTAR LO QUE EXISTE
+    pasa_cuando: se propone un instrumento sin mirar el toolgraph
+    ejemplo_medido: iba a escribir un capability_wiring_check que ES este grafo
+    defensa: consultar toolgraph.json y su seccion `salud` ANTES de proponer nada
+
+  - nombre: EL BUCLE QUE PARECE TRAVESIA
+    pasa_cuando: una arista va de un nodo a si mismo y se cuenta como relacion
+    ejemplo_medido: 94 aristas RECUERDA eran bucles; las 10 "AGENTE->AGENTE" eran diez
+                    agentes recordando su propia leccion. La colaboracion no era escasa: era CERO
+    defensa: contar bucles aparte. Un grafo que cuenta bucles como travesia miente en la
+             direccion que mas duele: hace parecer conectado lo que esta solo
+
+# -------------------------------------------------------------------------------------
+# 7. LAS PUERTAS QUE LO SOSTIENEN
+# -------------------------------------------------------------------------------------
+gates_del_oficio:
+  - work_triad_check.py:              las tres piezas de cada trabajo
+  - incident_domain_knowledge_check.py: todo incidente deja proceso, no solo caso
+  - validate_ontology.py:             bidireccional — declarado <-> registro
+  - validate_algorithms.py:           79 casos golden sobre los algoritmos
+  - rebuild_lock.py:                  un solo escritor, con PID y heartbeat
+  - stop_integrity_hook.py:           durabilidad y arsenal al cerrar
+
+# -------------------------------------------------------------------------------------
+# 8. LO QUE ESTE MODELO TODAVIA NO SABE
+# -------------------------------------------------------------------------------------
+known_unknowns:
+  - la colaboracion se modela como DELEGA derivado de nombrarse en el prompt. No hay
+    evidencia de que la delegacion OCURRA en ejecucion, solo de que este declarada
+  - `generaliza` es un campo nuevo: hoy lo declara 1 minero de 64. Eso mide adopcion del
+    campo, NO genericidad
+  - el termometro mide conectividad declarada, no USO real. Un LEE es una cita, no una lectura
+  - 9 de 15 trabajos siguen con alguna pieza sin aterrizar, y 3 dominios sin doc de proceso
