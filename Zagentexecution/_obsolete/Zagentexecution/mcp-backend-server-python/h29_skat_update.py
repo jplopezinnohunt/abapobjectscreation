@@ -30,7 +30,7 @@ SAFETY RAILS (hard enforcement)
 Related
 -------
 - h29_skat_diff.py — produces the source-of-truth for this run
-- .agents/skills/sap_master_data_sync/SKILL.md — step 3 "Copy via RFC_ABAP_INSTALL_AND_RUN"
+- .claude/skills/sap_master_data_sync/SKILL.md — step 3 "Copy via RFC_ABAP_INSTALL_AND_RUN"
 - feedback_data_p01_code_d01.md — direction P01(read) → D01(write)
 """
 

@@ -4,7 +4,7 @@ description: Guidelines on how the agent should manage generated files, test scr
 
 # Code & Artifact Archiving Guidelines
 
-To preserve the integrity of the agent's core skills (`.agents/skills`), rules (`.agents/rules`), and workflows (`.agents/workflows`), and to keep the root `c:\Users\jp_lopez\projects\abapobjectscreation` directory perfectly clean:
+To preserve the integrity of the agent's core skills (`.claude/skills`), rules (`.agents/rules`), and workflows (`.agents/workflows`), and to keep the root `c:\Users\jp_lopez\projects\abapobjectscreation` directory perfectly clean:
 
 ## 1. Output Isolation
 - **Never** write task-specific generated code (e.g., a one-off Playwright script like `create_segw_ZTEST.js` or a BAPI test script) into the `.agents` folder or directly into the root directory permanently.

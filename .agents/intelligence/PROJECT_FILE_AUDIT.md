@@ -11,7 +11,7 @@
 | File | Layer | Status | Notes |
 |------|-------|--------|-------|
 | `.agents/intelligence/` | Meta | ✅ Active | 12 files: SESSION_LOG, PROJECT_MEMORY, PMO_BRAIN, CAPABILITY_ARCHITECTURE, AGENT_ARCHITECTURE, BRAIN_ARCHITECTURE, sap_brain.json, sap_knowledge_graph.html, sap_companion_intelligence.md, vscode_sap_plugin_intelligence.md, README.md |
-| `.agents/skills/` | All | ✅ Active | 18 SKILL.md files across L1-L7 |
+| `.claude/skills/` | All | ✅ Active | 18 SKILL.md files across L1-L7 |
 | `.agents/workflows/` | Meta | ✅ Active | 6 workflows: session_start, session_retro, segw_interview, sap_configuration_strategy, hybrid_orchestration, fiori_app_reverse_engineering |
 
 ### Legacy Root Docs ⚠️ PARTIALLY MISSED

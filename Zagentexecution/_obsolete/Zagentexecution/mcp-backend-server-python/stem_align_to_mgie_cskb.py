@@ -30,7 +30,7 @@ Modes
 Related
 -------
 - stem_align_to_mgie_skb1.py — same pattern, SKB1 alignment
-- .agents/skills/sap_master_data_sync/SKILL.md
+- .claude/skills/sap_master_data_sync/SKILL.md
 - Session #031 retro: CSKB=0 STEM gap discovery
 """
 

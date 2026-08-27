@@ -1101,7 +1101,7 @@
         "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
         "knowledge/incidents/INC-BUDGETRATE-EQG_executive_brief.md",
         "knowledge/incidents/INC-CLASS-LOSS-2026-06_adt_rfc_write_corruption.md",
-        ".agents/skills/sap_incident_analyst/SKILL.md"
+        ".claude/skills/sap_incident_analyst/SKILL.md"
       ],
       "companions": [
         "companions/upgrade_2026_v01_open_customizing_requests.html"
@@ -2193,7 +2193,9 @@
             "B1_dfg_discovery",
             "B2_variant_analysis",
             "B4_declarative_conformance"
-          ]
+          ],
+          "skill": null,
+          "_sin_skill": "ningun skill de .claude/skills/ cubre este tramo de compras: es un hueco declarado, no un olvido"
         },
         {
           "n": 2,
@@ -2219,7 +2221,9 @@
           ],
           "conditional": false,
           "can_stop_here": false,
-          "anadida_por_el_dueno": "2026-08-27 -- faltaba en la cadena corta"
+          "anadida_por_el_dueno": "2026-08-27 -- faltaba en la cadena corta",
+          "skill": null,
+          "_sin_skill": "ningun skill de .claude/skills/ cubre este tramo de compras: es un hueco declarado, no un olvido"
         },
         {
           "n": 3,
@@ -2245,7 +2249,9 @@
           ],
           "conditional": true,
           "condicion": "compras de SERVICIO. En una casa que compra sobre todo servicios este es el tramo NORMAL, no la excepcion (correccion del dueno 2026-08-27).",
-          "can_stop_here": false
+          "can_stop_here": false,
+          "skill": null,
+          "_sin_skill": "ningun skill de .claude/skills/ cubre este tramo de compras: es un hueco declarado, no un olvido"
         },
         {
           "n": 4,
@@ -2270,7 +2276,9 @@
             "FI"
           ],
           "conditional": false,
-          "can_stop_here": false
+          "can_stop_here": false,
+          "skill": null,
+          "_sin_skill": "ningun skill de .claude/skills/ cubre este tramo de compras: es un hueco declarado, no un olvido"
         },
         {
           "n": 5,
@@ -2297,7 +2305,8 @@
           ],
           "conditional": false,
           "can_stop_here": false,
-          "LA_JUNTA_SECA": "ESTA es la costura original de H137, y esta partida en dos etapas a proposito para que se VEA: 40_invoice_mm termina donde 45 empieza y son el MISMO hecho de negocio visto por dos artefactos que no se citan. Ningun fichero cubre los dos lados. No es un hueco de mineria -- los dos tramos estan minados, 848.135 eventos de un lado y el WF Call Chain del otro -- es un hueco de COMPOSICION."
+          "LA_JUNTA_SECA": "ESTA es la costura original de H137, y esta partida en dos etapas a proposito para que se VEA: 40_invoice_mm termina donde 45 empieza y son el MISMO hecho de negocio visto por dos artefactos que no se citan. Ningun fichero cubre los dos lados. No es un hueco de mineria -- los dos tramos estan minados, 848.135 eventos de un lado y el WF Call Chain del otro -- es un hueco de COMPOSICION.",
+          "skill": "sap_payment_bcm_agent"
         },
         {
           "n": 6,
@@ -2326,19 +2335,22 @@
           "conditional": true,
           "condicion": "pago CROSS-BORDER de proveedor/beneficiario a uno de los 9 paises de T015L, Y sociedad FRANCESA (unica clase BAdI que despacha, claims 494/531), Y metodo/moneda en un T042Z de la familia SG. El 'TIPO de factura' que el dueno recordaba, medido, es proveedor vs NOMINA (LAUF1 sufijo 'P' -> codigo SALA), no un campo de la factura.",
           "can_stop_here": false,
-          "aislado_en_el_grafo": "p2p_purpose_of_payment.html no tiene arista con NINGUNA de las otras 4 piezas del circuito (medido 2026-08-27)"
+          "aislado_en_el_grafo": "p2p_purpose_of_payment.html no tiene arista con NINGUNA de las otras 4 piezas del circuito (medido 2026-08-27)",
+          "skill": "sap_payment_bcm_agent",
+          "⛔_cuantos_paises_NO_esta_cerrado": "esta etapa declaro NUEVE paises; el skill dice «T015L configuration (73 rows, 8 countries) VERIFIED from P01 live query» y lista OCHO (AE/CN/ID/IN/JO/MA/MY/PH). La diferencia puede ser Bahrein, que aparece en la familia de BAdIs (AE+BH) y esta SOLO EN D01, no vivo en P01 -- o sea 9 configurados y 8 despachando. No se elige un numero: se cuenta con RFC_READ_TABLE sobre T015L en P01 (SELECT DISTINCT LAND1). OPEN."
         },
         {
           "n": 7,
           "id": "60_wf_approval_rm",
-          "name": "Aprobacion por workflow -- resuelve el actor contra RoleManagement",
+          "name": "Aprobacion por workflow -- DOS ramas, y solo una llama a RoleManagement",
           "objects": [
             "YBSEG",
             "WS90000003",
             "WS90000002",
             "Z_GET_CERTIF_OFFICER_UNESDIR",
             "Z_WF_FI_PR_WF_ACTOR1_DET",
-            "ZFI_PAYREL_EMAIL"
+            "ZFI_PAYREL_EMAIL",
+            "ZROLE_MGTCO_FACADE"
           ],
           "evidence_tokens": [
             "WS90000003",
@@ -2358,13 +2370,71 @@
           ],
           "conditional": false,
           "can_stop_here": true,
-          "parada": "metodo de pago O/U -> se quita el bloqueo y el WF TERMINA (via oficina de terreno, no pasa por F110 de la central)",
+          "parada": "metodo de pago O o U -> el WF NO termina: repone el bloqueo a 'W' (bloqueo de workflow) y QUEDA ESPERANDO el evento 'Payment Method removed'. Un pago puede quedarse ahi indefinidamente, que no es lo mismo que salir del circuito. Las facturas de oficina de terreno se pagan FUERA de SAP; solo vuelven si alguien quita el metodo O a mano.",
           "claims": [
             619,
             624,
             626
           ],
-          "defecto_vivo_no_verificado": "el proxy tipado ZROLE_MGTCO_FACADE/LP_ROLE_MGT que resuelve el Certifying Officer esta declarado runtime-DEAD por el skill crp/unesdir-role-management (unescrp, S-118). Si esa muerte es del PROXY y no del caso de uso de CRP, este workflow podria estar cayendo SIEMPRE al fallback ZFI_PAYREL_EMAIL sin que nadie lo note. INVERIFICABLE hoy: la traza YTBC_TRACE de WF_PAYMENT esta APAGADA en P01 (claim 626, decision del dueno)."
+          "defecto_vivo_no_verificado": "el proxy tipado ZROLE_MGTCO_FACADE/LP_ROLE_MGT que resuelve el Certifying Officer esta declarado runtime-DEAD por el skill crp/unesdir-role-management (unescrp, S-118). Si esa muerte es del PROXY y no del caso de uso de CRP, este workflow podria estar cayendo SIEMPRE al fallback ZFI_PAYREL_EMAIL sin que nadie lo note. INVERIFICABLE hoy: la traza YTBC_TRACE de WF_PAYMENT esta APAGADA en P01 (claim 626, decision del dueno).",
+          "sociedad": "UNES UNICAMENTE. Las demas sociedades no pasan por este workflow.",
+          "alcance_real": {
+            "tipos_de_documento": 14,
+            "lista": [
+              "KR",
+              "KA",
+              "ER",
+              "KT",
+              "IT",
+              "CO",
+              "AS",
+              "P3",
+              "SN",
+              "MF",
+              "IN",
+              "AP",
+              "RF",
+              "MR"
+            ],
+            "rama_RoleManagement": {
+              "tipos": [
+                "KR",
+                "KA",
+                "KT",
+                "ER",
+                "IT"
+              ],
+              "regla": "90000001",
+              "resuelve": "Z_GET_CERTIF_OFFICER_UNESDIR -> Z_WF_GET_CERTIFYING_OFFICER -> proxy SOAP tipado ZROLE_MGTCO_FACADE / LP_ROLE_MGT",
+              "limite_de_firma": "150.000 USD (algunos 10.000)"
+            },
+            "rama_GRUPOS_FIJOS": {
+              "tipos": [
+                "CO",
+                "AS",
+                "P3",
+                "SN",
+                "MF",
+                "IN",
+                "AP",
+                "RF",
+                "MR"
+              ],
+              "regla": "90000002",
+              "resuelve": "Z_WF_FI_PR_WF_ACTOR1_DET sobre el customizing de liberacion (SPRO), 7 grupos de release",
+              "grupos": {
+                "CO": "BSP/CFS",
+                "AS/P3/SN": "BFM/PAY",
+                "MF/IN/AP": "HRM/SPI",
+                "RF": "BFM/TRS/CM",
+                "MR": "BFM/FRA + BFM/TRS/AR",
+                "PS/PN": "BFM/FNS"
+              }
+            },
+            "fallback_comun": "ZFI_PAYREL_EMAIL"
+          },
+          "_corregido_s107": "Esta etapa decia 5 tipos de documento, 'el WF TERMINA' con metodo O, y no declaraba la sociedad. Las tres cosas estaban MAL, y las tres estaban escritas en .claude/skills/sap_payment_bcm_agent/SKILL.md seccion 'Payment Release Workflow (Pre-F110)'. El coordinador (graph_queries.py tool) puso ese skill como '1_LEE_ESTO_PRIMERO' al empezar H137 y NO SE LEYO. El fallo no fue del modelo de la caja: fue del consumidor. Se corrige aqui y se mecaniza con el campo `skill` + el check del gate.",
+          "skill": "sap_payment_bcm_agent"
         },
         {
           "n": 8,
@@ -2394,7 +2464,17 @@
           ],
           "conditional": false,
           "can_stop_here": false,
-          "corte_obligatorio": "toda medida sobre REGUH se parte por DORIGIN (quien cobra) y por T042Z (FORMI=fichero / XSCHK=cheque). LAUFI prefijo B = via BCM, 0 = directo."
+          "skill": "sap_payment_bcm_agent",
+          "corte_obligatorio": "toda medida sobre REGUH se parte por DORIGIN (quien cobra) y por T042Z (FORMI=fichero / XSCHK=cheque).",
+          "⛔_QUE_ENRUTA_A_BCM_ESTA_EN_DISPUTA": {
+            "por_que_se_declara_en_vez_de_elegir": "s107 encontro TRES afirmaciones vivas que no concuerdan, y la primera version de esta etapa copio la mas accesible sin comprobar las otras dos. Elegir una en silencio es exactamente el defecto que costo la etapa 60.",
+            "fuente_A_companion_cabecera": "«LAUFI prefix B = BCM, 0 = direct» (payment_bcm_companion.html, WF Call Chain) — es la que se copio",
+            "fuente_B_skill": "«FABS: F110 run ID starting with `BCM*` -> routed to BCM (literal prefix, NOT just B)» y «STEPS: All payroll runs -> BCM (wildcard `*`, every run goes through BCM)» (sap_payment_bcm_agent/SKILL.md, BCM Activation Rule)",
+            "fuente_C_el_MISMO_companion_mas_abajo": "«config UNESCO: LAUFK=' '/P + LAUFI='*' + XBATCH='X' (wildcard, routes EVERY run)» en la tabla TFIBLMPAYBLOCK, tcode OBPM5",
+            "cual_pesa_mas_y_por_que": "la C, porque nombra la TABLA DE CUSTOMIZING y la transaccion que la mantiene: es la unica que se puede ir a leer. A y B son descripciones; C es una direccion. Pero no se da por buena sin leerla.",
+            "como_se_cierra": "RFC_READ_TABLE sobre TFIBLMPAYBLOCK en P01 (solo lectura) y comparar LAUFK/LAUFI/XBATCH con las tres afirmaciones",
+            "estado": "OPEN_QUESTION — no resuelto en s107"
+          }
         },
         {
           "n": 9,
@@ -2425,7 +2505,7 @@
             "Treasury"
           ],
           "conditional": true,
-          "condicion": "solo las sociedades Tier1 (UNES/UBO/IIEP/UIL/UIS). ICTP corre F110 SIN BCM; IBE/MGIE/ICBA no corren F110.",
+          "condicion": "solo las sociedades Tier1 (UNES/UBO/IIEP/UIL/UIS). ICTP corre F110 SIN BCM (prefijo T, 24 metodos de pago, cheques fisicos PAYR metodo K). IBE/MGIE/ICBA no corren F110 -- pero SI PAGAN, ver la etapa alternativa 85.",
           "can_stop_here": true,
           "parada": "IBC17 Fallido / IBC06 Rechazado son paradas reales del circuito",
           "claims": [
@@ -2437,10 +2517,43 @@
             "bcm_amount_bands_uil.html",
             "bcm_dual_control_audit.html"
           ],
-          "_tambien_relevantes_por_que": "tratan el MISMO sujeto (panel, tramos de importe, doble control) pero NO contienen las tablas del lote: no son cobertura de la etapa y la puerta no los mide como tal. Separarlos es lo que evita que un fichero relacionado pase por cubridor."
+          "_tambien_relevantes_por_que": "tratan el MISMO sujeto (panel, tramos de importe, doble control) pero NO contienen las tablas del lote: no son cobertura de la etapa y la puerta no los mide como tal. Separarlos es lo que evita que un fichero relacionado pase por cubridor.",
+          "skill": "sap_bcm_signatory_maintenance"
         },
         {
           "n": 10,
+          "id": "85_pago_manual_f53",
+          "name": "RAIL ALTERNATIVO -- pago manual por F-53, sin F110 y sin BCM",
+          "objects": [
+            "F-53",
+            "BSAK",
+            "BKPF"
+          ],
+          "evidence_tokens": [
+            "F-53",
+            "BSAK",
+            "BLART"
+          ],
+          "companions": [],
+          "skill": "sap_payment_bcm_agent",
+          "domains": [
+            "FI",
+            "Payment_BCM"
+          ],
+          "conditional": true,
+          "condicion": "sociedades IBE, MGIE, ICBA -- las tres sin entradas en T042A, luego F110 NO PUEDE correr para ellas",
+          "can_stop_here": false,
+          "es_un_RAIL_no_una_ausencia": "La primera version de este circuito decia 'IBE/MGIE/ICBA no corren F110' y las dejaba FUERA, como si no pagaran. Pagan: el documento contable ESTA en SAP, posteado a mano por F-53 con BLART=OP, y lo que ocurre fuera es la INSTRUCCION AL BANCO, en el sistema bancario local. El aviso esta literal en el skill: «Outside SAP means the bank instruction -- the accounting document IS in SAP». Leer 'no corre F110' como 'no esta en el circuito' borra un rail entero.",
+          "_measured": {
+            "IBE_docs_OP_2024_2026": 5364,
+            "MGIE_docs_OP_2024_2026": 3211,
+            "ICBA_docs_OP_2024_2026": 1227,
+            "fuente": "sap_payment_bcm_agent/SKILL.md, VERIFIED from BSAK 2024-2026"
+          },
+          "_sin_companion": "ningun companion narra este rail: se descubrio leyendo el skill en s107"
+        },
+        {
+          "n": 11,
           "id": "90_file_to_bank",
           "name": "Generacion y transmision del fichero al banco",
           "objects": [
@@ -2469,10 +2582,11 @@
           "can_stop_here": false,
           "claims": [
             536
-          ]
+          ],
+          "skill": "sap_payment_bcm_agent"
         },
         {
-          "n": 11,
+          "n": 12,
           "id": "95_ack_statement",
           "name": "Acuse del banco y extracto electronico",
           "objects": [
@@ -2502,7 +2616,8 @@
           ],
           "conditional": false,
           "can_stop_here": false,
-          "limite_declarado": "FEBKO_2024_2026 en el Gold DB es un extracto PARCIAL (claim 535): no se puede contestar 'que bancos reciben extracto electronico' con el tal como esta."
+          "limite_declarado": "FEBKO_2024_2026 en el Gold DB es un extracto PARCIAL (claim 535): no se puede contestar 'que bancos reciben extracto electronico' con el tal como esta.",
+          "skill": "sap_bank_statement_recon"
         }
       ],
       "_stages_juntas_secas": [

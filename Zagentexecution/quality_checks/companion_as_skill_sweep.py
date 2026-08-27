@@ -192,6 +192,57 @@ def main():
 
     tok_skill = {k: tokens_nombre(k) for k in vocab_skill}
 
+    # --- LA TERCERA SENAL: EL FRONT-MATTER DEL SKILL (s107) --------------------------
+    # LA ENCONTRO UN AGENTE, NO YO. El barrido dio `treasury_operations_companion_v2` como
+    # CANDIDATO_A_SKILL -- "ningun skill cubre su vocabulario" -- y al abrirlo resulta que el
+    # dominio esta declarado TRES veces (sap_house_bank_configuration, sap_bank_statement_recon,
+    # sap_payment_e2e). El companion no casaba porque esta escrito A PROPOSITO en lenguaje de
+    # negocio ("The Three Questions SAP Asks") en vez de en codigos de tabla, asi que comparar
+    # vocabulario SAP no lo alcanzaba.
+    # El diagnostico del agente, literal: si se hubiera cruzado contra el front-matter, `UBA01`
+    # y `ECO09` habrian casado DIRECTO con sap_house_bank_configuration. El front-matter
+    # (name + description + triggers) esta escrito para decir de que va el skill; el
+    # vocabulario SAP solo dice que tablas toca. Son dos preguntas distintas y yo hacia la
+    # segunda creyendo hacer la primera.
+    FM_RE = re.compile(r"^---\s*\n(.*?)\n---", re.S)
+
+    def front_matter(sk):
+        f = os.path.join(REPO, ".agents", "skills", sk, "SKILL.md")
+        try:
+            return (FM_RE.search(io.open(f, encoding="utf-8", errors="replace").read())
+                    or [None, ""])[1].lower()
+        except OSError:
+            return ""
+
+    fm_skill = {sk: front_matter(sk) for sk in vocab_skill}
+
+    # IDF TAMBIEN AQUI. La primera version conto los terminos comunes en crudo y el resultado
+    # fue el de siempre: `budget_rate` y `closing_activities` saltaron a YA_TIENE_SKILL por
+    # compartir "bank", "account", "payment", "name" -- palabras que estan en casi todas las
+    # descripciones. Un agente lo desmintio LEYENDO los dos ficheros. Tercera aparicion del
+    # mismo inflado en un solo dia (rfc_read_table en 20 de 50 skills; las sociedades en 10).
+    # Un termino que aparece en mas de un tercio de los front-matter no distingue nada.
+    _df_fm = {}
+    for _fm in fm_skill.values():
+        for _t in set(re.findall(r"[a-z0-9_]{4,}", _fm)):
+            _df_fm[_t] = _df_fm.get(_t, 0) + 1
+    _TOPE_FM = max(2, len(fm_skill) // 3)
+
+    def skill_por_front_matter(titulo, encabezados):
+        """Que skill NOMBRA lo que este companion dice ser. Se cruza contra el TITULO y los
+        ENCABEZADOS, no contra el HTML entero: el cuerpo trae cientos de nombres de paso."""
+        texto = " ".join([titulo] + encabezados).lower()
+        terminos = {w for w in re.findall(r"[a-z0-9_]{4,}", texto)} - PALABRA_VACIA
+        mejor, best, comunes = None, 0, []
+        for sk, fm in fm_skill.items():
+            if not fm:
+                continue
+            c = sorted(t for t in terminos
+                       if t in fm and _df_fm.get(t, 0) <= _TOPE_FM)
+            if len(c) > best:
+                mejor, best, comunes = sk, len(c), c
+        return mejor, best, comunes[:6]
+
     def skill_por_nombre(companion):
         tc = tokens_nombre(companion.replace(".html", ""))
         if not tc:
@@ -218,6 +269,8 @@ def main():
         raw = io.open(fp, encoding="utf-8", errors="replace").read()
         kb = os.path.getsize(fp) // 1024
         cuerpo = STYLE_RE.sub("", SCRIPT_RE.sub("", raw))
+        encabezados = [TAG_RE.sub("", m.group(2)).strip()
+                       for m in re.finditer(r"<h([1-4])[^>]*>(.*?)</h\1>", cuerpo, re.S | re.I)][:40]
         texto = TAG_RE.sub(" ", cuerpo)
         palabras = len(texto.split())
         filas_tabla = len(TR_RE.findall(cuerpo))
@@ -253,10 +306,26 @@ def main():
         if ov_nombre >= 2:                 # el nombre manda: mismo tema por construccion
             mejor, raros = sk_nombre, raros or [f"NOMBRE:{ov_nombre} tokens"]
 
+        sk_fm, ov_fm, term_fm = skill_por_front_matter(
+            nodos.get(n, {}).get("title", n), encabezados)
+        if ov_fm >= 3 and ov_nombre < 2:   # el front-matter habla de esto, aunque el vocabulario no
+            mejor, raros = sk_fm, raros or [f"FRONT-MATTER: {', '.join(term_fm)}"]
+
+        # ⛔ ESTE INSTRUMENTO NO DECIDE. RANQUEA. Y hay cifra:
+        # contra la lectura de los cuatro candidatos por un agente (s107), la version con
+        # solape de vocabulario acerto 3 de 4; anadir la senal del front-matter arreglo el
+        # falso positivo (`treasury`) y creo DOS falsos negativos (`budget_rate` ->
+        # integration_diagram, `closing_activities` -> sap_variant_analysis, que cubre solo su
+        # parte forense). Neto: 2 de 4. Cada senal nueva mueve aciertos de un lado al otro
+        # porque el problema no es la senal: es que "¿este HTML es conocimiento curado de un
+        # dominio?" NO SE CONTESTA CONTANDO PALABRAS.
+        # Por eso el veredicto alto ya no dice YA_TIENE_SKILL -- que es una sentencia -- sino
+        # PROBABLE_YA_CUBIERTO, que es lo que la medida sostiene. El GOLDEN de abajo mide el
+        # acierto en cada corrida, para que la proxima senal se juzgue en vez de suponerse.
         if clase != "MODELO":
             veredicto = "NO_ES_SKILL"
-        elif ov_nombre >= 2 or len(raros) >= 2:
-            veredicto = "YA_TIENE_SKILL"
+        elif ov_nombre >= 2 or ov_fm >= 3 or len(raros) >= 2:
+            veredicto = "PROBABLE_YA_CUBIERTO"
         elif prosa >= 5:
             veredicto = "CANDIDATO_A_SKILL"
         else:
@@ -268,6 +337,7 @@ def main():
             "skill_mas_cercano": mejor, "solape_crudo": crudo,
             "puntos_idf": round(puntos, 2), "nombres_raros": raros[:5],
             "skill_por_nombre": sk_nombre, "tokens_nombre": ov_nombre,
+            "skill_por_front_matter": sk_fm, "terminos_front_matter": ov_fm,
             "lectores": len(lect), "lectores_ficheros": lect[:4],
             "en_circuito": en_circuito.get(n, []),
             "veredicto": veredicto,
@@ -279,7 +349,8 @@ def main():
         print(json.dumps(filas, ensure_ascii=False, indent=2))
         return 0
 
-    orden = {"CANDIDATO_A_SKILL": 0, "YA_TIENE_SKILL": 1, "MODELO_SIN_METODO": 2, "NO_ES_SKILL": 3}
+    orden = {"CANDIDATO_A_SKILL": 0, "PROBABLE_YA_CUBIERTO": 1, "MODELO_SIN_METODO": 2,
+             "NO_ES_SKILL": 3}
     filas.sort(key=lambda f: (orden[f["veredicto"]], -f["prosa"]))
 
     print("=" * 108)
@@ -295,6 +366,27 @@ def main():
         if f["nombres_raros"]:
             print(f"{'':>52}por: {', '.join(f['nombres_raros'][:5])}")
 
+    # --- GOLDEN: cuatro veredictos obtenidos LEYENDO los ficheros (agente Explore, s107) ---
+    # No es una opinion: es la unica verdad de campo que tiene este instrumento. Se compara en
+    # cada corrida para que una senal nueva se pueda JUZGAR. Sin esto, cambiar el peso es
+    # tocar a ciegas -- que es exactamente como se paso de 3/4 a 2/4 sin enterarse.
+    GOLDEN = {
+        "budget_rate_companion_v1.html": "CANDIDATO_A_SKILL",       # ningun skill cubre budget rate
+        "project_wbs_companion_v1.html": "CANDIDATO_A_SKILL",       # 2 skills dentro; solo 5 marcas de prosa
+        "closing_activities_v1.html": "CANDIDATO_A_SKILL",          # la mecanica FX no esta; lo forense si
+        "treasury_operations_companion_v2.html": "PROBABLE_YA_CUBIERTO",  # sap_house_bank_configuration
+    }
+    por_fichero = {f["companion"]: f["veredicto"] for f in filas}
+    aciertos = [c for c, v in GOLDEN.items()
+                if c in por_fichero and por_fichero[c] == v]
+    if len(por_fichero) >= len(GOLDEN):
+        print("-" * 108)
+        print(f"CONTRA EL GOLDEN (4 ficheros LEIDOS a mano): {len(aciertos)}/{len(GOLDEN)} aciertos")
+        for c, v in GOLDEN.items():
+            hay = por_fichero.get(c, "(no evaluado)")
+            print(f"   {'OK ' if hay == v else '>< '} {c:<42} leido={v:<21} medido={hay}")
+        print("   Un cambio de senal que baje esta cifra es un retroceso, aunque arregle un caso.")
+
     print("-" * 108)
     tot = {}
     for f in filas:
@@ -308,7 +400,7 @@ def main():
     print("  CANDIDATO_A_SKILL = narrativa + prosa instructiva y NINGUN skill cubre su vocabulario.")
     print("     Es DONDE MIRAR, no un veredicto: se ABRE el fichero antes de declarar nada")
     print("     (en s106, el candidato numero uno por cifra no procedia al abrirlo).")
-    print("  YA_TIENE_SKILL    = el conocimiento ya tiene casa. Lo que falta es DECLARAR EL PAR")
+    print("  PROBABLE_YA_CUBIERTO = la medida sugiere que ya tiene casa -- NO es un veredicto. Lo que falta es DECLARAR EL PAR")
     print("     companion<->skill, no escribir un skill nuevo al lado.")
     print("  MODELO_SIN_METODO = narra pero no ensena. Suele ser una foto de un modelo, no un metodo.")
     print("  NO_ES_SKILL       = caso o tablero. Su valor es el hecho o la cifra, y esta bien asi.")

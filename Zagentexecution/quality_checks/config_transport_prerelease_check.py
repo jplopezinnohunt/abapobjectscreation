@@ -172,7 +172,7 @@ def main(argv):
         # Ahora se resuelven las hijas y se analiza la UNION. Y si no hay hijas y no hay claves,
         # se sale 2 (NO ANALIZABLE), nunca 0: un exit 0 sobre algo que no se pudo mirar se lee
         # como aprobado, que es la forma mas cara de fallar en una puerta de liberacion.
-        # ⛔ OBJFUNC PRIMERO — lo dice `.agents/skills/sap_transport_intelligence/SKILL.md`
+        # ⛔ OBJFUNC PRIMERO — lo dice `.claude/skills/sap_transport_intelligence/SKILL.md`
         # Parte 3, y este check lo ignoraba por completo en sus dos primeras versiones.
         #
         # OBJFUNC cambia la NATURALEZA del transporte, no un detalle:

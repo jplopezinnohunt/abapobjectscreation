@@ -1,5 +1,5 @@
 """
-Inject `domains:` frontmatter into SKILL.md files across .agents/skills/.
+Inject `domains:` frontmatter into SKILL.md files across .claude/skills/.
 
 Strategy: if the file already has YAML frontmatter (starts with ---), inject
 into it. Otherwise prepend a new frontmatter block. Infer domain from skill

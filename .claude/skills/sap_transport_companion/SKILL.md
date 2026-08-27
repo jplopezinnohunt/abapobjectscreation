@@ -161,8 +161,8 @@ Self-contained HTML with:
 | Reference | Location |
 |-----------|----------|
 | Transport Object Taxonomy | `knowledge/domains/Transport_Intelligence/transport_object_taxonomy.md` |
-| Company Code Copy Skill | `.agents/skills/sap_company_code_copy/SKILL.md` |
-| Transport Intelligence Skill | `.agents/skills/sap_transport_intelligence/SKILL.md` |
+| Company Code Copy Skill | `.claude/skills/sap_company_code_copy/SKILL.md` |
+| Transport Intelligence Skill | `.claude/skills/sap_transport_intelligence/SKILL.md` |
 | RFC extraction script | `Zagentexecution/mcp-backend-server-python/transport_adhoc_read.py` |
 | Bank validation script | `Zagentexecution/mcp-backend-server-python/transport_bank_validate.py` |
 | Example companion | `Zagentexecution/transport_companion_D01K9B0CBF.html` |

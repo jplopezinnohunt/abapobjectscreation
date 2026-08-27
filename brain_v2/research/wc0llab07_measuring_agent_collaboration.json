@@ -1,0 +1,192 @@
+{
+  "research_id": "wc0llab07",
+  "slug": "measuring_agent_collaboration",
+  "question": "COMO SE MIDE si unos agentes COLABORAN de verdad -- no si la colaboracion esta DECLARADA. Pedido del dueno (s107, 2026-08-27): «la exploracion de mineria que ya teniamos no explora la colaboracion de agentes; haz deep research para tomar la mejor decision» sobre como escribir ese instrumento. La pregunta concreta que hay que decidir: ¿otra metrica sobre las declaraciones (como el DELEGA de hoy), o una medida sobre la TRAZA de ejecucion? ¿Y que se puede observar realmente con el sustrato que tenemos?",
+  "summary": "La respuesta del campo es inequivoca y va contra el instinto de seguir puliendo la metrica declarativa: la colaboracion se mide sobre TRAZAS DE EJECUCION anotadas, no sobre lo que los agentes dicen de si mismos. El trabajo de referencia (MAST, Cemri et al. 2025) construyo su taxonomia anotando 1.600+ trazas de 7 frameworks multi-agente con kappa=0,88, y encontro que la DESALINEACION ENTRE AGENTES es el 36,9% de los fallos -- una categoria entera que ninguna declaracion puede exponer, porque sus seis modos (informacion retenida, entrada de otro agente ignorada, deriva de tarea, no pedir aclaracion, reinicio de conversacion, desajuste razonamiento-accion) solo existen EN LA EJECUCION. Su conclusion cierra la puerta al atajo: los fallos hallados «requieren soluciones mas sofisticadas» que mejores prompts o cambiar la topologia. Y la encuesta de evaluaciones multi-agente anade el aviso que decide nuestro diseno: las evaluaciones miden CAPACIDAD y no PROPENSION -- «¿podria?» en vez de «¿lo haria?». Nuestro DELEGA es exactamente eso: mide que la entrega este ESCRITA, no que OCURRA. CONSECUENCIA OPERATIVA PARA NOSOTROS: no procede escribir otro medidor declarativo; procede arreglar primero el SUSTRATO, porque nuestra traza (brain_v2/agent_invocations.jsonl) tiene 547 de 568 eventos sin atribuir y registro 4 paradas de subagente en una sesion con CERO agentes lanzados. Medir colaboracion sobre eso seria denominador incompleto en la propia herramienta de medir.",
+  "findings": [
+    {
+      "claim": "MAST -- la taxonomia de referencia de fallos multi-agente -- define 14 modos en 3 categorias, y se construyo anotando 1.600+ trazas de 7 frameworks multi-agente con acuerdo entre anotadores kappa=0,88.",
+      "tier": "TIER_1",
+      "evidence": "arXiv:2503.13657 «Why Do Multi-Agent LLM Systems Fail?», Cemri et al. — abstract: «1600+ annotated traces collected across 7 popular MAS frameworks», «14 unique modes, clustered into 3 categories», «high inter-annotator agreement (kappa = 0.88)»",
+      "por_que_nos_importa": "fija el METODO: la unidad de analisis es la TRAZA anotada, no el artefacto que declara la colaboracion. Y fija el orden de magnitud del esfuerzo: una taxonomia util se valida con acuerdo entre anotadores, no con una corrida."
+    },
+    {
+      "claim": "La categoria INTER-AGENT MISALIGNMENT es el 36,9% de los fallos y sus seis modos son INOBSERVABLES desde cualquier declaracion: 2.1 Conversation Reset, 2.2 Fail to Ask for Clarification, 2.3 Task Derailment, 2.4 Information Withholding, 2.5 Ignored Other Agent's Input, 2.6 Reasoning-Action Mismatch.",
+      "tier": "TIER_1",
+      "evidence": "arXiv:2503.13657 v3 (HTML) y sintesis publicada del paper; distribucion reportada: especificacion/diseno 41,8% · desalineacion entre agentes 36,9% · verificacion de tarea 21,3%",
+      "por_que_nos_importa": "es la respuesta directa a la pregunta del dueno. Nuestro toolgraph mide DELEGA (la entrega escrita) y con eso no se puede ver ni uno solo de esos seis. Mas de un tercio del riesgo real de un sistema multi-agente esta fuera del alcance de nuestro instrumento actual, POR CONSTRUCCION."
+    },
+    {
+      "claim": "Los autores concluyen que los fallos hallados «requieren soluciones mas sofisticadas»: mejorar prompts o cambiar la topologia de agentes NO basta.",
+      "tier": "TIER_1",
+      "evidence": "arXiv:2503.13657, abstract",
+      "por_que_nos_importa": "cierra el atajo que este proyecto habria tomado por defecto -- escribir mejores tablas de entrega en los prompts (que es literalmente lo que se hizo hoy en H141) y dar el problema por resuelto. Eso mejora la DECLARACION; no toca los seis modos de ejecucion."
+    },
+    {
+      "claim": "Las evaluaciones multi-agente publicadas miden CAPACIDAD y no PROPENSION -- responden «¿podria el agente hacer X?» y no «¿lo haria?» -- y la mayoria usan juegos o simulaciones economicas cuya falta de realismo hace que el resultado no mapee al riesgo real.",
+      "tier": "TIER_2",
+      "evidence": "Survey of Multi-agent LLM Evaluations (LessWrong): tres modos -- miscoordination (26 papers), conflict (16), collusion (5); critica explicita capability-vs-propensity y «the lack of realism might make some evaluation results not clearly map on to risk levels»",
+      "por_que_nos_importa": "nombra con precision el techo de nuestras TRES aristas (LEE, USA, DELEGA): las tres miden capacidad declarada. Y avisa contra la tentacion de construir un banco de pruebas sintetico: nuestro caso real es mejor sustrato que cualquier juego, SI la traza sirve."
+    },
+    {
+      "claim": "Existe una linea de trabajo especifica sobre ATRIBUCION DE FALLO en sistemas multi-agente -- que agente y que paso concreto causaron el fallo -- con metricas propias: exactitud a nivel de agente, exactitud a nivel de paso (la mas estricta) y exactitud a nivel de paso con tolerancia.",
+      "tier": "TIER_2",
+      "evidence": "arXiv:2604.22708 (benchmark de failure attribution), arXiv:2606.00765 (FALAT), arXiv:2605.17467 (VerifyMAS), arXiv:2510.10581 (GraphTracer)",
+      "por_que_nos_importa": "da el vocabulario para la segunda fase: cuando la traza sirva, la pregunta util no es «¿colaboraron?» sino «¿en que paso se perdio el trabajo, y de quien fue?». Son metricas, no herramientas: se pueden adoptar sin adoptar sus frameworks."
+    },
+    {
+      "claim": "ANTHROPIC, midiendo SU PROPIO sistema multi-agente en produccion: el USO DE TOKENS explica el 80% de la varianza de rendimiento, y anadiendo el numero de llamadas a herramientas y la eleccion de modelo sube al 95%. El sistema (Opus como lider + Sonnet como subagentes) supero al agente unico en un 90,2% en evaluaciones de investigacion, consumiendo ~15x mas tokens que un chat.",
+      "tier": "TIER_1",
+      "evidence": "anthropic.com/engineering/multi-agent-research-system, via sintesis LLMOps de ZenML (el dominio no era alcanzable en directo desde esta red)",
+      "por_que_nos_importa": "ES LA RESPUESTA PRACTICA A COMO ESCRIBIR EL INSTRUMENTO. Las tres variables que explican el 95% -- tokens, llamadas a herramientas, modelo -- estan TODAS en nuestra traza y no las guardabamos. No hay que inventar una metrica de colaboracion: hay que dejar de tirar la que ya llega. Y el 15x da el UMBRAL DE COSTE: multi-agente solo se justifica en tareas paralelizables de alto valor."
+    },
+    {
+      "claim": "El fallo numero uno que Anthropic observo en la delegacion orquestador->subagente es la DESCRIPCION DE TAREA VAGA: «sin descripciones de tarea detalladas, los agentes duplicaban trabajo o dejaban huecos criticos de informacion». Y el segundo: los subagentes no ven el trabajo de sus hermanos, asi que la exploracion sale duplicada en vez de complementaria.",
+      "tier": "TIER_1",
+      "evidence": "misma fuente: evolucionaron de «investiga la escasez de semiconductores» a «mandatos detallados que especifican estrategias de busqueda, tipos de fuente y protocolos de coordinacion»",
+      "por_que_nos_importa": "la causa esta en el PROMPT, que es medible: longitud y especificidad del encargo. Por eso el hook ahora guarda `prompt_len` y el principio del prompt. Y el segundo fallo lo cometimos HOY: se lanzaron dos agentes en paralelo sin que ninguno supiera del otro."
+    },
+    {
+      "claim": "Para evaluar, Anthropic encontro suficiente un conjunto de ~20 consultas representativas para detectar cambios, y que UNA sola llamada a un LLM-juez con rubrica estructurada (puntuacion 0,0-1,0 mas aprobado/suspenso) resulto MAS consistente que varios jueces especializados. Ademas, los evaluadores HUMANOS detectaron un sesgo que ninguna metrica automatica veia: los agentes preferian granjas de contenido optimizadas para SEO frente a fuentes autorizadas.",
+      "tier": "TIER_1",
+      "evidence": "misma fuente",
+      "por_que_nos_importa": "legitima nuestro GOLDEN de 4 ficheros como METODO (un conjunto pequeño y representativo basta para detectar cambios) y explica por que hoy el agente leyendo gano a mi cifra: es exactamente el sesgo que la metrica automatica no ve."
+    },
+    {
+      "claim": "OPENAI recomienda MAXIMIZAR PRIMERO LAS CAPACIDADES DE UN SOLO AGENTE y pasar a multi-agente solo cuando haga falta; modela la entrega como un HANDOFF, que es una transferencia UNIDIRECCIONAL implementada como una herramienta, y trata la observabilidad como parte del diseno (trace() envolviendo todos los spans de una consulta).",
+      "tier": "TIER_2",
+      "evidence": "openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/ y documentacion del Agents SDK (handoffs, tracing, guardrails)",
+      "por_que_nos_importa": "nuestra tabla `| agente | cuando |` es un handoff unidireccional declarado en prosa; la industria lo implementa como HERRAMIENTA, o sea ejecutable y por tanto trazable. Esa es la diferencia entre declarado y observado, en una frase."
+    }
+  ],
+  "refuted": [],
+  "aplicacion_a_nuestro_caso": {
+    "decision": "NO escribir otro medidor declarativo. La colaboracion se mide sobre TRAZA. Pero el paso 1 NO es el instrumento: es el SUSTRATO.",
+    "por_que_el_sustrato_primero": "brain_v2/agent_invocations.jsonl tiene 568 eventos y 547 SIN AGENTE (96%). El diagnostico que llevaba escrito -- «el payload no lo lleva» -- es falso: la clave `agent_type` EXISTE y llega VACIA. Y hay una hipotesis medida y no verificada: en s107 se registraron CUATRO SubagentStop habiendo lanzado CERO agentes, mientras corrian tareas de fondo. Si SubagentStop tambien dispara por una tarea de fondo, la mayoria de las filas NO SON AGENTES. Construir una medida de colaboracion encima seria DENOMINADOR INCOMPLETO en la herramienta de medir denominadores -- el mismo defecto cometido hoy en el censo de helpers.",
+    "que_se_puede_observar_con_NUESTRO_sustrato_una_vez_arreglado": {
+      "observable": [
+        "2.3 Task Derailment — el resultado del agente no contesta lo que su prompt pedia (tenemos prompt y resultado)",
+        "2.4 Information Withholding — el resultado omite un entregable que el prompt exigia explicitamente",
+        "3.1 Premature Termination — el agente termina con encargos del prompt sin tocar",
+        "3.2 No or Incomplete Verification — el agente afirma sin correr la comprobacion que su propio metodo exige",
+        "1.2 Disobey Role Specification — un agente hace trabajo de otro rol (leer/decidir/descubrir)"
+      ],
+      "UNOBSERVABLE_con_nuestro_sustrato": [
+        "2.1 Conversation Reset y 2.2 Fail to Ask for Clarification — nuestros subagentes no dialogan entre si: se lanzan y devuelven. No hay conversacion que reiniciar ni a quien pedir aclaracion",
+        "2.5 Ignored Other Agent's Input — hoy los agentes se lanzan en paralelo sin verse; no hay entrada de otro agente que ignorar",
+        "2.6 Reasoning-Action Mismatch — exigiria la traza de razonamiento intermedia, no solo el resultado"
+      ],
+      "regla": "emitir UNOBSERVABLE para esos cuatro, NUNCA cero. Un cero ahi diria que no ocurren, y lo que dice es que no se pueden ver."
+    },
+    "forma_del_instrumento": "MINERO de clase COLABORACION (la clase ya existe en braintoolbox seccion 2), no agente ni skill: recorre la traza, clasifica contra los modos observables de MAST y publica en mining_findings + claims. El JUICIO -- decidir si un caso dudoso es deriva de tarea o un cambio de alcance legitimo -- se queda en un agente, por el criterio de corte de la propia caja.",
+    "orden_de_trabajo": [
+      "1. HECHO s107 -- el hook guarda `agent_transcript_path` (traza completa), `last_assistant_message` (resultado), `prompt_len`/`prompt_ini`, `agent_id`, `sesion`, `effort` y `model`. Era descartar, no derivar.",
+      "2. Cerrar la hipotesis de las tareas de fondo: correlacionar una corrida con agentes contra una sin ellos. Decide si el 96% anonimo es fallo de atribucion o poblacion equivocada.",
+      "3. Minero de clase COLABORACION que lea la traza y publique lo que Anthropic mide: tokens, llamadas a herramientas y modelo por invocacion, mas la longitud del encargo. Es correlacion conocida, no invento.",
+      "4. Solo despues, anotacion contra los 5 modos de MAST observables -- y con LLM-juez UNICO con rubrica, no varios especializados.",
+      "5. Publicar el coste frente al umbral de 15x: multi-agente que no sea paralelizable y de alto valor no se justifica."
+    ],
+    "aviso_de_alcance": "MAST valido su taxonomia con kappa entre anotadores sobre 1.600+ trazas. Nosotros tendremos decenas. La taxonomia se ADOPTA (es el aporte reutilizable); las FRECUENCIAS de MAST no se pueden trasladar a nuestro caso como si fueran nuestras.",
+    "LO_QUE_CAMBIO_LA_FUENTE_PRIMARIA": "La lectura academica decia 'mide sobre trazas' y dejaba abierto QUE medir. Las fuentes de quien construye esto lo cierran: se mide TOKENS, LLAMADAS A HERRAMIENTAS y MODELO (95% de la varianza segun Anthropic), y la causa raiz de la mala delegacion es la DESCRIPCION DE TAREA. Las cuatro variables estaban en el payload del hook y las descartabamos. El instrumento, por tanto, NO es un minero nuevo que derive nada: es (1) dejar de tirar la traza y (2) leerla. Eso ya esta hecho en el hook -- guarda traza, resultado, prompt, agent_id, sesion, effort y modelo."
+  },
+  "caveats": "Los porcentajes por categoria (41,8/36,9/21,3) vienen de sintesis publicadas del paper, no de lectura directa del PDF: el PDF de arXiv no se pudo extraer en texto (contenido comprimido) y la lista de los 14 modos se obtuvo de fuentes secundarias que citan el paper. Los numeros de la CABECERA (1600+ trazas, 7 frameworks, kappa 0,88, 14 modos, 3 categorias) SI son del abstract original. AgentCollabBench (arXiv:2605.08647) se identifico como relevante y NO se pudo leer -- mismo problema de extraccion: queda como pista, no como hallazgo. La linea de failure-attribution se registro por titulo y no se leyo en profundidad. ⛔ anthropic.com NO ERA ALCANZABLE desde esta red (ECONNREFUSED en los dos intentos): las cifras de Anthropic (80%/95% de varianza, 90,2%, 15x, ~20 consultas) vienen de una transcripcion de tercero (ZenML LLMOps DB) que cita el articulo, no de la pagina original. Son consistentes entre si y con la busqueda, pero NO estan leidas en la fuente. Re-verificar cuando la red lo permita antes de citarlas fuera de casa. Y a xAI/Grok no se llego: no publica guia de ingenieria multi-agente equivalente.",
+  "openQuestions": [
+    "¿SubagentStop dispara tambien por una tarea de fondo? Es la hipotesis que decide si el 96% de filas anonimas es un fallo de atribucion o una poblacion equivocada. Se cierra correlacionando una sesion con agentes contra una sin ellos.",
+    "¿Donde se persiste el resultado de un agente para que sea anotable mañana? Hoy muere con la sesion.",
+    "¿Que dice AgentCollabBench exactamente sobre cuando un buen agente es mal colaborador? No se pudo leer.",
+    "¿Merece la pena adoptar las metricas de failure-attribution (nivel agente / nivel paso) con decenas de trazas, o el N es demasiado pequeño para que la exactitud a nivel de paso signifique algo?",
+    "¿Cuanto cuesta REALMENTE nuestra colaboracion multi-agente frente al umbral de 15x de Anthropic? Hoy no se mide; con la traza guardada ya se puede."
+  ],
+  "sources": [
+    {
+      "url": "https://arxiv.org/abs/2503.13657",
+      "titulo": "Why Do Multi-Agent LLM Systems Fail? (MAST) — Cemri et al.",
+      "leido": "abstract completo",
+      "peso": "TIER_1, es la fuente primaria"
+    },
+    {
+      "url": "https://arxiv.org/html/2503.13657v3",
+      "titulo": "MAST v3 HTML",
+      "leido": "referencias a los codigos de modo (FM-1.3, FM-2.1, FM-1.2)",
+      "peso": "TIER_1"
+    },
+    {
+      "url": "https://www.lesswrong.com/posts/tGcLA596E8g3KnphE/survey-of-multi-agent-llm-evaluations",
+      "titulo": "Survey of Multi-agent LLM Evaluations",
+      "leido": "completo via extraccion",
+      "peso": "TIER_2, es el aviso capacidad-vs-propension"
+    },
+    {
+      "url": "https://arxiv.org/pdf/2605.08647",
+      "titulo": "AgentCollabBench: Diagnosing When Good Agents Make Bad Collaborators",
+      "leido": "NO — extraccion fallida",
+      "peso": "PISTA, no hallazgo"
+    },
+    {
+      "url": "https://arxiv.org/html/2604.22708v1",
+      "titulo": "Seeing the Whole Elephant: benchmark de atribucion de fallo en MAS",
+      "leido": "resumen de busqueda",
+      "peso": "TIER_2"
+    },
+    {
+      "url": "https://arxiv.org/pdf/2606.00765",
+      "titulo": "FALAT: Tracing Failures in LLM Agent Trajectories",
+      "leido": "titulo",
+      "peso": "PISTA"
+    },
+    {
+      "url": "https://arxiv.org/pdf/2605.17467",
+      "titulo": "VerifyMAS: Hypothesis Verification for Failure Attribution",
+      "leido": "titulo",
+      "peso": "PISTA"
+    },
+    {
+      "url": "https://arxiv.org/pdf/2510.10581",
+      "titulo": "GraphTracer: Graph-Guided Failure Tracing",
+      "leido": "titulo",
+      "peso": "PISTA"
+    },
+    {
+      "url": "https://www.confident-ai.com/blog/llm-agent-evaluation-complete-guide",
+      "titulo": "LLM Agent Evaluation Metrics: tool calling, task completion, trace-based evals",
+      "leido": "resumen de busqueda",
+      "peso": "TIER_3, divulgacion"
+    },
+    {
+      "url": "https://www.anthropic.com/engineering/multi-agent-research-system",
+      "titulo": "Anthropic — How we built our multi-agent research system",
+      "leido": "via sintesis LLMOps de ZenML; el dominio no respondia en directo (ECONNREFUSED)",
+      "peso": "TIER_1, fuente primaria de ingenieria"
+    },
+    {
+      "url": "https://www.zenml.io/llmops-database/building-a-multi-agent-research-system-for-complex-information-tasks",
+      "titulo": "ZenML LLMOps DB — extracto del caso de Anthropic",
+      "leido": "completo",
+      "peso": "TIER_1 por transcribir la fuente primaria"
+    },
+    {
+      "url": "https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/",
+      "titulo": "OpenAI — A practical guide to building agents",
+      "leido": "resumen de busqueda",
+      "peso": "TIER_2"
+    },
+    {
+      "url": "https://developers.openai.com/tracks/building-agents",
+      "titulo": "OpenAI Agents SDK — handoffs, tracing, guardrails",
+      "leido": "resumen de busqueda",
+      "peso": "TIER_2"
+    }
+  ],
+  "stats": {
+    "busquedas": 4,
+    "fuentes_unicas": 13,
+    "leidas_a_fondo": 3,
+    "extracciones_fallidas": 3,
+    "hallazgos_TIER_1": 6,
+    "hallazgos_TIER_2": 3,
+    "refutados": 0
+  },
+  "status": "CLOSED_PARTIAL",
+  "_por_que_PARTIAL_y_no_VERIFIED": "Dos de las fuentes que mas aportarian (el PDF completo de MAST y AgentCollabBench entero) NO se pudieron leer: arXiv devuelve el PDF con el contenido comprimido y la extraccion solo saca metadatos. Lo que se cierra es la DECISION -- medir sobre traza, arreglar el sustrato primero, adoptar la taxonomia y no sus frecuencias -- que se sostiene solo con el abstract original, que si es TIER_1. Marcarlo VERIFIED seria dar por leido lo que no se leyo.",
+  "created_session": 107
+}

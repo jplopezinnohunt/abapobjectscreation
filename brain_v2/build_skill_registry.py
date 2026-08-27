@@ -191,7 +191,7 @@ def main():
         t = open(p, encoding="utf-8", errors="ignore").read()
         skills[d] = {
             "skill": d,
-            "fichero": ".agents/skills/%s/SKILL.md" % d,
+            "fichero": ".claude/skills/%s/SKILL.md" % d,
             "bytes": len(t),
             "de_que_habla": titulos(t),
             # DOS campos, no uno reemplazado: `cubre_nombres` PRESERVA todo lo que el skill

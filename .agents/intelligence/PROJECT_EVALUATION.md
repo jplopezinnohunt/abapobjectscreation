@@ -7,7 +7,7 @@ This document is the canonical reference point for the UNESCO SAP Intelligence P
 ## 1. Technical Architecture & Capability Layers
 
 The system is organized around a **Two-Tier Model** that separates reusable knowledge from script execution:
-*   **Tier 1: Skills & Frameworks** (`.agents/skills/` and `lib/`): Self-contained modules that define system patterns (e.g., house bank configuration, transport intelligence, BDC parsing, bank statement reconciliation).
+*   **Tier 1: Skills & Frameworks** (`.claude/skills/` and `lib/`): Self-contained modules that define system patterns (e.g., house bank configuration, transport intelligence, BDC parsing, bank statement reconciliation).
 *   **Tier 2: Execution** (`Zagentexecution/`): Scripts (228+) that import and consume Tier 1 skills to run operations, extractions, or diagnostics. Execution scripts do not define patterns; skills do.
 
 ### The 11 Capability Layers

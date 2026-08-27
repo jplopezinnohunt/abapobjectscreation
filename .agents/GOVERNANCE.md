@@ -13,7 +13,7 @@
 
 | Tier | Location | Role | Count |
 |------|----------|------|-------|
-| **Tier 1: Skills** | `.agents/skills/` + `lib/` | Reusable knowledge & framework modules | 31 skills + 8 lib modules |
+| **Tier 1: Skills** | `.claude/skills/` + `lib/` | Reusable knowledge & framework modules | 31 skills + 8 lib modules |
 | **Tier 2: Execution** | `Zagentexecution/` | Scripts that consume skills | 228+ scripts |
 
 **Rule:** Execution scripts (`Zagentexecution/`) consume skill knowledge. They do NOT define patterns — skills do.

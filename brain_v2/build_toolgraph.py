@@ -4,7 +4,7 @@ POR QUE EXISTE
     Hay un brain de la DATA (objetos SAP, claims, incidentes, dominios) y no habia ninguno de
     las HERRAMIENTAS con las que se construye. Estaban en seis sitios que no se hablan:
 
-        .agents/skills/*/SKILL.md      48 skills, cientos de KB de metodo curado
+        .claude/skills/*/SKILL.md      48 skills, cientos de KB de metodo curado
         .claude/agents/*.md            13 agentes
         brain_v2/methods/algorithms.json   75 algoritmos
         brain_v2/methods/algorithm_memory.json  156 memorias de metodo
@@ -207,11 +207,21 @@ def main():
                 except OSError:
                     pass
 
+    # ⛔ RECURSIVO, Y ESTO ES UN ARREGLO DEL MISMO DIA. La primera version listaba con
+    # `os.listdir` NO recursivo, asi que `brain_v2/methods/algorithm_memory.py` -- la API del
+    # store de memoria de metodo, con 4+ importadores -- NO PODIA SER NODO HELPER JAMAS, ni
+    # nada bajo `scripts/extraction/`. El censo de "10 helpers" era un SUELO presentado como
+    # total: DENOMINADOR INCOMPLETO, el modo de fallo numero uno de braintoolbox, cometido en
+    # la herramienta escrita ese mismo dia para medir denominadores. Lo encontro un agente
+    # leyendo este codigo, no yo corriendolo.
     candidatos = {}
     for d in DIRS_HELPER:
-        for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
-            if f.endswith(".py") and not f.startswith("_"):
-                candidatos[f[:-3]] = os.path.relpath(os.path.join(d, f), ROOT).replace("\\", "/")
+        for raiz, subs, fs in os.walk(d) if os.path.isdir(d) else []:
+            subs[:] = [x for x in subs if x != "__pycache__"]
+            for f in sorted(fs):
+                if f.endswith(".py") and not f.startswith("_"):
+                    rel = os.path.relpath(os.path.join(raiz, f), ROOT).replace("\\", "/")
+                    candidatos.setdefault(f[:-3], rel)
 
     for mod, ruta in candidatos.items():
         pat = re.compile(r"^\s*(?:from|import)\s+.*\b%s\b" % re.escape(mod), re.M)

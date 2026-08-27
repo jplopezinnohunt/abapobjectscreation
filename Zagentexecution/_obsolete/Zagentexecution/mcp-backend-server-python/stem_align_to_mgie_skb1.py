@@ -38,7 +38,7 @@ Safety rails
 
 Related
 -------
-- .agents/skills/sap_master_data_sync/SKILL.md
+- .claude/skills/sap_master_data_sync/SKILL.md
 - Zagentexecution/mcp-backend-server-python/h29_skat_update.py  (reference pattern)
 - Session #031 retro: FMCI=0 / CSKB=0 critical discovery (FIPOS gap is same class)
 """

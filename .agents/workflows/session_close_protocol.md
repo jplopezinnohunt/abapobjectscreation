@@ -25,7 +25,7 @@ Before any of the legacy phases, the main agent MUST invoke `agi_retro_agent` as
 
 ### How
 Use the Agent tool with `subagent_type=general-purpose`. The prompt must:
-1. Point to `.agents/skills/agi_retro_agent/SKILL.md` as the agent's brief
+1. Point to `.claude/skills/agi_retro_agent/SKILL.md` as the agent's brief
 2. Provide: current PMO_BRAIN diff, git diff since last commit, path to current retro draft
 3. Ask for: PASS/FAIL verdict, per-principle scores, blockers list, recommended retro content
 

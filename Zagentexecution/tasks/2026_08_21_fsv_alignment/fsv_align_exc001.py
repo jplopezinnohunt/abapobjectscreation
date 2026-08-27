@@ -2,7 +2,7 @@
 fsv_align_exc001.py — alinea la VERSION DE BALANCE (FSV) de P01 hacia D01 / V01.
 
 ⚖️ OPERA BAJO **EXC-001**, la unica excepcion de escritura directa autorizada.
-   Registro: .agents/skills/sap_master_data_sync/SKILL.md -> "REGISTRO DE EXCEPCIONES AUTORIZADAS".
+   Registro: .claude/skills/sap_master_data_sync/SKILL.md -> "REGISTRO DE EXCEPCIONES AUTORIZADAS".
    Alcance autorizado por JP el 2026-08-20: FAGL_011PC / FAGL_011QT / FAGL_011ZC / FAGL_011SC,
    chart UNES, destinos D01 y V01, **SOLO INSERT de filas ausentes**.
 

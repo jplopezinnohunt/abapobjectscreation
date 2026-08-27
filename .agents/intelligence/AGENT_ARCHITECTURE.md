@@ -207,7 +207,7 @@ Anthropic's Agent Skills framework is exactly what we already have:
 ### Skill Architecture (Current: 18 skills, Target: 22+)
 
 ```
-.agents/skills/
+.claude/skills/
 ├── L1: Connectivity
 │   ├── sap_webgui/SKILL.md
 │   ├── sap_native_desktop/SKILL.md
@@ -271,7 +271,7 @@ Anthropic's Agent Skills framework is exactly what we already have:
 ├─────────────────────────────────────────────────────────┤
 │  File System                                              │
 │  ├── .agents/intelligence/ → brain docs                  │
-│  ├── .agents/skills/ → 18 SKILL.md files                 │
+│  ├── .claude/skills/ → 18 SKILL.md files                 │
 │  ├── extracted_sap/ → domain-organized code               │
 │  └── Zagentexecution/ → scripts + tools                  │
 ├─────────────────────────────────────────────────────────┤

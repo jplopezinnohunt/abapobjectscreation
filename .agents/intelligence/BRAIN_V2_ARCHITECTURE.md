@@ -80,7 +80,7 @@ platform_integration:
     endpoints: ["brain://impact", "brain://depends-on", "brain://gaps", "brain://similar-to"]
     status: "phase_4_implementation"
   agent_skills:
-    invokable_skills: 38  # from .agents/skills/
+    invokable_skills: 38  # from .claude/skills/
     invocation_trigger: "query domain matches skill domain"
   agent_teams:
     critique_agent: "separate Claude instance reviews query results"
@@ -233,7 +233,7 @@ ServiceNow's CMDB succeeds because every entity is a Configuration Item (CI) wit
 | `PROCESS` | End-to-end business process | Coordinator skill | ~15 | `P2P`, `Payment_E2E` |
 | `PROCESS_STEP` | Individual step in a process | Process mining event logs | ~100 | `PR Created`, `GR Posted` |
 | `TRANSPORT` | CTS transport order | cts_transports (7,745) | 7,745 | `D01K9B0CBF` |
-| `SKILL` | Agent skill document | .agents/skills/ | ~38 | `sap_payment_bcm_agent` |
+| `SKILL` | Agent skill document | .claude/skills/ | ~38 | `sap_payment_bcm_agent` |
 | `KNOWLEDGE_DOC` | Domain analysis document | knowledge/**/*.md | ~51 | `payment_architecture` |
 
 **Total estimated nodes: ~80,000** (current 73,968 + ~6,000 new code/config/field nodes)

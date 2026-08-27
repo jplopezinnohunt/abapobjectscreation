@@ -27,7 +27,7 @@ roles:
     es: conocimiento curado de un dominio — como es, que trampas tiene
     se_consume: se LEE
     se_especializa_por: DOMINIO
-    vive_en: .agents/skills/*/SKILL.md
+    vive_en: .claude/skills/*/SKILL.md
     se_pierde_cuando: nadie lo lee
     medido_hoy: 50 skills · 24 sin ningun lector
     ojo: >
@@ -438,6 +438,112 @@ gates_de_la_caja:
   - validate_algorithms.py:           79 casos golden sobre los algoritmos
   - rebuild_lock.py:                  un solo escritor, con PID y heartbeat
   - stop_integrity_hook.py:           durabilidad y arsenal al cerrar
+
+# -------------------------------------------------------------------------------------
+# 1c. CADA ROL, SU PRIMITIVA REAL DE CLAUDE (s107) — y el dia que descubrimos que no lo eran
+# -------------------------------------------------------------------------------------
+# Lo destapo el dueno con una pregunta: «¿esto era prosa solo para vos? No skills reales en
+# terminos de Anthropic». Tenia razon, y era el agujero de fondo de toda la sesion.
+primitivas:
+  _el_hallazgo: >
+    MEDIDO 2026-08-27. `~/.claude/skills/` tiene 11 skills y el harness LAS OFRECE. Nuestras
+    50 vivian en `.claude/skills/`, un directorio que el harness NO ESCANEA: NINGUNA era
+    invocable. Estaban bien escritas -- front-matter con name y description, mejor formadas
+    que varias de las 11 reales -- pero en el sitio equivocado. 106 KB de metodo de banca que
+    el modelo no podia cargar salvo que alguien abriera la ruta a mano.
+    Y explica el sintoma que llevabamos midiendo mal: «24 skills sin ningun lector» NO era
+    desidia de los consumidores. Era ESTRUCTURAL: no podian tener lector.
+    Movidas en s107 con `git mv` a `.claude/skills/`, 50 de 50 verificadas.
+    ⛔ NO VERIFICADO EN VIVO: la documentacion dice que un directorio de skills que no existia
+    al arrancar la sesion exige REINICIAR. Se comprueba en la proxima sesion, no antes.
+
+  mapa:
+    SKILL:
+      primitiva: Claude Skill en .claude/skills/<nombre>/SKILL.md
+      estado: MIGRADO s107 (50) — pendiente de verificar en sesion nueva
+      lo_que_gana: >
+        descubrimiento automatico (cada sesion carga name+description; el CUERPO solo al
+        invocar), invocable por el tool Skill y por /nombre, precargable en un subagente con
+        el campo `skills:`, y ELEGIBLE POR EL MODELO cuando la descripcion encaja -- que es
+        el problema de «saber cuando usar cada cosa» resuelto por la herramienta en vez de
+        por disciplina.
+      coste_medido: 24.612 caracteres de front-matter en 49 skills ~= 6.150 tokens por sesion
+      deuda_que_abre: >
+        la doctrina oficial dice «manten SKILL.md bajo 500 lineas» porque UNA VEZ CARGADA LA
+        SKILL SE QUEDA EN CONTEXTO todo el turno. sap_payment_bcm_agent son 106 KB. Hay que
+        partir las grandes en SKILL.md (navegacion) + ficheros de referencia que se cargan
+        solo si hacen falta. NO HECHO.
+      campo_a_usar: >
+        `user-invocable: false` en las de CONOCIMIENTO DE DOMINIO -- la doc lo describe
+        exactamente asi: «background knowledge that isn't actionable as a command». Nadie
+        teclea /sap_payment_bcm_agent; Claude si debe cargarlo cuando toca.
+
+    AGENTE:
+      primitiva: subagente en .claude/agents/<nombre>.md
+      estado: YA ERAN REALES — 14 en disco, ofrecidos por el harness
+      matiz_medido: >
+        ser propio NO es ser invocable: log-process-discovery y process-guardian estan en
+        disco y no fueron ofrecidos ni en s106 ni en s107.
+      lo_que_se_anadio_en_s107: >
+        el campo `skills:` del front-matter, que PRECARGA el contenido completo del skill en
+        el contexto del subagente. Convierte «lee esto primero» de consejo en mecanismo. 11
+        agentes lo declaran. ⛔ Estaba INERTE mientras las skills vivieran en .claude/skills:
+        el campo resuelve contra el registro de skills. Tras la migracion deberia resolver --
+        sin verificar.
+
+    MINERO:
+      primitiva: >
+        NINGUNA PROPIA, y por eso se pierden. Un minero es un SCRIPT. La primitiva de
+        Anthropic que envuelve «un script + cuando correrlo + sus trampas» es una SKILL CON
+        EL SCRIPT EMPAQUETADO: la doc lo dice literal en su arbol de ejemplo --
+        `scripts/helper.py (utility script - EXECUTED, not loaded)`. El script se EJECUTA, no
+        se carga: 72 scripts cuestan CERO contexto.
+      donde_se_pierden_MEDIDO: >
+        72 mineros registrados, los 72 con script que EXISTE (0 rutas rotas). El agujero no
+        es el codigo: son 49 de 72 (68%) que NO LOS INVOCA NADIE. Por clase, la peor es
+        CODIGO_COMO_FUENTE (13 mineros, 10 huerfanos); las sanas son REALIDAD, CONFORMIDAD,
+        OBJETO_CENTRICO y DERIVA, con 0.
+      decision: >
+        UNA SKILL POR CLASE DE EXPLORACION, no una por minero. La unidad ya existe en la
+        seccion 2 de este documento: 12 clases. Cada skill lleva que contesta esa clase, que
+        mineros la implementan, el comando exacto y el `failure_mode` de cada uno; los
+        scripts van en su `scripts/` y se ejecutan sin entrar en contexto.
+      por_que_no_una_por_minero: >
+        MEDIDO: 12 descripciones ~= 1.200 tokens por sesion; 72 descripciones ~= 7.200. Y la
+        mayoria de los mineros no son pertinentes a una sesion dada, asi que 72 entradas son
+        ruido permanente para que una sea util.
+      por_que_esto_arregla_el_68_por_ciento: >
+        hoy un minero solo corre si alguien recuerda que existe y abre algorithms.json, que
+        es un JSON de 96 fichas que nadie carga. Como skill por clase, el MODELO la elige
+        cuando la descripcion encaja con la tarea. Deja de depender de acordarse, que es la
+        misma cura que las skills de dominio.
+      estado: DECIDIDO, NO CONSTRUIDO — las 12 skills no existen todavia
+
+    GATE:
+      primitiva: script + hook Stop (run_all.py los descubre por QUALITY_CHECK)
+      estado: CORRECTO, no toca
+      ojo: >
+        un gate que ESCRIBE debe llevar `disable-model-invocation: true` si algun dia se
+        empaqueta como skill: la doc reserva ese campo para lo que tiene efectos y cuyo
+        momento decide la persona.
+
+    STORE:
+      primitiva: ficheros. No hay primitiva de Claude para esto y no hace falta.
+      estado: CORRECTO
+
+    HELPER:
+      primitiva: modulo python importable
+      estado: CORRECTO — nodo del toolgraph desde s107 (18 helpers, USA 114)
+
+  lo_que_NO_estabamos_usando_y_ahora_se_sabe_que_existe:
+    - "`user-invocable: false` — conocimiento de fondo que el usuario no teclea"
+    - "`disable-model-invocation: true` — lo que tiene efectos y decide la persona"
+    - "`allowed-tools` / `disallowed-tools` — permisos por skill, sin preguntar"
+    - "`context: fork` — correr una skill en su propio subagente"
+    - "`model` — modelo por skill"
+    - "`when_to_use` — frases disparadoras; suma al tope de 1.536 caracteres del listado"
+    - "ficheros de apoyo: reference.md se carga si hace falta; scripts/ se EJECUTA sin cargarse"
+    - "roster de hermanos en el contexto del subagente (v2.1.206+): es el fallo de coordinacion que Anthropic documenta, ya resuelto por el harness"
 
 # -------------------------------------------------------------------------------------
 # 7b. EL BUCLE, EVALUADO CONTRA UNA SESION REAL (s107, 2026-08-27)

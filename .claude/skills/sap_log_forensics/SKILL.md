@@ -226,4 +226,4 @@ evento"*.
 `A19_log_reality_filter` · `A7_concept_drift` · `A8_change_to_executor_attribution` ·
 `A56_audit_slot_aggregate` · `A62_lazy_generated_object_as_usage_proof` ·
 `A60_outbound_channel_availability` (la sonda dirigida del paso 6, para canales salientes) ·
-`.agents/skills/sap_process_mining/` · `.agents/skills/sap_incident_analyst/`
+`.claude/skills/sap_process_mining/` · `.claude/skills/sap_incident_analyst/`

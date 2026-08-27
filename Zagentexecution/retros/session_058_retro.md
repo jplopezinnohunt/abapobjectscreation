@@ -28,7 +28,7 @@ across 3 families).
   + HR variants + _HR_UBO + YFI_BANK_RECONCILIATION + DATA + SEL), author
   history, TBTCO job evidence, MODE 'E' scan, empty-range scan, HR-fork
   explanation.
-- **Bank recon skill upgraded:** `.agents/skills/sap_bank_statement_recon/SKILL.md`
+- **Bank recon skill upgraded:** `.claude/skills/sap_bank_statement_recon/SKILL.md`
   now includes "UNESCO Custom Recon Programs (Y-Stack)" section with TCODE
   map (YTR0/1/2/2_HR/3/YFI_BANK1) and 6 anti-pattern rules (R1-R6) for new
   recon programs — distilled from INC-000006906.

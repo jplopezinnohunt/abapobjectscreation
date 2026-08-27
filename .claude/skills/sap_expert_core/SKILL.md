@@ -45,7 +45,7 @@ This skill document defines the expert persona and foundational knowledge requir
 - **Service Architecture**: Use the SAP Gateway Service Builder (SEGW) to define the OData model.
 - **Implementation (DPC/MPC)**: Always implement business logic in the Data Provider Class Extension (`*_DPC_EXT`), NEVER in the base `_DPC` class, as it will be overwritten upon regeneration.
 - **Mapping**: Utilize mapping to data sources (SADL, CDS views) where possible to minimize manual ABAP CRUD implementation.
-- **Orchestration**: Refer to the `.agents/skills/sap_segw/SKILL.md` for the exact step-by-step UI automation of the SEGW builder.
+- **Orchestration**: Refer to the `.claude/skills/sap_segw/SKILL.md` for the exact step-by-step UI automation of the SEGW builder.
 
 ### SEGW EntitySet Method Name Truncation (S-33 — HIGH confidence, verified on ECC 6.0)
 

@@ -1,6 +1,6 @@
 """
 Cross-check consistency between Learnings (rules/claims/incidents), Companions
-(HTML files under companions/), Skills (.agents/skills/*/SKILL.md), and the
+(HTML files under companions/), Skills (.claude/skills/*/SKILL.md), and the
 Domains registry (brain_v2/domains/domains.json).
 
 Checks (orphans both ways):
@@ -8,7 +8,7 @@ Checks (orphans both ways):
   2. Every claim_id referenced from domain.claims_ids EXISTS in claims.json
   3. Every incident_id referenced from domain.incidents EXISTS in incidents.json
   4. Every companion path referenced from domain.companions EXISTS on disk
-  5. Every skill referenced from domain.skills EXISTS in .agents/skills/
+  5. Every skill referenced from domain.skills EXISTS in .claude/skills/
   6. Every rule in feedback_rules.json has domain_axes (coverage check)
   7. Every claim in claims.json has domain_axes
   8. Every incident in incidents.json has domain_axes

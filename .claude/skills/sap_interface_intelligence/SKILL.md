@@ -87,7 +87,7 @@ being, per its owning project, a live production dependency.
   (`…_facade`) and namespace match RM exactly. Two artefacts state it wrongly and are corrected
   here rather than in place, because they are owned elsewhere:
   `companions/payment_bcm_companion.html` ("SharePoint WCF + SQL" — imprecise) and
-  `.agents/skills/sap_payment_bcm_agent/SKILL.md:277` ("reads **UNESCO LDAP (UNESdir)**" —
+  `.claude/skills/sap_payment_bcm_agent/SKILL.md:277` ("reads **UNESCO LDAP (UNESdir)**" —
   **incorrect**). This is *the alias that gives zero* INVERTED: the false name does not hide a
   file's existence, it hides **the identity of the dependency**. Searching for RM consumers by the
   name "RM" could never have found this one.
@@ -434,7 +434,7 @@ Same pagination bug as FMIOI — even months fail. Use day-by-day workaround for
 
 ## Visualization Standard
 
-**Use the `integration_diagram` skill** — see `.agents/skills/integration_diagram/SKILL.md`.
+**Use the `integration_diagram` skill** — see `.claude/skills/integration_diagram/SKILL.md`.
 
 Pure CSS/SVG, no vis.js. Hub-and-spoke with functional zones, orthogonal 90° connections, dark theme + neon accents. Reference implementation: `Zagentexecution/mcp-backend-server-python/connectivity_diagram.html`.
 

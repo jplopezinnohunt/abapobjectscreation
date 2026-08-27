@@ -633,7 +633,7 @@ def _agents_block():
                 "`knowledge/alignment_executors_model.md` - la escalera de canales "
                 "(API estandar / BC-Set / escritura directa bajo excepcion), los medidores, "
                 "los actuadores por objeto y el metodo comun. Excepciones autorizadas, lista "
-                "cerrada: `.agents/skills/sap_master_data_sync/SKILL.md`." + NL)
+                "cerrada: `.claude/skills/sap_master_data_sync/SKILL.md`." + NL)
     return ("## AGENTES - lo que sabemos HACER (%d disponibles)" % len(out) + NL
             + NL.join(out) + NL + tail)
 

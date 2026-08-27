@@ -394,7 +394,7 @@ After completing a task:
 1. Read `lib/README.md` - examples of all patterns
 2. Check `Zagentexecution/tasks/2026_03_04_crp_service_layer/` - 103 experiments
 3. Look at `learning_summary.md` files in past tasks
-4. Check `.agents/skills/` for relevant skills
+4. Check `.claude/skills/` for relevant skills
 5. Ask user for clarification (don't guess)
 
 ## 🔐 Security
@@ -409,7 +409,7 @@ After completing a task:
 - **User Questions:** Use `AskUserQuestion` tool for clarifications
 - **Complex Planning:** Use `EnterPlanMode` for multi-step implementations
 - **Codebase Search:** Use `Task` tool with `Explore` agent
-- **SAP Transactions:** Check `.agents/skills/` for transaction-specific guidance
+- **SAP Transactions:** Check `.claude/skills/` for transaction-specific guidance
 
 ---
 
@@ -446,7 +446,7 @@ Full specification: `Brain_Architecture/brain_design_specification_v3.md`
 - `knowledge/domains/` — Rich domain documentation (15 domains)
 - `knowledge/incidents/` — **Canonical location for incident analysis docs** (added Session #050). All `INC-<id>_<slug>.md` files live here, NOT in domain folders.
 - `.agents/intelligence/PMO_BRAIN.md` — Pending work tracker
-- `.agents/skills/sap_incident_analyst/SKILL.md` — **Support processing: Step-0 triage + Track A (diagnosis, 10 steps) + Track B (operational action, B1–B9)** (added #050, two-track since #099)
+- `.claude/skills/sap_incident_analyst/SKILL.md` — **Support processing: Step-0 triage + Track A (diagnosis, 10 steps) + Track B (operational action, B1–B9)** (added #050, two-track since #099)
 - `.claude/agents/incident-analyst.md` — subagent definition, kept as a **prompt template to read**; do NOT invoke it for the protocol (corrected #051)
 - `Zagentexecution/quality_checks/incident_record_coverage_check.py` — **gate: every incident doc has a first-class record** (added #099, after 3 incidents were found invisible to the brain)
 - `Zagentexecution/quality_checks/` — **Recurring data quality checks** (added Session #050). Class-of-defect detectors promoted from incidents.
@@ -495,7 +495,7 @@ check, or the cost per ticket never falls.
 **Both tracks:** output `knowledge/incidents/INC-<id>_<slug>.md` **AND** a first-class record in
 `brain_v2/incidents/incidents.json`. A doc without a record is invisible to BRAIN LOOKUP — gate it
 with `python Zagentexecution/quality_checks/incident_record_coverage_check.py` (exit 0 = clean)
-before closing. Full protocol: `.agents/skills/sap_incident_analyst/SKILL.md`.
+before closing. Full protocol: `.claude/skills/sap_incident_analyst/SKILL.md`.
 
 ### Session close — Phase 4b: Capture SAP Learnings (Session #050)
 Every session that touches SAP must explicitly answer: "What did we learn about SAP itself this session that the next agent needs to know?" See `.agents/workflows/session_close_protocol.md` Phase 4b for the mandatory checklist. Empty section in retro = explicit "N/A" with one-sentence justification. Silent omission is a Phase 4b failure.

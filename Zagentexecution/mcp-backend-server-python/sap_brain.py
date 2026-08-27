@@ -7,7 +7,7 @@ A connected knowledge graph that links ALL project knowledge sources:
   SOURCE 1: extracted_sap/       → Code objects (BSP Apps, Classes, Tables, Reports)
   SOURCE 2: SQLite gold DB        → Data entities (Fund Areas, Funds, Fund Centers, Transports)
   SOURCE 3: knowledge/**/*.md     → Domain knowledge documents
-  SOURCE 4: .agents/skills/       → Agent skill documents
+  SOURCE 4: .claude/skills/       → Agent skill documents
   SOURCE 5: Expert seed docs      → doc_reference.txt, YRGGBS00, etc.
   SOURCE 9: Payment Companion     → payment_bcm_companion.html (payment processes, BCM rules, named validators, DMEE, infra)
 
@@ -203,7 +203,7 @@ def build_brain():
     c3 = len(brain.nodes)
     print(f"  -> {c3 - c2} new nodes from knowledge docs  (total: {c3})")
 
-    print(f"\n  [SOURCE 4/8] Agent skills (.agents/skills/) ...")
+    print(f"\n  [SOURCE 4/8] Agent skills (.claude/skills/) ...")
     _ingest_skills(brain)
     c4 = len(brain.nodes)
     print(f"  -> {c4 - c3} new nodes from skills  (total: {c4})")
@@ -655,7 +655,7 @@ def _ingest_knowledge_docs(brain):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  SOURCE 4: AGENT SKILLS (.agents/skills/*/SKILL.md)
+#  SOURCE 4: AGENT SKILLS (.claude/skills/*/SKILL.md)
 # ══════════════════════════════════════════════════════════════════════════════
 
 _SKILL_LAYER_MAP = {
@@ -686,9 +686,9 @@ def _skill_layer(skill_name):
 
 
 def _ingest_skills(brain):
-    skills_dir = PROJECT_ROOT / ".agents/skills"
+    skills_dir = PROJECT_ROOT / ".claude/skills"
     if not skills_dir.exists():
-        print(f"  [SOURCE 4] .agents/skills/ dir not found - skipping")
+        print(f"  [SOURCE 4] .claude/skills/ dir not found - skipping")
         return
 
     skill_files = list(skills_dir.glob("*/SKILL.md"))
@@ -797,7 +797,7 @@ def _ingest_process_model(brain):
     # ── Link coordinator skill to all processes ────────────────────────────
     coord_skill = "SKILL_COORDINATOR"
     if coord_skill not in brain.nodes:
-        coord_path = PROJECT_ROOT / ".agents/skills/coordinator/SKILL.md"
+        coord_path = PROJECT_ROOT / ".claude/skills/coordinator/SKILL.md"
         brain.add_node(coord_skill, "SKILL", "UNESCO SAP Intelligence Coordinator",
                        domain="Meta", path=coord_path,
                        metadata={"layer": "Coordinator", "skill_name": "coordinator"},

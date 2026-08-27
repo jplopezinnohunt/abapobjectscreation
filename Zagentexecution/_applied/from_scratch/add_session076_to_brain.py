@@ -213,7 +213,7 @@ new_claims = [
             },
             {
                 "type": "skill_documentation",
-                "ref": ".agents/skills/sap_adt_api/SKILL.md#15",
+                "ref": ".claude/skills/sap_adt_api/SKILL.md#15",
                 "cite": "Session #076 added SKILL section 15 (DDIF Wrapper canonical for EhP8) - 8 subsections covering rationale, TADIR-orphan mitigation, RC=2 disambiguation, methods exposed, copy-paste workflow, recovery-by-phase, zombie cleanup, S/4HANA migration path.",
                 "added_session": 76,
             },

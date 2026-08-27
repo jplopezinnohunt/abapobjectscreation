@@ -41,7 +41,7 @@ Safety rails
 Related
 -------
 - stem_align_to_mgie_skb1.py / stem_align_to_mgie_cskb.py — April 14 reference scripts
-- .agents/skills/sap_master_data_sync/SKILL.md
+- .claude/skills/sap_master_data_sync/SKILL.md
 """
 
 from __future__ import annotations

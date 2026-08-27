@@ -18,7 +18,7 @@ Safe: READ-ONLY. No UPDATE / INSERT / DELETE. Gate for user approval before h29_
 
 Related
 -------
-- `.agents/skills/sap_master_data_sync/SKILL.md` — 4-step sync pattern (#034)
+- `.claude/skills/sap_master_data_sync/SKILL.md` — 4-step sync pattern (#034)
 - `Zagentexecution/sap_data_extraction/scripts/extract_gl_costel_comparison.py` — extraction template
 - `feedback_data_p01_code_d01.md` — direction P01 → D01 for data sync
 """

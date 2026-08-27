@@ -11,7 +11,7 @@
 | 3 | System Inventory (`system_inventory.html`) | 59KB | NEW — 31 system cards, direction map, 4 integration types |
 | 4 | RFC Analysis (`rfc_analysis.html`) | 38KB | NEW — 239 destinations, 5 tabs |
 | 5 | FI Maintenance (`fi_maintenance.html`) | 34KB | NEW — 6 tabs, support reference |
-| 6 | Integration Diagram Skill | N/A | NEW — `.agents/skills/integration_diagram/SKILL.md` |
+| 6 | Integration Diagram Skill | N/A | NEW — `.claude/skills/integration_diagram/SKILL.md` |
 | 7 | Gold DB: `tfdir_custom` | 3,073 rows | NEW — 334 RFC-enabled, 21 domains |
 
 ## Key Discoveries

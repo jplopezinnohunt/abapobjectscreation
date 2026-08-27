@@ -1,6 +1,6 @@
 ---
 name: SEGW Automation (DEPRECATED)
-description: Merged into sap_segw skill. See .agents/skills/sap_segw/SKILL.md.
+description: Merged into sap_segw skill. See .claude/skills/sap_segw/SKILL.md.
 domains:
   functional: [*]
   module: [*]
@@ -11,7 +11,7 @@ domains:
 
 All content from this skill has been consolidated into:
 
-**`.agents/skills/sap_segw/SKILL.md`**
+**`.claude/skills/sap_segw/SKILL.md`**
 
 Merged in Session #023 (2026-03-27). The merged skill contains:
 - All Playwright automation patterns

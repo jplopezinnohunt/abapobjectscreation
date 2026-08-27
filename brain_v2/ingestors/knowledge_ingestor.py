@@ -5,7 +5,7 @@ Principle: if it has relationships, it's a node. Zero dead text.
 Sources:
   - knowledge/domains/**/*.md (44 docs) → KNOWLEDGE_DOC nodes
   - knowledge/*.md (12 root docs) → KNOWLEDGE_DOC nodes
-  - .agents/skills/*/SKILL.md (40 skills) → SKILL nodes
+  - .claude/skills/*/SKILL.md (40 skills) → SKILL nodes
   - knowledge/session_retros/*.md (34 retros) → SESSION nodes
   - .agents/intelligence/PMO_BRAIN.md → extracts references
 

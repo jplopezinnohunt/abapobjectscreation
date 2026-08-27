@@ -879,7 +879,7 @@ class SAPADTClient:
     # `DDIF_*_PUT via RFC_ABAP_INSTALL_AND_RUN` pattern with mandatory
     # pre-flight (single-equality RFC_READ_TABLE, no IN-lists) and structured
     # SY-SUBRC → named-exception mapping. See
-    # .agents/skills/sap_adt_api/SKILL.md §0 (ADT-FIRST qualifier).
+    # .claude/skills/sap_adt_api/SKILL.md §0 (ADT-FIRST qualifier).
 
     def build_table_source_xml(self, name: str, description: str,
                                 fields: list, delivery_class: str = "A",

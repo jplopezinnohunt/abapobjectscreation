@@ -99,6 +99,17 @@ def main():
             "agent": inp.get("subagent_type") or "(unspecified)",
             "description": str(inp.get("description") or "")[:120],
         }
+        # El PROMPT es la otra mitad: sin el, el resultado no se puede juzgar contra nada.
+        # Anthropic lo midio en produccion y es su fallo numero uno de delegacion: «sin
+        # descripciones de tarea detalladas, los agentes duplicaban trabajo o dejaban huecos
+        # criticos de informacion». Guardar su LONGITUD y su principio permite medir despues
+        # si el encargo era detallado -- que es la variable que ellos senalan como causa.
+        pr = inp.get("prompt")
+        if isinstance(pr, str) and pr.strip():
+            record["prompt_len"] = len(pr)
+            record["prompt_ini"] = pr.strip()[:400]
+        if inp.get("model"):
+            record["model"] = inp.get("model")
 
     elif event == "SubagentStop":
         # MEDIDO s106: de 547 filas SubagentStop, CERO traian `subagent_type`. El payload de
@@ -121,6 +132,29 @@ def main():
             "agent": agente,                      # None, NUNCA un nombre falso
             "description": "",
         }
+
+        # --- LO QUE HACE ANOTABLE LA TRAZA, y llevabamos tirando (s107) ----------------
+        # La investigacion sobre como se mide la colaboracion multi-agente
+        # (brain_v2/research/wc0llab07) concluye que se mide sobre TRAZAS, no sobre lo que los
+        # agentes declaran de si mismos. Y al mirar el payload en vez de disenar un medidor
+        # aparecio que ya venia todo: `agent_transcript_path` es la traza completa del
+        # subagente y `last_assistant_message` es su resultado. Sin el resultado no se puede
+        # juzgar DERIVA DE TAREA, INFORMACION RETENIDA ni TERMINACION PREMATURA -- los tres
+        # modos de MAST que este sustrato si alcanza. El puntero no ocupa; del mensaje se
+        # guarda un extremo, que basta para saber si contesto a lo que se le pidio.
+        for clave, destino in (("agent_id", "agent_id"),
+                               ("agent_transcript_path", "traza"),
+                               ("session_id", "sesion"),
+                               ("prompt_id", "prompt_id"),
+                               ("effort", "effort")):
+            v = payload.get(clave)
+            if isinstance(v, str) and v.strip():
+                record[destino] = v.strip()
+        msg = payload.get("last_assistant_message")
+        if isinstance(msg, str) and msg.strip():
+            record["resultado_len"] = len(msg)
+            record["resultado_ini"] = msg.strip()[:400]
+            record["resultado_fin"] = msg.strip()[-400:] if len(msg) > 800 else ""
         if agente is None:
             # LA PARTE QUE SE MECANIZA: si no se puede atribuir, registrar QUE HABIA
             # DISPONIBLE. Un trazador que no anota lo que vio no se puede mejorar -- hubo

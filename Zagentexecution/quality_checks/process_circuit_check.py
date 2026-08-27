@@ -184,6 +184,48 @@ def main():
                               f"(umbral {umbral}/{len(toks)}) — conocimiento realmente ausente")
             cubre_por_etapa.append(set(declarados) & set(medido) or set(cubridores))
 
+            # --- 2a. UNA ETAPA SIN COMPANION LO DICE, NO LO CALLA -------------------
+            # Se anade al introducir `85_pago_manual_f53`, que no tiene companion ninguno: lo
+            # descubrio la lectura de un skill, no un artefacto visual. Sin esto, una etapa con
+            # `companions: []` pasaba en verde porque la lista de rotos venia vacia -- ausencia
+            # leida como conformidad, que es el modo de fallo mas caro de este proyecto.
+            if not declarados and not s.get("_sin_companion"):
+                fallos.append(f"{clave}/{s['id']}: sin companions y sin `_sin_companion` que lo "
+                              f"declare. Un hueco DICHO es informacion; un hueco callado pasa "
+                              f"por cobertura")
+
+            # --- 2b. EL SKILL QUE CUBRE LA ETAPA (s107) -----------------------------
+            # POR QUE EXISTE ESTA COMPROBACION, y es el defecto mas caro de s107:
+            # la etapa `60_wf_approval_rm` se declaro con CINCO tipos de documento (son 14),
+            # diciendo que el metodo O "termina" el workflow (no termina: repone el bloqueo a
+            # 'W' y QUEDA ESPERANDO un evento) y sin declarar que solo aplica a la sociedad
+            # UNES. Las tres cosas estaban escritas, literalmente, en
+            # `.claude/skills/sap_payment_bcm_agent/SKILL.md`. El coordinador
+            # (`graph_queries.py tool para "<tarea>"`) puso ese skill como `1_LEE_ESTO_PRIMERO`
+            # al empezar y NO SE LEYO. El modelo de la caja funciono; fallo el consumidor.
+            # Un consejo que no cambia nada del flujo se lee como decoracion, asi que aqui deja
+            # de ser consejo: la etapa DECLARA su skill y la puerta comprueba que ese skill
+            # habla de verdad de lo que la etapa afirma. Es la unica forma de que "abre el
+            # skill antes de declarar" sea comprobable y no una buena intencion.
+            sk = s.get("skill")
+            if sk:
+                ruta = os.path.join(REPO, ".agents", "skills", sk, "SKILL.md")
+                if not os.path.exists(ruta):
+                    fallos.append(f"{clave}/{s['id']}: declara el skill `{sk}` y no existe en .claude/skills/")
+                else:
+                    txt = io.open(ruta, encoding="utf-8", errors="replace").read()
+                    hay = [t for t in toks if re.search(re.escape(t), txt, re.I)]
+                    if len(hay) < max(1, len(toks) // 3):
+                        fallos.append(
+                            f"{clave}/{s['id']}: declara el skill `{sk}` pero ese skill solo "
+                            f"menciona {len(hay)}/{len(toks)} de sus objetos "
+                            f"({', '.join(hay) or 'ninguno'}) — o el skill no es ese, o la "
+                            f"etapa afirma cosas que ningun skill respalda")
+            elif not s.get("_sin_skill"):
+                fallos.append(f"{clave}/{s['id']}: sin `skill` y sin `_sin_skill` que explique "
+                              f"por que no lo tiene. Una etapa declarada sin abrir su conocimiento "
+                              f"curado es como se publicaron 3 errores en 60_wf_approval_rm")
+
             # --- 2. DECLARACION ----------------------------------------------------
             rotos = [d for d in declarados if len(medido.get(d, [])) < umbral]
             if rotos:

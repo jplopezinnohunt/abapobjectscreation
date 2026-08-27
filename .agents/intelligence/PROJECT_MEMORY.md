@@ -75,10 +75,10 @@ Word docs, expert knowledge, and discovered patterns are SEEDS — the agent mus
 
 ### Multi-Agent Architecture (Session #006)
 Coordinator → Domain Agent pattern (Anthropic orchestrator-workers):
-- **Coordinator** (`.agents/skills/coordinator/SKILL.md`): routes by UNESCO process/domain
-- **PSM** (`.agents/skills/psm_domain_agent/SKILL.md`): FM/budget, WRTTP filter, gold DB queries
-- **HCM** (`.agents/skills/hcm_domain_agent/SKILL.md`): employee lifecycle, Allos replacement, ASR
-- **FI** (`.agents/skills/fi_domain_agent/SKILL.md`): GL, OBBH/YRGGBS00, FM-FI bridge
+- **Coordinator** (`.claude/skills/coordinator/SKILL.md`): routes by UNESCO process/domain
+- **PSM** (`.claude/skills/psm_domain_agent/SKILL.md`): FM/budget, WRTTP filter, gold DB queries
+- **HCM** (`.claude/skills/hcm_domain_agent/SKILL.md`): employee lifecycle, Allos replacement, ASR
+- **FI** (`.claude/skills/fi_domain_agent/SKILL.md`): GL, OBBH/YRGGBS00, FM-FI bridge
 
 ### 3 Operational Modes
 | Mode | Anthropic Pattern | Example |

@@ -198,7 +198,7 @@ If 3 consecutive sessions fail the same principle → escalate to user with a ha
 - **`.agents/workflows/session_close_protocol.md`** — invokes this agent as Phase 0
 - **`scripts/session_preflight.py`** — runs a subset of checks pre-session; agi_retro_agent is post-session
 - **`.agents/rules/hypothesis_before_extraction.md`** — the rule agi_retro_agent enforces via Principle 4
-- **`.agents/skills/skill_coordinator/SKILL.md`** — the agent that routes findings to skills (Principle 7)
+- **`.claude/skills/skill_coordinator/SKILL.md`** — the agent that routes findings to skills (Principle 7)
 - **PMO_BRAIN.md** — the state file the agent reconciles (Principle 1)
 
 ## Siblings (meta-skills ecosystem — NOT merged, per growth paradigm)

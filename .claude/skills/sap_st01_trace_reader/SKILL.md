@@ -56,7 +56,7 @@ Also covers adjacent kernel trace files: work process dev traces (`dev_w*`), RFC
 
 ```bash
 cd Zagentexecution/mcp-backend-server-python
-python ../../.agents/skills/sap_st01_trace_reader/read_st01_trace.py \
+python ../../.claude/skills/sap_st01_trace_reader/read_st01_trace.py \
     --system TS3 \
     --user JP_LOPEZ \
     --since 2026-04-13T00:00:00 \
@@ -303,4 +303,4 @@ The skill writes results in two forms:
 
 ## Source / implementation
 
-`.agents/skills/sap_st01_trace_reader/read_st01_trace.py`
+`.claude/skills/sap_st01_trace_reader/read_st01_trace.py`

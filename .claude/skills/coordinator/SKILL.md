@@ -275,7 +275,7 @@ python sap_brain.py --build --html
 | Code objects (extracted_sap/) | 59 | ✅ Active |
 | SQLite data (42 tables, ~2.5GB Gold DB) | 73,000+ | ✅ Active |
 | Knowledge docs (knowledge/) | 51+ | ✅ Active |
-| Agent skills (.agents/skills/) | 33 | ✅ Active |
+| Agent skills (.claude/skills/) | 33 | ✅ Active |
 | Expert seed docs | 10 | ✅ Active |
 | CTS transports | 7,745 | ✅ Active |
 | Payment companion (SOURCE 9) | 27 new nodes | ✅ Active (added #022) |
@@ -297,7 +297,7 @@ This coordinator operates within a formal governance structure:
 - **`.agents/SKILL_MATURITY.md`** — 31 skills scored (13 Production, 10 Functional, 4 Draft, 4 Stub)
 
 **Two-Tier Model:**
-- Tier 1 (Skills): `.agents/skills/` + `lib/` — define patterns
+- Tier 1 (Skills): `.claude/skills/` + `lib/` — define patterns
 - Tier 2 (Execution): `Zagentexecution/` — consume patterns
 
 **Routing by maturity:** Prefer Production (4) skills for critical operations. Draft (2) and Stub (1) skills need user confirmation before relying on them.
