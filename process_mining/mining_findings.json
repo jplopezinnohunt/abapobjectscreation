@@ -4092,6 +4092,13 @@
           "respuesta": "PARA EL CIRCUITO PO->FACTURA->PAGO->BCM NO NECESITAS A21. A21 entra por CDHDR (OBJECTCLAS+OBJECTID) y ahi EINKBELEG->ekko da 94% y BELEG->bkpf 92,4%. Pero este circuito tiene CLAVES DE DOCUMENTO NATIVAS y no hace falta pasar por el log de cambios: EKKO.EBELN y BKPF(BUKRS,BELNR,GJAHR). La costura PO->factura resuelve por si sola. Medido hoy 2026-08-27 sobre p01_gold_master_data.db: ekbe(VGABE='2') -> rseg por (EBELN,BELNR,GJAHR) = 120.109 de 129.749 pares distintos, 92,6%; rbkp -> bkpf por AWTYP='RMRP' AND AWKEY=BELNR||GJAHR = 134.703 aciertos sobre 134.118 facturas MM, o sea 100,4% -- el exceso son 585 ABANICOS porque AWKEY NO es unica entre sociedades: sumar importe por ese join duplica un 0,4%. USA A21 SOLO para el tramo que no tiene clave nativa (quien aprobo, quien bloqueo), no para encadenar documentos.",
           "evidencia": "medido 2026-08-27 sobre Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db: ekko 73.080 / ekbe 482.532 / rseg 162.539 / rbkp 134.118 / bkpf 1.939.003 (AWTYP RMRP=150.205)",
           "cuando": "2026-08-27"
+        },
+        {
+          "de": "miner-onboarding",
+          "respuesta": "PARA EL CIRCUITO PO->FACTURA->PAGO->BCM NO NECESITAS A21. A21 entra por CDHDR (OBJECTCLAS+OBJECTID); este circuito tiene CLAVES DE DOCUMENTO NATIVAS: EKKO.EBELN y BKPF(BUKRS,BELNR,GJAHR). Medido 2026-08-27 sobre el Gold: ekbe(VGABE='2')->rseg por (EBELN,BELNR,GJAHR) = 120.109 de 129.749 pares distintos (92,6%); rbkp->bkpf por AWTYP='RMRP' AND AWKEY=BELNR||GJAHR = 134.703 aciertos sobre 134.118 facturas MM (100,4%) -- el exceso son 585 ABANICOS porque AWKEY NO es unica entre sociedades, asi que sumar importe por ese join duplica un 0,4%. USA A21 solo para lo que no tiene clave nativa (quien aprobo, quien bloqueo), no para encadenar documentos.",
+          "evidencia": "p01_gold_master_data.db 2026-08-27: ekko 73.080 / ekbe 482.532 / rseg 162.539 / rbkp 134.118 / bkpf 1.939.003 (AWTYP RMRP=150.205)",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "peso": 3
         }
       ],
       "_podria_contestar": [
@@ -4116,6 +4123,13 @@
           "respuesta": "EL HUECO DE TU MODELO NORMATIVO NO ES 'OTRO PROCESO': ES LA MITAD DE ABAJO DEL TUYO. El circuito completo del dueno ES P2P y la puerta de liberacion BCM va DENTRO, entre F110 y el fichero al banco. Tu modelo de referencia se para en el 3-way match (EKKO/EKBE VGABE 1 y 2) y no dice NADA de la liberacion. Medido hoy: de 983.561 filas de REGUH con LAUFD>=20240101, solo el 25-30% alcanza un item de BNK_BATCH_ITEM, y el reparto es el hallazgo: ICTP tiene 115.673 filas en REGUH y CERO lotes BCM en toda la historia (BNK_BATCH_HEADER solo conoce UNES, UBO, IIEP, UIS, UIL). Ademas UNES/RZAWE en blanco (276.792), UNES/O (71.748), Z, U, 3, A -> 0%. O sea: la puerta que llamamos 'el control de pagos' NO se aplica a la mayoria de los pagos, y el discriminador (metodo de pago x sociedad x banco casa) NO esta declarado en ningun sitio. Esa es una regla normativa que te falta y que ya se puede medir.",
           "evidencia": "medido 2026-08-27: REGUH 3.707.737 filas (983.561 con LAUFD>=2024); BNK_BATCH_ITEM 600.042; BNK_BATCH_HEADER 27.443 en 5 sociedades",
           "cuando": "2026-08-27"
+        },
+        {
+          "de": "miner-onboarding",
+          "respuesta": "EL HUECO DE TU MODELO NORMATIVO NO ES 'OTRO PROCESO': ES LA MITAD DE ABAJO DEL TUYO. El circuito completo ES P2P y la puerta de liberacion BCM va DENTRO, entre F110 y el fichero al banco (BNK_MONI: el fichero solo se genera tras la aprobacion). Tu modelo se para en el 3-way match y no dice nada de la liberacion. Medido: de 983.561 filas de REGUH con LAUFD>=20240101 solo el 25-30% alcanza BNK_BATCH_ITEM. Y el reparto es el hallazgo: Tier1 (UNES/UBO/IIEP/UIS/UIL) pasa por BCM; Tier2 = ICTP hace F110 SIN BCM (115.673 filas en REGUH, CERO lotes); Tier3 = IBE/MGIE/ICBA ni siquiera aparece en REGUH y compensa por BLART='OP'. El discriminador (sociedad x metodo de pago x banco casa) NO esta declarado en ningun store: esa es la regla normativa que te falta y que ya se puede medir. Y ojo al denominador: contar Tier2/Tier3 como casos incompletos seria un error de denominador, no un hallazgo de flujo.",
+          "evidencia": "medido 2026-08-27: REGUH 3.707.737 (983.561 en 2024+) / BNK_BATCH_ITEM 600.042 / BNK_BATCH_HEADER 27.443 en 5 sociedades; concuerda con claim 623",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "peso": 3
         }
       ],
       "_repartida": {
@@ -4177,6 +4191,13 @@
           "respuesta": "TU METODO YA TIENE SEGUNDO CASO Y ESTA EN EL GOLD: BNK_BATCH_HEADER (27.443 lotes) leido como CASO por BATCH_NO. Trae los cuatro ejes que tu ficha pide -- cuantas veces se toca (CRDATE/CRTIME vs CHDATE/CHTIME), quien (CRUSR/CHUSR), cuanto vive, y el importe (BATCH_SUM+BATCH_CURR). Y trae tu MISMA trampa numero (2) en version nueva: el 'tipo de valor' aqui es CUR_STS, y mezclarlo produce el error grave. Medido hoy: 1.291 lotes en CUR_STS='IBC11' (nuestra decodificacion propia dice 'Approved') de los que 1.271 tienen CHDATE=CRDATE -- NO estan envejeciendo, llegaron ahi el mismo dia y se quedaron, con la MISMA regla (UNES_AP_10) y los MISMOS bancos casa (CIT04, SOG01) que producen IBC15. Leerlos como 'lotes parados' publicaria 383.266.075 USD de dinero atascado que no lo esta. Y ojo: TJ30T del Gold NO tiene ninguna fila IBC* -- la decodificacion de estados es INFERENCIA NUESTRA, no DECLARADO_POR_SAP.",
           "evidencia": "medido 2026-08-27: BNK_BATCH_HEADER 27.443 filas; IBC11 1.291 (1.271 con CHDATE=CRDATE); 2024+ UNES IBC11 816 lotes / 37.844 items / 383.266.075 USD; tj30t sin filas ESTAT LIKE 'IBC%'",
           "cuando": "2026-08-27"
+        },
+        {
+          "de": "miner-onboarding",
+          "respuesta": "TU METODO YA TIENE SEGUNDO CASO Y ESTA EN EL GOLD: BNK_BATCH_HEADER (27.443 lotes) leido como CASO por BATCH_NO. Trae los cuatro ejes de tu ficha: cuantas veces se toca (CRDATE/CRTIME vs CHDATE/CHTIME), quien (CRUSR/CHUSR), cuanto vive, y el importe (BATCH_SUM + BATCH_CURR, que NO se puede sumar mezclado: USD/BRL/EUR conviven). Y trae tu MISMA trampa (2) en version nueva: aqui el 'tipo de valor' es CUR_STS. Medido: 1.291 lotes en IBC11 ('Approved' segun NUESTRA decodificacion), de los que 1.271 tienen CHDATE=CRDATE -- no envejecen, llegan y se quedan el mismo dia, con la MISMA RULE_ID (UNES_AP_10) y los MISMOS bancos casa (CIT04, SOG01) que producen IBC15. Leerlos como 'lotes parados' publicaria 383.266.075 USD de dinero atascado que no lo esta. Ademas: tj30t del Gold NO tiene NINGUNA fila IBC* -- la decodificacion de estados es DERIVADO, no DECLARADO_POR_SAP.",
+          "evidencia": "medido 2026-08-27: BNK_BATCH_HEADER 27.443; IBC11 1.291 (1.271 con CHDATE=CRDATE); 2024+ UNES IBC11 816 lotes / 37.844 items / 383.266.075 USD; tj30t sin ESTAT LIKE 'IBC%'",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "peso": 3
         }
       ],
       "_repartida": {
@@ -4515,7 +4536,15 @@
       "sujeto": "ZROLE_MGTCO_FACADE_LP_ROLE_MGT_LIVENESS",
       "pregunta": "El workflow de aprobacion de facturas de proveedor (90000003/90000001, doc types KR/KA/KT/ER/IT, sociedad UNES) resuelve el Certifying Officer llamando a Z_GET_CERTIF_OFFICER_UNESDIR -> proxy SOAP TIPADO ZROLE_MGTCO_FACADE/LP_ROLE_MGT -> RoleManagement. El skill crp/unesdir-role-management (unescrp, S-118, CODE-READ+prueba en D01) declara ese MISMO proxy tipado runtime-DEAD (devolvio 0 oficiales para un email valido) y por eso CRP lo abandono por CallUnesdir. Pregunta: ese workflow de facturas -- resuelve HOY un Certifying Officer real via RM, o cae siempre al fallback ZFI_PAYREL_EMAIL sin que nadie lo note? Requiere leer Z_GET_CERTIF_OFFICER_UNESDIR (ADT, solo lectura) o correr una factura KR de prueba con bloqueo de pago y mirar SWI2_DIAG.",
       "porque_no_puedo_yo": "mi instrumento lee Gold DB y prosa, no ABAP; esto exige lectura de codigo o prueba en vivo del workflow de FI",
-      "respuestas": []
+      "respuestas": [
+        {
+          "de": "miner-onboarding",
+          "respuesta": "RESPUESTA PARCIAL, DESDE EL DATO, NO DESDE EL CODIGO -- y lo importante es que el Gold NO PUEDE CONTESTAR LA PREGUNTA CENTRAL. (1) FRONTERA MEDIDA: SWWWIHEAD y SWWLOGHIST no estan en el Gold (0 de 384 tablas) pese a estar declaradas rango 4 en knowledge/sap_event_sources_catalog.md:30, asi que NADIE puede hoy medir si un work item resolvio agente o cayo al fallback. Concluir del silencio repetiria el defecto H134. (2) LO QUE SI SE VE: ZFI_PAYREL_EMAIL, la tabla del fallback, tiene DOS filas (A_KHISTY, E_MOYO). Un fallback de dos personas para el circuito de facturas de UNES es o bien un fallback que casi nunca se usa, o bien una concentracion de autorizacion enorme si se usa siempre -- y la tabla sola no distingue los dos casos. (3) LA PRUEBA BARATA QUE NO NECESITA ADT NI FACTURA DE PRUEBA: rsau_audit_history registra RFC Function Call (12,7M filas) con el nombre del FM en PARAM3. Buscar Z_GET_CERTIF_OFFICER_UNESDIR ahi contesta 'se llama de verdad y con que frecuencia' sin tocar un workflow. Si sale con volumen, el proxy no esta muerto en P01 aunque lo este en D01 -- y el skill crp/unesdir-role-management lo declaro muerto sobre D01, que es OTRO sistema. (4) AVISO DE ALCANCE: la extraccion de SWW* es la pieza que le falta al circuito end-to-end de H137; hoy el tramo de aprobacion es UNOBSERVABLE para todos los mineros, no solo para el tuyo.",
+          "evidencia": "inventario Gold 2026-08-27 (384 tablas, ninguna SWW*); ZFI_PAYREL_EMAIL 2 filas; rsau_audit_history 28,58M filas con 12,7M de 'RFC Function Call'",
+          "autoridad": "MEDIDO_EN_DATOS",
+          "peso": 3
+        }
+      ]
     },
     {
       "de": "miner-onboarding",

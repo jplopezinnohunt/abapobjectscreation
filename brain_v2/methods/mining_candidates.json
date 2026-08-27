@@ -244,6 +244,36 @@
         "que_haria_falta_para_decidir": "nada de evidencia; el mismo mecanismo que falta arriba",
         "recomendacion": "FUERA con este motivo, en cuanto el censo admita excluir un agente"
       }
+    },
+    {
+      "id": "A69_p2p_release_gate_chain",
+      "operates_on": "NO es un lector nuevo: es una COMPOSICION. Consume ekko/ekpo/ekbe/rseg/rbkp (tramo compra), bkpf/bsak/bsik/REGUH (tramo factura-pago), BNK_BATCH_HEADER/BNK_BATCH_ITEM (la puerta), T042Z/T012/T012K/T001 (quien esta sujeto a la puerta), YTFI_PPC_STRUC/YTFI_PPC_TAG (el codigo de proposito) y FEBKO/FEBEP (el acuse por extracto). Todas verificadas presentes en el Gold DB el 2026-08-27.",
+      "origin": "OURS",
+      "state": "PROPUESTO - nada en disco todavia",
+      "mining_kind": "FLUJO_DE_CONTROL",
+      "clase_nueva_necesaria": "NO. Cabe en FLUJO_DE_CONTROL (el gate es flujo) mas CONFORMIDAD para la parte de 'quien deberia pasar por la puerta y no pasa'. El precedente s105 (CODIGO_COMO_FUENTE) se justifico porque TRECE algoritmos estaban mal repartidos en seis cajones; aqui hay UNO, y crear una clase por un instrumento seria inflar la taxonomia.",
+      "does": "recorrer el circuito completo PO -> recepcion -> factura (+PPC) -> aprobacion -> propuesta F110 -> PUERTA BCM -> fichero al banco -> extracto, y emitir por SALTO un veredicto del vocabulario de A10 (LIVE / SUBSTITUTED / COLLAPSED / UNEVEN / SPARSE / BROKEN / UNOBSERVABLE) en vez de un porcentaje. La pregunta que contesta y que hoy no contesta nadie: DE CADA EURO QUE ENTRA POR UN PEDIDO, POR CUANTAS PUERTAS PASA DE VERDAD Y CUALES SE SALTA.",
+      "bound_in": [],
+      "como_se_construye": "NO se escribe un minero nuevo: se declara un p2p_chain_spec.json y se ejecuta con process_mining/chain_lineage.py (A10), que ya es un resolvedor de SALTOS declarativo con ese vocabulario exacto. Escribir otro caminador de saltos seria REINVENTAR LO QUE EXISTE (modo de fallo declarado en brain_v2/toolgraph.json). Lo unico que A10 necesita para admitir este dominio: aceptar saltos con CONDICION DE APLICABILIDAD (un salto que no aplica a una sociedad no es un salto roto) y un veredicto UNOBSERVABLE para el tramo cuya fuente no tenemos.",
+      "failure_mode": "DESCONOCIDO: no se ha corrido, no existe. Lo que SI esta medido son las tres trampas que lo mataran si no se declaran:\n(1) DENOMINADOR POR SOCIEDAD. Tier1 (UNES/UBO/IIEP/UIS/UIL) pasa por BCM; Tier2 (ICTP: 115.673 filas en REGUH, CERO lotes BCM) hace F110 sin BCM; Tier3 (IBE/MGIE/ICBA) no aparece ni en REGUH y compensa por BLART=OP. Un end-to-end que asuma la misma cadena para todos contara Tier2 y Tier3 como casos INCOMPLETOS. Es denominador, no flujo.\n(2) ABANICO DE CLAVE. rbkp->bkpf por AWTYP='RMRP' AND AWKEY=BELNR||GJAHR da 134.703 aciertos sobre 134.118 facturas (100,4%): AWKEY no es unica entre sociedades. Sumar importe por ese salto infla un 0,4% y el error crece con el numero de sociedades.\n(3) ESTADO INFERIDO. Los estados de la puerta (IBC01..IBC21) NO son decodificables desde el Gold (tj30t no tiene ninguna fila IBC*): la tabla del skill es DERIVADO. Ya produjo una lectura falsa: 816 lotes / 383.266.075 USD en IBC11 parecen atascados y no lo estan (1.271 de 1.291 con CHDATE=CRDATE, misma regla y mismos bancos que los que terminan en IBC15).",
+      "lands_in": "brain_v2/p2p_chain_lineage.json (mismo store que A10 produce para la cadena de financiacion) -> brain_v2/claims/claims.json. Y publicar() en process_mining/mining_bus.py para que B4 herede el modelo normativo del gate.",
+      "_metodo": {
+        "LEER": "un SELECT por salto sobre el Gold, solo lectura. Saltos medidos ya el 2026-08-27: ekbe(VGABE='2')->rseg 92,6% (120.109/129.749) · rbkp->bkpf(AWTYP='RMRP') 100,4% con 585 abanicos · bsak.AUGBL->REGUH.VBLNR 43,3% (109.476/252.884) · REGUH->BNK_BATCH_ITEM 15,3% global y 25-30% en 2024+ · BNK_BATCH_ITEM->HEADER 100,0%. Fuente que NO tenemos: SWWWIHEAD/SWWLOGHIST (declaradas rango 4 en knowledge/sap_event_sources_catalog.md:30, cero de 384 tablas del Gold).",
+        "INTERPRETAR": "cada porcentaje bajo se CLASIFICA antes de llamarse hueco. El 43,3% de bsak.AUGBL que no alcanza REGUH no es una cadena rota: son compensaciones que no vienen de F110 (F-53/F-44 manuales, y los rails OP y AB). El 15,3% de REGUH que no alcanza BCM no es un fallo de la puerta: es que la puerta no aplica -- el discriminador es sociedad x metodo de pago x banco casa y HOY NO ESTA DECLARADO EN NINGUN STORE. Ese discriminador es el entregable principal.",
+        "AGRUPAR": "por RAIL y por SOCIEDAD, nunca por documento suelto. Cinco rails medidos: F110+BCM (Tier1), F110 sin BCM (ICTP), OP sub-banco de oficina exterior fuera de T012K, AB neteo interno sin banco, y cheque prenumerado (PAYR, 4.431). Agrupar por documento mezcla los cinco y produce un mapa de un proceso que no existe.",
+        "CONTEXTO": "nunca corrido. Mide antes de opinar: ekko 73.080 · rbkp 134.118 · REGUH 3.707.737 · BNK_BATCH_HEADER 27.443 · BNK_BATCH_ITEM 600.042, todo verificado presente el 2026-08-27."
+      },
+      "_mi_juicio": {
+        "veredicto": "COMPOSICION, NO MINERO NUEVO. Las cuatro capas ya existen repartidas: A68 (factura->pago->BCM->compensacion, 1.975.206 eventos medidos hoy), B1/B2/B3+B4/B5 (PO->GR->IR), A59/A65/A49 (el control dentro de la puerta), A10 (el motor de saltos con el vocabulario correcto). Lo que NO existe es la COSTURA y esta MEDIDA: ekbe(VGABE='2')->rseg->rbkp->bkpf(AWTYP='RMRP'), 92,6% y 100,4%. Hoy esa costura vive como PROSA en .agents/skills/sap_payment_e2e/SKILL.md ('P2P ends at Invoice Posted; this skill picks up from there') y una frase no se ejecuta, no se gatea y no se compara con la corrida anterior.",
+        "lo_que_falta_de_verdad": "DOS cosas, y solo dos. (1) El DISCRIMINADOR DE SUJECION A LA PUERTA: que combinacion de sociedad x metodo de pago x banco casa obliga a pasar por BCM. Sin el, cualquier cifra de cobertura del control es un porcentaje sobre un denominador inventado. (2) El TRAMO DE APROBACION: SWWWIHEAD+SWWLOGHIST no estan extraidas, y su silencio debe emitirse como UNOBSERVABLE -- llamarlo 'sin aprobacion' repite exactamente el defecto H134 (llamar DEAD a 38 destinos que la evidencia no puede ver).",
+        "por_que_no_es_un_esqueleto": "porque cada salto ya tiene su porcentaje medido, su trampa nombrada y su lectura falsa descartada, y el motor que lo recorre ya esta escrito y probado en otra cadena."
+      },
+      "_quien_lo_propone": "agente miner-onboarding, 2026-08-27, tarea PMO H137",
+      "_preguntas_abiertas_en_el_bus": [
+        "costura PO-factura -> B4_conformidad",
+        "PPC en el circuito -> A33_variant_content_mining",
+        "lotes parados en el gate -> A59_bcm_dual_control_mining"
+      ]
     }
   ],
   "descartados_con_motivo": {

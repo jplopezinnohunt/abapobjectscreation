@@ -2075,6 +2075,67 @@
    ],
    "created_session": 105,
    "evidence": "s102: 21/21 variantes identicas a P01 en D01 y V01 tras reparar las 3 corruptas."
+  },
+  "A68_payment_lifecycle_e2e": {
+   "operates_on": "el Gold DB p01_gold_master_data.db, tramo BAJO del circuito P2P: bkpf (1.939.003 filas; BLART KR/RE/KG=factura, ZP/KZ=pago, KA=anticipo, OP=oficina exterior, AB=neteo interno) x bsak (776.063 partidas compensadas; AUGBL/AUGDT = el enlace factura->pago) x bsik (15.183 abiertas) x REGUH (3.707.737; LAUFD/LAUFI/ZBUKR/VBLNR, XVORL='X' marca PROPUESTA) x BNK_BATCH_HEADER (27.443 lotes BCM: BATCH_NO/RULE_ID/CRUSR/CHUSR/CUR_STS/BATCH_SUM/HBKID/ZBUKR) x BNK_BATCH_ITEM (600.042; VBLNR ata el lote al documento de pago) x T042*/T012* (cadena FBZP) x T001. NO lee ekko/ekpo/ekbe/rseg/rbkp: el tramo de COMPRA no esta en este minero.",
+   "origin": "OURS",
+   "state": "WORKS",
+   "mining_kind": "FLUJO_DE_CONTROL",
+   "tipo_mineria": [
+    "FLUJO_DE_CONTROL",
+    "CASO"
+   ],
+   "generaliza": false,
+   "does": "construir el log de eventos del ciclo de vida del PAGO -- factura contabilizada -> vencimiento -> propuesta F110 -> pago ejecutado -> lote BCM (creado/actualizado/aprobado/completado/anulado) -> proveedor compensado -- y descubrir que la compensacion de UNESCO NO es un flujo sino CUATRO: F110/BCM de sede (BLART=ZP), sub-banco de oficina exterior (OP, cuentas 2021xxx que NO estan en T012K), neteo interno (AB, BSCHL 31/29, sin transferencia bancaria) y codigos Tier-3 (IBE/MGIE/ICBA). Esa particion es el hallazgo: un DFG sobre un flujo unico presentaba como desviacion lo que es otro rail.",
+   "bound_in": [
+    "Zagentexecution/mcp-backend-server-python/payment_process_mining.py"
+   ],
+   "failure_mode": "MEDIDO al correr build_event_log() en modo SOLO LECTURA el 2026-08-27 (1.975.206 eventos / 611.760 casos / 90 s). CINCO formas de dar una respuesta verosimil y falsa.\n(a) EL TRAMO DE PROPUESTA F110 DA CERO EN SILENCIO. El paso 3f imprime '-> 0 proposal events linked to invoices' y sigue. Es imposible por construccion: enlaza REGUH con XVORL='X' contra payment_to_invoices, que se construye desde BSAK.AUGBL, y una PROPUESTA no compensa nada, luego su VBLNR nunca es un AUGBL. Resultado: los pagos aparecen en el mapa SIN paso de propuesta y las 358.106 propuestas que documenta el catalogo del Gold son invisibles. Un lector concluye 'aqui no hay fase de propuesta'.\n(b) ABANICO SIN DECLARAR EN EL TRAMO BCM. Carga 157.881 items de BNK_BATCH_ITEM y emite 394.772 eventos 'BCM Batch Routed' -- factor 2,5x, porque un item ata a varias facturas. Sumar importe sobre esa actividad multiplica el dinero por 2,5. Ademas el enlace se trunca a linked[:3] con el comentario 'Limit to avoid explosion': un cap silencioso, justo lo que la casa prohibe (un cap se reporta como '>=cap', nunca como recuento).\n(c) 'BCM Batch Approved' SOLO SE EMITE SI CHUSR!=CRUSR. Medido: 5.757 lotes creados, 2.394 aprobados, 3.359 con CHUSR=CRUSR. Esos 3.359 salen como Created->Updated->Completed, un camino que parece completo y regular, cuando son exactamente los lotes SIN doble control -- el mayor hueco de control de la casa (A59) queda dibujado como una variante mas del proceso.\n(d) EL VOCABULARIO DE ESTADOS ES INFERENCIA NUESTRA, NO SAP. BNK_BATCH_HEADER.STATUS es un GUID de gestion de estados; el estado vive en CUR_STS (IBC01..IBC21) y tj30t del Gold NO tiene NINGUNA fila ESTAT LIKE 'IBC%'. La decodificacion (IBC15=Completed, IBC11=Approved, IBC17=Failed) sale del skill sap_payment_e2e: es DERIVADO y se cita como si fuera DECLARADO_POR_SAP. Consecuencia medida: 816 lotes UNES de 2024+ en IBC11 por 383.266.075 USD parecen dinero atascado en la puerta y NO lo estan (ver _verificacion_adversarial).\n(e) DENOMINADOR POR SOCIEDAD. Asumir la misma cadena para todas las sociedades cuenta como INCOMPLETOS los casos que nunca pasan por el tramo. Medido: BNK_BATCH_HEADER solo conoce UNES/UBO/IIEP/UIS/UIL; ICTP tiene 115.673 filas en REGUH y CERO lotes BCM (F110 sin BCM); IBE/MGIE/ICBA no aparecen ni en REGUH (no usan F110) y sin embargo compensan facturas via BLART=OP. Es un problema de denominador, no de flujo (coincide con claim 623).",
+   "lo_que_NO_puede": "1. EL PEDIDO: no lee ekko/ekpo/ekbe/rseg/rbkp; su primer evento es 'Invoice Posted' y el circuito del dueno empieza dos pasos antes. 2. LA APROBACION POR WORKFLOW: SWWWIHEAD/SWWLOGHIST estan declaradas rango 4 en knowledge/sap_event_sources_catalog.md:30 y NO estan en el Gold (0 de 384 tablas); su silencio es UNOBSERVABLE, nunca 'no hubo aprobacion'. 3. EL PPC: no toca YTFI_PPC_STRUC/YTFI_PPC_TAG, asi que no puede decir que pago debia llevar codigo de proposito ni si lo llevo. 4. UN CASO PARADO EN LA PUERTA: su vocabulario de actividades solo tiene transiciones OCURRIDAS; no hay actividad para 'sigue en el gate', asi que un caso detenido y un caso cuyo log se acaba son indistinguibles. 5. FUERA DE 2024: la ventana BUDAT/LAUFD/CRDATE>='20240101' esta CABLEADA en nueve sitios; en ventana entran 5.757 de los 27.443 lotes que el skill publica, y las paradas reales conocidas (IBC17 Fallido 2.056 lotes, IBC06 Rechazado 161) son TODAS de 2021-2022 y por tanto invisibles para este minero.",
+   "metodo_LEER": "SQLite solo lectura sobre el Gold, un SELECT por tramo, ventana cableada >= 20240101. No hay --desde-cache: cada corrida vuelve a barrer bkpf (1,9M) y bsak (776K); 90 s medidos.",
+   "metodo_INTERPRETAR": "BLART es el discriminador de RAIL, no un atributo: KR/RE/KG=factura, KA=peticion de anticipo, ZP/KZ=pago F110/BCM, OP=pago de oficina exterior por sub-banco fuera de T012K, AB=neteo interno sin banco. La prueba de que OP esta fuera de F110 es NEGATIVA y esta medida: REGUH.VBLNR = BSAK.AUGBL con BLART='OP' da CERO filas. CUR_STS es el estado del gate (STATUS es un GUID, no un estado); CHUSR!=CRUSR es la unica senal de doble control que existe en la tabla.",
+   "metodo_AGRUPAR": "por NOCION DE CASO, y son cuatro deliberadamente distintas: INV_{BUKRS}_{BELNR}_{GJAHR} (la factura es el ancla), DP_ para anticipos, BCM_{ZBUKR}_{BATCH_NO} (el lote es su PROPIO caso, porque la puerta tiene ciclo propio) y PAY_ para pagos que no alcanzan factura. Que el LOTE sea un caso aparte es lo que permite ver la puerta como proceso y no como atributo -- y es tambien lo que impide, hoy, contar un caso de factura como detenido en ella.",
+   "metodo_CONTEXTO": "corrido hoy 2026-08-27 (esta ficha). Antes: sesion #020 (origen), #026-#029 (los 4 rails), #055. El skill sap_payment_e2e publica 1.848.699 eventos / 550.993 casos; hoy da 1.975.206 / 611.760 -- el corpus crecio, no es una regresion. El CSV que declara como salida es un puntero git-LFS de 134 bytes en el arbol local (211 MB en LFS): quien lo lea sin traerlo lee un puntero, no un log.",
+   "improve": "1. BORRAR el enlace de propuesta contra BSAK.AUGBL y sustituirlo por el unico que existe: REGUH(LAUFD,LAUFI,ZBUKR,VBLNR) con XVORL='X' contra la MISMA corrida con XVORL='' -- propuesta y pago comparten CORRIDA, no documento de compensacion. 2. Declarar el abanico: emitir 'BCM Batch Routed' con peso 1/n o marcar el evento como no sumable, y quitar el cap linked[:3] o reportarlo como '>=3'. 3. Emitir 'BCM Batch Single-Control' como ACTIVIDAD propia cuando CHUSR=CRUSR, en vez de disfrazarla de 'Updated'. 4. Aterrizar: hoy solo escribe CSV+HTML en su propia carpeta; falta JSON de hallazgos + publicar() en mining_bus. 5. Parametrizar la ventana (--desde/--hasta, hoy cableada en 9 sitios) y ofrecer --desde-cache para re-correr la INTERPRETACION sin volver a barrer 2,7M filas. 6. Partir SIEMPRE por sociedad y declarar el tier de cobertura (Tier1 con BCM / Tier2 F110 sin BCM / Tier3 sin F110), para que la ausencia de tramo no se lea como caso incompleto. 7. Encadenarlo con el tramo de compra: la costura ekbe(VGABE='2')->rseg->rbkp->bkpf(AWTYP='RMRP') esta MEDIDA (92,6% y 100,4%, con 585 abanicos porque AWKEY no es unica entre sociedades) y hoy solo existe como PROSA en el skill ('P2P ends at Invoice Posted; this skill picks up from there').",
+   "lands_in": "PARCIAL. Escribe Zagentexecution/mcp-backend-server-python/payment_event_log.csv (211 MB en git-LFS; en el arbol local es un puntero de 134 bytes) y payment_process_mining.html. NO escribe ningun store del brain, NO publica en mining_bus y NO deja claims: sus cifras llegaron al conocimiento A MANO, via el skill sap_payment_e2e, y por eso envejecen sin que nadie se entere. El store que le falta: process_mining/mining_findings.json + brain_v2/claims/claims.json.",
+   "lands_in_kind": "discovery",
+   "lee_skill": {
+    "sap_payment_e2e": "la construccion del log (11 actividades, 4 nociones de caso), la decodificacion CUR_STS -- que esta ficha degrada a DERIVADO -- y las trampas del Gold: REGUH.XVORL='X' son PROPUESTAS (358.106 de 3.707.737) y REGUH.PERNR poblado en 1.195.826 filas son pagos a EMPLEADOS, no a proveedores",
+    "sap_payment_bcm_agent": "que es la puerta BCM y su encadenado F110 -> FBPM1 -> workflow 90000003 -> regla 90000005 (validadores) -> BNK_APP -> regla 90000004 (committers) -> DMEE -> SWIFT/Coupa (INC-000006313:147), y el panel de firmantes que la resuelve",
+    "sap_process_mining": "que exige un event log para ser minable y por que una nocion de caso equivocada produce un mapa plausible de un proceso que no existe"
+   },
+   "relates_to": [
+    "B1_dfg_discovery",
+    "B4_declarative_conformance",
+    "A59_bcm_dual_control_mining",
+    "A65_authorised_panel_reconciliation",
+    "A21_case_spine",
+    "A10_address_chain_reconstruction"
+   ],
+   "_why_it_exists": "2026-08-27, tarea PMO H137: el dueno pregunta si hay oportunidad de un minero del circuito completo PO->factura->PPC->workflow->pago->BCM. La respuesta medida es que la MITAD DE ABAJO ya estaba minada desde la sesion #020 y NUNCA se registro: sin mining_kind, sin failure_mode, sin trigger, invisible al toolgraph y al censo. Registrarla es la parte de H137 que no requiere construir nada.",
+   "_measured": {
+    "corrida": "2026-08-27, build_event_log() en solo lectura, 90 s",
+    "eventos": 1975206,
+    "casos": 611760,
+    "actividades": 16,
+    "top_actividades": {
+     "Vendor Cleared": 564046,
+     "BCM Batch Routed": 394772,
+     "Field Office Payment (OP)": 289029,
+     "Payment Executed": 227806,
+     "Invoice Posted": 218686,
+     "Invoice Netted (Credit)": 117643,
+     "Invoice Due": 103930,
+     "BCM Batch Created": 5757,
+     "BCM Batch Approved": 2394
+    },
+    "proposal_events": 0,
+    "lotes_bcm_en_ventana_vs_tabla": "5.757 de 27.443",
+    "cobertura_del_gate": "REGUH 2024+ 983.561 filas, 25-30% alcanza BNK_BATCH_ITEM; ICTP 115.673 filas en REGUH y CERO lotes BCM; IBE/MGIE/ICBA ni en REGUH"
+   },
+   "_verificacion_adversarial": "Se probo la lectura mas alarmante y se DESCARTO: 816 lotes UNES de 2024+ en CUR_STS='IBC11' por 383.266.075 USD NO son dinero parado en la puerta. 1.271 de los 1.291 IBC11 tienen CHDATE=CRDATE (llegan y se quedan el mismo dia: no envejecen), se reparten uniformemente de 2024-01-03 a 2026-03-24 (un atasco se concentraria al final) y comparten RULE_ID (UNES_AP_10) y bancos casa (CIT04, SOG01) con los que si terminan en IBC15. Es una regla de reparto SIN DECLARAR -- UNEVEN en el vocabulario de A10 -- no un atasco. Publicarlo habria sido el hallazgo verosimil y falso de esta ficha.",
+   "created_session": 107,
+   "evidence": "corrida 2026-08-27 sobre Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db; ver _measured."
   }
  },
  "_portfolio": {
