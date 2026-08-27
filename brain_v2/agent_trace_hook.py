@@ -26,8 +26,30 @@ WHY THIS EXISTS
 
 WHAT IT WRITES
     brain_v2/agent_invocations.jsonl — one line per event, append-only:
-        {"at": iso, "event": "PostToolUse"|"SubagentStop", "agent": name,
+        {"at": iso, "event": "PostToolUse"|"SubagentStop", "agent": name|null,
          "session_ts": marker, "description": short}
+    and, when the agent could NOT be attributed:
+        "attribution": "UNAVAILABLE_IN_PAYLOAD", "payload_keys": [...]
+
+⛔ WHAT THIS TRACE CAN AND CANNOT SEE — measured s106, read before citing any count
+    PostToolUse   9 rows, 9 with a real agent name.  The launch side WORKS.
+    SubagentStop  547 rows, 0 with a name.           The payload does not carry it.
+
+    Two consequences, and the second is the one that misleads:
+
+    (1) `agent: null` + `attribution: UNAVAILABLE_IN_PAYLOAD` is now written instead of a
+        fake "(unspecified)". Those rows are NOT an agent called "(unspecified)"; they are
+        the absence of an answer. `payload_keys` records what the harness DID offer, so the
+        next session can extend the key list from data instead of guessing — guessing one
+        key and recording nothing is exactly how this sat broken.
+
+    (2) THE TWO COUNTS ARE NOT THE SAME POPULATION. 547 stops against 9 launches is not a
+        9:547 attribution rate: there are whole days with dozens of stops and ZERO launches
+        (128 on 2026-08-25, 118 on 2026-08-26, 94 on 2026-08-18). Most subagent activity
+        does not arrive through the Task tool at all — skills that run in a subagent, and
+        the harness's own internal agents, never touch it. So the launch trace, even
+        working perfectly, sees only a slice, and "9 launches ever" is a floor, not a total.
+        Do not divide one by the other.
 
     Append-only on purpose: a trace that can be rewritten is not a trace. Reading it is
     agent_invocation_check.py, which reports which agents have NEVER run and how long
@@ -79,11 +101,32 @@ def main():
         }
 
     elif event == "SubagentStop":
+        # MEDIDO s106: de 547 filas SubagentStop, CERO traian `subagent_type`. El payload de
+        # este evento no lo lleva. Escribir "(unspecified)" como si fuera un agente era peor
+        # que no escribir: 547 filas anonimas ahogaban a las 9 buenas (98,4% de ruido) y
+        # cualquiera que abriera el fichero concluia que la atribucion estaba rota, cuando
+        # el lado del LANZAMIENTO funciona perfecto (9 de 9 con nombre real).
+        #
+        # Se prueban varios nombres de clave porque el contrato del harness puede cambiar y
+        # adivinar UNO y no registrar nada es como llegamos aqui.
+        agente = None
+        for k in ("subagent_type", "subagentType", "agent_type", "agentType",
+                  "agent", "agent_name", "name"):
+            v = payload.get(k)
+            if isinstance(v, str) and v.strip():
+                agente = v.strip()
+                break
         record = {
             "event": "SubagentStop",
-            "agent": payload.get("subagent_type") or "(unspecified)",
+            "agent": agente,                      # None, NUNCA un nombre falso
             "description": "",
         }
+        if agente is None:
+            # LA PARTE QUE SE MECANIZA: si no se puede atribuir, registrar QUE HABIA
+            # DISPONIBLE. Un trazador que no anota lo que vio no se puede mejorar -- hubo
+            # que leer el codigo para descubrir que solo se intentaba UNA clave.
+            record["attribution"] = "UNAVAILABLE_IN_PAYLOAD"
+            record["payload_keys"] = sorted(payload.keys())[:25]
 
     if record is None:
         sys.exit(0)
