@@ -104,6 +104,45 @@ COMPROBADAS = [
 ]
 
 
+def parsea_como_yaml(ruta):
+    """H138. LA PUERTA LEIA CON REGEX Y POR ESO NO PODIA VER LO PEOR QUE LE PUEDE PASAR AL
+    FICHERO: que no sea YAML.
+
+    Medido el 2026-08-27: `braintoolbox.yaml` llevaba desde s105 SIN PARSEAR -- un valor plano
+    con `: ` dentro (`...NO DA ERROR: da un cero...`) y cuatro casos mas. Un regex sobre el
+    texto no se entera: encuentra sus 16 cifras igual, y devuelve VERDE sobre un fichero que
+    ningun consumidor de YAML puede leer. Es el modo de fallo que este proyecto llama medir la
+    FORMA en vez del EFECTO, aplicado a la puerta del documento que lo define.
+
+    Se comprueba lo primero y falla duro: sin esto, todo lo de abajo opina sobre un texto.
+    Si PyYAML no esta, se DICE -- 'no se pudo comprobar' no es 'esta bien'.
+    """
+    try:
+        import yaml
+    except ImportError:
+        return None, "PyYAML no instalado: NO SE PUDO COMPROBAR que el fichero sea YAML valido"
+    try:
+        return yaml.safe_load(io.open(ruta, encoding="utf-8")), None
+    except yaml.YAMLError as e:
+        mk = getattr(e, "problem_mark", None) or getattr(e, "context_mark", None)
+        donde = f"linea {mk.line + 1}, columna {mk.column + 1}" if mk else "sitio no reportado"
+        return False, f"NO PARSEA COMO YAML ({donde}): {getattr(e, 'problem', str(e))}"
+
+
+def escalares(nodo, salida):
+    """Todo el texto que el YAML REALMENTE contiene, para cruzarlo con lo que el regex leyo."""
+    if isinstance(nodo, dict):
+        for k, v in nodo.items():
+            salida.append(f"{k}: {v}" if not isinstance(v, (dict, list)) else str(k))
+            escalares(v, salida)
+    elif isinstance(nodo, list):
+        for v in nodo:
+            escalares(v, salida)
+    else:
+        salida.append(str(nodo))
+    return salida
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fix", action="store_true")
@@ -111,6 +150,19 @@ def main():
     if not os.path.exists(YML):
         print("no existe brain_v2/braintoolbox.yaml — el modelo de la caja no esta escrito")
         return 1
+
+    arbol, problema = parsea_como_yaml(YML)
+    if arbol is False:
+        print("BRAINTOOLBOX — ANTES DE MIRAR NINGUNA CIFRA:\n")
+        print(f"   X {problema}")
+        print("\nUn documento que no parsea no lo puede leer ningun consumidor de YAML, por muy")
+        print("bien que se lea a ojo. Las cifras de abajo NO se comprueban: primero el fichero.")
+        print("Causa habitual: un valor plano con ': ' dentro. Se arregla pasandolo a escalar")
+        print("de bloque (`clave: >` y el texto debajo, indentado) — no se pierde ni un caracter.")
+        return 1
+    if arbol is None:
+        print(f"AVISO: {problema}\n")
+
     s = io.open(YML, encoding="utf-8").read()
     m = medir()
 
@@ -133,6 +185,20 @@ def main():
             for i, k in enumerate(claves, 1):
                 trozo = trozo.replace(mt.group(i), str(m.get(k)), 1)
             nuevo = nuevo.replace(mt.group(0), trozo, 1)
+
+    # ¿el regex leyo de un VALOR de verdad, o de un comentario / un trozo muerto?
+    fantasmas = []
+    if arbol:
+        texto_real = "\n".join(escalares(arbol, []))
+        for patron, _ in COMPROBADAS:
+            mt = re.search(patron, s)
+            if mt and mt.group(0) not in texto_real:
+                fantasmas.append(mt.group(0))
+    if fantasmas:
+        print("\nLEIDAS DE TEXTO QUE EL YAML NO CONTIENE COMO VALOR (comentario o resto muerto):")
+        for f in fantasmas:
+            print(f"   ? {f[:80]}")
+        print("   Una cifra que solo vive en un comentario no la mantiene nadie.")
 
     print("\n" + "=" * 70)
     if not derivadas:

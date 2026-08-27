@@ -234,20 +234,51 @@ def marcar_visita(minero, podia, contesto):
         pass
 
 
-def contestar(minero, sujeto, respuesta, evidencia=""):
-    """Deja una respuesta REAL en el foro. Exige evidencia: sin ella no es una respuesta."""
+def contestar(minero, sujeto, respuesta, evidencia="", para=None, a_todas=False):
+    """Deja una respuesta REAL en el foro. Exige evidencia: sin ella no es una respuesta.
+
+    H139 — EL SUJETO NO IDENTIFICA UNA PREGUNTA, Y ELEGIR LA PRIMERA EN SILENCIO DEJABA EL
+    RESTO ABIERTAS PARA SIEMPRE.
+        Medido el 2026-08-27 sobre el bus: 47 preguntas, y CUATRO sujetos repetidos.
+        `CLAIM 616` son **15 preguntas** con el mismo sujeto, **15 destinatarios distintos** y
+        **texto distinto cada una** (A30_mining_bus, F1_interface_boundary_analysis,
+        A49_tier2_sod, sap_interface_intelligence...). La version anterior recorria la lista,
+        casaba por `sujeto`, contestaba la PRIMERA y hacia `return True`. Las otras 14 quedaban
+        abiertas sin que nadie lo supiera, y el foro decia "contestada" -- que es peor que
+        decir nada, porque parece cerrado.
+
+    LA IDENTIDAD DE UNA PREGUNTA ES (sujeto, para). Ahora:
+        - un solo candidato  -> se contesta.
+        - varios y `para`    -> se contesta el de ese destinatario.
+        - varios y `a_todas` -> se contestan TODAS (respuesta de nivel sujeto, el caso 616).
+        - varios y ninguno de los dos -> SE NIEGA y dice cuantas hay y a quien.
+          NUNCA elegir en silencio: un silencio parece una respuesta.
+    """
     if not str(respuesta or "").strip():
         raise ValueError("una respuesta vacia no es una respuesta")
     d = _cargar()
-    for p in d.get("preguntas") or []:
-        if str(p.get("sujeto")) == str(sujeto):
-            p.setdefault("respuestas", []).append({
-                "de": minero, "respuesta": respuesta,
-                "evidencia": evidencia or "(sin declarar -- una respuesta sin evidencia vale poco)",
-                "cuando": datetime.now(timezone.utc).strftime("%Y-%m-%d")})
-            _guardar(d)
-            return True
-    return False
+    cand = [p for p in (d.get("preguntas") or []) if str(p.get("sujeto")) == str(sujeto)]
+    if not cand:
+        return False
+    if para is not None:
+        cand = [p for p in cand if str(p.get("para")) == str(para)]
+        if not cand:
+            return False
+    if len(cand) > 1 and not a_todas:
+        destinos = ", ".join(sorted({str(p.get("para")) for p in cand}))
+        raise ValueError(
+            f"el sujeto '{sujeto}' tiene {len(cand)} preguntas abiertas, para: {destinos}.\n"
+            f"Una respuesta no las cierra todas por casualidad: pasa para='<destinatario>' si\n"
+            f"es especifica de uno, o a_todas=True si vale para los {len(cand)}.")
+    sello = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    for p in cand:
+        p.setdefault("respuestas", []).append({
+            "de": minero, "respuesta": respuesta,
+            "evidencia": evidencia or "(sin declarar -- una respuesta sin evidencia vale poco)",
+            "cuando": sello,
+            **({"alcance": f"respuesta de nivel SUJETO, aplicada a las {len(cand)}"} if len(cand) > 1 else {})})
+    _guardar(d)
+    return len(cand)
 
 
 def cerrar_colaborando(minero, puedo_contestar=None):
@@ -264,7 +295,10 @@ def cerrar_colaborando(minero, puedo_contestar=None):
         r = puedo_contestar(p) if puedo_contestar else None
         if r:
             resp, ev = (r if isinstance(r, tuple) else (r, ""))
-            if contestar(minero, p["sujeto"], resp, ev):
+            # `para=minero`: estas son SUS preguntas. Sin esto, un sujeto compartido por
+            # varios destinatarios (CLAIM 616 lo esta por 15) haria que contestar() se
+            # negara -- o, antes de H139, que este minero contestara la de OTRO.
+            if contestar(minero, p["sujeto"], resp, ev, para=minero):
                 contestadas.append(p["sujeto"])
     # DEJAR CONSTANCIA DE QUE PASO POR EL FORO. Sin esto no se puede distinguir "no habia nada
     # que contestar" de "no miro", y esa diferencia es justo lo que la puerta necesita.
