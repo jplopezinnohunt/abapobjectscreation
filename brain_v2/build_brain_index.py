@@ -206,6 +206,10 @@ the system is used that assumes people in screens is wrong before it starts.
 - **The boundary is mostly dead:** {sm.get('destinations_configured','?')} RFC destinations configured,
   **{sm.get('destinations_live','?')} live**, **{sm.get('destinations_dead','?')} dead**,
   **{sm.get('destinations_undeclared','?')} undeclared** — traffic crossing with no configuration entry.
+- **…and {sm.get('destinations_unobservable','?')} are UNOBSERVABLE, not dead** — HTTP destinations
+  driven by `cl_http_client`, whose calls write no row in the RFC audit log that this measurement
+  reads. They were counted as dead until s106 (claim 620). **A zero there means we cannot see, never
+  that nobody uses it** — deciding live/dead for those needs a different source.
 - **Write channels, derived per object class:** {' · '.join(f"{k} {v}" for k, v in sorted(ch.items(), key=lambda x: -x[1]))}
 - **An empty transaction code is a POINTER, not a gap** — usually a BAPI/RFC whose design never set
   one. Reading it as 'batch' loses the interface.

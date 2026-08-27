@@ -29,6 +29,67 @@ Build a complete **connectivity map** of UNESCO's SAP landscape:
 3. NEVER assume RFCDES is complete — some connections use hardcoded destinations in code
 4. NEVER ignore tRFC/qRFC queues (SM58/SMQ1/SMQ2) — stuck entries indicate broken interfaces
 5. NEVER extract EDIDC without date filter — IDoc tables can be enormous (10M+ rows)
+6. **NEVER read "0 observed calls" as "unused" without checking the destination's TRANSPORT** — see
+   the next section. Our own boundary algorithm published 40 such verdicts it could not support.
+
+## What the boundary measurement CAN and CANNOT see (s106, claim 620)
+
+`process_mining/interface_boundary.py` (algorithm F1) is how we tell live from dead at the boundary.
+Its entire evidence base is **`rsau_audit_history.PARAMX` — the Security Audit Log, which records
+RFC calls.** That is narrower than "all traffic", and the gap is not academic:
+
+| RFCTYPE | Transport | Can F1 see it? |
+|---|---|---|
+| `3` ABAP · `I` internal · `T` TCP/IP · `2` `S` `M` | RFC runtime | **YES** — a call writes PARAMX |
+| `G` HTTP external · `H` HTTP | `cl_http_client` | **NO** — writes no RFC audit row |
+| `L` logical · `X` driver | pointer / driver entry | **UNCERTAIN** — not confirmed to emit PARAMX |
+
+So for a type `G`/`H` destination, `observed_calls: 0` means **we cannot see**, never *nobody uses
+it*. F1 now emits those in a separate `unobservable` bucket (40 of them) instead of `dead` (187).
+Rows carry an `observability` field; `L`/`X` rows in `dead` carry a `caveat`.
+
+**The trap that produced this, worth remembering because it repeats:** F1's comment claims *"DEAD is
+now a fact rather than an artefact"* after the 400,000-row sample was removed. Removing the sample
+fixed the **coverage** of the source. It could not fix its **applicability**. Those are different
+properties, and conflating them is how a blind spot gets published as a finding.
+
+**To decide live/dead for an HTTP destination you need a different source** — ICM/HTTP log, the
+consuming application's own evidence, or reading the ABAP that calls it. Not this one.
+
+## RoleManagement (RM) — an external system we integrate with, owned by another project
+
+The case that exposed the above. `svc-prod-role.hq.int.unesco.org` sat in `dead` with 0 calls while
+being, per its owning project, a live production dependency.
+
+- **RM is NOT UNESDIR.** In UNESCO's SoapUI tree `RoleManagement` and `Unesdir` are **sibling
+  services**. Our integration map already knows UNESDIR (the directory): `ZLFNA1_DOWNLOAD_FOR_UNESDIR`
+  (FILE out, vendor master, daily) and `YHR_CREATE_MAIL_FROM_UNESDIR` (DBCON in, 93% failure).
+  RM is a different service and is **not** in the map as a flow.
+- **What it is:** the registry of *who may act*. SOAP 1.1, `http://unesco.org/rolemanagement`,
+  binding `BasicHttpBinding_Facade`, 4 operations (`GetRoleMembers`,
+  `GetCertifyingOfficersByEmployeeEmail`, `GetPlaces`, `GetEmployeeMemberships`).
+- **Who calls it:** the CRP app on D01 clnt 350, package ZCRP — via the `CallUnesdir` FunctionImport
+  on OData service `ZPSM_PROC_FORMS_SRV` → SM59 `UNESDIR_PROD` → `cl_http_client`.
+- ⛔ **Bank signatories do NOT go through RM.** RM's role catalogue happens to contain a role *named*
+  `BANK_SIGNATORY`; that is a name, not a mechanism. UNESCO bank signature authority is **SAP
+  standard** — RY nodes, `HRP1001` RELAT 007, role `BNK_APP`, execution via `OOCU_RESP` — and is
+  owned by the `bcm-signatory-panel` agent. A previous session opened a false gap by grepping the
+  foreign name against a brain that stores the concept under SAP's names, and reading the 0 as a
+  hole. That is *the alias that gives zero* (`braintoolbox.yaml`).
+
+**A NEW CHANNEL CLASS none of our 10 covers:** `CallUnesdir` (and its twin `CallSalesforce`) is a
+**generic HTTP passthrough exposed as an OData FunctionImport** — the *caller* supplies destination,
+SOAPAction and the whole envelope; the only control is a substring allowlist (`UNESDIR_*`, else
+forced to `UNESDIR_PROD`). Two consequences: you **cannot** characterise what leaves through it by
+reading the channel's code, and it is confused-deputy surface sitting in a package of ours. Consistent
+with H71 — the control has to live at the CALL and DATA layer, not the role layer.
+
+> **Source, not copied here (ADR-007 — each project owns its data):** the full skill + visual
+> companion live in the CRP project at
+> `unescrp/.claude/skills/crp/unesdir-role-management/` (README + `api-reference.md` +
+> `wsdl-reference.md` + `unesdir-role-management.html`), validated against the real hooks and DPC
+> in their session S-208 (2026-08-27, CODE-READ — D01 was unreachable, so shape not runtime).
+> **Read it there; do not fork it here.** Claims 619 / 620 / 621.
 
 ## Connection Types
 

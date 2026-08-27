@@ -61,8 +61,12 @@ the system is used that assumes people in screens is wrong before it starts.
 - **668 interface records** (derived, queryable — `brain_v2/interface_inventory.json`):
   RFC_INBOUND_OBSERVED 255 · RFC_DESTINATION 239 · RFC_CUSTOM_FM 105 · BATCH_INPUT 25 · FILE 20 · IDOC 9 · WEB_SERVICE 8 · WEBSERVICE 4 · DBCON 2 · HTTP_SERVICE 1
 - **The boundary is mostly dead:** 238 RFC destinations configured,
-  **11 live**, **227 dead**,
-  **319 undeclared** — traffic crossing with no configuration entry.
+  **11 live**, **187 dead**,
+  **321 undeclared** — traffic crossing with no configuration entry.
+- **…and 40 are UNOBSERVABLE, not dead** — HTTP destinations
+  driven by `cl_http_client`, whose calls write no row in the RFC audit log that this measurement
+  reads. They were counted as dead until s106 (claim 620). **A zero there means we cannot see, never
+  that nobody uses it** — deciding live/dead for those needs a different source.
 - **Write channels, derived per object class:** DIALOG 64 · RFC_INBOUND 40 · BATCH_JOB 19 · FILE 6 · PROGRAM 2 · WEBSERVICE_UNDETECTABLE 2 · BATCH_INPUT 1
 - **An empty transaction code is a POINTER, not a gap** — usually a BAPI/RFC whose design never set
   one. Reading it as 'batch' loses the interface.
@@ -100,7 +104,7 @@ corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta 
   El hueco real es SIN CLASIFICAR: 324,909 de 45,441,057.
 - **Situar no es explicar:** solo el **75.6%** de las ejecuciones de negocio llega a grado 3
   (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
-- Movimiento: +0.01 desde la ultima corrida · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
+- Movimiento: **no se movio** desde la ultima corrida — eso ES el hallazgo · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
 - **354 objetos por explorar** (36 custom) —
   la lista es `brain_v2/comprehension_index.json` → `keep_exploring`, ordenada por ejecuciones,
   y es el trabajo del agente `log-process-discovery`.
@@ -115,13 +119,13 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 616 | `python brain_v2/graph_queries.py search <termino>` |
+| **claims** | 620 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 145 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 15 | `python brain_v2/graph_queries.py incident <id>` |
-| **reglas** | 251 | `brain_v2/agent_rules/feedback_rules.json` |
+| **reglas** | 252 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 168 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 91 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **algoritmos** | 94 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -130,7 +134,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 91 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 94 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -345,7 +349,7 @@ lo deja — solo que nadie lo publicaba.
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A52_toolgraph` | EL BRAIN DEL BRAIN: un grafo de mis PROPIOS instrumentos con quien usa a q | Closing_Activities, Integration, Output, Procurement +1 | `brain_v2/toolgraph.json` |
+| `A52_toolgraph` | EL BRAIN DEL BRAIN: un grafo de mis PROPIOS instrumentos con quien usa a q | Closing_Activities, Integration, Master_Data_Governance, Output +2 | `brain_v2/toolgraph.json` |
 
 **el foro de mineros x e...**
 
@@ -414,6 +418,9 @@ lo deja — solo que nadie lo publicaba.
 | `A61_capability_footprint_in_log` | contestar SI UNA CAPACIDAD DEJA HUELLA ANTES DE CONCLUIR NADA DE SU SILENCIO. Se le da el conjun | `Zagentexecution/tasks/2026_08_26_inc16471_ads_log_mining/ads_outage_window_check.py` |
 | `A61_event_dating_without_a_trace` | FECHAR UN EVENTO QUE EL SISTEMA NO REGISTRA. Seis pasos: (1) comprobar si el hecho deja traza -- | `.agents/skills/sap_log_forensics/SKILL.md` |
 | `A64_authority_vs_request_delta` | SEPARAR LO QUE UN DOCUMENTO AUTORIZA DE LO QUE UN CORREO PIDE, y aplicar los cinco gates: (1) DE | `process_mining/authority_delta.py` |
+| `A65_authorised_panel_reconciliation` | RECONCILIAR QUIEN PUEDE FIRMAR CONTRA QUIEN ESTA AUTORIZADO A FIRMAR, y separar las cuatro salid | `Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py` |
+| `A66_master_data_replication_by_standard_api` | MEDIR EL HUECO REAL LEYENDO LOS DOS SISTEMAS EN VIVO Y REPLICAR POR LA API DEL OBJETO, con readb | `Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_master_sync.py` |
+| `A67_variant_write_safety` | COPIAR UNA VARIANTE SIN ROMPERLA, sabiendo que las dos formas de romperla NO DAN ERROR. (1) La l | `Zagentexecution/tasks/2026_08_21_variant_alignment/variant_align.py` |
 | `A6_frontier_with_substrate_tier` | coverage % + explicit worklist, with a third tier for technical substrate (connectivity, session | `process_mining/executed_objects_domain_map.py` |
 | `C1_component_resolution_chain` | object -> TADIR (package) -> TDEVC (component id) -> DF14L (application component) | `brain_v2/system_profile/probes/extract_component_hierarchy.py` |
 | `C3_static_edge_extraction` | parse ABAP source for reads_tables / writes_tables / calls_fms and merge the edges into the grap | `brain_v2/parse_abap_edges.py` |
@@ -478,12 +485,12 @@ _5 more open, drill by id:_ `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED
 > `python brain_v2/bank_model_explorer.py` (paso 2i del rebuild). El CRITERIO lo pone el
 > agente `bank-process-discovery`; el modelo vive en
 > `knowledge/domains/Treasury/house_bank_operating_roles.md`.
-- `NEW` - El 51% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
+- `NEW` - El 43% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
 - `NEW` - 16 cuenta(s) con extracto y CERO pagos: no pagan, COBRAN
 - `BLIND` - El extracto de FEBKO es PARCIAL: faltan 5 sociedad(es)
 - `RISK` - 10 banco(s) casa sin actividad desde 2024 o antes
 - `NEW` - 35 banco(s) ejecutan UN SOLO metodo de pago
-- `RISK` - 6 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
+- `RISK` - 4 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
 
 ## WHAT WE KNOW DEEPLY - 50 companions; the 10 densest, and what each covers
 > Do NOT re-derive these. Search any term across every store AND the companions: `python brain_v2/graph_queries.py search <term>`.
@@ -504,7 +511,7 @@ _5 more open, drill by id:_ `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4591 objects · 247 rules · 616 claims · 18 incidents · 9 closed researches)
+## Brain at a glance (4597 objects · 252 rules · 620 claims · 18 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -539,7 +546,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 247 total)
+## Rules to load first (behavioral DNA — 252 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).

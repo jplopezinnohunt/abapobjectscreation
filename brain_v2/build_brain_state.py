@@ -122,6 +122,11 @@ STORES_AL_GRAFO = [
     # y cinco de ellas no existian: el extractor caia en su fallback y publicaba ceros creibles.
     {"file": "interface_boundary.json", "key": "boundary_dead", "at": "dead",
      "name_field": "destination"},
+    # s106: los destinos HTTP salieron de `dead` a su propio cubo (claim 620). Sin esta
+    # entrada se caerian del brain_state en vez de recolocarse — el arreglo perderia 40
+    # destinos, que es justo lo contrario de lo que pretende (CP-002 preservar primero).
+    {"file": "interface_boundary.json", "key": "boundary_unobservable", "at": "unobservable",
+     "name_field": "destination"},
     {"file": "interface_boundary.json", "key": "boundary_live", "at": "live",
      "name_field": "destination"},
     {"file": "interface_boundary.json", "key": "boundary_undeclared", "at": "undeclared",

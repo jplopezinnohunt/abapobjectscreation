@@ -13,9 +13,18 @@ The algorithm, as specified in the catalogue:
         ICFSERVICE  HTTP services (what is exposed)
   2. CORRELATE configuration against OBSERVED TRAFFIC. This is the core move and the one
      a hand-written map cannot make:
-        configured + no traffic  -> DEAD (a maintenance and attack surface nobody uses)
-        traffic + not configured -> UNDECLARED (something crosses the boundary off-map)
-        configured + traffic     -> LIVE
+        configured + traffic       -> LIVE
+        configured + no traffic    -> DEAD (a maintenance and attack surface nobody uses)
+                                      ...but ONLY if this source could have seen the traffic
+        transport we cannot see    -> UNOBSERVABLE (added s106, claim 620): the evidence base
+                                      is the RFC audit log, and an HTTP destination driven by
+                                      cl_http_client writes no row in it. Reporting those as
+                                      DEAD published 38 verdicts the evidence never supported.
+        traffic + not configured   -> UNDECLARED (something crosses the boundary off-map)
+
+     The rule this encodes: an instrument states what it CAN see, and names what it cannot.
+     A zero from a source that does not cover the case is not a finding — it is a blind spot
+     wearing a finding's clothes.
   3. CLASSIFY direction and volume, and bind each flow to the process flows it serves.
   4. DIFF against the previous run — a new interface can CHANGE THE MEANING of a domain,
      which is exactly the interpretation trigger already declared in check_triggers.
@@ -48,6 +57,33 @@ RFCTYPE = {"3": "ABAP (RFC)", "T": "TCP/IP (external program)", "H": "HTTP",
            "G": "HTTP external", "I": "internal", "L": "logical", "X": "driver",
            "2": "R/2", "S": "SNA/CPIC", "M": "CMC"}
 
+# CAN THIS INSTRUMENT SEE A GIVEN DESTINATION AT ALL? (added s106, claim 620)
+#
+# Step 2 correlates configuration against rsau_audit_history.PARAMX — the SECURITY AUDIT
+# LOG, which records RFC CALLS. That is the whole evidence base, and it does not cover
+# every transport a destination can use:
+#
+#   OBSERVABLE   the destination is driven by the RFC runtime, so a call writes PARAMX.
+#   UNOBSERVABLE the destination is driven by cl_http_client (HTTP), which is NOT RFC and
+#                writes no audit row here. Zero observed calls therefore means WE CANNOT
+#                SEE, not "nobody uses it" — calling those DEAD is a claim the evidence
+#                cannot support. Measured case: svc-prod-role.hq.int.unesco.org (the
+#                UNESCO RoleManagement service) sat in DEAD with 0 calls while a documented
+#                caller reaches that host through cl_http_client=>create_by_destination.
+#   UNCERTAIN    'L' is a POINTER to another destination (traffic is recorded under the
+#                target, so 0 here can be correct AND meaningless) and 'X' is a driver
+#                entry. Neither is confirmed to emit PARAMX, so neither earns a verdict.
+#
+# Removing the old 400,000-row sample fixed the COVERAGE of this source. It did not — and
+# could not — fix its APPLICABILITY. Those are different properties, and conflating them is
+# how a blind spot gets published as a finding.
+OBSERVABILITY = {
+    "3": "OBSERVABLE", "I": "OBSERVABLE", "T": "OBSERVABLE",
+    "2": "OBSERVABLE", "S": "OBSERVABLE", "M": "OBSERVABLE",
+    "G": "UNOBSERVABLE", "H": "UNOBSERVABLE",
+    "L": "UNCERTAIN", "X": "UNCERTAIN",
+}
+
 
 def _rows(con, sql, params=()):
     try:
@@ -69,8 +105,10 @@ def main():
         m = re.search(r"H=([^,]+)", opts or "")
         if m:
             host = m.group(1).strip()
-        destinations[dest] = {"type": RFCTYPE.get((rtype or "").strip(), rtype),
-                              "host": host, "configured": True}
+        code = (rtype or "").strip()
+        destinations[dest] = {"type": RFCTYPE.get(code, rtype), "host": host,
+                              "configured": True,
+                              "observability": OBSERVABILITY.get(code, "UNCERTAIN")}
 
     idocs = defaultdict(lambda: {"count": 0, "partners": set(), "direction": set()})
     for idoctp, mestyp, sndprn, rcvprn, status in _rows(
@@ -141,7 +179,7 @@ def main():
     print(f"  FULL scan (no sampling): {len(rows):,} aggregated rows, "
           f"{len(parsed):,} distinct caller strings")
 
-    live, dead, undeclared = [], [], []
+    live, dead, unobservable, undeclared = [], [], [], []
     for dest, meta in destinations.items():
         n = seen_dest.get(dest, 0)
         row = {"destination": dest, **meta, "observed_calls": n}
@@ -152,7 +190,15 @@ def main():
             row["serves_domains"] = sorted({d for d in
                                             (domain_of_function_module(f) for f, _ in top) if d})
             live.append(row)
+        elif meta["observability"] == "UNOBSERVABLE":
+            # NOT dead — unseen. This source cannot record its transport at all.
+            row["why"] = ("HTTP transport (cl_http_client), which writes no RFC audit row — "
+                          "0 calls here is the instrument's blind spot, not a usage fact")
+            unobservable.append(row)
         else:
+            if meta["observability"] == "UNCERTAIN":
+                row["caveat"] = ("transport not confirmed to emit PARAMX — treat DEAD as "
+                                 "unproven for this type")
             dead.append(row)
     for dest, n in sorted(seen_dest.items(), key=lambda x: -x[1]):
         if dest not in destinations:
@@ -175,8 +221,10 @@ def main():
             prev = json.load(open(PREV, encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             prev = {}
+    # every bucket, or a destination that merely MOVED bucket reads as vanished/appeared
     prev_dests = {d["destination"] for d in
-                  (prev.get("live", []) + prev.get("dead", []))} if prev else set()
+                  (prev.get("live", []) + prev.get("dead", [])
+                   + prev.get("unobservable", []))} if prev else set()
     appeared = sorted(set(destinations) - prev_dests) if prev_dests else []
     vanished = sorted(prev_dests - set(destinations)) if prev_dests else []
 
@@ -190,6 +238,7 @@ def main():
             "destinations_configured": len(destinations),
             "destinations_live": len(live),
             "destinations_dead": len(dead),
+            "destinations_unobservable": len(unobservable),
             "destinations_undeclared": len(undeclared),
             "idoc_message_types": len(idocs),
             "idoc_documents": sum(v["count"] for v in idocs.values()),
@@ -197,13 +246,23 @@ def main():
             "http_services_active": http_active,
         },
         "findings": {
-            "DEAD": ("configured destinations with zero observed traffic — maintenance and "
-                     "attack surface that nobody uses"),
+            "DEAD": ("configured destinations, driven by a transport this source CAN see, "
+                     "with zero observed traffic — maintenance and attack surface that "
+                     "nobody uses"),
+            "UNOBSERVABLE": ("configured destinations whose transport writes no RFC audit "
+                             "row (HTTP via cl_http_client). We CANNOT SEE them; this is "
+                             "never evidence that nobody uses them. To decide live/dead "
+                             "for these you need a different source than the RFC audit "
+                             "log. Split out s106 — they used to be reported as DEAD"),
             "UNDECLARED": ("traffic crossing the boundary with no configuration entry — "
                            "something is talking to this system off-map"),
         },
+        "_evidence_base": ("rsau_audit_history.PARAMX — the Security Audit Log, which "
+                           "records RFC CALLS. Every live/dead verdict here is only as wide "
+                           "as that source; see `observability` on each destination row."),
         "live": sorted(live, key=lambda x: -x["observed_calls"]),
         "dead": sorted(dead, key=lambda x: x["destination"]),
+        "unobservable": sorted(unobservable, key=lambda x: x["destination"]),
         "undeclared": undeclared[:40],
         "idoc_flows": idoc_flows[:30],
         "batch_jobs": file_jobs,
@@ -219,7 +278,10 @@ def main():
     print(f"wrote {OUT}")
     print(f"  destinations: {s['destinations_configured']} configured — "
           f"{s['destinations_live']} LIVE, {s['destinations_dead']} DEAD, "
+          f"{s['destinations_unobservable']} UNOBSERVABLE, "
           f"{s['destinations_undeclared']} UNDECLARED")
+    if s["destinations_unobservable"]:
+        print(f"    ^ UNOBSERVABLE = HTTP transport, no RFC audit row. NOT a usage verdict.")
     print(f"  IDoc: {s['idoc_message_types']} message types, {s['idoc_documents']:,} documents")
     print(f"  jobs: {s['scheduled_jobs']:,} · HTTP services active: {s['http_services_active']:,}")
     if live:
