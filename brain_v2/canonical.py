@@ -22,6 +22,35 @@ re-implemented the lookup. This module is the lookup. Import it; do not re-deriv
     aliases_of("PSM_FM")    -> ["PSM_FM", "PSM"]
 """
 import json
+
+# H142 (s107) — LA FICHA QUE CONVIERTE A ESTE MODULO EN NODO DEL TOOLGRAPH.
+# Hasta s107 el grafo medía si se LEEN los skills. Un helper no era nodo, así que no podía
+# tener lector, así que **que se ignorara era invisible** — y este módulo es la prueba de que
+# eso importa: se escribió en s097 porque el mismo defecto salió TRES veces, su docstring dice
+# "Import it; do not re-derive it", y en s106 el agente resolvió alias a mano tres veces más y
+# publicó DOS hallazgos falsos. Escribirlo no bastó; documentarlo no bastó; nada medía que se
+# ignorase. `senales` dice qué idioma delata a alguien re-resolviendo este problema: de ahí
+# sale la arista DEBERIA_USAR, que es a los helpers lo que DEBERIA_LEER es a los skills.
+HELPER = {
+    "resuelve": "resolver un nombre de dominio a su clave canonica, y comparar dos nombres "
+                "sabiendo sus alias (canonical / aliases_of / same)",
+    "senales": [r"[\"']aliases[\"']", r"canonical_key", r"subdomain_aliases"],
+    # Exentos POR DISENO, nunca por comodidad: son los que definen o vigilan las tablas de
+    # alias, asi que tienen que tocarlas en crudo. La ruta se escribe COMPLETA y verificada --
+    # la primera version puso `Zagentexecution/quality_checks/validate_ontology.py` y ese
+    # fichero vive en `brain_v2/`, asi que la exencion no aplicaba a nada y el guardian de la
+    # ontologia salia acusado por hacer su trabajo. Una exencion con la ruta mal es peor que
+    # ninguna: silencia lo que no toca y deja pasar lo que si.
+    "exentos": [
+        "brain_v2/canonical.py",
+        "brain_v2/validate_ontology.py",
+        "Zagentexecution/quality_checks/canonical_usage_lint.py",
+    ],
+    "por_que_duele_ignorarlo": "un skill no leido es conocimiento que no se aplica; un helper "
+                              "no usado es una funcion que YA resuelve el problema y que se "
+                              "reescribe peor. El segundo produce hallazgos FALSOS, no solo "
+                              "pobres -- y un alias mal resuelto no da error: da un CERO.",
+}
 from functools import lru_cache
 from pathlib import Path
 

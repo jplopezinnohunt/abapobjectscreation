@@ -157,6 +157,18 @@ Never produce only the markdown doc and stop. The brain update is mandatory.
 - [ ] Stale references in old domain folders fixed
 - [ ] Result reported in <300 words back to caller
 
+## Who you hand work to (added s107)
+
+| hand to | when |
+|---|---|
+| `document-output-discovery` | the ticket is **a document that did not come out** — a PDF, a form, a printout. Ask **whether the channel was alive** before you look for a defect in any program: on INC-000016471 the channel that renders every PDF in the house was down for three working days and the cause was in no ABAP. A dead channel makes every code trace a wild goose chase |
+| `bcm-signatory-panel` | the ticket is about who may approve or sign a payment for an entity |
+
+**Why this is written down:** `document-output-discovery` was, until s107, the only agent with
+**zero** collaboration edges in either direction — and it exists precisely because an orphaned
+channel went unnoticed for three days. An agent nobody calls is the same failure it was built
+to catch.
+
 ## Wrong-Path Triage (when an investigation goes sideways)
 
 If during investigation you discover you were chasing the wrong mechanism

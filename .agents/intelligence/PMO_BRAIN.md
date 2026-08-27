@@ -69,6 +69,19 @@
 > - **H140 CERRADO.** El agent-finder ya tiene minero: **A69_agent_roster_enumeration**
 >   (`record_agent_roster.py`), con `UNOBSERVABLE` en su salida y en su `lo_que_NO_puede` para
 >   la mitad del harness, que no es enumerable desde disco POR CONSTRUCCION.
+> - **H141 CERRADO.** `document-output-discovery` era el UNICO aislado de verdad (0 aristas en
+>   los dos sentidos); los otros 4 "sin salida" SI recibian delegacion -- el agregado juntaba
+>   dos cosas distintas y por eso no se podia accionar. Tabla de entrega escrita en los 5, mas
+>   la entrada `incident-analyst -> document-output-discovery` (antes de buscar el defecto en
+>   un programa, saber si el canal estaba vivo). **DELEGA 26 -> 42, entregas reales 39,
+>   aislados 0.** Y de paso: **nombrar no es entregar** -- 4 de las 26 originales eran
+>   menciones de estilo, ahora separadas en `salud`.
+> - **H142 CERRADO.** El HELPER es un tipo de NODO del toolgraph. Se DERIVA el nodo y `USA`
+>   de los imports (2+ importadores = compartido: son **10**, no uno -- `metodo.py` lo importan
+>   35 modulos); se DECLARA solo lo que no se deriva, un dict `HELPER` con `senales`, de donde
+>   sale **`DEBERIA_USAR`**. Cruzado contra `canonical_usage_lint`, que ya existia: **coinciden**
+>   en los 3 ficheros del alcance comun. **Abierto y nombrado:** 1 de 10 tiene ficha, asi que
+>   el abandono de los otros 9 sigue sin medirse.
 > - **H143 NUEVO** (mio, medido violandolo): el guardia de escritura sobre stores solo casa
 >   `Write|Edit|MultiEdit` — una escritura por Bash no lo dispara, y esta sesion trabaja por
 >   Bash por instruccion del harness. Ver H143 abajo.

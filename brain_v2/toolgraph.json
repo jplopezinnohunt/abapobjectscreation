@@ -12,6 +12,7 @@
       "CLASE_MINERIA": 12,
       "AGENTE": 14,
       "GATE": 62,
+      "HELPER": 10,
       "MEMORIA": 94
     },
     "aristas": {
@@ -20,8 +21,10 @@
       "ATERRIZA_EN": 106,
       "DESCUBRE": 85,
       "INVOCA": 42,
-      "DELEGA": 26,
+      "DELEGA": 42,
       "VIGILA": 80,
+      "USA": 87,
+      "DEBERIA_USAR": 5,
       "RECUERDA": 94
     }
   },
@@ -96,16 +99,40 @@
       "conectividad_pct": 48.8,
       "_que_significa": "de todo el conocimiento que un instrumento DEBERIA leer, que porcentaje lee de verdad. Es el termometro del bucle: si una sesion no lo sube, conecto menos de lo que solto"
     },
-    "colaboracion_entre_agentes": {
-      "delega": 26,
-      "agentes_que_no_delegan_en_nadie": [
-        "batch-input-explorer",
-        "document-output-discovery",
-        "fx-revaluation-scope",
-        "log-process-discovery",
-        "variant-intelligence"
+    "helpers": {
+      "cuantos": 10,
+      "con_ficha_HELPER": 1,
+      "usa": 87,
+      "deberia_usar": 5,
+      "sin_ficha_no_pueden_tener_DEBERIA_USAR": [
+        "brain_v2/component_map.py",
+        "brain_v2/rebuild_lock.py",
+        "process_mining/ask.py",
+        "process_mining/caller_parse.py",
+        "process_mining/gold_ref.py",
+        "process_mining/metodo.py",
+        "process_mining/mining_bus.py",
+        "process_mining/rfc_process_classifier.py",
+        "scripts/scaffold_diagram.py"
       ],
-      "_que_significa": "un agente que no nombra a ningun otro trabaja solo. Hasta 2026-08-26 esto valia CERO y el grafo publicaba 10 por contar bucles de memoria como colaboracion"
+      "_que_significa": "H142. Un HELPER no era nodo, luego no podia tener lector, luego que se ignorara era INVISIBLE. Y la diferencia con un skill importa: un skill no leido es conocimiento que no se aplica; un helper no usado es una funcion que YA resuelve el problema y que alguien reescribe PEOR -- produce hallazgos FALSOS, no solo pobres.",
+      "_lo_derivado_y_lo_declarado": "el nodo y USA se DERIVAN de los imports reales (2+ importadores = helper compartido). DEBERIA_USAR necesita saber QUE PROBLEMA resuelve, y eso no se deriva: lo declara el modulo en un dict `HELPER` con sus `senales`, misma convencion que `QUALITY_CHECK`. Un helper sin ficha aparece igual, pero su abandono sigue sin medirse -- por eso se listan.",
+      "_limite": "USA cuenta un IMPORT, no una llamada. Importar y no llamar cuenta igual que usarlo bien -- mismo techo que el LEE. Y las senales solo alcanzan a ficheros de brain_v2/, scripts/, process_mining/ y quality_checks/."
+    },
+    "colaboracion_entre_agentes": {
+      "delega": 42,
+      "delega_ENTREGA_declarada": 39,
+      "delega_solo_MENCION": 3,
+      "menciones_que_no_son_entrega": [
+        "bank-process-discovery -> process-guardian: - **No añades ceremonia.** Preferencia fija, como el `process-guardian`:",
+        "bcm-signatory-panel -> authority-doc-reader: Lo que el reader te entrega ya estructurado lo produce `authority-doc-reader`. Tu no lees ",
+        "brain-steward -> process-guardian: - **`process-guardian`** — guards ABAP CHANGE discipline (deploy evidence). Not knowledge."
+      ],
+      "agentes_que_no_delegan_en_nadie": [],
+      "agentes_AISLADOS_en_los_dos_sentidos": [],
+      "_que_significa": "un agente que no nombra a ningun otro trabaja solo. Hasta 2026-08-26 esto valia CERO y el grafo publicaba 10 por contar bucles de memoria como colaboracion",
+      "_y_nombrar_no_es_entregar": "s107: NOMBRAR a otro agente no es PASARLE trabajo. Se separan las dos cifras porque contar una mencion de estilo como colaboracion es el mismo defecto que el LEE, que cuenta una cita como una lectura. La cifra que vale es delega_ENTREGA_declarada",
+      "_y_no_delegar_no_es_estar_aislado": "un agente sin salida puede estar perfectamente integrado si OTROS le delegan. El aislamiento real es no tener ninguna arista en NINGUN sentido -- eso es lo que mide H141"
     },
     "exploracion": {
       "mineros": 72,
@@ -2884,7 +2911,7 @@
     "batch-input-explorer": {
       "tipo": "AGENTE",
       "nombre": "batch-input-explorer",
-      "bytes": 17348
+      "bytes": 17946
     },
     "bcm-signatory-panel": {
       "tipo": "AGENTE",
@@ -2899,22 +2926,22 @@
     "document-output-discovery": {
       "tipo": "AGENTE",
       "nombre": "document-output-discovery",
-      "bytes": 7567
+      "bytes": 9019
     },
     "fx-revaluation-scope": {
       "tipo": "AGENTE",
       "nombre": "fx-revaluation-scope",
-      "bytes": 13788
+      "bytes": 14445
     },
     "incident-analyst": {
       "tipo": "AGENTE",
       "nombre": "incident-analyst",
-      "bytes": 13868
+      "bytes": 14708
     },
     "log-process-discovery": {
       "tipo": "AGENTE",
       "nombre": "log-process-discovery",
-      "bytes": 12624
+      "bytes": 13146
     },
     "master-data-sync": {
       "tipo": "AGENTE",
@@ -2939,7 +2966,7 @@
     "variant-intelligence": {
       "tipo": "AGENTE",
       "nombre": "variant-intelligence",
-      "bytes": 8722
+      "bytes": 9301
     },
     "agent_invocation_check": {
       "tipo": "GATE",
@@ -3250,6 +3277,86 @@
       "tipo": "GATE",
       "nombre": "work_triad_check",
       "tier": "gate"
+    },
+    "helper:canonical": {
+      "tipo": "HELPER",
+      "nombre": "helper:canonical",
+      "fichero": "brain_v2/canonical.py",
+      "usuarios": 11,
+      "resuelve": "resolver un nombre de dominio a su clave canonica, y comparar dos nombres sabiendo sus alias (canonical / aliases_of / same)",
+      "declarado": true
+    },
+    "helper:component_map": {
+      "tipo": "HELPER",
+      "nombre": "helper:component_map",
+      "fichero": "brain_v2/component_map.py",
+      "usuarios": 9,
+      "resuelve": null,
+      "declarado": false
+    },
+    "helper:rebuild_lock": {
+      "tipo": "HELPER",
+      "nombre": "helper:rebuild_lock",
+      "fichero": "brain_v2/rebuild_lock.py",
+      "usuarios": 2,
+      "resuelve": null,
+      "declarado": false
+    },
+    "helper:scaffold_diagram": {
+      "tipo": "HELPER",
+      "nombre": "helper:scaffold_diagram",
+      "fichero": "scripts/scaffold_diagram.py",
+      "usuarios": 2,
+      "resuelve": null,
+      "declarado": false
+    },
+    "helper:ask": {
+      "tipo": "HELPER",
+      "nombre": "helper:ask",
+      "fichero": "process_mining/ask.py",
+      "usuarios": 2,
+      "resuelve": null,
+      "declarado": false
+    },
+    "helper:caller_parse": {
+      "tipo": "HELPER",
+      "nombre": "helper:caller_parse",
+      "fichero": "process_mining/caller_parse.py",
+      "usuarios": 4,
+      "resuelve": null,
+      "declarado": false
+    },
+    "helper:gold_ref": {
+      "tipo": "HELPER",
+      "nombre": "helper:gold_ref",
+      "fichero": "process_mining/gold_ref.py",
+      "usuarios": 14,
+      "resuelve": null,
+      "declarado": false
+    },
+    "helper:metodo": {
+      "tipo": "HELPER",
+      "nombre": "helper:metodo",
+      "fichero": "process_mining/metodo.py",
+      "usuarios": 35,
+      "resuelve": null,
+      "declarado": false
+    },
+    "helper:mining_bus": {
+      "tipo": "HELPER",
+      "nombre": "helper:mining_bus",
+      "fichero": "process_mining/mining_bus.py",
+      "usuarios": 6,
+      "resuelve": null,
+      "declarado": false
+    },
+    "helper:rfc_process_classifier": {
+      "tipo": "HELPER",
+      "nombre": "helper:rfc_process_classifier",
+      "fichero": "process_mining/rfc_process_classifier.py",
+      "usuarios": 2,
+      "resuelve": null,
+      "declarado": false
     },
     "mem:D6_aggregate_before_resolve#3": {
       "tipo": "MEMORIA",
@@ -6189,14 +6296,14 @@
     {
       "de": "bank-process-discovery",
       "rel": "INVOCA",
-      "a": "A53_skill_binding_gate",
-      "via": "skill_binding_check.py"
+      "a": "A44_model_gap_exploration",
+      "via": "bank_model_explorer.py"
     },
     {
       "de": "bank-process-discovery",
       "rel": "INVOCA",
-      "a": "A44_model_gap_exploration",
-      "via": "bank_model_explorer.py"
+      "a": "A53_skill_binding_gate",
+      "via": "skill_binding_check.py"
     },
     {
       "de": "batch-input-explorer",
@@ -6243,8 +6350,8 @@
     {
       "de": "document-output-discovery",
       "rel": "INVOCA",
-      "a": "A52_toolgraph",
-      "via": "graph_queries.py"
+      "a": "A60_outbound_channel_availability",
+      "via": "ads_availability_check.py"
     },
     {
       "de": "document-output-discovery",
@@ -6255,14 +6362,8 @@
     {
       "de": "document-output-discovery",
       "rel": "INVOCA",
-      "a": "A60_outbound_channel_availability",
-      "via": "ads_availability_check.py"
-    },
-    {
-      "de": "document-output-discovery",
-      "rel": "INVOCA",
-      "a": "A30_mining_bus",
-      "via": "mining_bus.py"
+      "a": "A52_toolgraph",
+      "via": "graph_queries.py"
     },
     {
       "de": "document-output-discovery",
@@ -6271,10 +6372,16 @@
       "via": "graph_queries.py"
     },
     {
+      "de": "document-output-discovery",
+      "rel": "INVOCA",
+      "a": "A30_mining_bus",
+      "via": "mining_bus.py"
+    },
+    {
       "de": "fx-revaluation-scope",
       "rel": "INVOCA",
-      "a": "A39_fx_revaluation_scope_by_nature",
-      "via": "fx_revaluation_scope_check.py"
+      "a": "A47_ob09_vs_variant_check",
+      "via": "ob09_vs_variant_check.py"
     },
     {
       "de": "fx-revaluation-scope",
@@ -6291,26 +6398,14 @@
     {
       "de": "fx-revaluation-scope",
       "rel": "INVOCA",
-      "a": "A47_ob09_vs_variant_check",
-      "via": "ob09_vs_variant_check.py"
+      "a": "A39_fx_revaluation_scope_by_nature",
+      "via": "fx_revaluation_scope_check.py"
     },
     {
       "de": "incident-analyst",
       "rel": "INVOCA",
       "a": "A65_authorised_panel_reconciliation",
       "via": "bcm_signatory_reconciliation_check.py"
-    },
-    {
-      "de": "log-process-discovery",
-      "rel": "INVOCA",
-      "a": "A4_ordered_classifier_ladder",
-      "via": "executed_objects_domain_map.py"
-    },
-    {
-      "de": "log-process-discovery",
-      "rel": "INVOCA",
-      "a": "A6_frontier_with_substrate_tier",
-      "via": "executed_objects_domain_map.py"
     },
     {
       "de": "log-process-discovery",
@@ -6333,8 +6428,26 @@
     {
       "de": "log-process-discovery",
       "rel": "INVOCA",
+      "a": "A4_ordered_classifier_ladder",
+      "via": "executed_objects_domain_map.py"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "INVOCA",
+      "a": "A6_frontier_with_substrate_tier",
+      "via": "executed_objects_domain_map.py"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "INVOCA",
       "a": "A19_log_reality_filter",
       "via": "log_reality_filter.py"
+    },
+    {
+      "de": "master-data-sync",
+      "rel": "INVOCA",
+      "a": "A66_master_data_replication_by_standard_api",
+      "via": "gl_alignment_check.py"
     },
     {
       "de": "master-data-sync",
@@ -6349,22 +6462,10 @@
       "via": "gl_alignment_check.py"
     },
     {
-      "de": "master-data-sync",
-      "rel": "INVOCA",
-      "a": "A66_master_data_replication_by_standard_api",
-      "via": "gl_alignment_check.py"
-    },
-    {
       "de": "miner-onboarding",
       "rel": "INVOCA",
-      "a": "A32_mining_capability_census",
-      "via": "mining_capability_census.py"
-    },
-    {
-      "de": "miner-onboarding",
-      "rel": "INVOCA",
-      "a": "E3_trigger_evaluation",
-      "via": "check_triggers.py"
+      "a": "A35_mining_artifact_detector",
+      "via": "mining_artifact_detector.py"
     },
     {
       "de": "miner-onboarding",
@@ -6381,32 +6482,38 @@
     {
       "de": "miner-onboarding",
       "rel": "INVOCA",
+      "a": "A32_mining_capability_census",
+      "via": "mining_capability_census.py"
+    },
+    {
+      "de": "miner-onboarding",
+      "rel": "INVOCA",
+      "a": "A35_mining_artifact_detector",
+      "via": "mining_artifact_detector.py"
+    },
+    {
+      "de": "miner-onboarding",
+      "rel": "INVOCA",
       "a": "A28_graph_landing",
       "via": "graph_landing_check.py"
     },
     {
       "de": "miner-onboarding",
       "rel": "INVOCA",
-      "a": "A35_mining_artifact_detector",
-      "via": "mining_artifact_detector.py"
-    },
-    {
-      "de": "miner-onboarding",
-      "rel": "INVOCA",
-      "a": "A35_mining_artifact_detector",
-      "via": "mining_artifact_detector.py"
-    },
-    {
-      "de": "mining-arbiter",
-      "rel": "INVOCA",
-      "a": "A36_mining_capability_router",
-      "via": "ask.py"
+      "a": "E3_trigger_evaluation",
+      "via": "check_triggers.py"
     },
     {
       "de": "mining-arbiter",
       "rel": "INVOCA",
       "a": "A30_mining_bus",
       "via": "mining_bus.py"
+    },
+    {
+      "de": "mining-arbiter",
+      "rel": "INVOCA",
+      "a": "A36_mining_capability_router",
+      "via": "ask.py"
     },
     {
       "de": "mining-arbiter",
@@ -6435,132 +6542,296 @@
     {
       "de": "authority-doc-reader",
       "rel": "DELEGA",
-      "a": "bank-process-discovery"
+      "a": "bank-process-discovery",
+      "entrega": true,
+      "evidencia": "| Requisito regulatorio de un banco | `bank-process-discovery` |"
     },
     {
       "de": "authority-doc-reader",
       "rel": "DELEGA",
-      "a": "bcm-signatory-panel"
+      "a": "bcm-signatory-panel",
+      "entrega": true,
+      "evidencia": "| Panel de firmantes bancarios | `bcm-signatory-panel` |"
     },
     {
       "de": "authority-doc-reader",
       "rel": "DELEGA",
-      "a": "fx-revaluation-scope"
+      "a": "fx-revaluation-scope",
+      "entrega": true,
+      "evidencia": "| Alcance de revaluacion | `fx-revaluation-scope` |"
     },
     {
       "de": "authority-doc-reader",
       "rel": "DELEGA",
-      "a": "incident-analyst"
+      "a": "incident-analyst",
+      "entrega": true,
+      "evidencia": "| `incident-analyst` | si esto llegó como incidencia, el documento es la sección 2 de su Track B |"
     },
     {
       "de": "authority-doc-reader",
       "rel": "DELEGA",
-      "a": "master-data-sync"
+      "a": "master-data-sync",
+      "entrega": true,
+      "evidencia": "| Alta de datos maestros | `master-data-sync` |"
     },
     {
       "de": "bank-process-discovery",
       "rel": "DELEGA",
-      "a": "process-guardian"
+      "a": "process-guardian",
+      "entrega": false,
+      "evidencia": "- **No añades ceremonia.** Preferencia fija, como el `process-guardian`:"
+    },
+    {
+      "de": "batch-input-explorer",
+      "rel": "DELEGA",
+      "a": "brain-steward",
+      "entrega": true,
+      "evidencia": "| `brain-steward` | cuando encuentras una **herramienta externa nueva** que genera sesiones (fue el caso de ALLOS, buscada un año): eso es un canal de escritura"
+    },
+    {
+      "de": "batch-input-explorer",
+      "rel": "DELEGA",
+      "a": "miner-onboarding",
+      "entrega": true,
+      "evidencia": "| `miner-onboarding` | cuando tu forma de discriminar el canal deja de ser un análisis y **merece ficha de minero** |"
+    },
+    {
+      "de": "batch-input-explorer",
+      "rel": "DELEGA",
+      "a": "mining-arbiter",
+      "entrega": true,
+      "evidencia": "| `mining-arbiter` | cuando tu veredicto sobre quién creó una sesión **choca** con el de otro minero sobre el mismo objeto: no lo resuelvas por tu cuenta |"
     },
     {
       "de": "bcm-signatory-panel",
       "rel": "DELEGA",
-      "a": "authority-doc-reader"
+      "a": "authority-doc-reader",
+      "entrega": false,
+      "evidencia": "Lo que el reader te entrega ya estructurado lo produce `authority-doc-reader`. Tu no lees PDFs: tu"
     },
     {
       "de": "brain-steward",
       "rel": "DELEGA",
-      "a": "incident-analyst"
+      "a": "incident-analyst",
+      "entrega": true,
+      "evidencia": "| An incident | → route to `incident-analyst` | its 7-step output |"
     },
     {
       "de": "brain-steward",
       "rel": "DELEGA",
-      "a": "process-guardian"
+      "a": "process-guardian",
+      "entrega": false,
+      "evidencia": "- **`process-guardian`** — guards ABAP CHANGE discipline (deploy evidence). Not knowledge."
+    },
+    {
+      "de": "document-output-discovery",
+      "rel": "DELEGA",
+      "a": "brain-steward",
+      "entrega": true,
+      "evidencia": "| `brain-steward` | cuando descubres un **tipo** nuevo (un motor, un canal, un destino sin dueño) y hay que promoverlo a claim / dominio `Output` / capability_m"
+    },
+    {
+      "de": "document-output-discovery",
+      "rel": "DELEGA",
+      "a": "incident-analyst",
+      "entrega": true,
+      "evidencia": "| `incident-analyst` | cuando lo que encontraste **ya es un ticket**: un documento que no salió, un usuario esperando. Tú explicas el canal; el protocolo de inc"
+    },
+    {
+      "de": "document-output-discovery",
+      "rel": "DELEGA",
+      "a": "miner-onboarding",
+      "entrega": true,
+      "evidencia": "| `miner-onboarding` | cuando tu método de exploración deja de ser un análisis y **merece ficha de minero** — es el caso de tus huecos 1 a 4, que son mineros si"
+    },
+    {
+      "de": "fx-revaluation-scope",
+      "rel": "DELEGA",
+      "a": "incident-analyst",
+      "entrega": true,
+      "evidencia": "| `incident-analyst` | cuando lo que encuentras ya es un defecto vivo con dinero detras, no una deriva de configuracion |"
+    },
+    {
+      "de": "fx-revaluation-scope",
+      "rel": "DELEGA",
+      "a": "master-data-sync",
+      "entrega": true,
+      "evidencia": "| `master-data-sync` | cuando la cuenta que auditas **no existe en D01/V01**: no puedes concluir sobre un alcance que dev ni siquiera reproduce |"
+    },
+    {
+      "de": "fx-revaluation-scope",
+      "rel": "DELEGA",
+      "a": "variant-intelligence",
+      "entrega": true,
+      "evidencia": "| `variant-intelligence` | siempre que la pregunta sea **que se ejecuta de verdad**. Una configuracion existe para todos y se EJECUTA para algunos: quien sabe q"
     },
     {
       "de": "incident-analyst",
       "rel": "DELEGA",
-      "a": "bcm-signatory-panel"
+      "a": "bcm-signatory-panel",
+      "entrega": true,
+      "evidencia": "| `bcm-signatory-panel` | the ticket is about who may approve or sign a payment for an entity |"
+    },
+    {
+      "de": "incident-analyst",
+      "rel": "DELEGA",
+      "a": "document-output-discovery",
+      "entrega": true,
+      "evidencia": "| `document-output-discovery` | the ticket is **a document that did not come out** — a PDF, a form, a printout. Ask **whether the channel was alive** before you"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "DELEGA",
+      "a": "batch-input-explorer",
+      "entrega": true,
+      "evidencia": "| `batch-input-explorer` | cuando lo que ves ejecutarse **no lo movió una persona**: una sesión de batch input tiene otro dueño y otro canal |"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "DELEGA",
+      "a": "brain-steward",
+      "entrega": true,
+      "evidencia": "| `brain-steward` | cuando lo descubierto es un **tipo** nuevo de proceso o de actor y hay que promoverlo antes de que muera en la corrida |"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "DELEGA",
+      "a": "mining-arbiter",
+      "entrega": true,
+      "evidencia": "| `mining-arbiter` | cuando tu lectura del log **contradice** a otro minero sobre el mismo objeto, o cuando dejas una pregunta que tu instrumento no puede cerra"
     },
     {
       "de": "master-data-sync",
       "rel": "DELEGA",
-      "a": "authority-doc-reader"
+      "a": "authority-doc-reader",
+      "entrega": true,
+      "evidencia": "| `authority-doc-reader` | el alta viene de un formulario firmado (AM 3-11): él dice qué autoriza de verdad |"
     },
     {
       "de": "master-data-sync",
       "rel": "DELEGA",
-      "a": "fx-revaluation-scope"
+      "a": "fx-revaluation-scope",
+      "entrega": true,
+      "evidencia": "| `fx-revaluation-scope` | una cuenta de banco nueva no está completa sin OB09 + variante: eso lo audita él, no yo |"
     },
     {
       "de": "master-data-sync",
       "rel": "DELEGA",
-      "a": "process-guardian"
+      "a": "process-guardian",
+      "entrega": true,
+      "evidencia": "| `process-guardian` | si algo se desplegó, que fuera por el camino con puertas |"
     },
     {
       "de": "master-data-sync",
       "rel": "DELEGA",
-      "a": "variant-intelligence"
+      "a": "variant-intelligence",
+      "entrega": true,
+      "evidencia": "| `variant-intelligence` | qué variante ejecuta de verdad la sociedad — una config existe para todos y se EJECUTA para algunos |"
     },
     {
       "de": "miner-onboarding",
       "rel": "DELEGA",
-      "a": "batch-input-explorer"
+      "a": "batch-input-explorer",
+      "entrega": true,
+      "evidencia": "| `batch-input-explorer` | si mina `APQI`/`APQD` |"
     },
     {
       "de": "miner-onboarding",
       "rel": "DELEGA",
-      "a": "brain-steward"
+      "a": "brain-steward",
+      "entrega": true,
+      "evidencia": "| `brain-steward` | promueve al brain lo que el minero descubra |"
     },
     {
       "de": "miner-onboarding",
       "rel": "DELEGA",
-      "a": "log-process-discovery"
+      "a": "log-process-discovery",
+      "entrega": true,
+      "evidencia": "| `log-process-discovery` | si el candidato mina el log de ejecución |"
     },
     {
       "de": "miner-onboarding",
       "rel": "DELEGA",
-      "a": "variant-intelligence"
+      "a": "variant-intelligence",
+      "entrega": true,
+      "evidencia": "| `variant-intelligence` | si lee variantes |"
     },
     {
       "de": "mining-arbiter",
       "rel": "DELEGA",
-      "a": "batch-input-explorer"
+      "a": "batch-input-explorer",
+      "entrega": true,
+      "evidencia": "| `log-process-discovery` · `batch-input-explorer` · `variant-intelligence` | los mineros cuyo desacuerdo arbitras — pregúntales antes de decidir por ellos |"
     },
     {
       "de": "mining-arbiter",
       "rel": "DELEGA",
-      "a": "brain-steward"
+      "a": "brain-steward",
+      "entrega": true,
+      "evidencia": "| `brain-steward` | para promover lo establecido a claim, incidente o dominio |"
     },
     {
       "de": "mining-arbiter",
       "rel": "DELEGA",
-      "a": "log-process-discovery"
+      "a": "log-process-discovery",
+      "entrega": true,
+      "evidencia": "| `log-process-discovery` · `batch-input-explorer` · `variant-intelligence` | los mineros cuyo desacuerdo arbitras — pregúntales antes de decidir por ellos |"
     },
     {
       "de": "mining-arbiter",
       "rel": "DELEGA",
-      "a": "miner-onboarding"
+      "a": "miner-onboarding",
+      "entrega": true,
+      "evidencia": "| `miner-onboarding` | si el choque revela que un minero tiene el método incompleto |"
     },
     {
       "de": "mining-arbiter",
       "rel": "DELEGA",
-      "a": "variant-intelligence"
+      "a": "variant-intelligence",
+      "entrega": true,
+      "evidencia": "| `log-process-discovery` · `batch-input-explorer` · `variant-intelligence` | los mineros cuyo desacuerdo arbitras — pregúntales antes de decidir por ellos |"
     },
     {
       "de": "process-guardian",
       "rel": "DELEGA",
-      "a": "brain-steward"
+      "a": "brain-steward",
+      "entrega": true,
+      "evidencia": "| `brain-steward` | él promueve el conocimiento del cierre; yo audito que el cierre fuera legítimo |"
     },
     {
       "de": "process-guardian",
       "rel": "DELEGA",
-      "a": "incident-analyst"
+      "a": "incident-analyst",
+      "entrega": true,
+      "evidencia": "| `master-data-sync` / `incident-analyst` | son quienes pueden haber escrito: su evidencia es lo que audito |"
     },
     {
       "de": "process-guardian",
       "rel": "DELEGA",
-      "a": "master-data-sync"
+      "a": "master-data-sync",
+      "entrega": true,
+      "evidencia": "| `master-data-sync` / `incident-analyst` | son quienes pueden haber escrito: su evidencia es lo que audito |"
+    },
+    {
+      "de": "variant-intelligence",
+      "rel": "DELEGA",
+      "a": "brain-steward",
+      "entrega": true,
+      "evidencia": "| `brain-steward` | cuando el contenido de una variante revela una **regla de negocio** que no está en ninguna configuración — es el caso que más se pierde, por"
+    },
+    {
+      "de": "variant-intelligence",
+      "rel": "DELEGA",
+      "a": "fx-revaluation-scope",
+      "entrega": true,
+      "evidencia": "| `fx-revaluation-scope` | cuando la variante que lees es de `RFBILA00`/`SAPF100`: él decide qué cuentas quedan dentro y fuera, tú sólo dices qué ejecuta la soc"
+    },
+    {
+      "de": "variant-intelligence",
+      "rel": "DELEGA",
+      "a": "mining-arbiter",
+      "entrega": true,
+      "evidencia": "| `mining-arbiter` | cuando dos sistemas dan contenidos distintos para la misma variante y hay que decidir cuál es el bueno |"
     },
     {
       "de": "agent_invocation_check",
@@ -6580,22 +6851,7 @@
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "learned_rules.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "domain_composition.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "algorithms.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "claims.json"
+      "a": "code_sections.json"
     },
     {
       "de": "artifact_reachability_check",
@@ -6605,17 +6861,37 @@
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
+      "a": "log_reality.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
+      "a": "algorithms.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
+      "a": "learned_rules.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
       "a": "incidents.json"
     },
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "capability_model.json"
+      "a": "claims.json"
     },
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
       "a": "comprehension_index.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
+      "a": "capability_model.json"
     },
     {
       "de": "artifact_reachability_check",
@@ -6630,12 +6906,7 @@
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "log_reality.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "code_sections.json"
+      "a": "domain_composition.json"
     },
     {
       "de": "artifact_wiring_check",
@@ -6645,22 +6916,22 @@
     {
       "de": "artifact_wiring_check",
       "rel": "VIGILA",
-      "a": "incidents.json"
-    },
-    {
-      "de": "artifact_wiring_check",
-      "rel": "VIGILA",
       "a": "companions.json"
     },
     {
       "de": "artifact_wiring_check",
       "rel": "VIGILA",
-      "a": "skill_registry.json"
+      "a": "incidents.json"
     },
     {
       "de": "artifact_wiring_check",
       "rel": "VIGILA",
       "a": "algorithm_memory.json"
+    },
+    {
+      "de": "artifact_wiring_check",
+      "rel": "VIGILA",
+      "a": "skill_registry.json"
     },
     {
       "de": "brain_state_enrichment_check",
@@ -6670,7 +6941,7 @@
     {
       "de": "braintoolbox_check",
       "rel": "VIGILA",
-      "a": "toolgraph.json"
+      "a": "mining_findings.json"
     },
     {
       "de": "braintoolbox_check",
@@ -6679,11 +6950,6 @@
     },
     {
       "de": "braintoolbox_check",
-      "rel": "VIGILA",
-      "a": "mining_findings.json"
-    },
-    {
-      "de": "companion_as_skill_sweep",
       "rel": "VIGILA",
       "a": "toolgraph.json"
     },
@@ -6700,6 +6966,11 @@
     {
       "de": "companion_as_skill_sweep",
       "rel": "VIGILA",
+      "a": "toolgraph.json"
+    },
+    {
+      "de": "companion_as_skill_sweep",
+      "rel": "VIGILA",
       "a": "skill_registry.json"
     },
     {
@@ -6710,6 +6981,11 @@
     {
       "de": "finding_promotion_check",
       "rel": "VIGILA",
+      "a": "drift_signals.json"
+    },
+    {
+      "de": "finding_promotion_check",
+      "rel": "VIGILA",
       "a": "claims.json"
     },
     {
@@ -6718,9 +6994,9 @@
       "a": "algorithms.json"
     },
     {
-      "de": "finding_promotion_check",
+      "de": "fsv_alignment_check",
       "rel": "VIGILA",
-      "a": "drift_signals.json"
+      "a": "algorithm_memory.json"
     },
     {
       "de": "fsv_alignment_check",
@@ -6728,7 +7004,7 @@
       "a": "quality_checks_state.json"
     },
     {
-      "de": "fsv_alignment_check",
+      "de": "fsv_coverage_check",
       "rel": "VIGILA",
       "a": "algorithm_memory.json"
     },
@@ -6738,44 +7014,9 @@
       "a": "fsv_versions_in_use.json"
     },
     {
-      "de": "fsv_coverage_check",
-      "rel": "VIGILA",
-      "a": "algorithm_memory.json"
-    },
-    {
       "de": "fx_revaluation_scope_check",
       "rel": "VIGILA",
       "a": "algorithm_memory.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "algorithms.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "claims.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "code_inventory.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "incidents.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "interface_inventory.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "capability_model.json"
     },
     {
       "de": "graph_landing_check",
@@ -6785,17 +7026,47 @@
     {
       "de": "graph_landing_check",
       "rel": "VIGILA",
+      "a": "algorithms.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "incidents.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "claims.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "capability_model.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "code_inventory.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "interface_inventory.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
       "a": "trigger_state.json"
     },
     {
       "de": "graph_landing_check",
       "rel": "VIGILA",
-      "a": "discovery_delta.json"
+      "a": "algorithm_memory.json"
     },
     {
       "de": "graph_landing_check",
       "rel": "VIGILA",
-      "a": "algorithm_memory.json"
+      "a": "discovery_delta.json"
     },
     {
       "de": "incident_domain_knowledge_check",
@@ -6810,12 +7081,12 @@
     {
       "de": "knowledge_connectivity_check",
       "rel": "VIGILA",
-      "a": "interface_inventory.json"
+      "a": "claims.json"
     },
     {
       "de": "knowledge_connectivity_check",
       "rel": "VIGILA",
-      "a": "claims.json"
+      "a": "interface_inventory.json"
     },
     {
       "de": "knowledge_reachability_check",
@@ -6825,12 +7096,12 @@
     {
       "de": "method_memory_applied_check",
       "rel": "VIGILA",
-      "a": "algorithms.json"
+      "a": "algorithm_memory.json"
     },
     {
       "de": "method_memory_applied_check",
       "rel": "VIGILA",
-      "a": "algorithm_memory.json"
+      "a": "algorithms.json"
     },
     {
       "de": "mining_artifact_detector",
@@ -6855,12 +7126,12 @@
     {
       "de": "mining_collaboration_check",
       "rel": "VIGILA",
-      "a": "colaboracion_state.json"
+      "a": "mining_findings.json"
     },
     {
       "de": "mining_collaboration_check",
       "rel": "VIGILA",
-      "a": "toolgraph.json"
+      "a": "colaboracion_state.json"
     },
     {
       "de": "mining_collaboration_check",
@@ -6870,17 +7141,17 @@
     {
       "de": "mining_collaboration_check",
       "rel": "VIGILA",
-      "a": "mining_findings.json"
-    },
-    {
-      "de": "ob09_vs_variant_check",
-      "rel": "VIGILA",
-      "a": "quality_checks_state.json"
+      "a": "toolgraph.json"
     },
     {
       "de": "ob09_vs_variant_check",
       "rel": "VIGILA",
       "a": "algorithm_memory.json"
+    },
+    {
+      "de": "ob09_vs_variant_check",
+      "rel": "VIGILA",
+      "a": "quality_checks_state.json"
     },
     {
       "de": "process_circuit_check",
@@ -6895,12 +7166,12 @@
     {
       "de": "production_discipline_check",
       "rel": "VIGILA",
-      "a": "algorithms.json"
+      "a": "claims.json"
     },
     {
       "de": "production_discipline_check",
       "rel": "VIGILA",
-      "a": "claims.json"
+      "a": "algorithms.json"
     },
     {
       "de": "run_all",
@@ -6930,17 +7201,12 @@
     {
       "de": "work_triad_check",
       "rel": "VIGILA",
+      "a": "interface_boundary.json"
+    },
+    {
+      "de": "work_triad_check",
+      "rel": "VIGILA",
       "a": "algorithms.json"
-    },
-    {
-      "de": "work_triad_check",
-      "rel": "VIGILA",
-      "a": "code_inventory.json"
-    },
-    {
-      "de": "work_triad_check",
-      "rel": "VIGILA",
-      "a": "claims.json"
     },
     {
       "de": "work_triad_check",
@@ -6950,7 +7216,12 @@
     {
       "de": "work_triad_check",
       "rel": "VIGILA",
-      "a": "interface_inventory.json"
+      "a": "claims.json"
+    },
+    {
+      "de": "work_triad_check",
+      "rel": "VIGILA",
+      "a": "code_inventory.json"
     },
     {
       "de": "work_triad_check",
@@ -6960,7 +7231,472 @@
     {
       "de": "work_triad_check",
       "rel": "VIGILA",
-      "a": "interface_boundary.json"
+      "a": "interface_inventory.json"
+    },
+    {
+      "de": "brain_v2/comprehension_index.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "brain_v2/methods/build_domain_assets.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "brain_v2/methods/build_domain_capability_matrix.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "brain_v2/methods/validate_algorithms.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "brain_v2/system_profile/build_model_graph.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "brain_v2/system_profile/build_profile_links.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "process_mining/derive_satellites.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "process_mining/interface_boundary.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/incident_domain_knowledge_check.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/process_axis_consistency_check.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/work_triad_check.py",
+      "rel": "USA",
+      "a": "helper:canonical"
+    },
+    {
+      "de": "brain_v2/build_brain_state.py",
+      "rel": "DEBERIA_USAR",
+      "a": "helper:canonical",
+      "por": "[\\\"']aliases[\\\"']"
+    },
+    {
+      "de": "brain_v2/capability_model/snapshot_model_state.py",
+      "rel": "DEBERIA_USAR",
+      "a": "helper:canonical",
+      "por": "[\\\"']aliases[\\\"']"
+    },
+    {
+      "de": "brain_v2/build_brain_state.py",
+      "rel": "DEBERIA_USAR",
+      "a": "helper:canonical",
+      "por": "canonical_key"
+    },
+    {
+      "de": "brain_v2/rebuild_all.py",
+      "rel": "DEBERIA_USAR",
+      "a": "helper:canonical",
+      "por": "canonical_key"
+    },
+    {
+      "de": "brain_v2/capability_model/snapshot_model_state.py",
+      "rel": "DEBERIA_USAR",
+      "a": "helper:canonical",
+      "por": "canonical_key"
+    },
+    {
+      "de": "brain_v2/methods/measure_portability.py",
+      "rel": "USA",
+      "a": "helper:component_map"
+    },
+    {
+      "de": "brain_v2/methods/validate_algorithms.py",
+      "rel": "USA",
+      "a": "helper:component_map"
+    },
+    {
+      "de": "process_mining/adaptive_discovery.py",
+      "rel": "USA",
+      "a": "helper:component_map"
+    },
+    {
+      "de": "process_mining/attach_object_text.py",
+      "rel": "USA",
+      "a": "helper:component_map"
+    },
+    {
+      "de": "process_mining/derive_object_roles.py",
+      "rel": "USA",
+      "a": "helper:component_map"
+    },
+    {
+      "de": "process_mining/derive_satellites.py",
+      "rel": "USA",
+      "a": "helper:component_map"
+    },
+    {
+      "de": "process_mining/detect_drift.py",
+      "rel": "USA",
+      "a": "helper:component_map"
+    },
+    {
+      "de": "process_mining/executed_objects_domain_map.py",
+      "rel": "USA",
+      "a": "helper:component_map"
+    },
+    {
+      "de": "process_mining/interface_boundary.py",
+      "rel": "USA",
+      "a": "helper:component_map"
+    },
+    {
+      "de": "brain_v2/rebuild_all.py",
+      "rel": "USA",
+      "a": "helper:rebuild_lock"
+    },
+    {
+      "de": "brain_v2/store_write_guard_hook.py",
+      "rel": "USA",
+      "a": "helper:rebuild_lock"
+    },
+    {
+      "de": "scripts/build_basis_companion.py",
+      "rel": "USA",
+      "a": "helper:scaffold_diagram"
+    },
+    {
+      "de": "scripts/build_retro_companion.py",
+      "rel": "USA",
+      "a": "helper:scaffold_diagram"
+    },
+    {
+      "de": "process_mining/colaborar.py",
+      "rel": "USA",
+      "a": "helper:ask"
+    },
+    {
+      "de": "process_mining/mining_bus.py",
+      "rel": "USA",
+      "a": "helper:ask"
+    },
+    {
+      "de": "brain_v2/build_security_posture.py",
+      "rel": "USA",
+      "a": "helper:caller_parse"
+    },
+    {
+      "de": "process_mining/attribute_changes_to_programs.py",
+      "rel": "USA",
+      "a": "helper:caller_parse"
+    },
+    {
+      "de": "process_mining/derive_satellites.py",
+      "rel": "USA",
+      "a": "helper:caller_parse"
+    },
+    {
+      "de": "process_mining/interface_boundary.py",
+      "rel": "USA",
+      "a": "helper:caller_parse"
+    },
+    {
+      "de": "process_mining/account_classes.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/accumulate_problems.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/adaptive_discovery.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/bdc_channel_mining.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/build_p2p_log.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/executed_objects_domain_map.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/fm_executed_census.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/mine_domain.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/p2p_conformance.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/parse_syslog.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/rfc_process_classifier.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/semantic_activity_map.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/tier2_sod.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "process_mining/variant_content_mining.py",
+      "rel": "USA",
+      "a": "helper:gold_ref"
+    },
+    {
+      "de": "brain_v2/build_interface_inventory.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "brain_v2/build_security_posture.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "brain_v2/build_skill_registry.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "brain_v2/case_spine.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "brain_v2/comprehension_index.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "brain_v2/domain_composition.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "scripts/extraction/extract_fsv_structure.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/account_classes.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/adaptive_discovery.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/attribute_changes_to_programs.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/bdc_channel_mining.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/chain_lineage.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/change_governance.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/claim_resolution.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/detect_drift.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/document_lifecycle.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/executed_objects_domain_map.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/fm_executed_census.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/harvest_custom_fields.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/log_reality_filter.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/mine_domain.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/p2p_conformance.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/rfc_process_classifier.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/run_discovery_pipeline.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/semantic_activity_map.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/tier2_sod.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/variant_content_mining.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/wbs_model.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/config_transport_prerelease_check.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/fsv_alignment_check.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/fsv_coverage_check.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/fx_revaluation_scope_check.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/method_memory_applied_check.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/ob09_vs_variant_check.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "Zagentexecution/quality_checks/skill_binding_check.py",
+      "rel": "USA",
+      "a": "helper:metodo"
+    },
+    {
+      "de": "process_mining/account_classes.py",
+      "rel": "USA",
+      "a": "helper:mining_bus"
+    },
+    {
+      "de": "process_mining/ask.py",
+      "rel": "USA",
+      "a": "helper:mining_bus"
+    },
+    {
+      "de": "process_mining/bdc_channel_mining.py",
+      "rel": "USA",
+      "a": "helper:mining_bus"
+    },
+    {
+      "de": "process_mining/knowledge_propagation.py",
+      "rel": "USA",
+      "a": "helper:mining_bus"
+    },
+    {
+      "de": "process_mining/run_discovery_pipeline.py",
+      "rel": "USA",
+      "a": "helper:mining_bus"
+    },
+    {
+      "de": "process_mining/variant_content_mining.py",
+      "rel": "USA",
+      "a": "helper:mining_bus"
+    },
+    {
+      "de": "brain_v2/methods/validate_algorithms.py",
+      "rel": "USA",
+      "a": "helper:rfc_process_classifier"
+    },
+    {
+      "de": "process_mining/adaptive_discovery.py",
+      "rel": "USA",
+      "a": "helper:rfc_process_classifier"
     },
     {
       "de": "D6_aggregate_before_resolve",

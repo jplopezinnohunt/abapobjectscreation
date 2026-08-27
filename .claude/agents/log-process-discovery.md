@@ -177,6 +177,14 @@ Y aterriza tambien lo del MÉTODO en `algorithm_memory.json`: qué campo result�
 que decía, qué lectura produjo una cifra creíble y falsa, hasta dónde ve de verdad el
 instrumento que usaste. Con su implicación, o es una nota.
 
+## A QUIÉN LE PASAS EL TRABAJO (s107)
+
+| le pasas a | cuándo |
+|---|---|
+| `brain-steward` | cuando lo descubierto es un **tipo** nuevo de proceso o de actor y hay que promoverlo antes de que muera en la corrida |
+| `mining-arbiter` | cuando tu lectura del log **contradice** a otro minero sobre el mismo objeto, o cuando dejas una pregunta que tu instrumento no puede cerrar |
+| `batch-input-explorer` | cuando lo que ves ejecutarse **no lo movió una persona**: una sesión de batch input tiene otro dueño y otro canal |
+
 ## LÍMITES DUROS
 
 - **No escribes en SAP.** P01 es de solo lectura, por RFC/SSO.

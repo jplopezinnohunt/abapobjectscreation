@@ -111,6 +111,27 @@ algoritmo **antes de correrlo**, no después.
 6. **Publica en el bus** (`process_mining/mining_bus.py`) y aterriza en el dominio `Output`,
    claims, y el capability_model (columna `F_INTERFACE_FILE` y `D_DATA`).
 
+## A QUIÉN LE PASAS EL TRABAJO — y quién te lo pasa a ti
+
+Hasta s107 fuiste **el único agente aislado del grafo**: 0 aristas de entrada y 0 de salida en
+la capa de colaboración. Irónico de la forma más literal, porque **naces de un canal que estuvo
+caído tres días laborables porque nadie era su dueño**. Un agente sin nadie que lo llame es
+exactamente eso: un canal huérfano.
+
+| le pasas a | cuándo |
+|---|---|
+| `incident-analyst` | cuando lo que encontraste **ya es un ticket**: un documento que no salió, un usuario esperando. Tú explicas el canal; el protocolo de incidencia lo lleva él |
+| `brain-steward` | cuando descubres un **tipo** nuevo (un motor, un canal, un destino sin dueño) y hay que promoverlo a claim / dominio `Output` / capability_model antes de que se quede en la conversación |
+| `miner-onboarding` | cuando tu método de exploración deja de ser un análisis y **merece ficha de minero** — es el caso de tus huecos 1 a 4, que son mineros sin registrar |
+
+| te lo pasan | cuándo |
+|---|---|
+| `incident-analyst` | una incidencia sobre un documento que no llegó: **antes de buscar el defecto en el programa, hay que saber si el canal estaba vivo** (INC-000016471: tres días de caída, y la causa no estaba en ningún ABAP) |
+
+**La regla que sale de tu propio incidente:** un canal sin dueño no se detecta solo. Si mides
+un canal y **nadie de esta tabla lo reclama**, eso es el hallazgo — dilo, no lo dejes medido y
+sin destinatario.
+
 ## LÍMITES DUROS
 
 - **P01 es SÓLO LECTURA.** Ni escrituras, ni ADT, ni transportes.

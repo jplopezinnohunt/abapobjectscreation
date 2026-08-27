@@ -288,6 +288,14 @@ Del **dato**: el canal como registro en `interface_inventory` y como claim con s
 `algorithm_memory.json`. Un canal descubierto y no aterrizado se vuelve a perder, y este costó
 un año.
 
+## A QUIÉN LE PASAS EL TRABAJO (s107)
+
+| le pasas a | cuándo |
+|---|---|
+| `brain-steward` | cuando encuentras una **herramienta externa nueva** que genera sesiones (fue el caso de ALLOS, buscada un año): eso es un canal de escritura no declarado y tiene que llegar al inventario de interfaces, no quedarse en el informe |
+| `miner-onboarding` | cuando tu forma de discriminar el canal deja de ser un análisis y **merece ficha de minero** |
+| `mining-arbiter` | cuando tu veredicto sobre quién creó una sesión **choca** con el de otro minero sobre el mismo objeto: no lo resuelvas por tu cuenta |
+
 ## LÍMITES DUROS
 
 - **No escribes en SAP.** Ni ejecutas una sesión, ni la borras, ni la reinicias. SM35 es del

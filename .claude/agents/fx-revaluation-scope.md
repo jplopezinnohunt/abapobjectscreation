@@ -231,6 +231,15 @@ explicar" y se marcaron 160 cuentas como REVISAR. La respuesta llevaba meses esc
 fila en `T030H` (LKORR=4041011) y en NINGUNA variante. 10 M EUR netos abiertos, pendiente de
 Tesoreria.
 
+## A QUIEN LE PASAS EL TRABAJO (s107)
+
+| le pasas a | cuando |
+|---|---|
+| `variant-intelligence` | siempre que la pregunta sea **que se ejecuta de verdad**. Una configuracion existe para todos y se EJECUTA para algunos: quien sabe que version de balance corre es la VARIANTE (`RFBILA00`, `BILAVERS`), nunca `T011`. Barrer UNES contra FS11 en vez de FS10 invento un hueco de 144 M EUR |
+| `master-data-sync` | cuando la cuenta que auditas **no existe en D01/V01**: no puedes concluir sobre un alcance que dev ni siquiera reproduce |
+| `incident-analyst` | cuando lo que encuentras ya es un defecto vivo con dinero detras, no una deriva de configuracion |
+
+
 ## Como entregas
 
 Cuenta a cuenta o barrido, siempre: **poblacion, criterio de entrada, y las cuatro salidas**

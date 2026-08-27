@@ -146,6 +146,15 @@ variante; dos de las tres restantes tenían exposición EUR real.
 - `VARID.ENVIRONMNT`/`PROTECTED` distinguen variantes de sistema de las operativas; el prefijo
   `SAP&*` marca las entregadas por SAP, que no se tocan.
 
+## A quién le pasas el trabajo (s107)
+
+| le pasas a | cuándo |
+|---|---|
+| `brain-steward` | cuando el contenido de una variante revela una **regla de negocio** que no está en ninguna configuración — es el caso que más se pierde, porque vive en un parámetro y no en un customizing |
+| `fx-revaluation-scope` | cuando la variante que lees es de `RFBILA00`/`SAPF100`: él decide qué cuentas quedan dentro y fuera, tú sólo dices qué ejecuta la sociedad |
+| `mining-arbiter` | cuando dos sistemas dan contenidos distintos para la misma variante y hay que decidir cuál es el bueno |
+
+
 ## Salida esperada
 Un mapa **programa → variante → selección**, y explícitamente **lo configurado que queda fuera de
 toda variante**. Si el análisis toca un job de interfaz, la ruta de fichero es un entregable, no

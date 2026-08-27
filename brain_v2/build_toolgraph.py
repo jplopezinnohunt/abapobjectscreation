@@ -41,6 +41,7 @@ QUE ES, Y QUE NO ES
 Uso:  python brain_v2/build_toolgraph.py [--json]
 Aterriza en: brain_v2/toolgraph.json  ·  drill: graph_queries.py tool <nombre>
 """
+import ast
 import json
 import os
 import re
@@ -127,19 +128,40 @@ def main():
                 if any(base in str(b) for b in (v.get("bound_in") or [])):
                     arista(f[:-3], "INVOCA", k, via=base)
 
-    # ---- DELEGA: la colaboracion REAL entre agentes ----------------------------------
+    # ---- DELEGA: la colaboracion entre agentes ---------------------------------------
     # Hasta 2026-08-26 el grafo publicaba 10 aristas AGENTE->AGENTE y las 10 eran BUCLES: un
-    # agente recordando su propia leccion. La colaboracion no era escasa, era CERO. Aqui se
-    # deriva de verdad: un agente que NOMBRA a otro en su prompt le esta pasando trabajo.
+    # agente recordando su propia leccion. La colaboracion no era escasa, era CERO.
+    #
+    # s107 — Y LA CORRECCION SIGUIENTE: NOMBRAR NO ES ENTREGAR. La version anterior daba por
+    # hecho que "un agente que NOMBRA a otro le esta pasando trabajo". Medido sobre las 26
+    # aristas: la mayoria SI son entregas -- casi todos los agentes usan la misma convencion,
+    # una tabla `| agente | cuando le pasas el trabajo |` -- pero DOS son menciones de estilo.
+    # `bank-process-discovery -> process-guardian` sale de "No anades ceremonia. Preferencia
+    # fija, como el process-guardian"; e `incident-analyst -> bcm-signatory-panel`, de una
+    # frase narrativa sobre lo que ese agente no sabia. Contarlas igual infla la unica cifra
+    # que dice si colaboramos -- el mismo defecto que el `LEE`, que cuenta una CITA como una
+    # lectura. Aqui la arista se sigue creando (no se pierde la senal) pero LLEVA SU EVIDENCIA
+    # y queda clasificada, para que `salud` pueda publicar las dos cifras y no solo la alegre.
     _ag = [n for n, v in nodos.items() if v["tipo"] == "AGENTE"]
     for f in sorted(os.listdir(AGENTS)) if os.path.isdir(AGENTS) else []:
         if not f.endswith(".md"):
             continue
         yo = f[:-3]
-        t = open(os.path.join(AGENTS, f), encoding="utf-8", errors="ignore").read()
+        lineas = open(os.path.join(AGENTS, f), encoding="utf-8", errors="ignore").read().split("\n")
         for otro in _ag:
-            if otro != yo and re.search(r"\b%s\b" % re.escape(otro), t):
-                arista(yo, "DELEGA", otro)
+            if otro == yo:
+                continue
+            hits = [l for l in lineas if re.search(r"\b%s\b" % re.escape(otro), l)]
+            if not hits:
+                continue
+            # una ENTREGA se declara: fila de tabla `| agente | cuando |`, o vineta con
+            # disparador ("si ...", "cuando ...", "->", "para ..."). Lo demas es MENCION.
+            entrega = any(l.strip().startswith("|") and l.count("|") >= 3 for l in hits) or \
+                      any(re.search(r"^\s*[-*].*\b(si|cuando|para|→|->)\b", l, re.I) for l in hits)
+            arista(yo, "DELEGA", otro,
+                   entrega=bool(entrega),
+                   evidencia=next((l.strip()[:160] for l in hits
+                                   if l.strip().startswith("|")), hits[0].strip()[:160]))
 
     # ---- GATES -----------------------------------------------------------------------
     for f in sorted(os.listdir(GATES)) if os.path.isdir(GATES) else []:
@@ -153,6 +175,72 @@ def main():
         for m in set(re.findall(r"([\w-]+\.json)", t)):
             if m in nodos:
                 arista(f[:-3], "VIGILA", m)
+
+    # ---- HELPERS (H142, s107) --------------------------------------------------------
+    # EL AGUJERO QUE ESTE BLOQUE TAPA. El toolgraph medía si se LEEN los skills. Un helper no
+    # es un skill: no aparecía como nodo, luego no podía tener lector, luego que se ignorara
+    # era invisible. Y la diferencia importa mas de lo que parece: un skill no leido es
+    # conocimiento que no se aplica; un HELPER no usado es una FUNCION QUE YA RESUELVE EL
+    # PROBLEMA y que alguien reescribe peor. El segundo produce hallazgos FALSOS.
+    # El caso: `brain_v2/canonical.py` se escribio en s097 porque el mismo defecto aparecio
+    # TRES veces en tres ficheros. Su docstring dice "Import it; do not re-derive it". En s106
+    # el agente resolvio alias a mano tres veces mas y publico dos hallazgos falsos. Escribir
+    # el helper no basto; documentarlo no basto; nada MEDIA que se ignoraba.
+    #
+    # Se DERIVA lo derivable y se DECLARA solo lo que no: el nodo y `USA` salen de los
+    # imports reales (2+ importadores = helper compartido, no un script suelto); la arista
+    # DEBERIA_USAR necesita saber QUE PROBLEMA resuelve, y eso lo declara el propio modulo en
+    # un dict `HELPER` -- misma convencion que `QUALITY_CHECK` en las puertas.
+    DIRS_HELPER = [os.path.join(ROOT, d) for d in ("brain_v2", "scripts", "process_mining")]
+    fuentes = []          # (ruta_rel, texto)
+    for d in (os.path.join(ROOT, x) for x in
+              ("brain_v2", "scripts", "process_mining", "Zagentexecution/quality_checks")):
+        for raiz, subs, fs in os.walk(d):
+            subs[:] = [s for s in subs if s != "__pycache__"]
+            for f in fs:
+                if not f.endswith(".py"):
+                    continue
+                p = os.path.join(raiz, f)
+                try:
+                    fuentes.append((os.path.relpath(p, ROOT).replace("\\", "/"),
+                                    open(p, encoding="utf-8", errors="ignore").read()))
+                except OSError:
+                    pass
+
+    candidatos = {}
+    for d in DIRS_HELPER:
+        for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+            if f.endswith(".py") and not f.startswith("_"):
+                candidatos[f[:-3]] = os.path.relpath(os.path.join(d, f), ROOT).replace("\\", "/")
+
+    for mod, ruta in candidatos.items():
+        pat = re.compile(r"^\s*(?:from|import)\s+.*\b%s\b" % re.escape(mod), re.M)
+        usan = [r for r, t in fuentes if r != ruta and pat.search(t)]
+        if len(usan) < 2:                      # 0 o 1 importador: no es un helper compartido
+            continue
+        propio = next((t for r, t in fuentes if r == ruta), "")
+        decl = re.search(r"^HELPER\s*=\s*(\{.*?\n\})", propio, re.S | re.M)
+        ficha = {}
+        if decl:
+            try:
+                ficha = ast.literal_eval(decl.group(1))
+            except (ValueError, SyntaxError):
+                ficha = {}
+        nodo("HELPER", "helper:" + mod, fichero=ruta, usuarios=len(usan),
+             resuelve=ficha.get("resuelve"), declarado=bool(ficha))
+        for r in usan:
+            arista(r, "USA", "helper:" + mod)
+        # DEBERIA_USAR: opera sobre el mismo problema (una senal declarada) y NO lo importa
+        for senal in (ficha.get("senales") or []):
+            try:
+                sre = re.compile(senal)
+            except re.error:
+                continue
+            for r, t in fuentes:
+                if r == ruta or r in usan or r in (ficha.get("exentos") or []):
+                    continue
+                if sre.search(t):
+                    arista(r, "DEBERIA_USAR", "helper:" + mod, por=senal)
 
     # ---- MEMORIAS DE METODO ----------------------------------------------------------
     # Una memoria es una LECCION que un instrumento aprendio. Modelarla como arista de un nodo
@@ -220,14 +308,62 @@ def main():
                 "_que_significa": ("de todo el conocimiento que un instrumento DEBERIA leer, "
                                    "que porcentaje lee de verdad. Es el termometro del bucle: "
                                    "si una sesion no lo sube, conecto menos de lo que solto")},
+            "helpers": {
+                "cuantos": sum(1 for v in nodos.values() if v["tipo"] == "HELPER"),
+                "con_ficha_HELPER": sum(1 for v in nodos.values()
+                                        if v["tipo"] == "HELPER" and v.get("declarado")),
+                "usa": por_rel.get("USA", 0),
+                "deberia_usar": por_rel.get("DEBERIA_USAR", 0),
+                "sin_ficha_no_pueden_tener_DEBERIA_USAR": sorted(
+                    v["fichero"] for v in nodos.values()
+                    if v["tipo"] == "HELPER" and not v.get("declarado")),
+                "_que_significa": (
+                    "H142. Un HELPER no era nodo, luego no podia tener lector, luego que se "
+                    "ignorara era INVISIBLE. Y la diferencia con un skill importa: un skill no "
+                    "leido es conocimiento que no se aplica; un helper no usado es una funcion "
+                    "que YA resuelve el problema y que alguien reescribe PEOR -- produce "
+                    "hallazgos FALSOS, no solo pobres."),
+                "_lo_derivado_y_lo_declarado": (
+                    "el nodo y USA se DERIVAN de los imports reales (2+ importadores = helper "
+                    "compartido). DEBERIA_USAR necesita saber QUE PROBLEMA resuelve, y eso no "
+                    "se deriva: lo declara el modulo en un dict `HELPER` con sus `senales`, "
+                    "misma convencion que `QUALITY_CHECK`. Un helper sin ficha aparece igual, "
+                    "pero su abandono sigue sin medirse -- por eso se listan."),
+                "_limite": (
+                    "USA cuenta un IMPORT, no una llamada. Importar y no llamar cuenta igual "
+                    "que usarlo bien -- mismo techo que el LEE. Y las senales solo alcanzan "
+                    "a ficheros de brain_v2/, scripts/, process_mining/ y quality_checks/."),
+            },
             "colaboracion_entre_agentes": {
                 "delega": por_rel.get("DELEGA", 0),
+                "delega_ENTREGA_declarada": sum(
+                    1 for x in aristas if x["rel"] == "DELEGA" and x.get("entrega")),
+                "delega_solo_MENCION": sum(
+                    1 for x in aristas if x["rel"] == "DELEGA" and not x.get("entrega")),
+                "menciones_que_no_son_entrega": [
+                    f"{x['de']} -> {x['a']}: {x.get('evidencia', '')[:90]}"
+                    for x in aristas if x["rel"] == "DELEGA" and not x.get("entrega")],
                 "agentes_que_no_delegan_en_nadie": sorted(
                     n for n, v in nodos.items() if v["tipo"] == "AGENTE"
                     and not any(x["rel"] == "DELEGA" and x["de"] == n for x in aristas)),
+                "agentes_AISLADOS_en_los_dos_sentidos": sorted(
+                    n for n, v in nodos.items() if v["tipo"] == "AGENTE"
+                    and not any(x["rel"] == "DELEGA" and (x["de"] == n or x["a"] == n)
+                                for x in aristas)),
                 "_que_significa": ("un agente que no nombra a ningun otro trabaja solo. Hasta "
                                    "2026-08-26 esto valia CERO y el grafo publicaba 10 por "
-                                   "contar bucles de memoria como colaboracion")},
+                                   "contar bucles de memoria como colaboracion"),
+                "_y_nombrar_no_es_entregar": ("s107: NOMBRAR a otro agente no es PASARLE "
+                                              "trabajo. Se separan las dos cifras porque "
+                                              "contar una mencion de estilo como colaboracion "
+                                              "es el mismo defecto que el LEE, que cuenta una "
+                                              "cita como una lectura. La cifra que vale es "
+                                              "delega_ENTREGA_declarada"),
+                "_y_no_delegar_no_es_estar_aislado": ("un agente sin salida puede estar "
+                                                      "perfectamente integrado si OTROS le "
+                                                      "delegan. El aislamiento real es no "
+                                                      "tener ninguna arista en NINGUN sentido "
+                                                      "-- eso es lo que mide H141")},
             "exploracion": {
                 "mineros": sum(1 for v in nodos.values() if v["tipo"] == "MINERO"),
                 "clases_de_mineria_cubiertas": sorted(
