@@ -223,6 +223,51 @@ Each layer FEEDS the others:
 
 ### ðŸŸ¡ HIGH â€” Next available session
 
+**H137 -- EL COMPANION DE PRESUPUESTO-A-PAGO: ENCONTRARLO, Y DECIDIR SI UN COMPANION ES
+UN SKILL DE DOMINIO SIN DECLARAR (pedido del dueno, 2026-08-27).**
+
+**Lo que el dueno recuerda, en sus palabras:** este proyecto tenia un companion que recorria
+el **circuito completo de pagos** y era *"muy bueno y detallado"*. La cadena que describe:
+
+```
+PO  ->  factura  ->  si es de cierto TIPO la factura debe llevar PPC
+    ->  aprobacion por WORKFLOW  ->  y ESE workflow llama a Role Management
+    ->  pago  ->  proceso BCM, distinto SEGUN LA SOCIEDAD
+```
+
+No recuerda como estaba identificado ni donde esta. **Eso es el sintoma, no un detalle**: es
+el mismo defecto que ya medimos en s099 -- si no se llega desde los dos puntos de entrada, no
+existe. Un artefacto que el propio dueno no sabe localizar esta perdido aunque el fichero
+este en disco.
+
+**La tesis a evaluar, que es lo de fondo:** *los companions contienen IMPLICITAMENTE skills
+que se generaron para el dominio*. Si es cierto, tenemos 44 companions y solo 50 skills, y una
+parte del conocimiento de dominio esta atrapada en HTML que nadie declara como skill -- no lo
+lee ningun instrumento, no aparece en el toolgraph, y no puede tener lectores porque no es un
+nodo. Concretamente este seria el skill **presupuesto-al-pago (B2R + P2P + Payment_BCM)**,
+que hoy no existe: tenemos los dominios sueltos, no el CIRCUITO que los atraviesa.
+
+**Pista fuerte y fresca (s106):** el paso *"el workflow llama a Role Management"* CONECTA con
+el claim 619. RM lo consume CRP para resolver actores (CERTIFYING / OFFICER_IN_CHARGE /
+APPROVING / BUDGET_OFFICER); si ademas lo llama un workflow de aprobacion de facturas,
+**RM tiene un segundo consumidor que no teniamos mapeado**, y deja de ser "una cosa de CRP"
+para ser infraestructura de resolucion de actores de toda la casa. Verificarlo es parte de
+esta tarea.
+
+**Como atacarlo (orden, para no repetir el fallo del alias que da cero):**
+1. Buscar por CONTENIDO, no por nombre de fichero -- el companion de RM en unescrp se llamaba
+   `unesdir-role-management.html` y un grep por nombre no lo encontraba (S-208). Terminos:
+   PPC, BCM, workflow de aprobacion, factura, PO, y las combinaciones. Empezar por
+   `companions/` (44) y por `companions/companion_graph.json`, que los indexa.
+2. Si aparece: leerlo entero antes de opinar, y decidir que parte es SKILL (conocimiento
+   curado, se LEE), que parte es PROCESO (doc de dominio) y si falta el METODO. La triada.
+3. Si NO aparece: es una perdida real y hay que decir eso, no reconstruirlo de memoria.
+4. Cerrar la pregunta general: barrer los 44 companions y marcar cuales son de facto un skill
+   de dominio sin declarar. Eso es una respuesta MEDIDA a la tesis del dueno, no una opinion.
+
+**No confundir con H135/H136**, que son defectos del propio PMO. Esto es conocimiento de
+negocio potencialmente perdido, y vale mas.
+
 **H134 -- EL BOUNDARY LLAMA DEAD A 38 DESTINOS QUE SU EVIDENCIA NO PUEDE VER (medido 2026-08-27,
 claim 620).** `process_mining/interface_boundary.py` correlaciona `RFCDES` contra
 `rsau_audit_history.PARAMX`, que registra llamadas **RFC**. Un `cl_http_client=>create_by_destination`

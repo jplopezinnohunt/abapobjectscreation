@@ -117,9 +117,60 @@ def nombres_sap_conocidos():
     return out - DEMASIADO_COMUNES
 
 
+_TABLAS_CACHE = None
+
+
+def tablas_reales():
+    """QUE ES UNA TABLA — preguntado a la autoridad, no supuesto (s106, claim 622).
+
+    `DEMASIADO_COMUNES` ya llevaba el razonamiento correcto escrito encima: coincidir en
+    T001 no prueba que dos artefactos hablen del mismo tema. Pero era una lista DE 30
+    NOMBRES MANTENIDA A MANO, y lo que se mantiene a mano se degrada: no estaban
+    RFC_READ_TABLE (109 solapes, y es la funcion que usa TODO lector), UBO / IIEP / UIS /
+    UIL / ICTP / IBE (sociedades: 171 solapes entre las seis), F110 y DMEE (codigos de
+    transaccion), ni WAERS (un elemento de datos, o sea el TIPO de un campo).
+
+    Con SOLAPE_MINIMO=2, UNA tabla real mas RFC_READ_TABLE bastaba para fabricar una
+    arista. Medido antes del arreglo: de 302 aristas DEBERIA_LEER, solo 82 se sostenian
+    sobre dos tablas de verdad. Las otras 220 inflaban el denominador del termometro de
+    conectividad, que por eso marcaba 19,5% en vez de 47,1%.
+
+    La autoridad es TADIR — el directorio de objetos del propio SAP, ya en el Gold —
+    donde OBJECT dice QUE ES cada nombre: TABL/VIEW tabla, TRAN transaccion, DTEL
+    elemento de datos, PROG programa. 562.700 nombres TABL/VIEW.
+
+    Si TADIR no esta disponible devuelve None, y quien llama CAE AL COMPORTAMIENTO
+    ANTERIOR en vez de a un conjunto vacio: un filtro que no puede aplicarse no debe
+    silenciar todas las aristas — eso convertiria una ceguera en un cero, que es el modo
+    de fallo 'el alias que da cero'.
+    """
+    global _TABLAS_CACHE
+    if _TABLAS_CACHE is not None:
+        return _TABLAS_CACHE or None
+    out = set()
+    try:
+        g = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
+                         "p01_gold_master_data.db")
+        if os.path.exists(g):
+            con = sqlite3.connect("file:%s?mode=ro" % g, uri=True, timeout=60)
+            out = {str(r[0]).strip().upper() for r in con.execute(
+                "SELECT DISTINCT OBJ_NAME FROM tadir_obj WHERE OBJECT IN ('TABL','VIEW')")}
+            con.close()
+    except Exception:
+        out = set()
+    _TABLAS_CACHE = out
+    return out or None
+
+
 def citados(texto, conocidos):
     return {m for m in re.findall(r"\b([A-Z][A-Z0-9_/]{2,29})\b", texto or "")
             if m in conocidos}
+
+
+def solo_tablas(nombres):
+    """Los que TADIR confirma como tabla. Sin TADIR, todos — degradar, no cegar."""
+    t = tablas_reales()
+    return set(nombres) if t is None else {n for n in nombres if n.upper() in t}
 
 
 def titulos(texto, tope=14):
@@ -143,7 +194,12 @@ def main():
             "fichero": ".agents/skills/%s/SKILL.md" % d,
             "bytes": len(t),
             "de_que_habla": titulos(t),
-            "cubre_tablas": sorted(citados(t, conocidos)),
+            # DOS campos, no uno reemplazado: `cubre_nombres` PRESERVA todo lo que el skill
+            # nombra (sociedades, transacciones, procesos — informacion legitima que se
+            # perderia al filtrar), y `cubre_tablas` por fin contiene tablas, que es lo que
+            # su nombre siempre prometio. El solape se calcula sobre el segundo.
+            "cubre_nombres": sorted(citados(t, conocidos)),
+            "cubre_tablas": sorted(solo_tablas(citados(t, conocidos))),
             "leido_por": {"agentes": [], "algoritmos": []},
             "deberia_leerlo": [],
             "_por_que_importa": None,

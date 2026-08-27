@@ -29244,7 +29244,7 @@
     "claim": "LOS 27 SKILLS SIN LECTOR SON DOS PROBLEMAS DISTINTOS, Y JUNTARLOS ESCONDE EL QUE IMPORTA (medido 2026-08-26 sobre el toolgraph). DOCE tienen instrumentos que DEBERIAN leerlos y no lo hacen -- fi_domain_agent 15, sap_company_code_copy 14, sap_account_comparison 7, sap_job_intelligence 7, sap_transport_companion 7, hcm_domain_agent 5 -- y eso es perdida real: conocimiento curado que existe y no alcanza a quien opera sobre sus mismas tablas. Los otros QUINCE no los deberia leer nadie tampoco (abapgit_integration, agi_retro_agent, integration_diagram, notion_integration, parallel_html_build, sap_automated_testing...), y eso no es hueco: es tema dormido o peso muerto. Publicar '27 sin lector' como una sola cifra es el mismo defecto de denominador que costo seis falsos positivos en s102. Y UNA SEGUNDA LECTURA, con el modelo de roles de s105: `fi_domain_agent` y `hcm_domain_agent` son SKILLS nombradas 'agent'. Estan bien guardadas y MAL NOMBRADAS -- si es para leer es skill, si decide es agente, si descubre es minero -- y el nombre basta para que nadie las busque donde estan.",
     "claim_type": "measured_fact",
     "confidence": "TIER_1",
-    "status": "VERIFIED",
+    "status": "partially_superseded",
     "domain": "Brain_Architecture",
     "domain_axes": {
       "functional": "Brain_Architecture",
@@ -29266,7 +29266,8 @@
     ],
     "created_session": 105,
     "resolved_session": 105,
-    "resolution_notes": ""
+    "resolution_notes": "PARCIALMENTE SUPERADO POR EL CLAIM 622 (2026-08-27). LO QUE SIGUE EN PIE, y era lo importante: que los skills sin lector son DOS problemas distintos (perdida real frente a tema dormido) y que juntarlos esconde el que importa; y que fi_domain_agent y hcm_domain_agent son SKILLS mal nombradas 'agent'. LO QUE YA NO VALE son las CIFRAS: se calcularon sobre `cubre_tablas`, que no contenia tablas sino cualquier nombre SAP en mayusculas, asi que RFC_READ_TABLE y las sociedades fabricaban aristas. Depurado contra TADIR el reparto es 7 con deuda / 20 dormidos, no 12/15, y fi_domain_agent baja de 15 a 1 -- deja de ser la prioridad numero uno. Ironia util: este claim denunciaba un defecto de denominador ('publicar 27 sin lector como una sola cifra es el mismo defecto que costo seis falsos positivos en s102') y lo cometia en su propio ranking.",
+    "superseded_by": 622
   },
   {
     "id": 619,
@@ -29360,5 +29361,40 @@
     "created_session": 106,
     "resolved_session": 106,
     "resolution_notes": ""
+  },
+  {
+    "id": 622,
+    "claim": "EL TERMOMETRO DE CONECTIVIDAD MEDIA CONTRA UN DENOMINADOR INFLADO: DE 302 ARISTAS DEBERIA_LEER, SOLO 83 SE SOSTENIAN SOBRE DOS TABLAS DE VERDAD (medido 2026-08-27 contra TADIR). El campo se llama `cubre_tablas` y no contenia tablas: `citados()` en build_skill_registry.py captura CUALQUIER token en mayusculas de 3-30 caracteres que este en la lista de nombres SAP conocidos, y con SOLAPE_MINIMO=2 bastaba UNA tabla real mas un nombre cualquiera para fabricar la arista. Los que inflaban, clasificados por el propio TADIR: RFC_READ_TABLE en 109 de 302 solapes (es la FUNCION que usa todo lector, no una tabla); UBO 62, IIEP 31, UIS 27, UIL 20, ICTP 16, IBE 15 (SOCIEDADES -- ni figuran en TADIR); F110 31 y DMEE 13 (OBJECT=TRAN, codigos de transaccion); WAERS 21 (OBJECT=DTEL, o sea el TIPO de un campo); P2P 19 y PBC 17 (nombres de proceso y de modulo). CONSECUENCIA MEDIDA: la conectividad pasa de 19,5% a 46,8% -- y NO porque se haya conectado nada, sino porque el denominador deja de estar inflado. Y el ORDEN DE PRIORIDAD SE INVIERTE: fi_domain_agent, que encabezaba la lista con 15 instrumentos que 'deberian leerlo', baja a 1; sap_company_code_copy de 14 a 6; el reparto de los 27 skills sin lector pasa de 12-con-deuda/15-dormidos a 7-con-deuda/20-dormidos. Actuar sobre la lista vieja habria gastado el esfuerzo en el skill equivocado. LO QUE LO HACE INTERESANTE: el defecto NO era no haberlo pensado. `DEMASIADO_COMUNES` ya existia con el razonamiento exacto escrito encima -- 'coincidir en T001 o en P01 no prueba que dos artefactos hablen del mismo tema' -- pero era una lista DE 30 NOMBRES MANTENIDA A MANO, y no contenia ninguno de los doce de arriba. Es el mismo diagnostico que le hacemos a UNES_DEPOSIT (lo que se mantiene a mano se degrada) aplicado a nuestro propio instrumento: el pensamiento estaba bien y la ENUMERACION envejecio. ARREGLADO en build_skill_registry.py: `tablas_reales()` DERIVA el conjunto de TADIR (OBJECT IN TABL,VIEW -- 562.700 nombres, ya en el Gold como tadir_obj), que es la autoridad de SAP sobre QUE ES cada nombre; `cubre_tablas` por fin contiene tablas y el solape se calcula sobre el; `cubre_nombres` PRESERVA todo lo que el skill nombra (sociedades, transacciones, procesos: informacion legitima que se perderia al filtrar, CP-002); y si TADIR no esta disponible NO devuelve conjunto vacio sino que degrada al comportamiento anterior, porque un filtro inaplicable que silencia todas las aristas convierte una ceguera en un cero -- el modo 'el alias que da cero'. OJO CON LO QUE ESTO NO ARREGLA: `LEE` sigue siendo que el NOMBRE del skill aparezca como substring en el texto del consumidor (`if s in texto`), o sea una CITA, no una lectura. El termometro mide conectividad DECLARADA. Se puede subir a 100% pegando nombres en ficheros sin que nadie lea nada, y por eso la cifra nunca debe usarse sola como objetivo. Ya estaba anotado como known_unknown del braintoolbox; sigue abierto.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Brain_Architecture",
+    "domain_axes": {
+      "functional": "Brain_Architecture",
+      "process": "P2D"
+    },
+    "evidence_for": [
+      "brain_v2/build_skill_registry.py citados() + SOLAPE_MINIMO + DEMASIADO_COMUNES (el defecto)",
+      "brain_v2/build_skill_registry.py tablas_reales() + solo_tablas() (el arreglo, s106)",
+      "Gold DB tadir_obj: 497.348 TABL + 65.407 VIEW; OBJECT clasifica TRAN/DTEL/PROG/CLAS",
+      "brain_v2/skills/skill_registry.json antes 302 / despues 83 aristas deberia_leerlo",
+      "brain_v2/toolgraph.json salud (LEE 73 constante, DEBERIA_LEER 302 -> 83)"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "build_skill_registry.py",
+      "build_toolgraph.py",
+      "skill_registry.json",
+      "toolgraph.json",
+      "tadir_obj",
+      "TADIR",
+      "RFC_READ_TABLE",
+      "fi_domain_agent",
+      "sap_company_code_copy",
+      "sap_transport_companion"
+    ],
+    "created_session": 106,
+    "resolved_session": 106,
+    "resolution_notes": "Supersede en parte el claim 618, cuyas CIFRAS venian de la senal sin depurar."
   }
 ]
