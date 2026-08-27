@@ -40,6 +40,33 @@
 >    **21,25 GB** + `~/.claude` **1,95 GB**, ninguno en git, sin copia mientras `D:` no este
 >    montado. `python scripts/backup_golden.py --dest D:\claude_backups`
 >
+> ### ⬛ CERRADO EN s107 (2026-08-27) -- los cinco de la lista
+> - **H137 CERRADO el tramo principal.** El companion existe (`payment_bcm_companion.html`,
+>   828 KB) y las 11 etapas estan cubiertas: no habia nada perdido, faltaba el ORDEN. La
+>   similitud de vocabulario no puede expresar secuencia, asi que el circuito se DECLARA
+>   (`domains.json -> process_map.P2P.stages`) y el grafo gana una segunda clase de arista,
+>   `SIGUE_A` (20). Gate `process_circuit_check.py`. **Barrido de los 44 hecho:** 4 de 50
+>   companions son de facto un skill sin declarar -- `budget_rate`, `closing_activities`,
+>   `treasury_operations`, `project_wbs`, los cuatro dominios sin skill. Claims 627/628.
+>   **Sigue abierto:** escribir el skill `presupuesto-al-pago` y el veredicto del minero e2e.
+> - **H138 CERRADO.** `braintoolbox.yaml` parsea (5 cambios quirurgicos, cero contenido
+>   perdido) y su puerta comprueba el PARSEO antes de mirar ninguna cifra. Verificado
+>   rompiendolo a proposito.
+> - **H139 CERRADO.** `contestar()` casa por (sujeto, para): contesta la unica, la de `para=`,
+>   TODAS con `a_todas=True`, o SE NIEGA. Nunca la primera en silencio. 4 casos probados.
+> - **H136 CERRADO.** 788 secuencias mojibake reparadas, 0 restantes, vigilado por gate.
+> - **H135 CERRADO como DECLARACION, no como renumeracion.** 5 repeticiones son un item vivo
+>   con varias secciones (correcto); 14 son colisiones reales. **No se renumeran: medido,
+>   H113 y H112 se citan en 5 ficheros cada uno, H110 en 4, y el historial de git no se
+>   reescribe.** Declaradas en el bloque `PMO-IDS` de arriba; la puerta falla solo ante una
+>   repeticion NUEVA sin clasificar.
+> - **H140 CERRADO.** El agent-finder ya tiene minero: **A69_agent_roster_enumeration**
+>   (`record_agent_roster.py`), con `UNOBSERVABLE` en su salida y en su `lo_que_NO_puede` para
+>   la mitad del harness, que no es enumerable desde disco POR CONSTRUCCION.
+> - **H143 NUEVO** (mio, medido violandolo): el guardia de escritura sobre stores solo casa
+>   `Write|Edit|MultiEdit` — una escritura por Bash no lo dispara, y esta sesion trabaja por
+>   Bash por instruccion del harness. Ver H143 abajo.
+>
 > ### DEL AGENTE -- en este orden, empezando por H137
 > - **H137 -- PRIMERO.** El circuito presupuesto-a-pago existe REPARTIDO EN 4 PIEZAS con una
 >   junta seca (nadie cose PO->factura con factura->WF), y el grafo de companions NO CONOCE

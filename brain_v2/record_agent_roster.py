@@ -121,10 +121,20 @@ def main(argv):
 
     print("roster declarado: %d agentes" % len(decl))
     print("  propios (medidos en disco) : %d" % len(mios))
-    print("  SOLO del harness           : %d  %s"
+    # H140/s107 — la palabra tiene que ser UNOBSERVABLE, no 'solo del harness'.
+    # Son lo mismo para un humano y NO para el resto de instrumentos: `UNOBSERVABLE` es el
+    # termino que este proyecto fijo (claim 620, destinos HTTP) para 'no se puede ver', frente
+    # a 'no hay'. Decirlo de otra forma deja a quien lea esta salida sin la unica senal que
+    # distingue un CERO MEDIDO de un CERO CIEGO -- y este es un cero ciego POR CONSTRUCCION:
+    # el harness entrega esa lista al contexto del modelo, no al disco.
+    print("  UNOBSERVABLE desde disco   : %d  %s"
           % (len(rec["solo_harness"]), ", ".join(rec["solo_harness"]) or "-"))
+    print("      ^ solo del harness: no versionados, no enumerables. Un minero que cuente")
+    print("        `.claude/agents/*.md` y diga 'hay %d' comete el defecto de H134."
+          % len(mios))
     print("  propios NO ofrecidos hoy   : %d  %s"
           % (len(rec["propios_no_ofrecidos"]), ", ".join(rec["propios_no_ofrecidos"]) or "-"))
+    print("      ^ existen en disco y NO son invocables hoy: ser propio no es ser invocable")
     if prev:
         if rec["nuevos_vs_anterior"] or rec["desaparecidos_vs_anterior"]:
             print("  ⚠ CAMBIO DE CAPACIDAD frente a la declaracion anterior:")
