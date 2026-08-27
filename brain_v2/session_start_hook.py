@@ -99,6 +99,37 @@ def cycle_headline():
     return f" | loop healthy: cycle ran {days}d ago, {d.get('steps_ran')} steps, 0 failed"
 
 
+def pendiente_al_abrir():
+    """Saca el bloque PENDIENTE AL ABRIR del PMO, si lo hay.
+
+    El bloque OPEN WORK del BRAIN_INDEX saca INCIDENTES. Los items del PMO -- y las
+    decisiones que quedan en manos del dueno -- no aparecen por ningun lado, asi que una
+    sesion nueva no los encuentra. Es el defecto medido en s099: guardar no es recuperar,
+    y si no se llega desde los puntos de entrada, no existe.
+    """
+    try:
+        import re                                    # noqa: PLC0415
+        pmo = (HERE.parent / ".agents" / "intelligence" / "PMO_BRAIN.md")
+        txt = pmo.read_text(encoding="utf-8", errors="replace")
+        m = re.search(r"^> ## (PENDIENTE AL ABRIR[^\n]*)$", txt, re.M)
+        if not m:
+            return ""
+        cab = m.group(1).strip()
+        prim = re.search(r"^> 1\. \*\*([^*]+)\*\*", txt[m.end():], re.M)
+        h = re.search(r"^> - \*\*(H\d+)[^\n]*PRIMERO", txt[m.end():], re.M)
+        extra = ""
+        if h:
+            extra += " EMPIEZA POR %s." % h.group(1)
+        if prim:
+            extra += " Del dueno, sin tocar: %s" % prim.group(1).strip()
+        return (" ⛔ HAY TRABAJO REGISTRADO AL CERRAR LA SESION ANTERIOR: \"%s\" — esta al "
+                "PRINCIPIO de .agents/intelligence/PMO_BRAIN.md y NO sale en el OPEN WORK "
+                "del indice, que solo lista incidentes. LEELO ANTES DE PROPONER NADA.%s"
+                % (cab, extra))
+    except Exception:
+        return ""
+
+
 def roster_request():
     """PIDE que la sesion declare que agentes le ofrecieron. No puede medirlo el hook.
 
@@ -144,6 +175,7 @@ def main():
     meta = meta_headline()
     loop = cycle_headline()
     roster = roster_request()
+    pend = pendiente_al_abrir()
     ctx = (
         "MANDATORY FIRST ACTION (TIERED LOADING): read brain_v2/BRAIN_INDEX.md FIRST (~800 tokens, lean L1 "
         "index) — NOT the full 400K brain_state.json. Then DRILL on demand: python brain_v2/graph_queries.py "
@@ -171,10 +203,10 @@ def main():
         "invent exotic channels (ADT-HTTP, SPNEGO/password, deploy-to-P01) — that re-litigates settled constraints (rule #156). "
         "(2) CLOSE — commit SOURCE changes FOCUSED (never 'git add -A'; brain_state.json is GENERATED, don't commit it entangled) "
         "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (15.2GB measured 2026-08-17, gitignored) + ~/.claude memory "
-        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop + roster
+        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop + roster + pend
     )
     print(json.dumps({
-        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta + loop + roster,
+        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta + loop + roster + pend,
         "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": ctx},
     }))
 

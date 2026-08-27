@@ -1,4 +1,52 @@
 # UNESCO SAP â€” Project Brain + PMO Brain
+
+> ## PENDIENTE AL ABRIR - S106 (2026-08-27). EMPIEZA POR H137.
+>
+> Decision del dueno al cerrar s106: registrar todo y reabrir sesion, porque los hooks
+> nuevos SOLO CARGAN AL ARRANCAR -- el guardia de escritura sobre stores (PreToolUse) y la
+> peticion del roster de agentes no estaban activos en la sesion que los escribio.
+>
+> ### DEL DUENO -- decision o produccion, el agente NO las hace
+> 1. **EL FLAG DE UN BIT.** `YTBC_TRACE.ACTIVE='X'` para `WF_PAYMENT` en P01. Hoy la traza
+>    esta APAGADA (sus dos hermanas estan a `X` con 594 y 197 filas), y por eso la liveness
+>    del proxy a RoleManagement es INVERIFICABLE. Un flag la convierte en numero medido.
+>    Es configuracion en PRODUCCION. Claim 626.
+> 2. **EL DOBLE CONTROL DE BCM.** 3.359 de 5.757 lotes con `CHUSR = CRUSR` -- **58,4%**
+>    creados y aprobados por la misma persona -- y el evento `BCM Batch Approved` solo se
+>    emite cuando difieren, asi que el hueco sale DIBUJADO COMO VARIANTE NORMAL del proceso.
+>    Es el hallazgo de NEGOCIO mas serio de s106, no una tarea tecnica. Claim 625.
+> 3. **EL BACKUP.** Diferido explicitamente por el dueno ("luego hacemos backup"). Golden DB
+>    **21,25 GB** + `~/.claude` **1,95 GB**, ninguno en git, sin copia mientras `D:` no este
+>    montado. `python scripts/backup_golden.py --dest D:\claude_backups`
+>
+> ### DEL AGENTE -- en este orden, empezando por H137
+> - **H137 -- PRIMERO.** El circuito presupuesto-a-pago existe REPARTIDO EN 4 PIEZAS con una
+>   junta seca (nadie cose PO->factura con factura->WF), y el grafo de companions NO CONOCE
+>   LA CADENA: no hay arista entre `p2p_purpose_of_payment` y `payment_bcm_companion`. Es lo
+>   que originó s106 y sigue abierto. La cadena correcta, corregida por el dueño, esta en el
+>   propio H137.
+> - H138 `braintoolbox.yaml` no parsea como YAML y su puerta lee con regex, asi que no puede
+>   verlo. Se intento reparar guiado por el parser, paro en la linea 210, se REVIRTIO entero.
+> - H139 `colaborar.contestar()` casa por SUJETO y cierra solo la primera: `CLAIM 616` tiene
+>   15 preguntas iguales, asi que una respuesta deja 14 abiertas para siempre.
+> - H135 / H136 los IDs del PMO colisionan (18 repetidos) y el fichero esta DOBLE-CODIFICADO
+>   en disco (el guion de H111 son tres caracteres, no U+2014).
+> - H140 el *agent-finder*: falta el MINERO que enumere, con `UNOBSERVABLE` declarado para la
+>   mitad del harness, que no es enumerable desde disco.
+> - H141 `document-output-discovery` aislado (0 aristas DELEGA de entrada y salida).
+> - H142 los HELPERS no son nodo del toolgraph, por eso nadie mide que se ignoren.
+>
+> ### Deuda medida que se dejo VISIBLE a proposito, no olvidada
+> - 4 ficheros leen tablas de alias sin importar `canonical` (`canonical_usage_lint.py`).
+>   No se tocaron a ciegas: hay que mirar si resuelven alias o solo nombran claves.
+> - Invocacion de agentes al 38% de los medibles (`agent_invocation_check.py`), con su
+>   ventana declarada: 9 lanzamientos en 8 dias NO permite concluir abandono.
+>
+> ### Instrumentos nuevos de s106 que la proxima sesion DEBE usar
+> `record_agent_roster.py` (el arranque lo pide) · `whose_commits.py` (antes de creerse una
+> alarma de escritor paralelo) · `canonical.same()` (SIEMPRE, antes de comparar nombres) ·
+> `process_axis_consistency_check.py` · `agent_invocation_check.py` · `canonical_usage_lint.py`
+>
 > Two brains, one project. Updated every session. Read alongside `PROJECT_MEMORY.md`.
 > **Last reconciled**: Session #082 (2026-06-15) â€” **ABAP CHANGE DISCIPLINE, end-to-end.** Born from INC-CLASS-LOSS (2026-06-12, ADT in-place write corrupted N_MENARD classes). Audited our write surface (2 kill-switched ADT clients + `adt_deploy` MCP + ~78 ad-hoc `deploy_*` scripts, ~81% with no transport) vs CRP's proven pipeline. The disciplined rule existed **only inside CRP** (never distributed) â†’ **promoted to ecosystem universal standard**: `ecosystem-coordinator/.knowledge/way-of-working/sap-abap-change-discipline.md` + **BROADCAST-007** (abapobjectscreation + FINCLOSSING + offboardning_clone adopt; CRP exempt as origin) + CLAUDE.md pointer. **#0 landscape probe DONE** (live read-only RFC): **D01 (DEV) â†’ V01 (QAS) â†’ P01 (PROD)**, basis 7.50, 29,408 released transports â€” liberating IS the norm; the incident was the agent bypassing it. **Point A DONE â€” ported CRP gate stack**: `Zagentexecution/abap_deploy/` (objects_manifest.yaml own-objects-only + deploy_object.py 9-gate path + verify_mirror.py) + `process-guardian` agent. VERIFIED read-only: the real N_MENARD victim `YCL_FI_ACCOUNT_SUBST_BL` is HALTED at gate-0 â†’ the incident would not recur. Closed `task_43451c89`. **Point B (transport RELEASE + ATC-REST) deferred by JP â†’ H59.** Commits: fe9e0d6 (coordinator); 3896bb4/34bb9f7/b11722b (project). CRP untouched (read-only). New: H59-H62.
 > **Prior**: Session #079 (2026-06-08) â€” **Capability Model (Layer 15) = the operating spine; this session folds into the master plan.** A domain is now modeled as AS-DESIGNED (standard SAP) + AS-RUN (ours); G = the delta = the product. 10 capability dimensions incl. **R_S4_READINESS** (composite/fractal sub-scorecard) and BP/CVI migration readiness (scoreable from our master data). **4 deep-researches CLOSED** under the new research quality-gate (process mining w3t7ufrbg Â· code mining w3os0wwlx Â· competitive landscape wgrqpmt9f Â· S/4-readiness/BP-CVI wh5gw9exu). 2 CRITICAL rules: **#148** research_quality_gate_before_conclusions, **#149** capability_model_is_the_operating_model. **Maturity baseline 22.7%** (54.5% of gap reachable without extraction) â€” dashboard `companions/model_maturity_dashboard.html`. Execution DEFERRED + fully specified: `brain_v2/capability_model/execution_backlog.json` (9 extraction + 9 analysis + 4 research). The plan is now GENERATED from the matrix (`graph_queries.py capability_gaps`). See `knowledge/capability_model.md`, `capability_model_execution_plan.md`, `adoption_backlog_synthesis_phaseB.md`.
