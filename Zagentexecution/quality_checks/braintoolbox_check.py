@@ -1,29 +1,29 @@
 """
-oficio_check.py — el modelo del OFICIO se mide, o esta muerto.
+braintoolbox_check.py — el BRAINTOOLBOX se mide, o esta muerto.
 
-`brain_v2/oficio.yaml` es el modelo canonico de COMO TRABAJAMOS: los tres roles, los dos ejes,
+`brain_v2/braintoolbox.yaml` es el modelo canonico de COMO TRABAJAMOS: los tres roles, los dos ejes,
 la triada, el bucle y su termometro. Y afirma de si mismo que **cada cifra suya se puede
 recalcular**. Esta puerta lo comprueba: si una cifra del YAML ya no coincide con lo que dicen
 los ficheros vivos, esa linea esta muerta y hay que actualizarla o retirarla.
 
 POR QUE UN DOCUMENTO SOBRE UNO MISMO NECESITA PUERTA
     Un modelo de como se trabaja envejece mas rapido que el trabajo, y envejece EN SILENCIO:
-    nadie lo relee porque cree conocerlo. Un `oficio.yaml` con cifras de hace tres semanas es
+    nadie lo relee porque cree conocerlo. Un `braintoolbox.yaml` con cifras de hace tres semanas es
     peor que ninguno, porque da confianza falsa sobre el propio estado. Medido el 2026-08-27:
     el termometro paso de 19,7 %% a otro valor en la misma sesion en que se escribio.
 
 NO valida la PROSA del YAML — las ideas no se miden. Valida las CIFRAS, que si.
 
 Uso:
-    python oficio_check.py            # exit 1 si alguna cifra derivo
-    python oficio_check.py --fix      # reescribe las cifras con lo medido ahora
+    python braintoolbox_check.py            # exit 1 si alguna cifra derivo
+    python braintoolbox_check.py --fix      # reescribe las cifras con lo medido ahora
 """
 
 QUALITY_CHECK = {
     "tier": "gate",
     "sobre": "conocimiento",
     "needs": "files",
-    "what": "las cifras del modelo del oficio siguen coincidiendo con los ficheros vivos",
+    "what": "las cifras del modelo de la caja siguen coincidiendo con los ficheros vivos",
     "args": "[--fix]",
 }
 
@@ -39,7 +39,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
-YML = os.path.join(REPO, "brain_v2", "oficio.yaml")
+YML = os.path.join(REPO, "brain_v2", "braintoolbox.yaml")
 
 
 def cargar(p):
@@ -109,12 +109,12 @@ def main():
     ap.add_argument("--fix", action="store_true")
     a = ap.parse_args()
     if not os.path.exists(YML):
-        print("no existe brain_v2/oficio.yaml — el modelo del oficio no esta escrito")
+        print("no existe brain_v2/braintoolbox.yaml — el modelo de la caja no esta escrito")
         return 1
     s = io.open(YML, encoding="utf-8").read()
     m = medir()
 
-    print("EL OFICIO — ¿siguen vivas sus cifras?\n")
+    print("BRAINTOOLBOX — ¿siguen vivas sus cifras?\n")
     print("%-46s %10s %10s" % ("AFIRMACION", "EN EL YAML", "MEDIDO"))
     derivadas, nuevo = [], s
     for patron, claves in COMPROBADAS:
@@ -141,13 +141,13 @@ def main():
         return 0
     if a.fix:
         io.open(YML, "w", encoding="utf-8").write(nuevo)
-        print("ACTUALIZADAS %d cifras en oficio.yaml. Revisa que la PROSA siga siendo cierta:"
+        print("ACTUALIZADAS %d cifras en braintoolbox.yaml. Revisa que la PROSA siga siendo cierta:"
               % len(derivadas))
         for k, d, r in derivadas:
             print("   %-42s %s -> %s" % (k, d, r))
         print("\nUna cifra se arregla sola; una idea que ya no se sostiene, no.")
         return 0
-    print("%d CIFRAS DEL MODELO HAN DERIVADO — el oficio dice de si mismo algo que ya no es:"
+    print("%d CIFRAS DEL MODELO HAN DERIVADO — la caja dice de si mismo algo que ya no es:"
           % len(derivadas))
     for k, d, r in derivadas:
         print("   %-42s dice %s · mide %s" % (k, d, r))
