@@ -1,6 +1,6 @@
 # UNESCO SAP — Project Brain + PMO Brain
 
-<!-- PMO-IDS: mismo-item = H137, H67, H68, H41, H50 -->
+<!-- PMO-IDS: mismo-item = H137, H67, H68, H41, H50, H135, H136, H138, H139, H140, H143 -->
 <!-- PMO-IDS: colision-historica = H91, H92, H93, H104, H105, H106, H107, H108, H109, H110, H111, H112, H113, H114 -->
 <!--
   H135/H136, s107. Las repeticiones de numero son de DOS clases y confundirlas esconde la
@@ -12,6 +12,12 @@
                       sesiones repartiendo numeros sin mirar las del otro -- el fallo de
                       un-solo-escritor (ADR-008) aplicado al contador del PMO. Ejemplo:
                       H113 es a la vez 'reubicacion de reglas' y 'variantes de F.05'.
+
+  H135/H136/H138/H139/H140/H143 entraron en `mismo-item` el mismo dia que se escribio esta
+  puerta, y no por comodidad: el bloque "CERRADO EN s107" de arriba resume cada uno, asi que
+  cada numero sale DOS veces -- el resumen y su entrada. La puerta lo detecto en la primera
+  corrida despues de escribirlo, sobre su propio autor. Eso es exactamente lo que tiene que
+  hacer: obligar a decir de que clase es cada repeticion en vez de dejarla pasar.
 
   NO SE RENUMERAN A CIEGAS. Un ID citado en un retro, un claim o un mensaje de commit se
   queda apuntando a nada, y el historial de git no se reescribe. Renumerar es una migracion
