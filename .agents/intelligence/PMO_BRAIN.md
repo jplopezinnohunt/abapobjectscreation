@@ -27,6 +27,59 @@
 -->
 
 
+> ## PENDIENTE AL ABRIR - S107 (2026-08-28). LEE ESTO ANTES QUE EL INDICE.
+>
+> ### 1. EL INDICE PUEDE MENTIRTE
+> `BRAIN_INDEX.md` y `brain_state.json` son del 27-ago 16:21/16:36 -- ANTES de 24 commits.
+> Si el rebuild no corrio al cerrar s107, el indice NO SABE NADA de: las 50 skills migradas,
+> los 12 skills de mineria, el circuito P2P declarado, ni el arreglo del bus.
+> COMPRUEBALO ANTES DE FIARTE: `python brain_v2/graph_queries.py stats` y compara los claims
+> de la fuente (629+) contra `brain_state.claims`. Si no cuadra, corre
+> `python brain_v2/rebuild_all.py` (~56 min) ANTES de razonar sobre el estado del proyecto.
+>
+> ### 2. LO QUE CAMBIO DE SUELO -- no es una tarea, es el terreno
+> LAS 50 SKILLS NO ERAN SKILLS. Vivian en `.agents/skills/`, un directorio que el harness NO
+> ESCANEA: ninguna era invocable. Migradas a `.claude/skills/` y disponibles en la MISMA
+> sesion. Esto explica retroactivamente la metrica «24 skills sin ningun lector»: no era
+> desidia de los consumidores, era IMPOSIBILIDAD. Regla nueva CRITICAL
+> `feedback_an_instrument_nobody_can_reach_is_documentation`. Hoy hay 64 skills invocables,
+> 12 de mineria por clase, y `braintoolbox` como skill. El mapa rol->primitiva real esta en
+> `braintoolbox.yaml` SECCION 1c.
+>
+> ### 3. LO QUE NO USAMOS Y DUELE -- `braintoolbox.yaml` SECCION 1d
+> YA APLICADO: Stop hook que BLOQUEA (gate de durabilidad, exit 2) y CLAUDE.md -15% a skills.
+> PENDIENTE: `/goal` (un evaluador re-comprueba tras cada turno) · `/batch` (parte un cambio
+> en 5-30 subagentes con worktree y PR) · `--output-format json --json-schema` (cierra la
+> regla `feedback_a_workflow_that_returns_text_lands_nothing`) · y `total_cost_usd` POR
+> INVOCACION, que es el dato con el que juzgar si la colaboracion multi-agente compensa
+> frente al 15x que mide Anthropic. Nuestra propia investigacion decia que no lo teniamos.
+>
+> ### 4. `claude -p` NO ARRANCA EN ESTA MAQUINA -- no lo intentes a ciegas
+> Falla con «Claude Code on Windows requires git-bash». El binario esta en
+> `C:\Users\jp_lopez\AppData\Local\Programs\Git\bin\bash.exe`; con `CLAUDE_CODE_GIT_BASH_PATH`
+> apuntando ahi, la prueba AGOTO 2 MINUTOS SIN DEVOLVER. NO VERIFICADO. Es el bloqueo que
+> impide correr los 72 mineros en bucle, que es lo que falta para que contesten todos.
+>
+> ### 5. TRES CONTRADICCIONES ABIERTAS DEL CIRCUITO P2P, con su comando de cierre
+> En `domains.json -> process_map.P2P.stages`, declaradas y NO resueltas:
+> (a) QUE ENRUTA A BCM: `LAUFI=B*` (companion) vs `BCM*` literal (skill) vs `LAUFI='*'` de
+>     `TFIBLMPAYBLOCK`/OBPM5 -- cierra leyendo esa tabla en P01 por RFC_READ_TABLE.
+> (b) 8 o 9 PAISES de PPC -- cierra con `SELECT DISTINCT LAND1 FROM T015L` en P01.
+> (c) EL RAIL F-53: IBE/MGIE/ICBA pagan SIN F110 -- 9.802 documentos OP en 2024-2026.
+>
+> ### 6. EL FORO: 43 de 47 contestadas (eran 14). Quedan CUATRO
+> Tres de `ADS` exigen extraccion nueva (`TNAPR`/`NAST`/`FPCONTEXT` no estan en el Gold) y una
+> espera a que corra `A59_bcm_dual_control_mining`. Contestar es ya el comportamiento POR
+> DEFECTO de los 49 mineros que pasan por `metodo.avisar()`.
+>
+> ### 7. DEL DUENO -- lo unico irreversible que sigue abierto
+> LA COPIA. `D:\claude_backups` desconectado desde el 26-ago 16:10. Golden DB 21,25 GB +
+> `~/.claude` 1,96 GB, ninguno en git. Aceptado como riesgo por el dueno para el 28-ago.
+>   `python scripts/backup_golden.py --dest D:\claude_backups`
+> Y siguen abiertos el FLAG DE UN BIT (`YTBC_TRACE` de `WF_PAYMENT`, claim 626) y el DOBLE
+> CONTROL DE BCM (58,4% de lotes creados y aprobados por la misma persona, claim 625).
+>
+
 > ## PENDIENTE AL ABRIR - S106 (2026-08-27). EMPIEZA POR H137.
 >
 > Decision del dueno al cerrar s106: registrar todo y reabrir sesion, porque los hooks
