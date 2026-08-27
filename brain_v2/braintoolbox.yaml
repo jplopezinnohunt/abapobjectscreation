@@ -440,6 +440,82 @@ gates_de_la_caja:
   - stop_integrity_hook.py:           durabilidad y arsenal al cerrar
 
 # -------------------------------------------------------------------------------------
+# 7b. EL BUCLE, EVALUADO CONTRA UNA SESION REAL (s107, 2026-08-27)
+# -------------------------------------------------------------------------------------
+# Peticion del dueno: "evaluame el valor de lo que estamos haciendo, y si la colaboracion de
+# agentes y la clasificacion de la caja estan ayudando". Contestado con lo medido de UNA
+# sesion entera, no con impresiones. Se conserva aunque envejezca: es la primera vez que la
+# caja se mide contra su propio uso.
+evaluacion_s107:
+  que_produjo_la_sesion: >
+    7 items del PMO cerrados (H137 tramo principal + barrido, H138, H139, H135, H136, H140,
+    H141, H142), 4 claims (627/628/629 + 2 reglas), 5 instrumentos nuevos o mejorados,
+    27 ficheros, 8 commits. Pero el VALOR no fueron los H: fueron los SEIS defectos vivos
+    encontrados en nuestros propios instrumentos, todos por el mismo metodo.
+
+  la_clasificacion_de_la_caja_AYUDO_A_MEDIAS_y_se_puede_decir_cual_mitad: >
+    El coordinador (`graph_queries.py tool para "<tarea>"`) se consulto UNA vez, al empezar
+    H137, y su respuesta tiene dos mitades. La de CONOCIMIENTO -- bloque
+    `6_LO_QUE_YA_SABEMOS`, claims 623/624/626 -- se uso y ahorro re-derivar el tramo entero
+    pago->BCM, que otra sesion ya habia medido. La de HERRAMIENTAS falló en el consumidor:
+    su primera linea decia `1_LEE_ESTO_PRIMERO: sap_payment_bcm_agent` (106 KB de metodo de
+    banca) y NO SE LEYO. Medido: 0 aperturas en toda la sesion.
+    ⛔ Esto es H125 con una vuelta mas. H125 dice "el coordinador existe y nadie lo llama
+    solo". El hallazgo de s107 es peor: LLAMANDOLO, su recomendacion numero uno se ignora.
+    El orden de su salida esta pensado para eso -- los SKILL van primero -- y aun asi.
+    La leccion no es "hay que acordarse": es que un consejo que no cambia nada del flujo se
+    lee como decoracion. Palanca abierta.
+
+  la_colaboracion_de_agentes_NO_SE_PUEDE_EVALUAR_HOY_y_esa_es_la_respuesta: >
+    Esta sesion corrio con CERO agentes (el harness lo pidio asi), asi que no aporta caso.
+    Lo que si aporta es el estado del INSTRUMENTO que deberia contestarlo, y esta roto:
+    `brain_v2/agent_invocations.jsonl` tiene 568 eventos y 547 SIN AGENTE. El diagnostico
+    que llevaba escrito -- "el payload no lo lleva" -- es FALSO: `payload_keys` ya listaba
+    `agent_type`, o sea la clave EXISTE y llega VACIA. Y hay una hipotesis con evidencia:
+    esta sesion registro CUATRO `SubagentStop` habiendo lanzado CERO agentes, mientras
+    corrian varias tareas de fondo. Si `SubagentStop` tambien dispara por una tarea de fondo,
+    el 96% de filas anonimas no es un fallo de atribucion: es que la mayoria NO SON AGENTES,
+    y cualquier metrica de colaboracion construida encima mide otra cosa. Anotado en el
+    propio registro como NO VERIFICADO (s107) para que lo cierre quien pueda correr las dos
+    corridas.
+    LO QUE SI ESTA MEDIDO, de s106: `Explore` produjo el hallazgo que ORIGINO H137 -- la
+    fractura del circuito en 4 piezas -- y gasto ~301K tokens, mas que ningun otro agente; y
+    `bank-process-discovery` dejo los claims 623/624 que esta sesion reutilizo. Hay evidencia
+    de que ayuda. No hay medida propia fiable de cuanto. Las dos cosas a la vez.
+
+  saber_cuando_usar_cada_cosa: >
+    El criterio de los tres roles (leer=SKILL, decidir=AGENTE, descubrir=MINERO) SI dirigio
+    decisiones reales esta sesion, y se puede senalar donde: A69 se dio de alta como MINERO y
+    no como agente porque enumerar es determinista; la mitad del harness se declaro
+    UNOBSERVABLE en vez de omitirse; el HELPER se separo del SKILL porque el dano de
+    ignorarlos es distinto (uno no aplica conocimiento, el otro produce hallazgos FALSOS); y
+    en H135 se eligio DECLARAR en vez de renumerar porque la evidencia -- H113 y H112 citados
+    en 5 ficheros cada uno -- decia el coste. El eje que mas trabajo hizo fue el de
+    PROCEDENCIA (seccion 1a): es el que separa 'no lo veo' de 'no existe'.
+
+  ⛔_la_medida_incomoda: >
+    `meta_capability.py` sigue en 65,3% y DURABILITY en 0,10 -- NO SE MOVIO. El arranque pide
+    explicitamente "elige UNA sub-palanca debil y muevela esta sesion", y la sesion entera fue
+    a instrumentos. La palanca de durabilidad es la copia de seguridad, el disco `D:` sigue
+    desconectado, y 23 GB (Golden DB + memoria) existen solo en un disco. Trabajar sobre los
+    instrumentos es util Y no es lo mismo que mover la capacidad mas debil. Si esto se repite
+    tres sesiones seguidas, el problema no es el disco: es que el bucle premia lo que sabe
+    medir y la durabilidad no se mide con un grafo.
+
+  lo_que_cambio_EN_LA_CAJA_por_esta_evaluacion:
+    - >
+      dos reglas nuevas: `feedback_an_instrument_is_not_done_until_it_fails_on_purpose`
+      (CRITICAL) y `feedback_a_citation_an_import_and_a_mention_are_not_use` (HIGH)
+    - >
+      `salud.colaboracion_entre_agentes` separa ENTREGA de MENCION y anade
+      `agentes_AISLADOS_en_los_dos_sentidos`: el agregado viejo juntaba dos cosas
+    - >
+      `salud.helpers`: tipo de nodo nuevo, 10 helpers, USA 87, DEBERIA_USAR 5, y los 9 sin
+      ficha nombrados en vez de escondidos
+    - >
+      el trazador de agentes distingue "la clave no viene" de "la clave viene vacia"
+
+# -------------------------------------------------------------------------------------
 # 8. LO QUE ESTE MODELO TODAVIA NO SABE
 # -------------------------------------------------------------------------------------
 known_unknowns:

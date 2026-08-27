@@ -5710,8 +5710,7 @@
     "rule": "ANTES DE PUBLICAR UNA CIFRA, DECLARA CONTRA QUE LA MIDES Y DE DONDE SACASTE ESE DENOMINADOR. Es el modo de fallo mas repetido que tenemos: el 26-27 de agosto se corrigieron CUATRO sondas del MISMO check por lo mismo, mas otras seis en la sesion 102. Las cuatro: (1) marcar cuentas de mayor 'sin sitio' mirando tres registros y no el indice de entidades; (2) exigir registro a un PERNR y a un numero de pedido como si fueran estructura -- 33 huecos falsos en INC-000006313, que eran los firmantes del panel; (3) resolver `Treasury` a su canonico `Treasury_EBS`, que NO es la clave del registro, con lo que el dominio entero salia vacio y sus dos incidentes decian 'falta doc de proceso' teniendo runbook, solution design y ocho companions; (4) marcar tres arboles DMEE 'sin sitio' estando anotados desde hace meses en annotations.json.",
     "why": "Las cuatro publican un CERO o un HUECO que no existe, y un cero se lee como hallazgo. Ninguna da error -- por eso sobreviven: un instrumento que mide mal contra un denominador incompleto CORRE PERFECTAMENTE y devuelve una alarma inventada. El caso (3) es el peor porque el fallo esta en la RESOLUCION DE NOMBRES: un alias mal resuelto no falla, devuelve el conjunto vacio. ACTUALIZACION s106 (2026-08-27), TRES VECES MAS EN LA MISMA SESION PESE A QUE ESTA REGLA YA EXISTIA: (5) se busco BANK_SIGNATORY (clave de OTRO sistema, RoleManagement) contra un cerebro que modela el mismo concepto bajo claves de SAP (HRP1001, BNK_APP, nodos RY) -- el grep dio 0 y se leyo como hueco de conocimiento cuando era hueco de clave, hasta que el dueno lo refuto el mismo dia (KU-2026-106-RM-BANK-SIGNATORY); (6) se reportaron \"5 referencias rotas\" en process_map cuando `Payment` y `BCM` eran ALIAS declarados de `Payment_BCM` -- la medida solo canonicalizaba UNA de las tres fuentes del eje de proceso (domains[X].primary_processes, process_map[P].domains, ontology[i].process_axis); (7) casi se \"corrige\" `parent: Treasury_EBS` en la ontologia, que es la clave CORRECTA -- Treasury_EBS es el canonico y Treasury su alias, exactamente al reves de lo que se iba a hacer. Las tres se evitaron ANTES de escribir nada porque se comparo contra la tabla de alias antes de concluir, no porque la regla se hubiera interiorizado -- persistir el patron en `why` es la unica correccion que queda pendiente. Ver braintoolbox.yaml modo_de_fallo \"EL ALIAS QUE DA CERO\" y su gemelo invertido (feedback_a_misleading_name_can_hide_dependency_identity_not_existence): un alias mal resuelto esconde EXISTENCIA; un nombre que miente esconde IDENTIDAD -- son dos fallos distintos con la misma raiz, comparar dos vocabularios sin canonicalizar.",
     "how_to_apply": "1) Todo instrumento que publique un recuento imprime PRIMERO su denominador y COMO lo derivo -- `fsv_coverage_check.py` deriva del uso real la version de balance y se niega a llamar hueco a lo que no se ejecuta; copia ese patron. 2) Si resuelves un nombre por alias, ten fallback al crudo y ASEVERA que encontraste registro: si `rec` sale vacio, es DESCONOCIDO, nunca cero. 3) Antes de exigirle registro a algo, pregunta si es ESTRUCTURA o INSTANCIA: un PERNR, un documento o una cuenta no tienen por que estar en ningun registro estructural. 4) Enumera TODAS las casas posibles de un objeto antes de decir que no tiene ninguna. 5) Y si una cifra te sorprende por grande, sospecha del denominador ANTES que del sistema: en las diez veces medidas, el defecto estuvo siempre en la medida."
-  }
-,
+  },
   {
     "id": "feedback_a_misleading_name_can_hide_dependency_identity_not_existence",
     "severity": "HIGH",
@@ -5759,5 +5758,67 @@
     "how_to_apply": "1) Antes de reconciliar, enumera TODAS las fuentes que afirman el mismo eje/campo -- no asumas que una es la maestra. 2) Unelas por UNION (superset), nunca por interseccion ni por sustituir unas por otras. 3) Anade un campo `_provenance` (o equivalente) por valor, diciendo QUE fuente lo afirmo -- eso es lo que permite despues auditar si una fuente estaba sola en lo correcto. 4) Construye una PUERTA que compare las fuentes en cada rebuild (aqui: process_axis_consistency_check.py, exit 1 si discrepan) -- sin puerta, la discrepancia puede vivir meses sin que nadie la mire, que es exactamente como se acumularon los 7 procesos discrepantes. 5) Si la union pierde una distincion que una fuente SI representaba (aqui: process_map distinguia PASO DE PAGO de PASO DE CONTROL, y el modelo unido no sabe representar eso), preserva la version previa en un campo `_antes_de_<sesion>` en vez de descartarla en silencio.",
     "evidence": "commit 27fb67a (\"el eje de proceso: reconciliado por UNION y con puerta\"); brain_v2/domains/domains.json (_provenance por proceso); Zagentexecution/quality_checks/process_axis_consistency_check.py",
     "source_file": "brain_v2/domains/domains.json"
+  },
+  {
+    "id": "feedback_an_instrument_is_not_done_until_it_fails_on_purpose",
+    "severity": "CRITICAL",
+    "created_session": 107,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": [
+        "Brain_Architecture",
+        "Support"
+      ],
+      "process": [
+        "B2R",
+        "T2R",
+        "H2R",
+        "P2P",
+        "P2D",
+        "A2R",
+        "O2C"
+      ]
+    },
+    "rule": "UN INSTRUMENTO NO ESTA TERMINADO CUANDO CORRE SIN ERROR NI CUANDO DA VERDE: LO ESTA CUANDO SE LE HA DADO UN CASO QUE DEBE FALLAR Y HA FALLADO. Y su docstring no cuenta como defensa. Medido en s107 sobre SEIS instrumentos escritos o tocados el mismo dia: los seis fallaron su propio criterio en la primera corrida, y los seis se cazaron SOLO al probarlos contra un caso que debia fallar. process_circuit_check dio el circuito P2P entero por COSIDO acreditando la junta a un companion de TRANSPORTES que cita MIRO de pasada -- y su propio docstring ya advertia de que una cita no es una narracion. companion_as_skill_sweep publico un ranking dominado por vocabulario ubicuo y, corregido eso, marco 'ningun skill lo cubre' sobre un companion cuyo skill se llama IGUAL. pmo_id_integrity_check clasificaba por parecido de titulo y fallo en las DOS direcciones a la vez, y ademas llevaba un re.S goloso que se tragaba la cabecera siguiente: dos entradas juntas contaban como UNA, y solo aparecio al inyectar dos duplicados pegados. braintoolbox_check llevaba DOS DIAS en verde sobre un fichero que no parseaba como YAML, porque lee con regex. A69 rompio artifact_reachability_check escribiendo un campo como string donde los otros ocho lo tienen como dict. Y el propio pmo_id_integrity_check, ya en verde, fallo en su primera corrida REAL sobre el bloque de cierre que acababa de escribir su autor.",
+    "why": "Correr sin error no es validacion, dar verde no es validacion, y ESCRIBIR LA ADVERTENCIA EN EL DOCSTRING NO PROTEGE DE COMETERLA -- eso es lo nuevo y lo incomodo de s107. Un instrumento probado solo contra el camino bueno certifica el camino bueno. La familia entera de defectos de este proyecto (medir la FORMA en vez del EFECTO, el denominador incompleto, el alias que da cero, creerse el propio print) comparte que TODOS pasan la prueba feliz: producen un verde, un cero o un numero verosimil. Solo el caso adversario los separa.",
+    "how_to_apply": "Antes de declarar terminado un check, un gate, un hook o un minero: (1) construye el caso que DEBE fallar -- rompe el fichero, inyecta el duplicado, quita el permiso, mete el valor vacio; (2) correlo y comprueba que falla POR LA RAZON CORRECTA, no por otra; (3) restaura y comprueba que vuelve a verde. Si no se te ocurre un caso que deba fallar, el instrumento no discrimina nada y ese es el hallazgo. Y el criterio tiene que estar en el `if`, no en la prosa: si el docstring dice 'ojo con X' pero el codigo no comprueba X, X va a pasar.",
+    "evidence": [
+      "Zagentexecution/quality_checks/process_circuit_check.py — comentario del bloque de juntas",
+      "Zagentexecution/quality_checks/pmo_id_integrity_check.py — comentario de CABECERA (re.S goloso) y prueba con dos H999",
+      "Zagentexecution/quality_checks/braintoolbox_check.py — parsea_como_yaml(), probado rompiendo el YAML a proposito",
+      "brain_v2/methods/algorithms.json A69._measured._schema",
+      "claim 629"
+    ],
+    "source_file": "knowledge/session_retros/session_107_retro.md"
+  },
+  {
+    "id": "feedback_a_citation_an_import_and_a_mention_are_not_use",
+    "severity": "HIGH",
+    "created_session": 107,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": [
+        "Brain_Architecture"
+      ],
+      "process": [
+        "B2R",
+        "T2R",
+        "H2R",
+        "P2P",
+        "P2D",
+        "A2R",
+        "O2C"
+      ]
+    },
+    "rule": "LAS TRES ARISTAS CON LAS QUE MEDIMOS SI NUESTRO CONOCIMIENTO SE APLICA CUENTAN UN PROXY, NO EL HECHO, Y LAS TRES TIENEN EL MISMO TECHO: `LEE` cuenta que el NOMBRE del skill aparezca en el texto -- una CITA, no una lectura. `USA` cuenta un IMPORT -- importar y no llamar puntua igual que usarlo bien. `DELEGA` contaba que un agente NOMBRE a otro -- y medido en s107, 4 de 26 eran menciones de estilo, no entregas. Ninguna de las tres se puede llevar al 100% honestamente pegando texto, pero las tres se PUEDEN llevar al 100% pegando texto, y por eso ninguna vale como objetivo.",
+    "why": "Un proxy sirve para RANQUEAR donde mirar y no para certificar que algo se aplica. Confundirlos convierte una mejora real en un ejercicio de pegar nombres, y el proyecto ya tiene el caso: el termometro de conectividad subio de 19,7% a 48,8% sin que se conectara nada -- subio porque el DENOMINADOR estaba inflado (claim 622). El riesgo simetrico es inflar el NUMERADOR.",
+    "how_to_apply": "Al publicar cualquiera de las tres, publica al lado la version DEPURADA (delega_ENTREGA_declarada frente a delega total) y di explicitamente que es DECLARADO y no OBSERVADO. Al mejorar una, pregunta antes: ¿lo que voy a escribir seria una entrega/lectura/llamada REAL si alguien la siguiera? Si la respuesta es 'no, pero cuenta', no lo escribas.",
+    "evidence": [
+      "brain_v2/toolgraph.json -> salud.colaboracion_entre_agentes.delega_solo_MENCION (4 de 26 antes de s107)",
+      "brain_v2/toolgraph.json -> salud.helpers._limite (USA cuenta un import)",
+      "brain_v2/braintoolbox.yaml -> termometro.⛔_no_usar_sola_como_objetivo",
+      "claim 622"
+    ],
+    "source_file": "brain_v2/braintoolbox.yaml"
   }
 ]
