@@ -56,20 +56,18 @@ DOM = os.path.join(ROOT, "brain_v2", "domains", "domains.json")
 ONT = os.path.join(ROOT, "brain_v2", "capability_model", "ontology.json")
 
 
-def canonicalizador(ont):
-    """Cualquier nombre -> clave canonica. Las dos tablas, no solo una."""
-    m = {}
-    for e in ont.get("domains", []):
-        ck = e.get("canonical_key")
-        if not ck:
-            continue
-        m[ck] = ck
-        for a in (e.get("aliases") or []):
-            m[a] = ck
-    for k, v in (ont.get("subdomain_aliases") or {}).items():
-        if isinstance(v, dict) and v.get("canonical_key"):
-            m.setdefault(k, v["canonical_key"])
-    return m
+# NO se resuelven alias a mano: brain_v2/canonical.py ES el lookup, y su docstring lleva
+# desde s097 pidiendo "Import it; do not re-derive it". La primera version de esta puerta
+# (s106) se lo salto y construyo su propio mapa -- el mismo defecto que el lint
+# canonical_usage_lint.py marca, cometido por quien escribio el lint. Corregido aqui.
+# `canonical_or_parent` es la variante opt-in que ademas colapsa subdominios declarados
+# (Cost_Recovery_CRP -> PSM_FM), que es justo lo que esta comparacion necesita.
+sys.path.insert(0, os.path.join(ROOT, "brain_v2"))
+try:
+    from canonical import canonical_or_parent as _canon   # noqa: E402
+except ImportError:                                        # degradar, nunca cegar
+    def _canon(x):
+        return x
 
 
 def main():
@@ -80,8 +78,7 @@ def main():
         print("no puedo leer los stores: %s" % e)
         return 1
 
-    alias = canonicalizador(o)
-    R = lambda s: {alias.get(x, x) for x in s}
+    R = lambda s: {_canon(x) for x in s}
 
     A, B, C = defaultdict(set), {}, defaultdict(set)
     for n, v in (d.get("domains") or {}).items():
@@ -96,8 +93,9 @@ def main():
             C[p].add(e["canonical_key"])
 
     # nombres que ninguna tabla de alias resuelve: eso es deuda de ontologia, no deriva
+    from canonical import is_declared  # noqa: PLC0415
     crudos = {x for s in list(A.values()) + list(B.values()) for x in s}
-    sin_resolver = sorted(x for x in crudos if x not in alias)
+    sin_resolver = sorted(x for x in crudos if _canon(x) == x and not is_declared(x))
 
     procesos = sorted(set(A) | set(B) | set(C))
     print("=" * 74)

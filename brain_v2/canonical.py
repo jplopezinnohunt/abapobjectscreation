@@ -69,6 +69,51 @@ def canonical(name, default=None):
     return default if default is not None else name
 
 
+@lru_cache(maxsize=1)
+def _subdominios():
+    """nombre_upper -> canonical del PADRE, leido de `subdomain_aliases`. s106.
+
+    Aparte de `_tables()` A PROPOSITO. Un subdominio NO es un alias: `Cost_Recovery_CRP`
+    es dominio de primer nivel en domains.json y subdominio de PSM_FM en el capability
+    model -- decision declarada en la propia ontologia ("Mapped as a SUBDOMAIN, not a 16th
+    domain"). Colapsarlo por defecto cambiaria el resultado de los 6 modulos que ya
+    importan este helper, asi que se ofrece OPT-IN.
+    """
+    out = {}
+    if not ONTOLOGY.exists():
+        return out
+    try:
+        onto = json.load(open(ONTOLOGY, encoding="utf-8"))
+    except (OSError, ValueError):
+        return out
+    for k, v in (onto.get("subdomain_aliases") or {}).items():
+        ck = (v or {}).get("canonical_key") if isinstance(v, dict) else None
+        if ck:
+            out[str(k).upper()] = ck
+    return out
+
+
+def canonical_or_parent(name, default=None):
+    """Como `canonical()`, pero un SUBDOMINIO declarado resuelve a su dominio padre.
+
+    Usalo cuando compares poblaciones entre stores que no coinciden en granularidad --
+    p.ej. el eje de proceso, donde domains.json lista Cost_Recovery_CRP y el capability
+    model lo tiene dentro de PSM_FM. Sin esto, la comparacion inventa una discrepancia
+    que no existe (medido s106 en process_axis_consistency_check).
+    """
+    if not name:
+        return default
+    hit = _subdominios().get(str(name).upper())
+    if hit:
+        return hit
+    return canonical(name, default)
+
+
+def same_or_parent(a, b):
+    """`same()` tolerante a granularidad: un subdominio y su padre son el mismo sujeto."""
+    return bool(a) and bool(b) and canonical_or_parent(a) == canonical_or_parent(b)
+
+
 def is_declared(name):
     """True when the name resolves to a declared canonical domain."""
     fwd, _ = _tables()
