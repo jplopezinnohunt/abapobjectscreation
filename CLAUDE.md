@@ -170,112 +170,6 @@ For mid-session queries without loading the full graph: `python brain_v2/graph_q
 4. **[.agents/workflows/hybrid_orchestration.md](.agents/workflows/hybrid_orchestration.md)** - When to use WebGUI vs BAPI
 5. **[Brain_Architecture/brain_design_specification_v3.md](Brain_Architecture/brain_design_specification_v3.md)** - Brain v3 hybrid architecture (MANDATORY before any brain_v2/ changes)
 
-## 🎓 Key Learnings (DO NOT IGNORE)
-
-### 1. The Select-Then-Toolbar Pattern
-```javascript
-// ✅ CORRECT - Most reliable (proven in 103 experiments)
-await tree.selectNode(['Entity Types']);
-await toolbar.clickCreate();
-
-// ❌ WRONG - Right-click menus are unreliable
-await tree.rightClick(['Entity Types']);
-await menu.selectMenuItem('Create');
-```
-
-### 2. Text Locators Are More Stable Than IDs
-```javascript
-// ✅ CORRECT
-frame.locator('span, td').filter({ hasText: /^Entity Types$/ })
-
-// ❌ WRONG - IDs change between sessions
-frame.locator('#tree#C111#3#ni')
-```
-
-### 3. Keyboard Navigation > Mouse for Trees
-```javascript
-// ✅ CORRECT
-await node.click();                      // Focus
-await page.keyboard.press('ArrowRight'); // Expand
-
-// ⚠️ Less reliable
-await expandIcon.click();
-```
-
-### 4. Always Handle Transport Requests
-Transport popups appear asynchronously after saves/creates. ALWAYS check:
-```javascript
-await session.save();
-await session.handleTransportRequest(); // Don't skip this!
-```
-
-### 5. BAPIs vs WebGUI Decision Tree
-- **Use WebGUI:** Visual builders (SEGW, SWDD), screen configuration
-- **Use BAPI/RFC:** Mass data operations, standard business objects
-- **Use Hybrid:** Complex workflows (UI for setup, BAPI for data)
-
-See: `.agents/workflows/hybrid_orchestration.md`
-
-## 🚀 Adding a New Transaction
-
-Example: Automating SE11 (Data Dictionary)
-
-### Step 1: Create Transaction Module
-```javascript
-// lib/sap-transactions/Se11Automation.js
-const { SapTree, SapToolbar, SapPopup, SapSession } = require('../sap-webgui-core');
-
-class Se11Automation {
-    constructor(connection) {
-        this.tree = new SapTree(connection.frame, connection.page);
-        this.toolbar = new SapToolbar(connection.frame, connection.page, 'C110'); // SE11 prefix
-        this.popup = new SapPopup(connection.frame, connection.page);
-        this.session = new SapSession(connection.frame, connection.page);
-    }
-
-    async createTable(tableName, fields) {
-        // Use generic primitives - NO custom tree navigation!
-        await this.session.ensureChangeMode();
-        await this.tree.selectNode(['Dictionary Objects', 'Database Tables']);
-        await this.toolbar.clickCreate();
-        await this.popup.fillFirst(tableName);
-        await this.popup.confirm();
-
-        // Add fields using keyboard navigation
-        for (const field of fields) {
-            await this._addField(field);
-        }
-
-        await this.session.save();
-    }
-}
-```
-
-### Step 2: Document Toolbar Prefixes
-If the transaction uses a different toolbar prefix, document it in the transaction class.
-
-### Step 3: Write Test
-```javascript
-// test_se11.js
-const { SapConnection } = require('./lib/sap-webgui-core');
-const Se11Automation = require('./lib/sap-transactions/Se11Automation');
-
-const conn = await SapConnection.connect();
-const se11 = new Se11Automation(conn);
-await se11.createTable('ZTESTTABLE', fields);
-```
-
-## 🔧 Modifying Core Modules
-
-**⚠️ RARELY NEEDED - Core modules are stable.**
-
-Only modify core modules if:
-1. SAP changes its HTML structure (`.urPW` class, tree patterns, etc.)
-2. Chrome CDP API changes
-3. Adding a truly generic primitive (e.g., table handling)
-
-**Never modify core for transaction-specific needs!**
-
 ## 📋 Task Execution Workflow
 
 1. **User provides requirement** (e.g., "Create OData service")
@@ -283,56 +177,6 @@ Only modify core modules if:
 3. **Use framework:** Compose transaction module from core primitives
 4. **Execute and archive:** Save to `Zagentexecution/tasks/{date}_{task}/`
 5. **Document learnings:** Update `.agents/rules/sapwebgui_framework_findings.md` if needed
-
-## 🛠️ Debugging Failed Automation
-
-When a script fails:
-
-1. **Check Status Bar:** `await session.getStatusBarMessage()`
-2. **Take Screenshot:** `await conn.screenshot('debug')`
-3. **List Toolbar Buttons:** `await toolbar.listButtons()` (shows all available buttons)
-4. **Verify Tree State:** `await tree.getActiveNode()`
-5. **Check for Popup:** `await popup.isVisible()`
-
-Don't guess - use the framework's debugging methods.
-
-## 🚫 Anti-Patterns (DON'T DO THIS)
-
-### ❌ Hardcoding Tree Navigation
-```javascript
-// WRONG - Transaction-specific in core module
-class SapTree {
-    async navigateToSegwEntity() { // NO! Too specific!
-        await this.selectNode(['Z_CRP_SRV', 'Data Model', 'Entity Types']);
-    }
-}
-```
-
-### ❌ Skipping Framework and Writing Raw Playwright
-```javascript
-// WRONG - Bypassing framework
-const entityTypes = page.locator('#tree#C111#3#ni');
-await entityTypes.click({ button: 'right' });
-// Use tree.selectNode() instead!
-```
-
-### ❌ Using browser_subagent for SAP
-```javascript
-// WRONG - browser_subagent has no SAP session
-await browser_subagent.execute('click button');
-// Use SapConnection.connect() instead!
-```
-
-### ❌ Mixing Generic and Specific Logic
-```javascript
-// WRONG - SEGW logic in core toolbar class
-class SapToolbar {
-    async createSegwEntity(name) { // NO! Too specific!
-        await this.clickButton(0);
-        // This belongs in SegwAutomation class
-    }
-}
-```
 
 ## 📁 File Organization
 
@@ -360,17 +204,6 @@ This project uses specialized agents (see `.agents/rules/multi_agent_architectur
    - CI/CD (abapGit)
 
 **As an agent, identify your role and stay in scope.**
-
-## 🎯 Success Metrics
-
-When you complete a task, the result should have:
-- ✅ Clean code using framework primitives
-- ✅ < 20 lines per operation (not counting property data)
-- ✅ No hardcoded DOM selectors (use framework locators)
-- ✅ Transport handling included
-- ✅ Error handling via status bar checks
-- ✅ Screenshots for major steps
-- ✅ Archived in `Zagentexecution/tasks/`
 
 ## 📐 Companion & Report Quality Rules
 
@@ -502,3 +335,19 @@ Every session that touches SAP must explicitly answer: "What did we learn about 
 
 ### Legacy Memory (~/.claude/memory/)
 The `~/.claude/` memory files are a **cache**, not the source of truth. The authoritative knowledge lives in the project files above. If memory and project conflict, project wins.
+
+
+## 🕹️ Automatización SAP WebGUI — vive en el skill, no aquí
+
+El método completo de automatización WebGUI **se movió al skill `sap_webgui`** el s107:
+los patrones probados (select-then-toolbar, localizadores por texto, navegación por
+teclado, transportes), cómo añadir una transacción, cuándo tocar los módulos core, los
+anti-patrones con su ejemplo, cómo depurar una automatización fallida y las métricas de
+éxito.
+
+**Por qué se movió, y es la doctrina oficial:** *«Bloated CLAUDE.md files cause Claude to
+ignore your actual instructions»* — este fichero se carga ENTERO en cada sesión, y ese
+método sólo hace falta cuando de verdad se automatiza una transacción. Un skill se carga
+**bajo demanda**. Medido antes de moverlo: CLAUDE.md eran ~7.150 tokens permanentes.
+
+Se invoca solo cuando toca, o a mano con `/sap_webgui`.
