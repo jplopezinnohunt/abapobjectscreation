@@ -248,6 +248,42 @@ solo bajo demanda directa del usuario) y para los otros 4 agentes huerfanos del 
 `otras_senales`, nombrandolos. No mecanizar la deteccion otra vez: ya existe (`A52_toolgraph`
 + braintoolbox `salud`); falta la DECISION, que es trabajo de agente, no de minero.
 
+**H142 -- EL TOOLGRAPH MIDE SI SE LEEN LOS SKILLS, NO SI SE USAN LOS HELPERS -- y por ese
+hueco se cuelan HALLAZGOS FALSOS (medido 2026-08-27).**
+
+`brain_v2/canonical.py` existe y expone `canonical()`, `aliases_of()` y **`same(a, b)`**. Lo
+importan CINCO modulos. En s106 resolvi alias **a mano tres veces** y falle **dos**: publique
+"5 referencias rotas en process_map" -- eran alias declarados -- y estuve a punto de
+"corregir" `parent: Treasury_EBS`, que es la clave canonica correcta. `same(a,b)` era
+literalmente la funcion que lo impedia.
+
+**Y lo peor es que el modulo se escribio para impedir exactamente esto.** Su propio docstring:
+
+> *"THE most repeated defect in this codebase. In session 097 alone the same bug appeared
+> THREE times, in three different files, and was fixed three times separately... Fixing a
+> recurring defect three times is not fixing it... the failure was never missing data, it was
+> that every consumer re-implemented the lookup. **This module is the lookup. Import it; do
+> not re-derive it.**"*
+
+Tres veces en s097. Tres mas en s106, por el agente que ese mismo dia predicaba no reinventar
+lo que existe. **La solucion se escribio, se documento, se dejo lista para importar -- y el
+defecto siguio.** Escribir el helper no fue suficiente; nada obliga a usarlo.
+
+**Por que la defensa declarada no protege:** el modo REINVENTAR LO QUE EXISTE dice "consultar
+toolgraph.json antes de proponer nada". Pero el toolgraph **no tiene nodos de HELPER**: sus
+aristas LEE / DEBERIA_LEER van de instrumento a SKILL. Un helper no aparece, luego no puede
+tener lector, luego nadie mide que se ignora.
+
+**La distincion que hay que registrar:** un skill no leido es conocimiento que no se aplica;
+un helper no usado es **una funcion que YA resuelve el problema y que se reescribe peor**. El
+segundo produce hallazgos FALSOS, no solo pobres -- y dos de los mios llegaron al dueno antes
+de que los retirara.
+
+**Dos salidas, a decidir con el criterio de A69 (mirar si ya existe antes de escribir):**
+(a) helpers como nodo del toolgraph, con arista DEBERIA_USAR derivada de quien opera sobre su
+mismo problema y no lo importa; (b) mas barato y quiza suficiente: un lint que marque toda
+comparacion de conjuntos de nombres que no pase por `canonical.same()`.
+
 **H140 -- HAY AGENTES QUE EL MODELO NO VE, Y EL HUECO ES BIDIRECCIONAL (medido 2026-08-27,
 peticion del dueno: "hay mas agentes que no ves... seria un nuevo agente, agent finder").**
 
