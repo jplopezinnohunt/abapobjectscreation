@@ -29671,5 +29671,45 @@
     "created_session": 107,
     "resolved_session": 107,
     "resolution_notes": "Cuarta y quinta aparicion del patron que braintoolbox seccion 6 llama medir la FORMA en vez del EFECTO. Lo nuevo de s107 no es el patron: es que los cuatro se cazaron SOLOS, en la primera corrida, porque se probaron contra un caso que debia fallar. Relacionado con claim 622 (senal inflada) y con feedback_a_gate_must_measure_the_effect_not_the_form."
+  },
+  {
+    "id": 630,
+    "claim": "USR02-USTYP NO SEPARA PERSONA DE MAQUINA EN P01: 6.696 DE 6.755 CUENTAS (99,13%) ESTAN DECLARADAS TIPO 'A' -- DIALOGO. Medido 2026-08-28: solo 59 cuentas son no-A (52 B, 6 S, 1 C). De los 255 canales de entrada que A23_channel_discovery_by_traffic descubrio POR TRAFICO en interface_inventory.json, 241 (94,5%) estan declarados 'A', 10 'B', 3 'S' y uno (TMSADM, 14.456 llamadas) no existe en usr02. La declaracion falla en LAS DOS DIRECCIONES: JOBBATCH es 'B' (sistema) y registra 656.257 logons de DIALOGO contra 302.993 llamadas RFC; P_IKOUNA es 'S' (servicio) con 56.507 logons de dialogo; y de las 59 cuentas no-A solo 13 tienen trafico entrante observado -- las otras 46 estan declaradas sistema y no entran. POR QUE IMPORTA: el 2026-08-25 se RETIRO la heuristica 'cero logons de dialogo = maquina' por ser falsa por los dos lados, y se sustituyo por 'lo declara USR02-USTYP'. La retirada era correcta; el sustituto no vale, y la nota _likely_RETIRADO que hoy llevan los 255 registros de interface_inventory.json delega en un campo que declara PERSONA al 94,5% de ellos. Ademas A27_interface_nature, a quien esos registros remiten, no lee usr02: opera sobre el log RFC y emite dominio y naturaleza, sin eje persona-maquina. LA RECONCILIACION ES H71: USTYP declara QUE ES la cuenta y el trafico mide QUE LA CONDUCE; una cuenta de persona conducida por una aplicacion es las dos cosas a la vez y hereda todos los permisos de la persona. Ninguna senal decide sola. CONSECUENCIA OPERATIVA: ningun instrumento puede emitir persona/maquina como UN campo. Se emiten TRES -- ustyp_declarado, logons_de_dialogo y actor_en_PARAMX (A45_actor_attribution_per_account) -- y el valor CONDUCIDA_POR_APLICACION cuando ustyp='A' con trafico RFC masivo. Encaja con SEC-2-ATTRIBUTION-GAP (claim 404): ~5,3M llamadas RFC sin persona atribuible.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db :: usr02 6.755 filas, GROUP BY USTYP -> A=6.696 / B=52 / S=6 / C=1 (medido 2026-08-28, solo lectura)",
+      "brain_v2/interface_inventory.json :: counts.RFC_INBOUND_OBSERVED=255; los 255 artifact casados contra usr02.BNAME -> A=241, B=10, S=3, ausente=1 (TMSADM)",
+      "brain_v2/interface_inventory.json :: MP_ANCUTA calls=300.391/dialog_logons=61 (USTYP A); JP_LOPEZ 219.161/244 (A); V.VAURETTE 211.702/31.077 (A); JOBBATCH 302.993/656.257 (B); P_IKOUNA 56.308/56.507 (S); UBO-RFC 363.466/0 (B)",
+      "brain_v2/methods/algorithms.json :: A27_interface_nature.operates_on = log RFC + clasificador de dominio; lands_in = campos domain/nature; sin usr02 ni USTYP",
+      "brain_v2/security_posture.json :: SEC-1-CONTROL-SURFACE (H71, VERIFIED) y SEC-2-ATTRIBUTION-GAP (VERIFIED, claim #404)",
+      "process_mining/mining_findings.json :: pregunta LIMITE:A23_CHANNEL_DISCOVERY_BY_TRAFFIC, resuelta por mining-arbiter 2026-08-28"
+    ],
+    "related_objects": [
+      "usr02",
+      "USR02",
+      "interface_inventory.json",
+      "A23_channel_discovery_by_traffic",
+      "A27_interface_nature",
+      "A45_actor_attribution_per_account",
+      "MULESOFT",
+      "JOBBATCH",
+      "EPAM-RFC",
+      "UBO-RFC",
+      "BRIDGE-RFC",
+      "TMSADM",
+      "security_posture.json"
+    ],
+    "domain": "Basis_Security",
+    "domain_axes": {
+      "functional": "Basis_Security",
+      "process": "cross"
+    },
+    "created_session": 107,
+    "status": "VERIFIED",
+    "cross_links": [
+      "claim 404 (SEC-2-ATTRIBUTION-GAP)",
+      "H71 write-channel SoD"
+    ]
   }
 ]

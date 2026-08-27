@@ -112,9 +112,110 @@ def _cargar():
         return {"hallazgos": [], "preguntas": []}
 
 
+def _qid(p):
+    """Identidad ESTABLE de una pregunta: quien pregunta + sujeto + su texto.
+
+    NO incluye el destinatario a proposito: `para` cambia cuando se re-enruta, y usar el par
+    (sujeto, para) como identidad fue lo que dejo a `variant-intelligence` sin poder contestar
+    su propia pregunta con la API. Es H139 por el otro lado.
+    """
+    import hashlib
+    base = "|".join([str(p.get("de") or ""), str(p.get("sujeto") or ""),
+                     str(p.get("pregunta") or "")[:400]])
+    return "q" + hashlib.sha1(base.encode("utf-8")).hexdigest()[:12]
+
+
 def _guardar(d):
-    with open(BUS, "w", encoding="utf-8") as fh:
-        json.dump(d, fh, indent=2, ensure_ascii=False)
+    """Atomico y FUNDIENDO lo que otro haya escrito mientras tanto.
+
+    Lo encontro `mining-arbiter` trabajando: el bus hacia read-modify-write del fichero
+    entero sin control de concurrencia, y mientras contestaba «otro proceso volco su copia y
+    desaparecio `_reenrutada_s107` de las cuatro preguntas de ADS». Sus respuestas
+    sobrevivieron POR ORDEN DE ESCRITURA, NO POR DISENO.
+
+    Es ADR-008 -- un solo escritor -- incumplido justo donde dos mineros trabajan a la vez
+    POR DISENO. Y el sintoma es el peor de todos: no da error, borra.
+    """
+    import os as _os
+    import tempfile as _tf
+
+    # RELEER Y FUNDIR: las respuestas de otro no se pisan. Se funden por qid; lo que no
+    # este en memoria se conserva tal cual.
+    try:
+        with open(BUS, encoding="utf-8") as fh:
+            disco = json.load(fh)
+        mias = {_qid(p): p for p in (d.get("preguntas") or [])}
+        fundidas, vistas = [], set()
+        for p in (disco.get("preguntas") or []):
+            k = _qid(p)
+            vistas.add(k)
+            if k not in mias:
+                fundidas.append(p)          # pregunta que otro anadio: se conserva
+                continue
+            mia = mias[k]
+            # las respuestas se UNEN, nunca se sustituyen
+            ya = {(str(r.get("de")), str(r.get("respuesta"))[:120])
+                  for r in (mia.get("respuestas") or [])}
+            for r in (p.get("respuestas") or []):
+                if (str(r.get("de")), str(r.get("respuesta"))[:120]) not in ya:
+                    mia.setdefault("respuestas", []).append(r)
+            fundidas.append(mia)
+        for k, p in mias.items():
+            if k not in vistas:
+                fundidas.append(p)          # pregunta nueva mia
+        d["preguntas"] = fundidas
+        # los hallazgos son append-only: se conserva la union por (minero, sujeto, hallazgo)
+        hd = {(str(h.get("minero")), str(h.get("sujeto")), str(h.get("hallazgo"))[:120]): h
+              for h in (disco.get("hallazgos") or [])}
+        for h in (d.get("hallazgos") or []):
+            hd[(str(h.get("minero")), str(h.get("sujeto")), str(h.get("hallazgo"))[:120])] = h
+        d["hallazgos"] = list(hd.values())
+    except Exception:
+        pass                                # si no se puede releer, se escribe lo que hay
+
+    # ⛔ CONSECUENCIA DECLARADA: al fundir con el disco, el bus es APPEND-ONLY. Una
+    # respuesta no se puede BORRAR por esta via -- si la quitas en memoria, la fusion la
+    # recupera del disco. Es deliberado: para un foro donde dos mineros escriben a la vez,
+    # perder una respuesta ajena es peor que arrastrar una de mas. Borrar exige escritura
+    # directa y consciente, no un descuido.
+    for p in (d.get("preguntas") or []):
+        p.setdefault("qid", _qid(p))
+
+    fd, tmp = _tf.mkstemp(dir=_os.path.dirname(BUS), suffix=".tmp")
+    try:
+        with _os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(d, fh, indent=2, ensure_ascii=False)
+        _os.replace(tmp, BUS)               # atomico: nadie ve un fichero a medias
+    except Exception:
+        try:
+            _os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+def _mineros_ejecutables():
+    """Quien puede CORRER: registrado en algorithms.json y con su fichero en disco.
+
+    s107. Un publicador del bus no es necesariamente un minero: puede ser un analisis de una
+    tarde que nadie declaro -- patron H118. Enrutarle una pregunta la deja en un limbo que
+    parece atendido.
+    """
+    import os as _os
+    try:
+        with open(_os.path.join(REPO, "brain_v2", "methods", "algorithms.json"),
+                  encoding="utf-8") as fh:
+            A = json.load(fh).get("algorithms") or {}
+    except Exception:
+        return set()
+    out = set()
+    for k, v in A.items():
+        for b in (v.get("bound_in") or []):
+            r = str(b).split(" ")[0]
+            if r and _os.path.exists(_os.path.join(REPO, r)):
+                out.add(k)
+                break
+    return out
 
 
 def repartir(silencioso=False):
@@ -136,11 +237,17 @@ def repartir(silencioso=False):
         # PODER CONTESTAR, y el IDF no lo salva -- se midio: ninguno de esos terminos es
         # ubicuo. La senal que SI vale es haber publicado sobre el sujeto, que es prueba y no
         # proximidad, y es la misma que usa `_respuesta_desde_lo_publicado` para contestar.
+        # ⛔ Y TIENE QUE PODER CORRER. Publicar en el bus no basta: la primera version de
+        # esto mando las cuatro preguntas de ADS a `inc16471_ads_log_mining`, que publico y
+        # NO ESTA REGISTRADO -- sin ficha y sin script. Enrutar a quien no se puede ejecutar
+        # es enrutar a un fantasma: la pregunta parece atendida y no lo esta.
         por_evidencia = None
         if suj:
+            _ejecutables = _mineros_ejecutables()
             for h in (d.get("hallazgos") or []):
                 m = str(h.get("minero") or "")
-                if m and m != quien and str(h.get("sujeto") or "").strip().lower() == suj:
+                if (m and m != quien and m in _ejecutables
+                        and str(h.get("sujeto") or "").strip().lower() == suj):
                     por_evidencia = m
                     break
 
@@ -289,7 +396,7 @@ def marcar_visita(minero, podia, contesto):
         pass
 
 
-def contestar(minero, sujeto, respuesta, evidencia="", para=None, a_todas=False):
+def contestar(minero, sujeto, respuesta, evidencia="", para=None, a_todas=False, qid=None):
     """Deja una respuesta REAL en el foro. Exige evidencia: sin ella no es una respuesta.
 
     H139 — EL SUJETO NO IDENTIFICA UNA PREGUNTA, Y ELEGIR LA PRIMERA EN SILENCIO DEJABA EL
@@ -312,7 +419,16 @@ def contestar(minero, sujeto, respuesta, evidencia="", para=None, a_todas=False)
     if not str(respuesta or "").strip():
         raise ValueError("una respuesta vacia no es una respuesta")
     d = _cargar()
-    cand = [p for p in (d.get("preguntas") or []) if str(p.get("sujeto")) == str(sujeto)]
+    # `qid` manda: es la identidad ESTABLE. El par (sujeto, para) deja de identificar en
+    # cuanto la pregunta se re-enruta -- le paso a variant-intelligence con su propia
+    # pregunta y tuvo que abrir el fichero a mano.
+    if qid:
+        cand = [p for p in (d.get("preguntas") or []) if p.get("qid") == qid]
+        if not cand:
+            return False
+        a_todas = True                      # un qid identifica una sola pregunta
+    else:
+        cand = [p for p in (d.get("preguntas") or []) if str(p.get("sujeto")) == str(sujeto)]
     if not cand:
         return False
     if para is not None:
