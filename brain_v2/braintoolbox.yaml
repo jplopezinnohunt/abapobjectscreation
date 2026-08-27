@@ -546,6 +546,84 @@ primitivas:
     - "roster de hermanos en el contexto del subagente (v2.1.206+): es el fallo de coordinacion que Anthropic documenta, ya resuelto por el harness"
 
 # -------------------------------------------------------------------------------------
+# 1d. LO QUE LA HERRAMIENTA NOS DA Y NO USAMOS (s107) — leido en la fuente, no recordado
+# -------------------------------------------------------------------------------------
+# Peticion del dueno: «que mas de las herramientas de Anthropic no estamos usando y
+# deberiamos». Leido en code.claude.com/docs/en/best-practices. Ordenado por el DOLOR MEDIDO
+# que explica, no por lo llamativo que suene.
+no_usamos:
+  STOP_HOOK_QUE_BLOQUEA:
+    que_es: >
+      la doc: «a Stop hook runs your check as a script and BLOCKS the turn from ending until
+      it passes» (Claude Code corta a los 8 bloqueos seguidos). Es un gate DETERMINISTA, no
+      un aviso.
+    que_tenemos: >
+      NUEVE hooks Stop y NINGUNO bloquea: todos imprimen y el turno termina igual. El de
+      durabilidad lleva toda la sesion avisando de ficheros sin commitear; el del steward
+      pide una pasada que no se ejecuta sola.
+    el_dolor_que_explica: >
+      ES EL PROBLEMA CENTRAL DE ESTE PROYECTO, escrito una docena de veces con otras
+      palabras: «lo que depende de acordarse no pasa». Teniamos el mecanismo determinista
+      disponible y usabamos la version advisory.
+    ojo: >
+      no todo debe bloquear. Un gate en rojo permanente por deuda historica se ignora
+      (leccion H131). Bloquear lo que es CIERRE DE ESTA SESION (commit, backup declarado);
+      avisar lo que es deuda vieja.
+    prioridad: 1
+
+  CLAUDE_MD_QUE_SE_MUEVE_A_SKILLS:
+    que_dice_la_doc: >
+      «Bloated CLAUDE.md files cause Claude to ignore your actual instructions!» y «For
+      domain knowledge or workflows that are only relevant sometimes, use skills instead.
+      Claude loads them on demand without bloating every conversation.» Y el criterio por
+      linea: «Would removing this cause Claude to make mistakes?».
+    medido_hoy: >
+      CLAUDE.md del proyecto 28.625 caracteres + el global 3.342 = ~8.000 TOKENS EN CADA
+      SESION, siempre, se usen o no. Frente a eso, las 74 skills cuestan 13,7K en el listado
+      y su CUERPO solo se carga al invocarse.
+    el_dolor_que_explica: >
+      por que se ignoran reglas que SI estan escritas. No es desobediencia: es que compiten
+      con 8.000 tokens de instrucciones permanentes. Y buena parte de ese fichero es
+      conocimiento de dominio -- exactamente lo que la doc dice que debe ser skill.
+    prioridad: 2
+
+  GOAL:
+    que_es: >
+      «set the check as a /goal condition. A separate evaluator re-checks it after every turn
+      and Claude keeps working until the goal resolves.»
+    donde_pega_aqui: >
+      cierre de sesion, rebuild, alineacion de master data: todo lo que hoy se comprueba una
+      vez y se da por bueno. Es el bucle de verificacion que no tenemos.
+    prioridad: 3
+
+  BATCH_Y_HEADLESS:
+    que_es: >
+      `/batch <instruccion>` parte un cambio entre 5 y 30 subagentes, cada uno en su worktree
+      y con su PR. Y `claude -p` corre sin sesion interactiva, apto para bucle sobre una
+      lista con `--allowedTools` acotando permisos.
+    donde_pega_aqui: >
+      (a) la migracion de HOY: 542 referencias reencaminadas a mano en 61 ficheros;
+      (b) «un minero registrado que no se ejecuta es documentacion» -- 72 mineros que nadie
+      corre son un bucle `claude -p` sobre la lista, no un problema de voluntad.
+    prioridad: 4
+
+  LO_DEMAS_QUE_NO_USAMOS:
+    - "plan mode (Shift+Tab) — explorar y planear ANTES de tocar; no lo usamos nunca"
+    - "/rewind y checkpoints — deshacer conversacion y codigo a un punto; util al probar algo arriesgado"
+    - "/context y /doctor — MEDIR que se carga al arrancar en vez de estimarlo"
+    - "/btw — preguntas laterales que NO entran en el historial"
+    - "/clear entre tareas no relacionadas — la doc lo pone como el fallo #1 (la sesion cajon de sastre)"
+    - "@ruta en el prompt e imports @path en CLAUDE.md"
+    - "subagente REVISOR adversarial sobre el diff, en contexto fresco, antes de dar por hecho"
+    - "agent teams / agent view (experimental) para coordinar sesiones en paralelo"
+
+  ⛔_el_patron_de_los_dos_primeros: >
+    Los dos que mas duelen no son funciones exoticas: son la version DETERMINISTA de cosas
+    que ya haciamos en version ADVISORY. Teniamos el hook y lo usabamos para imprimir;
+    teniamos las skills y el conocimiento estaba en CLAUDE.md. El defecto no fue no conocer
+    la herramienta: fue usar la mitad blanda de una herramienta que tiene mitad dura.
+
+# -------------------------------------------------------------------------------------
 # 7b. EL BUCLE, EVALUADO CONTRA UNA SESION REAL (s107, 2026-08-27)
 # -------------------------------------------------------------------------------------
 # Peticion del dueno: "evaluame el valor de lo que estamos haciendo, y si la colaboracion de
