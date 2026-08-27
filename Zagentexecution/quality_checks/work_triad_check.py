@@ -71,13 +71,35 @@ def texto(p):
     return io.open(fp, encoding="utf-8", errors="ignore").read() if os.path.exists(fp) else ""
 
 
+def _estructural(x):
+    """ESTRUCTURA o INSTANCIA: solo la estructura tiene que estar en un registro.
+
+    La primera version exigia sitio para TODO lo que el incidente nombraba, y eso incluye
+    `10050037` (un PERNR), `4500540022` (un pedido) y `0001010571` (una cuenta): datos, no
+    objetos del paisaje. Pedirle registro a una instancia es fabricar un hueco -- 33 'objetos
+    sin sitio' en INC-000006313 eran los PERNR del panel de firmantes.
+
+    Estructura = tabla, campo, programa, FM, transaccion, sistema, interfaz, objeto de espacio
+    de nombres, instrumento. Instancia = todo lo que es solo un numero.
+    """
+    x = (x or "").strip()
+    if len(x) < 3:
+        return False
+    if re.fullmatch(r"[0-9]+", x):                       # PERNR, cuenta, pedido, documento
+        return False
+    if re.fullmatch(r"[A-Z]{1,3}[0-9]{6,}", x):          # INC-…, referencias con prefijo corto
+        return False
+    return True
+
+
 def objetos_del_incidente(inc):
-    """Los nombres que el incidente dice haber tocado. Es lo que hay que poder localizar."""
+    """Los nombres ESTRUCTURALES que el incidente dice haber tocado: lo que otro tendria que
+    poder localizar sin conocer el caso. Las instancias se ignoran a proposito."""
     out = set()
     for k in ("related_objects", "objects", "systems"):
         v = inc.get(k)
         if isinstance(v, list):
-            out |= {x for x in v if isinstance(x, str) and len(x) > 2}
+            out |= {x for x in v if isinstance(x, str) and _estructural(x)}
     return out
 
 
@@ -115,8 +137,15 @@ def main():
     print("%-24s %-9s %-9s %-9s %s" % ("INCIDENTE", "OBJETO", "PROCESO", "METODO", "QUE FALTA"))
     incompletos = []
     for x in sorted(casos, key=lambda z: z["id"]):
-        canon = alias.get((x.get("domain") or "").strip(), (x.get("domain") or "").strip())
-        rec = dom.get(canon) or {}
+        crudo = (x.get("domain") or "").strip()
+        canon = alias.get(crudo, crudo)
+        # La clave CANONICA de la ontologia no siempre es la clave del REGISTRO: `Treasury`
+        # canoniza a `Treasury_EBS`, que no existe en domains.json. Sin este fallback el
+        # registro sale vacio y el dominio entero parece no tener ni proceso ni companions --
+        # medido: los dos incidentes de BCM salian "falta doc de proceso" teniendo el runbook,
+        # el solution design y 8 companions declarados. Un alias mal resuelto no da error: da
+        # un cero, que es peor.
+        rec = dom.get(canon) or dom.get(crudo) or {}
 
         # 2 · PROCESO: doc de proceso en el dominio + companion
         docs = rec.get("knowledge_docs", []) or []
