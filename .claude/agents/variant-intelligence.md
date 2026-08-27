@@ -158,5 +158,10 @@ variante y extraer las rutas, para cerrar el modelo de por dónde entran y salen
 
 ## Artefactos
 - Skill: `.agents/skills/sap_variant_analysis/SKILL.md`
+- Skill: `.agents/skills/sap_job_intelligence/SKILL.md` — **la otra mitad del par.** Tú lees la
+  VARIANTE (qué se hace); ese skill lee el JOB (`TBTCO`/`TBTCP`: quién lo programó, cada cuánto,
+  qué encadena, cómo falla). Mapear jobs de interfaz a sus variantes — que es tu tarea declarada
+  para cerrar el modelo de rutas de ficheros — necesita las dos: una variante sin job no se
+  ejecuta nunca, y un job sin variante no dice qué cubre. Conectado s106 (claim 622).
 - Metodología: `knowledge/domains/Closing_Activities/sap_variant_forensic_methodology.md`
 - Regla: `feedback_read_the_variant_the_variant_is_the_process` (CRITICAL)

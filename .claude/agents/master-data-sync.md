@@ -112,6 +112,13 @@ la acción vacía. `'U'` sobre una cuenta inexistente devuelve `FH058`, lo que c
 
 ## Artefactos
 - Skill: `.agents/skills/sap_master_data_sync/SKILL.md` (matriz de canales, corregida s102)
+- Skill: `.agents/skills/sap_account_comparison/SKILL.md` — **el que te faltaba, y es el que
+  cubre tu mitad ciega.** Se declara a sí mismo *"extends sap_master_data_sync with UPDATE
+  capability (not just INSERT)"*: comparación campo a campo de `SKA1`/`SKB1`/`SKAT` entre
+  sistemas y ajuste de lo que DIFIERE. Sin él sabes crear la cuenta que falta y no sabes
+  arreglar la que existe con otro `KTOKS`, otro `XINTB`, otro `HBKID` o textos `SKAT` en otro
+  idioma — y ése es justo el caso que un `gl_alignment_check` en verde no distingue de estar
+  alineado. Conectado s106 (claim 622).
 - Método FM: `Zagentexecution/tasks/2026_06_29_fm_model_sync/METHOD.md`
 - GL: `Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_master_sync.py` + `gl_alignment_check.py`
 

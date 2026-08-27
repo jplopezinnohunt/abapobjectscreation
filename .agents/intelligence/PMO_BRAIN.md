@@ -223,6 +223,56 @@ Each layer FEEDS the others:
 
 ### ðŸŸ¡ HIGH â€” Next available session
 
+**H138 -- `braintoolbox.yaml` NO SE PUEDE PARSEAR COMO YAML, Y SU PUERTA NO SE ENTERA
+(medido 2026-08-27, defecto PRE-EXISTENTE -- comprobado contra HEAD antes de tocarlo).**
+`yaml.safe_load` falla: escalares PLANOS que contienen `: ` sin comillas. Dos confirmados y
+al menos uno mas detras:
+
+```
+piezas: - objeto: ... "Un objeto puede ser varias cosas a la vez: Solution Manager es..."
+defensa: fallback al crudo. Un alias mal resuelto NO DA ERROR: da un cero, que es peor
+```
+
+**Por que importa mas de lo que parece.** El fichero se presenta como el modelo canonico de
+como trabajamos y dice de si mismo *"NO es prosa: cada afirmacion de aqui se mide en un
+fichero real"*. Pero **ningun consumidor puede leerlo como datos**: es prosa con aspecto de
+YAML. Y `braintoolbox_check.py`, que lo vigila, pasa en verde porque lee con **regex**, no con
+un parser -- o sea la puerta comprueba las 16 CIFRAS y es estructuralmente incapaz de detectar
+que el documento esta roto. Es el mismo patron que H134: un instrumento que afirma dentro de
+una frontera que no declara.
+
+**Intento y marcha atras (s106).** Se escribio un reparador guiado por el PARSER (no por un
+patron mio), que entrecomilla el valor solo en la linea que el parser senala y **PARA si no
+sabe arreglarla sin inventar**. Paro en la linea 210. Se REVIRTIO entero en vez de dejar el
+fichero a medio entrecomillar: dos lineas con comillas y el documento igual de irreparseable
+es peor que no haberlo tocado -- cambia la prosa sin ganar nada.
+
+**Que falta:** terminar la pasada (probablemente < 10 lineas) y **anadir al gate un
+`yaml.safe_load` que falle**, que es el arreglo de fondo: hoy el guardian no puede ver la
+clase de rotura que mas le importa.
+
+**H139 -- UNA RESPUESTA EN EL BUS CIERRA UNA PREGUNTA Y DEJA ABIERTAS LAS OTRAS 14
+(medido 2026-08-27).** `colaborar.contestar(minero, sujeto, ...)` busca por **`sujeto`** y
+hace `return` en la PRIMERA coincidencia. Pero el propagador abre una pregunta **por cada
+minero destinatario** con el MISMO sujeto:
+
+```
+CLAIM 616                             15 preguntas, 15 abiertas
+ADS                                    4 preguntas,  4 abiertas
+A65_AUTHORISED_PANEL_RECONCILIATION    4 preguntas,  3 abiertas tras contestar una
+A67_VARIANT_WRITE_SAFETY               3 preguntas,  3 abiertas
+```
+
+Contestar `CLAIM 616` cierra UNA de quince; las otras catorce quedan abiertas para siempre y
+`mining_collaboration_check` las cuenta como ocasion perdida. **La cifra de "preguntas sin
+contestar" esta inflada por construccion**, igual que lo estaba `DEBERIA_LEER` (claim 622):
+otro denominador que no se deriva.
+
+**Arreglo:** que `contestar()` acepte `para=` (o el indice) para desambiguar, y que sin `para`
+conteste a TODAS las del mismo sujeto o se NIEGUE, en vez de elegir la primera en silencio.
+Decidir cual de las dos: una respuesta puede ser valida para los 15 destinatarios (el caso de
+CLAIM 616) o especifica de uno.
+
 **H137 -- EL COMPANION DE PRESUPUESTO-A-PAGO: ENCONTRARLO, Y DECIDIR SI UN COMPANION ES
 UN SKILL DE DOMINIO SIN DECLARAR (pedido del dueno, 2026-08-27).**
 

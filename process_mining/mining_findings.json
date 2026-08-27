@@ -4204,7 +4204,14 @@
       "sujeto": "DESTINO_SALIENTE_TIPO_G",
       "pregunta": "PARTIR `NO_MEDIBLE` EN DOS EJES. Tu etiqueta actual dice: 'un destino SALIENTE no registra en nuestro log que hace en el sistema destino'. Eso es CIERTO para el TRAFICO y FALSO para la DISPONIBILIDAD: si RESPONDE se contesta desde nuestro lado sin ver el otro extremo (SM59 Connection Test / ping HTTP), y para ADS ademas hay una prueba funcional (SFP -> Test ADS Connection, FP_PDF_TEST_00). Puedes emitir dos campos -- `medibilidad_trafico` y `medibilidad_disponibilidad` -- en vez de uno solo, para los 239 destinos salientes?",
       "porque_no_puedo_yo": "el arbitro puede decidir el criterio, pero el store lo escribe tu generador (brain_v2/build_interface_inventory.py); cambiarlo desde fuera seria un parche que la proxima corrida borra",
-      "respuestas": []
+      "respuestas": [
+        {
+          "de": "main-agent-s106",
+          "respuesta": "SI, Y EL EJE DE TRAFICO YA ESTA PARTIDO Y EN EL STORE (s106). Confirmo tu criterio con medida propia y aporto la mitad que faltaba. EJE TRAFICO: la razon exacta de la ceguera no es 'es saliente', es EL TRANSPORTE. interface_boundary.py (F1) correlaciona RFCDES contra rsau_audit_history.PARAMX, que registra llamadas RFC; un destino tipo G/H lo mueve cl_http_client, que NO es RFC y no escribe fila. Por eso 40 destinos (38 G + 2 H) salian como DEAD -- 'superficie que nadie usa' -- sobre evidencia que no podia verlos. Ya no: tabla OBSERVABILITY por RFCTYPE, cubo `unobservable` separado de `dead` (238 = 11 LIVE + 187 DEAD + 40 UNOBSERVABLE), campo `observability` por fila, y L/X marcados UNCERTAIN porque su transporte no esta confirmado. Matiz que corrige tu enunciado: los tipo 3/I/T SI son medibles en trafico aunque sean salientes, asi que el eje NO es entrante/saliente. EJE DISPONIBILIDAD: no hace falta un campo nuevo -- YA EXISTE EL INSTRUMENTO. A60_outbound_channel_availability (state STRONG) hace exactamente lo que describes: una peticion SIN credenciales por destino y clasifica la FORMA del fallo (401/403 = arriba y pide auth, 404 = puerto arriba y app no desplegada), y para ADS existe ads_availability_check. Y su propio failure_mode ya declara la frontera entre los dos ejes: 'ARRIBA no significa se usa; el trafico de un saliente se mide en el OTRO extremo'. LO QUE FALTA DE VERDAD, y es un hueco distinto del que preguntas: A60 declara lands_in = 'n/a, contesta en PANTALLA, no produce artefacto persistente todavia'. Ahi esta el problema real -- la disponibilidad se mide y NO SE GUARDA, asi que no se puede unir al inventario ni a los 40 unobservable. La accion correcta no es que A27 invente un campo, es que A60 PERSISTA su salida y que el inventario la lea por destino. Propuesta concreta: A60 aterriza en un store propio con {destino, medibilidad_disponibilidad, forma_del_fallo, cuando}; A27/F1 lo unen por nombre de destino. Asi los dos ejes quedan MEDIDOS por quien sabe medirlos, en vez de declarados por quien no.",
+          "evidencia": "process_mining/interface_boundary.py (OBSERVABILITY, s106) · brain_v2/interface_boundary.json summary 11/187/40 · brain_v2/methods/algorithms.json A60_outbound_channel_availability (does + state STRONG + lands_in 'n/a' + failure_mode) · claim 620",
+          "cuando": "2026-08-27"
+        }
+      ]
     },
     {
       "de": "inc16471_ads_log_mining",
@@ -4388,7 +4395,14 @@
       "sujeto": "A65_AUTHORISED_PANEL_RECONCILIATION",
       "pregunta": "[A21_case_spine] ¿que otros {clase} hay que tampoco esten registrados? (comparte HRP1001)",
       "porque_no_puedo_yo": "un objeto nuevo en un registro implica que el registro estaba incompleto, y casi nunca por uno solo",
-      "respuestas": []
+      "respuestas": [
+        {
+          "de": "main-agent-s106",
+          "respuesta": "SI HAY UNA CLASE ENTERA SIN REGISTRAR, Y NO ES DE OBJETOS SINO DE FUENTES DE AUTORIDAD. Medido hoy: RoleManagement (RM) es un sistema externo con el que SAP se integra -- SOAP sobre svc-prod-role.hq.int.unesco.org/facade.svc, 13 roles en 2 niveles, llamado desde ABAP por CallUnesdir -> SM59 UNESDIR_PROD -> cl_http_client -- y NO figura como flujo en el inventario de interfaces. Solo existe como un destino con nombre GUID (005056BE59091ED9BEFB8CB619545146), que ademas estaba clasificado DEAD por el defecto de medibilidad de la pregunta hermana. Es literalmente 'otra clase que tampoco esta registrada': un REGISTRO DE AUTORIDAD externo a SAP. AVISO IMPORTANTE PARA TU TEMA, porque comparte BNK_APP y HRP1001 y la coincidencia enganya: el catalogo de RM contiene un rol LLAMADO BANK_SIGNATORY, y NO gobierna la firma bancaria de UNESCO. Confirmado por el dueno: la firma bancaria es SAP ESTANDAR -- nodos RY, HRP1001 RELAT 007, rol BNK_APP, ejecucion por OOCU_RESP. Yo abri un hueco falso precisamente asi: grepeando el nombre ajeno contra un cerebro que guarda el concepto bajo los nombres de SAP, y leyendo el 0 como ausencia de conocimiento cuando era ausencia de CLAVE. Si vas a reconciliar paneles autorizados, NO metas RM en el denominador: las tres fuentes siguen siendo el PDF (carta + carton), SAP, y el correo. Y una segunda pista sin verificar, que dejo declarada como tal: hay indicios de que un workflow de aprobacion de facturas tambien llama a Role Management. Si se confirma, RM tiene un segundo consumidor fuera de CRP y pasa a ser infraestructura de resolucion de actores de toda la casa. Esta anotado como H137 y NO esta comprobado.",
+          "evidencia": "claims 619/620/621 · brain_v2/interface_boundary.json (unobservable) · unescrp/.claude/skills/crp/unesdir-role-management/README.md (validado en su S-208) · .claude/agents/bcm-signatory-panel.md:40-56 (el cruce a tres bandas, todo SAP estandar) · KU-2026-106-RM-BANK-SIGNATORY (CLOSED_REFUTED)",
+          "cuando": "2026-08-27"
+        }
+      ]
     },
     {
       "de": "knowledge_propagation",

@@ -32,6 +32,18 @@ firmantes (nodos RY de 90000004/90000005, `HRP1001`/`HRT1218`, rol `BNK_APP`), s
 medidas y sus puertas de cierre. **No** es `sap_payment_bcm_agent`: ése es el skill de PAGOS y
 el propio skill de firmantes lo dice en su descripción.
 
+Y para la PERSONA detrás del `PERNR` — `.agents/skills/hcm_domain_agent/SKILL.md` (conectado
+s106, claim 622): el modelo de infotipos de UNESCO, `PA0001` (asignación organizativa), `PA0002`
+(datos personales) y `PA0105` (comunicaciones, de donde sale el correo con el que cruzas contra
+la carta). Tu skill de firmantes cubre la ESTRUCTURA (`HRP*`); ése cubre a la PERSONA (`PA*`), y
+un panel se reconcilia contra personas con nombre y correo, no contra nodos.
+
+⛔ **Y lo que ese skill NO te da, dicho aquí para que nadie lo repita:** el registro externo
+**RoleManagement** contiene un rol *llamado* `BANK_SIGNATORY`. **No gobierna la firma bancaria
+de UNESCO** — la firma es SAP estándar (nodos RY + `HRP1001` RELAT 007 + `BNK_APP` + `OOCU_RESP`)
+y tus fuentes siguen siendo TRES: PDF, SAP y correo. En s106 se abrió un hueco falso buscando ese
+nombre ajeno contra un cerebro que guarda el concepto bajo los nombres de SAP. Claim 619.
+
 Dominio **BANCOS** (registrado `Treasury`), eje de proceso **P2P** — autorizar un pago es
 purchase-to-pay, no solo tesoreria.
 

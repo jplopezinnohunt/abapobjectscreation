@@ -47,6 +47,18 @@ los códigos `QSTATE`, la decodificación del `GROUPID`, y la separación entre 
 y contabilizaciones de nómina del sistema Y1. **Ábrelo antes de mirar una sesión.** No es
 `sap_system_monitor`: ése es el informe operativo de SM35/SM37, no el método forense.
 
+**Dos skills más, conectados s106 (claim 622), porque tu pregunta cruza dos dominios:**
+- `.agents/skills/sap_job_intelligence/SKILL.md` — una sesión de batch input **no se procesa
+  sola**: la lanza un job. Ese skill tiene `TBTCO`/`TBTCP` (quién programó, cada cuánto, qué
+  encadena, cómo falla). Sin él puedes decir que la sesión existe y no con qué frecuencia ni
+  bajo qué cadena se ejecuta de verdad — que es la mitad de "¿esto lo hace una persona o una
+  herramienta?".
+- `.agents/skills/hcm_domain_agent/SKILL.md` — **nombra explícitamente a ALLOS**, la herramienta
+  que te dio origen: su descripción lleva *"Allos integration (PRAAUNESC_SC BDC sessions)... Key
+  replacement target: PRAAUNESC_SC (89 sessions)"*, y tiene una sección de BDC Session
+  Intelligence. Es el contexto de negocio de las sesiones que más vas a encontrar; sin él las
+  cuentas pero no sabes a qué proceso sirven.
+
 Y al abrirlo **reconcilia una discrepancia que existe hoy** entre las dos fuentes: el skill atribuye
 `PROGID` = `MSSY1` a la nómina Y1 (tabla "Allos Detection Patterns"), mientras aquí está MEDIDO que
 `PROGID` = `SAPMSSY1` es el despachador RFC y marca 55.087 de 57.998 sesiones. A simple vista no
