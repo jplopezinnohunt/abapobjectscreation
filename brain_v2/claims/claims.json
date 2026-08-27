@@ -29519,5 +29519,42 @@
     "created_session": 106,
     "resolved_session": null,
     "resolution_notes": "ABIERTO como hallazgo de CONTROL, no solo de instrumento. El failure_mode de A68 en brain_v2/methods/algorithms.json (punto c) ya documenta el mecanismo; este claim promueve el numero a hecho verificable del sistema. Pendiente: decidir si UNESCO Treasury acepta 3,359 lotes de creador=aprobador como excepcion conocida (cuentas de servicio, RULE_ID=PAYROLL en solitario) o si es una brecha viva -- requiere separar OPERADOR HUMANO de CUENTA DE SERVICIO como ya hace A59 (owns_background_jobs / is_dialog_human) sobre estos 3,359 concretos, hoy no hecho."
+  },
+  {
+    "id": 626,
+    "claim": "LA LIVENESS DEL PROXY A ROLEMANAGEMENT EN P01 ES HOY INVERIFICABLE, Y NO POR FALTA DE DATO SINO PORQUE EL UNICO INSTRUMENTO QUE LA REGISTRARIA ESTA APAGADO (medido en vivo contra P01 el 2026-08-27, solo lectura por RFC_READ_TABLE sobre SNC/SSO). LO QUE SI ESTA MEDIDO: los dos objetos EXISTEN en P01 -- ZROLE_MGTCO_FACADE en SEOCLASS y Z_GET_CERTIF_OFFICER_UNESDIR en TFDIR. Pero existir no es funcionar (codigo presente != codigo que anda), y si la llamada devuelve algo no se puede saber hoy. TRES VIAS PROBADAS, LAS TRES DESCARTADAS CON SU RAZON: (1) rsau_audit_history.PARAM3 NO APLICA -- registra llamadas RFC y este FM lo invoca una regla de workflow LOCALMENTE, dentro del mismo sistema. Se comprobo que PARAM3 SI contiene FMs custom (5.152.027 filas Z_/Y_ de 19.935.563 con PARAM3) y que los que aparecen son los RFC-enabled llamados desde satelites (Y_BAPI_WBS_FINANCIAL_DATA_1 1.916.000, Z_RFC_GET_USER 949.312): la ausencia del nuestro era ESPERADA y no informa. Los aciertos de '%CERTIF%|%OFFICER%|%UNESDIR%' en PARAM3 son RUTAS DE FICHERO, porque el campo es polimorfico. (2) CDHDR NO CONCLUYE -- hay 442.303 cambios de documento FI, o sea la poblacion existe, pero el que mas cambia es WF-BATCH con 90.715: el workflow escribe con su usuario tecnico, asi que la identidad del aprobador NO esta en CDHDR.USERNAME. Que los dos del fallback ZFI_PAYREL_EMAIL casi no aparezcan (A_KHISTY 16 filas, todas de compras: ENTRYSHEET/MM_SERVICE/EINKBELEG; E_MOYO CERO) es indicio contra 'cae siempre al fallback', pero seria igual de esperable si WF-BATCH firma por ellos. (3) LA TRAZA, QUE ES LA BUENA, ESTA DESACTIVADA. El propio codigo la escribe: Z_WF_GET_CERTIFYING_OFFICER llama a ycl_bc_trace_table( iv_tr_obj='WF_PAYMENT' ) con el campo unesdir_subrc por intento. Medido en P01: YSBC_TRACE_PAYMENT es INTTAB (una ESTRUCTURA, no una tabla -- por eso no tiene filas y por eso un RFC_READ_TABLE sobre ella da 'no existe'); las transparentes reales son YTBC_TRACE (registro) e YTBC_TRACE_DET (detalle). Y YTBC_TRACE dice, con grupo de control incluido: FIORI_INB_FILES ACTIVE='X' -> 594 filas · FIORI_P_AND_F_FILES ACTIVE='X' -> 197 filas · WF_PAYMENT ACTIVE=' ' -> 0 filas. El mecanismo FUNCIONA; esta apagado solo para el pago. POR QUE ESTE CLAIM IMPORTA MAS QUE SU TEMA: parar una consulta antes habria producido el veredicto 'cero filas de traza, luego el workflow nunca llama a RM'. Habria sido la CUARTA vez el mismo dia de leer el silencio de un instrumento que no esta mirando (claim 620 / H134, y el alias que da cero x3). El grupo de control -- dos objetos de traza hermanos, activos y con datos -- es lo que convierte la sospecha en prueba. COMO SE CIERRA, y es de UN FLAG: alguien autorizado pone YTBC_TRACE.ACTIVE='X' para WF_PAYMENT en P01 y se espera a que fluyan facturas. Convierte una pregunta inverificable en un numero medido. ES UN CAMBIO DE CONFIGURACION EN PRODUCCION: el agente NO lo hace. Y si resultara muerto, el fallback son DOS correos, uno de ellos sin actividad ninguna.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Payment_BCM",
+    "domain_axes": {
+      "functional": "Payment_BCM",
+      "process": "P2P"
+    },
+    "evidence_for": [
+      "P01 RFC_READ_TABLE 2026-08-27: YTBC_TRACE (TR_OBJ/ACTIVE/STRUC_NAME) 3 filas -- WF_PAYMENT con ACTIVE en blanco",
+      "P01 RFC_READ_TABLE: YTBC_TRACE_DET 791 filas, ninguna de WF_PAYMENT (594 FIORI_INB_FILES + 197 FIORI_P_AND_F_FILES)",
+      "P01 RFC_READ_TABLE: SEOCLASS CLSNAME=ZROLE_MGTCO_FACADE existe · TFDIR FUNCNAME=Z_GET_CERTIF_OFFICER_UNESDIR existe",
+      "P01 DD02L: YSBC_TRACE_PAYMENT es TABCLASS=INTTAB (estructura, no tabla)",
+      "Gold DB rsau_audit_history: 19.935.563 filas con PARAM3, 5.152.027 con FM custom, 0 de los tres FMs del workflow",
+      "Gold DB cdhdr: 442.303 filas OBJECTCLAS=BELEG, top WF-BATCH 90.715; A_KHISTY 16 (ENTRYSHEET/MM_SERVICE/EINKBELEG), E_MOYO 0",
+      "extracted_code/FI/Payment_Workflow/Z_WF_GET_CERTIFYING_OFFICER.abap (escribe la traza)"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "ZROLE_MGTCO_FACADE",
+      "Z_GET_CERTIF_OFFICER_UNESDIR",
+      "Z_WF_GET_CERTIFYING_OFFICER",
+      "YTBC_TRACE",
+      "YTBC_TRACE_DET",
+      "YSBC_TRACE_PAYMENT",
+      "ZFI_PAYREL_EMAIL",
+      "RoleManagement",
+      "WS90000003",
+      "WF-BATCH"
+    ],
+    "created_session": 106,
+    "resolved_session": 106,
+    "resolution_notes": "Cierra en parte el claim 624 (contradiccion abierta D01 vs P01): los objetos EXISTEN en P01, asi que la muerte declarada en D01 no se hereda. Lo que queda abierto es si la LLAMADA funciona, y ahora se sabe exactamente que hace falta para saberlo."
   }
 ]

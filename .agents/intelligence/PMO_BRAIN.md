@@ -374,6 +374,25 @@ esta tarea.
 4. Cerrar la pregunta general: barrer los 44 companions y marcar cuales son de facto un skill
    de dominio sin declarar. Eso es una respuesta MEDIDA a la tesis del dueno, no una opinion.
 
+**LA CADENA COMPLETA, CORREGIDA POR EL DUENO (2026-08-27) -- la de arriba estaba corta:**
+
+```
+PO -> GOODS RECEIPT -> SERVICE ENTRY SHEET (en algunos casos) -> INVOICE
+   -> PPC si aplica -> aprobacion WF (llama a RM) -> F110
+   -> BCM (lote + panel + liberacion)  <- EN MEDIO, con parada posible
+   -> fichero al banco -> acuse -> extracto
+```
+
+Faltaban **recepcion de mercancia** y **hoja de entrada de servicios**, que no es un detalle:
+la hoja de servicios es un objeto propio con su ciclo, y en una casa que compra sobre todo
+SERVICIOS es el tramo normal, no la excepcion.
+
+**Y ya esta minado:** `companions/p2p_process_mining.html` recorre exactamente
+`EBAN -> EKKO/EKPO -> ESSR/ESLL -> RBKP/RSEG -> EKBE` (848.135 eventos, 193.296 casos), y
+`ESSR/ESLL` ES la hoja de entrada de servicios. O sea el tramo que el dueno anadio NO es un
+hueco de mineria: esta cubierto y termina en `Invoice Posted`. Lo que falta sigue siendo la
+COSTURA con el tramo de workflow, no el tramo en si.
+
 **TRES REQUISITOS DEL DUENO (2026-08-27), que acotan como se resuelve esto:**
 1. **NO PERDER NADA.** Ni skills ni companions. Lo que se reorganice se PRESERVA (CP-002);
    lo obsoleto se SUPERSEDE, no se borra. Si un companion resulta ser un skill de dominio,
