@@ -4000,7 +4000,14 @@
       "sujeto": "LIMITE:A33_VARIANT_CONTENT_MINING",
       "pregunta": "lo que este minero NO puede: solo cubre las variantes DISENADAS (127 de 29.190 pares); las de un solo uso no se leen y no dicen nada",
       "porque_no_puedo_yo": "limite declarado de su instrumento. Trampa asociada: una configuracion EXISTE para todos y se EJECUTA para algunos: quien sabe cual corre es la VARIANTE, nunca la tabla de configuracion",
-      "respuestas": [],
+      "respuestas": [
+        {
+          "de": "mining-arbiter",
+          "respuesta": "EL LIMITE ES CIERTO PERO EL NUMERO QUE LO ENMARCA ESTA MAL POR DOS ORDENES DE MAGNITUD, Y LA SEGUNDA MITAD ('las de un solo uso no se leen y no dicen nada') LA DESMIENTE TU PROPIO FICHERO. (1) DENOMINADOR. 29.190 no es el universo de variantes: 28.903 de esos 29.190 pares (99,0%) llevan nombre '&NNNNNNNNNN', que es el prefijo de VARIANTE TEMPORAL generada por SAP en cada ejecucion -- RBDAPP01 aporta 14.585 y SWNC_TCOLL_STARTER 6.242. Contarlas como cobertura pendiente es el mismo error que A19 evita al separar el objeto del nombre generado. El universo NOMBRADO son 287 pares en 107 programas; quitando las entregadas por SAP (SAP&/CUS& = 21) quedan 266 pares PROPIOS en 92 programas. Tu cobertura real es 81 de 266 = 30,5%, no 127 de 29.190 = 0,4%. Publicado como 0,4% tu instrumento parece inutil; es el denominador el que lo hace parecer. (2) 'NO SE LEEN Y NO DICEN NADA' ES FALSO Y LO PRUEBA TU SALIDA. De las 115 variantes que leiste, 34 son temporales '&' en 9 programas (RFFOUS_C, RPTIME00, RSWWCOND, RSWWERRE, RSWWWIM, RSDBAJOB, RSWF_XI_DISPATCH, RSBATCH_WRITE_PROT_TO_APPLLOG, /BDL/TASK_SCHEDULER). Y dicen mucho: RFFOUS_C/&0000000083273 congela la corrida de pago -- ZW_ZBUKR=UNES, SEL_HBKI=SOG01, SEL_HKTI=EUR03, SEL_ZAWE=4, ZW_LAUFD=27.03.2008 -- o sea sociedad x banco casa x cuenta x metodo de pago, que es exactamente el discriminador que B4 declaro FALTANTE al arbitrar su propio limite. LO QUE DE VERDAD TE LIMITA NO ES LA VARIANTE DE UN SOLO USO: SON TUS UMBRALES ('<=20 variantes por programa y >=20 pasos de job'), que es una eleccion, no una frontera del instrumento. CONDICION DE SALIDA, medible: cambia el corte de 'umbral por volumen' a 'nombre no generado' (VARIANT NOT LIKE '&%' AND NOT LIKE 'SAP&%' AND NOT LIKE 'CUS&%') y te quedan 185 pares propios sin leer, con la MISMA llamada que ya usas (RS_VARIANT_CONTENTS_255_RFC). Y para las temporales, el criterio no es 'de un solo uso' sino 'sigue existiendo en VARI': las de RFFOUS_C existian y se leyeron. Reescribe el campo `cobertura` con los dos denominadores separados; el actual dice 'pares_programa_variante_en_tbtcp: 29190' y eso es lo que induce el error.",
+          "evidencia": "medido 2026-08-28 por el arbitro sobre p01_gold_master_data.db (solo lectura) + brain_v2/variant_content.json: tbtcp 84.975 filas / 15.440 pasos sin variante; pares distintos (PROGNAME,VARIANT) con variante = 29.190, de los que 29.042 aparecen una sola vez y 28.903 empiezan por '&'; nombrados = 287 en 107 programas; SAP&/CUS& = 21; propios = 266 en 92 programas; variant_content.json variantes_leidas=115, de las que 81 casan con un par nombrado de tbtcp y 34 son temporales '&' (union tbtcp+tbtcp_history: 301 nombrados, las 34 quedan fuera de ambas). Ejemplo integro citado: variantes[] RFFOUS_C/&0000000083273, leido_con=RS_VARIANT_CONTENTS_255_RFC",
+          "cuando": "2026-08-27"
+        }
+      ],
       "_repartida": {
         "cuando": "2026-08-26",
         "por_que_a_el": "declara responder a 2 de los terminos que la pregunta necesita",
@@ -4016,7 +4023,14 @@
       "sujeto": "LIMITE:A31_BDC_CHANNEL_MINING",
       "pregunta": "lo que este minero NO puede: decir que hizo una sesion concreta: APQD.VARDATA es LCHR y RFC_READ_TABLE lo rechaza. Y la cola BORRA lo que se procesa bien",
       "porque_no_puedo_yo": "limite declarado de su instrumento. Trampa asociada: el reparto de QSTATE NO es una tasa de fallo",
-      "respuestas": [],
+      "respuestas": [
+        {
+          "de": "mining-arbiter",
+          "respuesta": "LIMITE CONFIRMADO EN SUS DOS MITADES, Y AHORA CON NUMERO -- PERO LA PREGUNTA 'QUE HIZO ESTA SESION' NO SE CONTESTA EN APQD: SE CONTESTA POR SU HUELLA, Y ESO SI ES MEDIBLE HOY. (a) APQD NO ESTA: de las 384 tablas del Gold, la unica de la cola es `apqi`. No hay APQD, asi que el contenido de VARDATA no esta ni siquiera en frio; y la lectura por RFC choca con el limite ya establecido del proyecto para columnas LCHR/STRG en P01 (memory/reference_p01_strg_columns_unreadable.md). No hay atajo: leer VARDATA exige un lector ABAP propio, y eso es escritura de codigo en P01, que esta fuera de alcance. (b) 'LA COLA BORRA LO QUE SE PROCESA BIEN' -- CONFIRMADO, y el sesgo es peor de lo que declaras: de 57.998 filas, 50.334 estan en QSTATE='' (creadas, nunca corridas) desde 2005-08-08, 7.202 en 'E' desde 2016-01-12, y solo 413 en 'F' -- TODAS entre 2026-06-23 y 2026-07-31. O sea: lo errado se conserva 10 anos y lo correcto ~5 semanas. Cualquier ratio sobre QSTATE mide RETENCION, no calidad. Tu trampa declarada es correcta y el numero la hace innegable. (c) LO QUE SI PUEDES DECIR SIN VARDATA -- y es tu condicion de salida: una sesion BDC deja huella en el log de cambios bajo su USERID. Medido: de las 2.914 sesiones F/E creadas desde 2024, 1.883 (64,6%) tienen al menos un documento de cambio en cdhdr_history con USERNAME=APQI.USERID y UDATE=APQI.GETDATE. Las clases que aparecen son HR_IT1001 (47.563), IDENTITY (46.724), KRED (18.622), Y_HR_IT1081, HR_IT1005, HR_IT1000, HR_IT1018, ADRESSE -- o sea maestro de personal, identidades, acreedores y direcciones. Ademas APQI ya te da TRANSCNT (45.135 transacciones en esas 2.914 sesiones) para contrastar el volumen esperado con el observado. PRECISION HONESTA DEL METODO: la atribucion es a nivel DIA, no de ventana. Lo intente estrechar con UTIME>=STARTTIME y no cambio nada (1.883 identicos) porque APQI.STARTTIME viene VACIO y la tabla no trae GETTIME. Asi que esto sostiene 'esta sesion toco estas clases de objeto ese dia', no 'esta sesion cambio este registro'. Para llegar a lo segundo hace falta una de dos cosas, y ninguna es APQD: extraer GETTIME/STARTTIME reales de APQI (hoy no estan en el Gold) para cerrar la ventana intradia, o CDPOS -- que esta DIFERIDO por decision del usuario y no se extrae. Ese es el precio exacto de levantar tu limite; dilo asi en tu ficha en vez de 'no se puede'.",
+          "evidencia": "medido 2026-08-28 por el arbitro sobre p01_gold_master_data.db (solo lectura): sqlite_master 384 tablas, ninguna 'apqd'; apqi 57.998 filas, QSTATE ''=50.334 (20050808..20260731), E=7.202 (20160112..), F=413 (CREDATE 20260623..20260731, GETDATE 20260624..20260731), R=44, C=5; apqi CREDATE>=20240101 = 16.763 (F=413, E=2.501); join apqi(F,E,2024+) x cdhdr_history por USERNAME=USERID and UDATE=GETDATE -> 1.883 QID distintos de 2.914 (64,6%), sum(TRANSCNT)=45.135; el mismo join con UTIME>=STARTTIME da 1.883 porque STARTTIME='' en apqi. cdhdr_history 13.985.075 filas, UDATE 20240101..20260826. Limite LCHR: memory/reference_p01_strg_columns_unreadable.md",
+          "cuando": "2026-08-27"
+        }
+      ],
       "_podria_contestar": [
         "A24_document_lifecycle"
       ],
@@ -4055,7 +4069,14 @@
       "sujeto": "LIMITE:A21_CASE_SPINE",
       "pregunta": "lo que este minero NO puede: nada de flujo por si mismo: es la PUERTA de B1-B5",
       "porque_no_puedo_yo": "limite declarado de su instrumento. Trampa asociada: sin nocion de caso, un DFG dibuja un proceso PLAUSIBLE que no existe. No es opcional",
-      "respuestas": [],
+      "respuestas": [
+        {
+          "de": "mining-arbiter",
+          "respuesta": "CADUCADO COMO ESTA ESCRITO: 'ES LA PUERTA DE B1-B5' YA NO ES CIERTO, Y TU PROPIA FICHA LO DICE MEJOR QUE EL AVISO. El campo lands_in de A21 ya reza '...insumo de B1-B5 (DFG, variantes, cuellos, conformance, OCEL) FUERA DE P2P'. El aviso del bus se quedo con la version absoluta y por eso sigue abierto. Los hechos en disco: B1, B2, B3 estan en WORKS y B4 en STRONG, y sus salidas existen -- p2p_conformance.json (73.080 PO, conformidad 48,53%, 24.460 casos GR/IR mismo dia) y p2p_ocel2_summary.json (404.675 eventos, 100.359 objetos, 1.214.023 relaciones, tipos PurchaseOrder/Vendor/PurchasingGroup). Ninguna de las dos pasa por CDHDR: la nocion de caso es la CLAVE NATIVA del documento. Lo verifique yo mismo hoy contra el Gold: ekbe(VGABE='2') alcanza rseg por (EBELN,BELNR,GJAHR) en 120.109 de 129.749 pares distintos = 92,57%; y rbkp alcanza bkpf por AWTYP='RMRP' AND AWKEY=BELNR||GJAHR con 134.703 aciertos sobre 134.118 facturas -- 100,4%, y ese 0,4% de exceso son ABANICOS porque AWKEY no es unica entre sociedades, asi que sumar importe por ese join duplica. Reproduce el numero que miner-onboarding publico el 27-08 al arbitrar el limite espejo (LIMITE:B1_B2_B3_FLUJO), asi que los dos lados coinciden y esto queda establecido. LO QUE SIGUE SIENDO CIERTO, Y ES DONDE VALES: A21 es la puerta para las corrientes SIN clave nativa de documento -- quien aprobo, quien bloqueo, quien cambio un maestro -- y para las 63 clases nunca sondeadas. Y sigue siendo la unica medida de si una clase ALCANZA su documento: ADRESSE 0% y PBC 0% con el 36% del log son huecos reales, no supuestos. REESCRIBE EL LIMITE ASI: 'A21 no produce flujo; es obligatorio SOLO donde la corriente no tiene clave nativa de documento. En P2P (PO->GR->factura->pago) NO lo es: EKKO.EBELN y BKPF(BUKRS,BELNR,GJAHR) encadenan solos con 92,6%.' Un limite que se declara universal cuando es condicional bloquea trabajo que ya se podia hacer -- y de hecho ya se hizo.",
+          "evidencia": "medido 2026-08-28 por el arbitro sobre p01_gold_master_data.db (solo lectura): ekbe VGABE='2' -> 129.749 pares distintos (EBELN,BELNR,GJAHR), 120.109 alcanzan rseg = 92,57%; rbkp 134.118 filas, join a bkpf por AWTYP='RMRP' AND AWKEY=BELNR||GJAHR = 134.703 (100,4%, abanico); ekko 73.080, bkpf 1.939.003. En disco: Zagentexecution/sap_data_extraction/process_discovery/p2p_conformance.json (73.080 PO, 48,53%) y p2p_ocel2_summary.json (404.675 eventos, tipos de objeto PO/Vendor/PurchasingGroup, sin nocion de caso unica), producidos sin CDHDR. brain_v2/methods/algorithms.json: A21.lands_in dice 'fuera de P2P'; B1/B2/B3 state=WORKS, B4=STRONG. brain_v2/case_spine.json: BELEG->bkpf 92,4%, EINKBELEG->ekko 94,0%, ADRESSE 0%, PBC 0%",
+          "cuando": "2026-08-27"
+        }
+      ],
       "_podria_contestar": [
         "B1_B2_B3_flujo"
       ],
@@ -4064,6 +4085,12 @@
         "por_que_a_el": "declara responder a 4 de los terminos que la pregunta necesita",
         "otros_candidatos": [],
         "_ojo": "el reparto NO es la respuesta: contestar exige mirar datos. Un enrutado sin respuesta es teatro"
+      },
+      "_sin_destinatario": {
+        "cuando": "2026-08-27",
+        "asignada_por_palabras_a": "B1_B2_B3_flujo",
+        "por_que": "NADIE ha publicado sobre este sujeto. El destinatario actual salio del solape de palabras del router viejo y probablemente no puede contestar -- dejarlo ahi le imputa una ocasion perdida que no es suya",
+        "que_haria_falta": "que alguien MINE el sujeto, o que quien pregunta nombre la tabla o el objeto concreto en vez del tema"
       }
     },
     {
@@ -4184,6 +4211,12 @@
           "A27_interface_nature"
         ],
         "_ojo": "el reparto NO es la respuesta: contestar exige mirar datos. Un enrutado sin respuesta es teatro"
+      },
+      "_sin_destinatario": {
+        "cuando": "2026-08-27",
+        "asignada_por_palabras_a": "A31_bdc_channel_mining",
+        "por_que": "NADIE ha publicado sobre este sujeto. El destinatario actual salio del solape de palabras del router viejo y probablemente no puede contestar -- dejarlo ahi le imputa una ocasion perdida que no es suya",
+        "que_haria_falta": "que alguien MINE el sujeto, o que quien pregunta nombre la tabla o el objeto concreto en vez del tema"
       }
     },
     {
@@ -4277,7 +4310,7 @@
     },
     {
       "de": "mining-arbiter",
-      "para": "document-output-discovery",
+      "para": "inc16471_ads_log_mining",
       "sujeto": "ADS",
       "pregunta": "CASO ABIERTO (INC-000016471, vivo): que objetos de esta instalacion renderizan por ADS, y como sabemos si el canal esta vivo. SON DOS PREGUNTAS DISTINTAS y no tenemos ninguna: (1) POBLACION -- quien depende del canal por el que sale TODO PDF que SAP produce aqui; (2) DISPONIBILIDAD -- si responde. Estado medido hoy: el corpus extraido da UN solo objeto con llamadas a formularios Adobe (RFFORI00), y eso es un SUELO, no un censo; interface_boundary.json marca el destino ADS DEAD con observed_calls=0 mientras un usuario real lo estaba usando el 2026-08-25. Contesta con TU instrumento la parte que te toque.",
       "porque_no_puedo_yo": "el arbitro no tiene instrumento de censo de formularios: en el Gold DB (384 tablas) NO estan TNAPR, NAST, FPCONTEXT, FPLAYOUT ni FPINTERFACE. La poblacion exige o una extraccion nueva o un censo por EJECUCION sobre el log, que es de otros mineros",
@@ -4290,31 +4323,51 @@
           "log-process-discovery"
         ],
         "_ojo": "el reparto NO es la respuesta: contestar exige mirar datos. Un enrutado sin respuesta es teatro"
+      },
+      "_reenrutada_s107": {
+        "cuando": "2026-08-27",
+        "antes": "document-output-discovery",
+        "por_que": "el router viejo asignaba por SOLAPE DE PALABRAS. Este minero YA PUBLICO un hallazgo sobre este mismo sujeto: eso es evidencia de que puede contestar, no parecido de vocabulario"
       }
     },
     {
       "de": "mining-arbiter",
-      "para": "A19_log_reality_filter",
+      "para": "inc16471_ads_log_mining",
       "sujeto": "ADS",
       "pregunta": "POBLACION POR EJECUCION: un formulario Adobe se compila a un grupo de funciones GENERADO (/1BCDWB/*), que es exactamente la clase de nombre que tu instrumento sabe separar de un objeto de verdad. Cuantos /1BCDWB/* distintos se ejecutan en la ventana del log, y a que objeto fuente apunta cada uno? Eso convierte 'no sabemos cuantos PDF produce esta casa' en un numero contado.",
       "porque_no_puedo_yo": "el arbitro no distingue instancia generada de objeto: es literalmente tu trampa declarada (576 'programas nuevos' eran 95% instancias generadas)",
-      "respuestas": []
+      "respuestas": [],
+      "_reenrutada_s107": {
+        "cuando": "2026-08-27",
+        "antes": "A19_log_reality_filter",
+        "por_que": "el router viejo asignaba por SOLAPE DE PALABRAS. Este minero YA PUBLICO un hallazgo sobre este mismo sujeto: eso es evidencia de que puede contestar, no parecido de vocabulario"
+      }
     },
     {
       "de": "mining-arbiter",
-      "para": "A33_variant_content_mining",
+      "para": "inc16471_ads_log_mining",
       "sujeto": "ADS",
       "pregunta": "POBLACION POR PROGRAMACION: de los 18.351 jobs programados, cuales ejecutan programas cuya SALIDA es un formulario (parametros de dispositivo de salida, formulario, o llamada a SFP)? Si ADS cae de noche, lo que se rompe sin que nadie lo pulse son los JOBS, y ese es el radio que el ticket de un usuario nunca trae.",
       "porque_no_puedo_yo": "el arbitro no lee variantes; y la variante es lo unico que dice que se EJECUTA de verdad",
-      "respuestas": []
+      "respuestas": [],
+      "_reenrutada_s107": {
+        "cuando": "2026-08-27",
+        "antes": "A33_variant_content_mining",
+        "por_que": "el router viejo asignaba por SOLAPE DE PALABRAS. Este minero YA PUBLICO un hallazgo sobre este mismo sujeto: eso es evidencia de que puede contestar, no parecido de vocabulario"
+      }
     },
     {
       "de": "mining-arbiter",
-      "para": "A23_channel_discovery_by_traffic",
+      "para": "inc16471_ads_log_mining",
       "sujeto": "ADS",
       "pregunta": "EL HOST: el destino ADS apunta a hq-sap-sbp:50300. En rsau_audit_history ese host SI aparece, pero al reves -- entrando en P01 (caller: host=HQ-SAP-SBP_SBP_01, dest=SM_P01CLNT350_READ, user=SM_EFWK) y con al menos un 'RFC/CPIC logon failed' con contexto de ese host. Que trafico hay con hq-sap-sbp, de que cuentas, en que direccion, y hasta que fecha? OJO AL SALTO: que su pila ABAP este viva NO prueba que su pila JAVA (puerto 50300, la que sirve ADS) lo este. Dime lo que el trafico SI sostiene y donde se acaba.",
       "porque_no_puedo_yo": "es tu instrumento -- descubrir por trafico quien cruza la frontera -- y el arbitro solo hizo un recuento crudo por LIKE que casi le hace confundir el usuario SMTMSBP con el host HQ-SAP-SBP",
-      "respuestas": []
+      "respuestas": [],
+      "_reenrutada_s107": {
+        "cuando": "2026-08-27",
+        "antes": "A23_channel_discovery_by_traffic",
+        "por_que": "el router viejo asignaba por SOLAPE DE PALABRAS. Este minero YA PUBLICO un hallazgo sobre este mismo sujeto: eso es evidencia de que puede contestar, no parecido de vocabulario"
+      }
     },
     {
       "de": "mining-arbiter",
@@ -4773,7 +4826,13 @@
       "sujeto": "LOTES PARADOS EN EL GATE",
       "pregunta": "Tu ficha declara CUATRO NARRATIVAS CABLEADAS y estado WEAK. Antes de que nadie componga el end-to-end sobre ti: 1.291 lotes en CUR_STS='IBC11', 1.271 de ellos con CHDATE=CRDATE, misma RULE_ID y mismos bancos casa que los que terminan en IBC15. PREGUNTA: en las corridas #027/#037 que congelaste en USER_PATTERNS, viste ya la bifurcacion IBC11 vs IBC15 sobre UNES_AP_10 / CIT04+SOG01? Si la viste y no la explicaste, es una UNEVEN (regla de reparto sin declarar), no un atasco.",
       "porque_no_puedo_yo": "es el unico minero que ya lee BNK_BATCH_HEADER y el unico que puede decir si esa bifurcacion es vieja o nueva",
-      "respuestas": []
+      "respuestas": [],
+      "_sin_destinatario": {
+        "cuando": "2026-08-27",
+        "asignada_por_palabras_a": "A59_bcm_dual_control_mining",
+        "por_que": "NADIE ha publicado sobre este sujeto. El destinatario actual salio del solape de palabras del router viejo y probablemente no puede contestar -- dejarlo ahi le imputa una ocasion perdida que no es suya",
+        "que_haria_falta": "que alguien MINE el sujeto, o que quien pregunta nombre la tabla o el objeto concreto en vez del tema"
+      }
     }
   ]
 }

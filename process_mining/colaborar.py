@@ -126,22 +126,77 @@ def repartir(silencioso=False):
         if p.get("respuestas") or str(p.get("para", "")).upper() not in ("CUALQUIERA", "", "TODOS"):
             continue
         quien = str(p.get("de") or "")
+        suj = str(p.get("sujeto") or "").strip().lower()
         necesita = _tok(p.get("pregunta")) | _tok(p.get("porque_no_puedo_yo"))
+
+        # ---- 1) EVIDENCIA: ¿alguien PUBLICO ya sobre ese sujeto? --------------------
+        # H126, arreglado s107. El repartidor mandaba a A68 cuatro preguntas sobre ADS
+        # «porque su capacidad cubre 4 terminos». A68 mina el ciclo del PAGO y no tiene nada
+        # que decir de ADS: comparte 'jobs', 'salida', 'programas'. COMPARTIR PALABRAS NO ES
+        # PODER CONTESTAR, y el IDF no lo salva -- se midio: ninguno de esos terminos es
+        # ubicuo. La senal que SI vale es haber publicado sobre el sujeto, que es prueba y no
+        # proximidad, y es la misma que usa `_respuesta_desde_lo_publicado` para contestar.
+        por_evidencia = None
+        if suj:
+            for h in (d.get("hallazgos") or []):
+                m = str(h.get("minero") or "")
+                if m and m != quien and str(h.get("sujeto") or "").strip().lower() == suj:
+                    por_evidencia = m
+                    break
+
         cand = []
-        for mid, texto in saben.items():
-            if not mid or mid == quien:
-                continue                      # nadie se pregunta a si mismo
-            n = sum(1 for w in necesita if w in texto)
-            if n >= 2:
-                cand.append((n, mid))
+        if por_evidencia:
+            cand = [("EVIDENCIA", por_evidencia)]
+            motivo = ("YA PUBLICO un hallazgo sobre este mismo sujeto: puede contestar con lo "
+                      "que ya midio, no por parecido de vocabulario")
+        else:
+            # ---- 2) PALABRAS, pero pesadas y exigiendo una RARA ---------------------
+            import math as _math
+            _df = {}
+            for _t in saben.values():
+                for _w in _tok(_t):
+                    _df[_w] = _df.get(_w, 0) + 1
+            _N = max(len(saben), 1)
+
+            def _idf(w):
+                dd = _df.get(w, 0)
+                return 0.0 if dd < 1 or dd > 0.25 * _N else _math.log(_N / dd)
+
+            _RARO = _math.log(_N / max(1.0, 0.08 * _N))
+            for mid, texto in saben.items():
+                if not mid or mid == quien:
+                    continue                      # nadie se pregunta a si mismo
+                comunes = [w for w in necesita if w in texto]
+                if not comunes:
+                    continue
+                raros = [w for w in comunes if _idf(w) >= _RARO]
+                if not raros or len(comunes) < 3:
+                    continue          # sin un termino RARO no hay tema compartido
+                cand.append((round(sum(_idf(w) for w in comunes), 2), mid))
+            cand.sort(reverse=True)
+            motivo = None
+
         if not cand:
+            # ---- 3) NADA: se deja sin repartir Y SE DICE ---------------------------
+            # Antes se asignaba al menos malo. Eso es peor que no asignar: el destinatario
+            # equivocado no contesta Y el gate lo cuenta como ocasion perdida SUYA.
+            p["_sin_destinatario"] = {
+                "cuando": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                "por_que": ("nadie ha publicado sobre este sujeto y ningun candidato comparte "
+                            "un termino RARO con la pregunta. Repartir al menos malo culpa a "
+                            "quien no podia contestar"),
+                "que_haria_falta": ("que alguien mine el sujeto, o que el que pregunta nombre "
+                                    "la tabla o el objeto concreto en vez del tema"),
+            }
             continue
-        cand.sort(reverse=True)
+
         p["para"] = cand[0][1]
         p["_repartida"] = {
             "cuando": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-            "por_que_a_el": (f"declara responder a {cand[0][0]} de los terminos que la "
-                             f"pregunta necesita"),
+            "por_que_a_el": motivo or (
+                f"solape pesado por IDF ({cand[0][0]}) con al menos un termino RARO -- es un "
+                f"PROXY de capacidad, no una prueba de que pueda contestar"),
+            "senal": "EVIDENCIA" if por_evidencia else "PALABRAS_PESADAS",
             "otros_candidatos": [m for _, m in cand[1:3]],
             "_ojo": ("el reparto NO es la respuesta: contestar exige mirar datos. Un enrutado "
                      "sin respuesta es teatro"),
