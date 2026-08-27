@@ -1924,6 +1924,30 @@
    ],
    "created_session": 105,
    "evidence": "claim 616 (el log es ciego al render Adobe): 15 instrumentos comparten sujeto, y DIEZ de ellos leen rsau_audit_history sin saber que ese log no ve los PDF. Ninguno se hizo la pregunta; la formulo un humano cuatro dias despues."
+  },
+  "A64_authority_vs_request_delta": {
+   "operates_on": "el JSON estructurado que produce un lector de documentos de autoridad: {documentos[], pedido_del_correo, objetos_esperados, no_legible}",
+   "origin": "OURS",
+   "state": "STRONG",
+   "tipo_mineria": [
+    "CONFORMIDAD"
+   ],
+   "generaliza": true,
+   "does": "SEPARAR LO QUE UN DOCUMENTO AUTORIZA DE LO QUE UN CORREO PIDE, y aplicar los cinco gates: (1) DELTA -- lo que se pide y nadie autoriza, no ejecutable; (2) OMISION -- lo autorizado que el correo no menciona, que es donde muerde; (3) SUSTITUCION -- si alguna clausula dice 'replaces all previous', el panel es sustitutivo y todo extra en el sistema pasa a ser SOBRE-AUTORIZACION y no deriva menor; (4) COMPLETITUD -- sin documento para cada objeto afectado no se puede llamar deriva a nada; (5) ALINEACION -- si dos documentos no dicen lo mismo, el cambio puede no ser representable y hay que devolverlo a quien lo autoriza.",
+   "por_que_esta_fuera_del_agente": "el metodo vivia en el prompt de `authority-doc-reader`: util para todos y usable por uno. Se corta por donde de verdad se parte -- LEER el PDF necesita criterio y se queda en el agente; COMPARAR es determinista y sale fuera, para que lo ejecuten master-data-sync, bcm-signatory-panel o un humano.",
+   "bound_in": [
+    "process_mining/authority_delta.py"
+   ],
+   "lands_in": [
+    "el veredicto va al doc del incidente y a la spec de ejecucion"
+   ],
+   "failure_mode": "RESUMIR EL DOCUMENTO A PARTIR DEL CORREO. Es el fallo que este algoritmo existe para impedir y se ha medido DOS VECES: INC-000011781 (la nota decia 'add Renata', las cartas decian ADD y DELETE Martin) e INC-000016262 (el correo pedia revaluar dos cuentas, el formulario AM 3-11 firmado decia NO para una). Segundo modo: dar OK cuando el gate de completitud NO SE PUDO EVALUAR -- si nadie declaro objetos_esperados el resultado es DESCONOCIDO, nunca OK.",
+   "checks_first": "los dos artefactos se leen POR SEPARADO. Comparar dos resumenes del mismo lector no compara nada.",
+   "relates_to": [
+    "A63_discovery_raises_questions"
+   ],
+   "created_session": 105,
+   "evidence": "corrida sobre INC-000011781: detecta la baja de 10108464 que el correo omitia."
   }
  },
  "_portfolio": {

@@ -35,6 +35,18 @@ Medido, dos veces, en incidentes distintos:
 En los dos casos ejecutar la nota del correo habria sido incorrecto. **Nunca resumas el documento
 a partir del correo; leelos por separado y compara.**
 
+## El minero que ejecutas cuando ya tienes el JSON
+
+Tu trabajo es LEER, que necesita criterio. **Comparar es determinista y ya no vive aqui**:
+
+```bash
+python process_mining/authority_delta.py --entrada <tu_json>
+```
+
+`A64_authority_vs_request_delta` aplica los cinco gates -- delta, omision, clausula sustitutiva,
+completitud y alineacion -- y devuelve HALT / REVISAR / OK. Esta fuera a proposito: asi lo puede
+ejecutar `bcm-signatory-panel`, `master-data-sync` o cualquiera con tu JSON, sin invocarte a ti.
+
 ## Lo que produces — siempre estructurado, nunca prosa
 
 ```json
