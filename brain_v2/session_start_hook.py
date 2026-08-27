@@ -99,6 +99,36 @@ def cycle_headline():
     return f" | loop healthy: cycle ran {days}d ago, {d.get('steps_ran')} steps, 0 failed"
 
 
+def roster_request():
+    """PIDE que la sesion declare que agentes le ofrecieron. No puede medirlo el hook.
+
+    El harness entrega el roster al CONTEXTO DEL MODELO, no al disco ni al payload de
+    ningun hook (comprobado s106: este mismo hook lee stdin y ahi no viene). Asi que la
+    unica forma de observarlo es que la sesion lo diga -- mismo patron que el gate del
+    steward: una peticion que el modelo cumple, no una funcion que corre sola.
+
+    Por que importa: enumerar `.claude/agents/*.md` ve los PROPIOS y es ciego al resto. En
+    s106 habia SEIS invisibles, y `Explore` -- uno de ellos -- fue el agente que mas
+    trabajo hizo ese dia. Ademas DOS propios no fueron ofrecidos: el roster cambia en los
+    dos sentidos, y sin declaracion ese cambio de capacidad pasa inadvertido.
+    """
+    try:
+        from record_agent_roster import anterior, session_ts as _sts  # noqa: PLC0415
+        prev = anterior()
+        if prev and prev.get("session_ts") == _sts():
+            return ""
+        edad = (" La ultima es de %s." % prev["at"][:10]) if prev else " NUNCA se ha declarado."
+        return (" ROSTER DE AGENTES — DECLARALO: ningun hook puede ver que agentes te ofrecio "
+                "el harness; solo tu los ves.%s Corre `python brain_v2/record_agent_roster.py "
+                "<nombre> <nombre> ...` con la lista EXACTA de tu system prompt. Enumerar "
+                ".claude/agents/ ve solo los PROPIOS y es ciego a Explore/Plan/general-purpose; "
+                "y hay propios que algunas sesiones NO ofrecen. El diff contra la declaracion "
+                "anterior es el hallazgo: un agente que aparece o desaparece es un cambio de "
+                "capacidad." % edad)
+    except Exception:
+        return ""
+
+
 def main():
     # Implementa, inyectandolas en cada arranque:
     #   feedback_load_the_domain_before_you_reason
@@ -113,6 +143,7 @@ def main():
     note = maybe_curate()
     meta = meta_headline()
     loop = cycle_headline()
+    roster = roster_request()
     ctx = (
         "MANDATORY FIRST ACTION (TIERED LOADING): read brain_v2/BRAIN_INDEX.md FIRST (~800 tokens, lean L1 "
         "index) — NOT the full 400K brain_state.json. Then DRILL on demand: python brain_v2/graph_queries.py "
@@ -140,10 +171,10 @@ def main():
         "invent exotic channels (ADT-HTTP, SPNEGO/password, deploy-to-P01) — that re-litigates settled constraints (rule #156). "
         "(2) CLOSE — commit SOURCE changes FOCUSED (never 'git add -A'; brain_state.json is GENERATED, don't commit it entangled) "
         "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (15.2GB measured 2026-08-17, gitignored) + ~/.claude memory "
-        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop
+        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop + roster
     )
     print(json.dumps({
-        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta + loop,
+        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta + loop + roster,
         "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": ctx},
     }))
 
