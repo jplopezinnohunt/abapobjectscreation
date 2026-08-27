@@ -363,6 +363,34 @@ modos_de_fallo:
       El segundo produce hallazgos FALSOS, no solo pobres.
       Se trata en PMO H142.
 
+  - nombre: EL SUBAGENTE NO DISTINGUE A SU PADRE DE UN EXTRANO
+    pasa_cuando: >
+      un agente largo mira el repo mientras trabaja y ve commits que el no hizo. Desde
+      DENTRO de un subagente, el trabajo de la sesion que lo lanzo y el de un escritor
+      ajeno se ven EXACTAMENTE IGUAL: no tiene ninguna vista de lo que hace su padre.
+    ejemplo_medido: >
+      s106. brain-steward corrio un rebuild de 56 minutos y al terminar levanto una
+      bandera de gobernanza: "7 commits de otro hilo activo aterrizaron durante mi
+      ventana; confirmad si era una sesion paralela autorizada". NO LO ERA. Los ocho
+      commits entre 16:13 y 16:57 eran del AGENTE PRINCIPAL de su propia sesion,
+      verificados uno a uno por hora y autor. Y el dueno lo confirmo por el otro lado: el
+      unico proyecto en paralelo es unescrp, que tiene otro arbol y otro .git, asi que no
+      puede commitear aqui.
+    por_que_importa: >
+      NO es un error de juicio del agente: es una CEGUERA ESTRUCTURAL, y va a repetirse
+      cada vez que un agente largo se solape con el trabajo del padre. Callarla seria
+      peor -- desde donde el miraba era indistinguible de un doble escritor real. Lo que
+      hay que arreglar no es al agente, es la LECTURA de su bandera.
+    defensa: >
+      ante una bandera de "escritor paralelo" levantada por un subagente, VERIFICAR ANTES
+      DE CREER: `git log --since=<inicio> --pretty="%h %ad %an %s"` y cruzar con lo que la
+      sesion hizo en esa ventana. Observar que el repo cambio es un HECHO; atribuirlo a un
+      actor es una HIPOTESIS (regla feedback_do_not_invent_who_changed_the_repo).
+    lo_que_si_fue_real_ese_dia: >
+      una violacion de un-solo-escritor, pero del PRINCIPAL: escribi claims.json con el
+      rebuild_all en curso. Admitido en su commit (b8f9c40). El defecto era mio, no del
+      steward, y su verificacion de que no hubo corrupcion era correcta.
+
   - nombre: EL BUCLE QUE PARECE TRAVESIA
     pasa_cuando: una arista va de un nodo a si mismo y se cuenta como relacion
     ejemplo_medido: 94 aristas RECUERDA eran bucles; las 10 "AGENTE->AGENTE" eran diez
