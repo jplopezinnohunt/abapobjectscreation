@@ -88,6 +88,7 @@ FAILURE MODES ALREADY HIT, KEPT HERE SO THEY ARE NOT HIT AGAIN
 
 Run:  python brain_v2/comprehension_index.py
 """
+from canonical import canonical as _canon  # noqa: E402
 import os, sys, json, sqlite3, collections, datetime
 
 # --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
@@ -208,15 +209,14 @@ def process_resolver():
             chains[name].add(pr)
         modules[name] = e.get("primary_modules") or []
 
-    alias = {}
+    # el mapa alias->canonico lo daba este bucle a mano; canonical.py ES el lookup y lo
+    # pide en su docstring desde s097 ("Import it; do not re-derive it"). s106. El bucle se
+    # queda porque ademas llena `chains` y `modules`, que no son cosa de canonical.
     onto = load(os.path.join(ROOT, "brain_v2", "capability_model", "ontology.json"))
     for e in onto.get("domains") or []:
         ck = e.get("canonical_key")
         if not ck:
             continue
-        alias[ck] = ck
-        for a in e.get("aliases") or []:
-            alias[a] = ck
         for pr in (e.get("process_axis") or []):
             chains[ck].add(pr)
         modules.setdefault(ck, e.get("module_axis") or [])
@@ -226,14 +226,14 @@ def process_resolver():
         if proc.startswith("_") or not isinstance(entry, dict):
             continue
         for dom in entry.get("domains") or []:
-            chains[alias.get(dom, dom)].add(proc)
+            chains[_canon(dom)].add(proc)
 
     assert chains, "ninguna de las 3 fuentes trae cadenas de proceso - no grades sobre esto"
 
     def resolve(domain):
         if not domain:
             return [], "UNKNOWN"
-        key = alias.get(domain, domain)
+        key = _canon(domain)
         ch = sorted(chains.get(key, ()))
         if ch:
             return ch, "PLACED"

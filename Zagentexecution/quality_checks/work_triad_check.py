@@ -42,6 +42,9 @@ QUALITY_CHECK = {
     "args": "[--incident INC-xxxx]",
 }
 
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))), "brain_v2"))
+from canonical import canonical as _canon  # noqa: E402
 import argparse
 import glob
 import io
@@ -111,11 +114,8 @@ def main():
     inc = load("brain_v2/incidents/incidents.json") or []
     dom = (load("brain_v2/domains/domains.json") or {}).get("domains", {})
     onto = load("brain_v2/capability_model/ontology.json") or {}
-    alias = {}
-    for d in onto.get("domains", []):
-        alias[d["canonical_key"]] = d["canonical_key"]
-        for x in (d.get("aliases") or []):
-            alias[x] = d["canonical_key"]
+    # canonical.py ES el lookup (s097: "Import it; do not re-derive it"). Este bloque
+    # construia el mapa a mano -- el defecto que canonical_usage_lint.py marca. s106.
 
     # DONDE puede aterrizar un objeto. La primera version de este check miraba SOLO los tres
     # registros de infraestructura y marcaba como "sin sitio" cuentas de mayor y clases ABAP que
@@ -146,7 +146,7 @@ def main():
     incompletos = []
     for x in sorted(casos, key=lambda z: z["id"]):
         crudo = (x.get("domain") or "").strip()
-        canon = alias.get(crudo, crudo)
+        canon = _canon(crudo)
         # La clave CANONICA de la ontologia no siempre es la clave del REGISTRO: `Treasury`
         # canoniza a `Treasury_EBS`, que no existe en domains.json. Sin este fallback el
         # registro sale vacio y el dominio entero parece no tener ni proceso ni companions --

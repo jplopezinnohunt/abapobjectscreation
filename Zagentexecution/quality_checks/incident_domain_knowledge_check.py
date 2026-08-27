@@ -33,6 +33,9 @@ QUALITY_CHECK = {
     "what": "todo incidente tiene dominio con registro y doc de PROCESO; avisa si hay 2+ del mismo tipo sin el",
 }
 
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))), "brain_v2"))
+from canonical import canonical as _canon  # noqa: E402
 import argparse
 import io
 import json
@@ -72,11 +75,8 @@ def main():
     inc = load("brain_v2/incidents/incidents.json")
     dom = load("brain_v2/domains/domains.json")["domains"]
     onto = load("brain_v2/capability_model/ontology.json")
-    alias = {}
-    for d in onto["domains"]:
-        alias[d["canonical_key"]] = d["canonical_key"]
-        for x in (d.get("aliases") or []):
-            alias[x] = d["canonical_key"]
+    # canonical.py ES el lookup (s097: "Import it; do not re-derive it"). Este bloque
+    # construia el mapa a mano -- el defecto que canonical_usage_lint.py marca. s106.
     cross = {x["key"] for x in onto.get("cross_cutting_keys", [])}
 
     sin_registro, sin_proceso, sin_cita = [], [], []
@@ -84,7 +84,7 @@ def main():
     print("%-24s %-12s %-22s %s" % ("INCIDENTE", "TIPO", "DOMINIO", "DOC DE PROCESO"))
     for i in sorted(inc, key=lambda z: (z.get("incident_type") or "", z["id"])):
         d = (i.get("domain") or "").strip()
-        canon = alias.get(d, d)
+        canon = _canon(d)
         rec = dom.get(canon) or dom.get(d)
         if not rec:
             nota = ("clave transversal, no dominio" if d in cross else "SIN REGISTRO")

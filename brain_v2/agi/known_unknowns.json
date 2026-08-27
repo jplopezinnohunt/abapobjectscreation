@@ -927,13 +927,19 @@
       "question": "La tabla ysbc_trace_payment (ycl_bc_trace_table, objeto WF_PAYMENT) tiene filas? Si las tiene, se puede CONTAR el trafico RM->FI (via Z_WF_GET_CERTIFYING_OFFICER / Z_GET_CERTIF_OFFICER_UNESDIR, campo unesdir_subrc) sin depender de PARAMX?",
       "why": "Z_WF_GET_CERTIFYING_OFFICER.abap escribe una fila de traza por INTENTO de llamada a RoleManagement (iv_tr_obj='WF_PAYMENT'). Si la tabla tiene filas, parte del cubo UNOBSERVABLE (claim 620, 40 destinos HTTP salientes que el instrumento de frontera no puede ver) se convierte en un numero MEDIDO para este consumidor concreto -- el workflow de liberacion de pago FI (WS90000003, ver claim 624). Es un LEAD encontrado leyendo ABAP el 2026-08-27 (aterrizado en .agents/skills/sap_interface_intelligence/SKILL.md), NO un dato: nadie ha leido esa tabla todavia, solo el codigo que la escribe.",
       "how_to_resolve": "Leer ysbc_trace_payment via RFC_READ_TABLE (o incluirla en el Gold DB si tiene volumen manejable), filtrar WHERE iv_tr_obj='WF_PAYMENT', y cruzar unesdir_subrc contra los resultados esperados de zrole_mgtco_facade. Verificar primero si la tabla existe en P01 (puede ser solo D01) y su retencion (puede purgarse como un log tecnico).",
-      "status": "OPEN",
+      "status": "CLOSED_ANSWERED",
+      "closed_at": "2026-08-27",
+      "closed_session": 106,
+      "resolution": "RESPONDIDA EN VIVO CONTRA P01 por claim 626, mientras este KU seguia abierto (otra sesion trabajando en el mismo repo). CORRECCION AL PREMISE de este KU: 'ysbc_trace_payment' NO es una tabla transparente -- es INTTAB (estructura), por eso RFC_READ_TABLE sobre ella da 'no existe'. Las tablas reales son YTBC_TRACE (registro, con grupo de control) y YTBC_TRACE_DET (detalle). Medido: FIORI_INB_FILES ACTIVE='X' -> 594 filas, FIORI_P_AND_F_FILES ACTIVE='X' -> 197 filas, WF_PAYMENT ACTIVE=' ' -> 0 filas. El mecanismo DE TRAZA FUNCIONA (grupo de control hermano con datos); esta APAGADO solo para el pago -- no es un instrumento ciego, es una traza desactivada. Se cierra con UN flag pendiente: activar YTBC_TRACE.ACTIVE='X' para WF_PAYMENT en P01 (cambio de configuracion en produccion, el agente no lo hace) y esperar a que fluyan facturas.",
       "related_claims": [
         620,
-        624
+        624,
+        626
       ],
       "related_objects": [
         "ysbc_trace_payment",
+        "YTBC_TRACE",
+        "YTBC_TRACE_DET",
         "ycl_bc_trace_table",
         "Z_WF_GET_CERTIFYING_OFFICER",
         "Z_GET_CERTIF_OFFICER_UNESDIR",
