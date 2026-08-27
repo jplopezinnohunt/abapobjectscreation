@@ -22,6 +22,11 @@ tools:
   - Write
   - Edit
   - TodoWrite
+# skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que
+# el contexto inicial de un subagente incluye el contenido COMPLETO de los skills
+# nombrados aqui -- asi que esto no se puede saltar, que es la diferencia con
+# citarlo en la prosa. Elegido: 19 KB: para arbitrar dos medidas hay que saber como se extrajeron.
+skills: [sap_data_extraction]
 ---
 
 # mining-arbiter — lo que no se vota, se mira

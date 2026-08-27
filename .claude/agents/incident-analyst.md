@@ -21,6 +21,11 @@ tools:
   - Bash
   - TodoWrite
 model: opus
+# skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que
+# el contexto inicial de un subagente incluye el contenido COMPLETO de los skills
+# nombrados aqui -- asi que esto no se puede saltar, que es la diferencia con
+# citarlo en la prosa. Elegido: 34 KB: el protocolo de dos vias (Track A diagnostico / Track B accion) que este agente EJECUTA. sap_adt_api son 76 KB de despliegue y no aplica a la mayoria.
+skills: [sap_incident_analyst]
 ---
 
 # Incident Analyst Agent
@@ -99,7 +104,7 @@ feedback, and in-flight corrections are preserved.
 Before reading the incident, **read the brain in this order**:
 
 1. `brain_v2/brain_state.json` (one Read = full intelligence)
-2. `.agents/skills/sap_incident_analyst/SKILL.md` (the 7-step protocol)
+2. `.claude/skills/sap_incident_analyst/SKILL.md` (the 7-step protocol)
 
 The brain already knows about most UNESCO objects, past incidents, broken
 fallbacks, and known-bad data. **Read it before grepping.** This is rule

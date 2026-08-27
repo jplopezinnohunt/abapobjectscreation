@@ -23,6 +23,11 @@ tools:
   - Write
   - Edit
   - TodoWrite
+# skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que
+# el contexto inicial de un subagente incluye el contenido COMPLETO de los skills
+# nombrados aqui -- asi que esto no se puede saltar, que es la diferencia con
+# citarlo en la prosa. Elegido: 18 KB: es su propio dominio, probado sobre SAPF100/F.05.
+skills: [sap_variant_analysis]
 ---
 
 # variant-intelligence — la variante ES el proceso
@@ -166,8 +171,8 @@ variante y extraer las rutas, para cerrar el modelo de por dónde entran y salen
 (claim 536).
 
 ## Artefactos
-- Skill: `.agents/skills/sap_variant_analysis/SKILL.md`
-- Skill: `.agents/skills/sap_job_intelligence/SKILL.md` — **la otra mitad del par.** Tú lees la
+- Skill: `.claude/skills/sap_variant_analysis/SKILL.md`
+- Skill: `.claude/skills/sap_job_intelligence/SKILL.md` — **la otra mitad del par.** Tú lees la
   VARIANTE (qué se hace); ese skill lee el JOB (`TBTCO`/`TBTCP`: quién lo programó, cada cuánto,
   qué encadena, cómo falla). Mapear jobs de interfaz a sus variantes — que es tu tarea declarada
   para cerrar el modelo de rutas de ficheros — necesita las dos: una variante sin job no se

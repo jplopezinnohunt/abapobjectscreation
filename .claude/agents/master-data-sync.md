@@ -23,6 +23,11 @@ tools:
   - Write
   - Bash
   - TodoWrite
+# skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que
+# el contexto inicial de un subagente incluye el contenido COMPLETO de los skills
+# nombrados aqui -- asi que esto no se puede saltar, que es la diferencia con
+# citarlo en la prosa. Elegido: 31 KB: su dominio exacto, replicacion por API estandar.
+skills: [sap_master_data_sync]
 ---
 
 # master-data-sync — replicar master data de P01 a los no productivos
@@ -111,8 +116,8 @@ la acción vacía. `'U'` sobre una cuenta inexistente devuelve `FH058`, lo que c
   `GET_CCODE` devuelve `NOT_EXISTING`. Es un dato, no un error.
 
 ## Artefactos
-- Skill: `.agents/skills/sap_master_data_sync/SKILL.md` (matriz de canales, corregida s102)
-- Skill: `.agents/skills/sap_account_comparison/SKILL.md` — **el que te faltaba, y es el que
+- Skill: `.claude/skills/sap_master_data_sync/SKILL.md` (matriz de canales, corregida s102)
+- Skill: `.claude/skills/sap_account_comparison/SKILL.md` — **el que te faltaba, y es el que
   cubre tu mitad ciega.** Se declara a sí mismo *"extends sap_master_data_sync with UPDATE
   capability (not just INSERT)"*: comparación campo a campo de `SKA1`/`SKB1`/`SKAT` entre
   sistemas y ajuste de lo que DIFIERE. Sin él sabes crear la cuenta que falta y no sabes

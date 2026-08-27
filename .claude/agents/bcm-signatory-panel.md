@@ -17,6 +17,11 @@ description: |
   - "Verifica que el cambio de ayer quedo bien"
   - "¿Hay alguien autorizado en SAP que no este en ningun carton?"
 model: sonnet
+# skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que
+# el contexto inicial de un subagente incluye el contenido COMPLETO de los skills
+# nombrados aqui -- asi que esto no se puede saltar, que es la diferencia con
+# citarlo en la prosa. Elegido: 53 KB del metodo del panel de firmantes, que es literalmente su trabajo. NO se precarga sap_payment_bcm_agent (103 KB): es el dominio de al lado y lo cita en prosa.
+skills: [sap_bcm_signatory_maintenance]
 ---
 
 # Control del PANEL DE FIRMANTES BCM
@@ -27,12 +32,12 @@ model: sonnet
 **Casos**: `INC-000006313` (UIS/Voffal) · `INC-000011781` (UBO/Ritter) · claim 566
 
 ⛔ **SKILL DEL DOMINIO — LÉELO ANTES DE TOCAR NADA**:
-`.agents/skills/sap_bcm_signatory_maintenance/SKILL.md` — el método completo del panel de
+`.claude/skills/sap_bcm_signatory_maintenance/SKILL.md` — el método completo del panel de
 firmantes (nodos RY de 90000004/90000005, `HRP1001`/`HRT1218`, rol `BNK_APP`), sus trampas
 medidas y sus puertas de cierre. **No** es `sap_payment_bcm_agent`: ése es el skill de PAGOS y
 el propio skill de firmantes lo dice en su descripción.
 
-Y para la PERSONA detrás del `PERNR` — `.agents/skills/hcm_domain_agent/SKILL.md` (conectado
+Y para la PERSONA detrás del `PERNR` — `.claude/skills/hcm_domain_agent/SKILL.md` (conectado
 s106, claim 622): el modelo de infotipos de UNESCO, `PA0001` (asignación organizativa), `PA0002`
 (datos personales) y `PA0105` (comunicaciones, de donde sale el correo con el que cruzas contra
 la carta). Tu skill de firmantes cubre la ESTRUCTURA (`HRP*`); ése cubre a la PERSONA (`PA*`), y

@@ -2,6 +2,11 @@
 name: log-process-discovery
 description: Descubre CÓMO SE TRABAJA REALMENTE en cada dominio leyendo el log de auditoría acumulado (28,5M filas de SM20/RSAU + CDHDR + TBTCO/TBTCP) — quién lo hace, cuándo, por qué canal, en qué orden y con qué variante — y mide el ÍNDICE DE COMPRENSIÓN: de todo lo que el sistema ejecuta, qué fracción sabemos situar en un proceso y un dominio Y explicar como forma de trabajo. Ese índice es su producto. Corre cuando el acumulador trae días nuevos, cuando la frontera deja de moverse, y bajo demanda. NO recalcula lo que el algoritmo ya calcula. NO escribe en SAP. Nace del 2026-08-22, cuando julio se recuperó y 576 "programas nuevos" resultaron ser 95% instancias generadas.
 model: sonnet
+# skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que
+# el contexto inicial de un subagente incluye el contenido COMPLETO de los skills
+# nombrados aqui -- asi que esto no se puede saltar, que es la diferencia con
+# citarlo en la prosa. Elegido: 11 KB: el unico que cita, y avisa de que una nocion de caso equivocada produce un mapa plausible de un proceso que no existe.
+skills: [sap_process_mining]
 ---
 
 # Log Process Discovery
@@ -92,7 +97,7 @@ ACUMULAR    accumulate_logs.py    A1 chunks ≤6h · A2 ventana derivada de la c
 Datos: `brain_v2/log_reality.json` · `brain_v2/executed_objects_domain_map.json` ·
 `brain_v2/drift_signals.json` · `brain_v2/change_attribution.json`
 Registro: `brain_v2/methods/algorithms.json` (A1–A8, A18, A19, B1–B5)
-Skill: `.agents/skills/sap_process_mining/SKILL.md`
+Skill: `.claude/skills/sap_process_mining/SKILL.md`
 
 ## CUÁNDO CORRES
 

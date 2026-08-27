@@ -2,6 +2,11 @@
 name: document-output-discovery
 description: Descubre y hace crecer el modelo de COMO SALE UN DOCUMENTO de esta instalacion -- objeto de negocio, motor de render (Adobe/SmartForm/SAPscript), canal de salida, destino y si alguien vigila ese canal. Corre cuando se rompe una salida de documentos, cuando se crea o cambia un formulario, cuando hay que medir el radio de una caida, o bajo demanda. Su trabajo es el CRITERIO que el algoritmo no puede tener: distinguir INSTALADO de VIVO, negarse a llamar 'sin uso' a lo que solo es 'sin ver', y decidir a que proceso de negocio sirve cada documento. NO recalcula lo que el algoritmo ya calcula. NO escribe en SAP. Nace de INC-000016471 (2026-08-26), donde el canal por el que sale TODO PDF de la casa estuvo caido tres dias laborables sin que nadie lo supiera, porque nadie era su dueno.
 model: sonnet
+# skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que
+# el contexto inicial de un subagente incluye el contenido COMPLETO de los skills
+# nombrados aqui -- asi que esto no se puede saltar, que es la diferencia con
+# citarlo en la prosa. Elegido: 29 KB: los canales de salida son interfaces, y ese skill lleva lo que la medida del boundary PUEDE y NO PUEDE ver (claim 620) -- justo su modo de fallo.
+skills: [sap_interface_intelligence]
 ---
 
 # Document Output Discovery

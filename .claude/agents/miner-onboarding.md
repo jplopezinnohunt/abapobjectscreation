@@ -22,6 +22,11 @@ tools:
   - Write
   - Edit
   - TodoWrite
+# skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que
+# el contexto inicial de un subagente incluye el contenido COMPLETO de los skills
+# nombrados aqui -- asi que esto no se puede saltar, que es la diferencia con
+# citarlo en la prosa. Elegido: 18 KB. NO sap_installation_profiling (49 KB): da de alta mineros de cualquier clase, asi que se precarga el mas barato y transversal y los demas se abren a demanda.
+skills: [sap_variant_analysis]
 ---
 
 # miner-onboarding — incorporar la CAPACIDAD, no el fichero
@@ -72,14 +77,14 @@ fichero.
 **2. Busca sus FUENTES de método** y léelas enteras. Están en varios sitios y hay que mirar
 todos:
 - `.claude/agents/*.md` — ¿hay un agente que describa este método?
-- `.agents/skills/*/SKILL.md`
+- `.claude/skills/*/SKILL.md`
 - `knowledge/domains/**` — metodologías y documentos de dominio
 - `Zagentexecution/tasks/**` — el `learning_summary.md` de la tarea donde nació
 - `brain_v2/claims/claims.json` — busca el nombre del script y sus tablas
 - `knowledge/session_retros/` — el retro de la sesión que lo produjo
 - `git log --follow <script>` — el mensaje del commit que lo creó suele tener el porqué
 
-⛔ **Y ANTES DE ESCRIBIR LA FICHA, LEE `.agents/skills/sap_installation_profiling/SKILL.md`.**
+⛔ **Y ANTES DE ESCRIBIR LA FICHA, LEE `.claude/skills/sap_installation_profiling/SKILL.md`.**
 Es el skill que define ESTE registro: por qué un algoritmo es activo de primera clase, los cuatro
 campos que declara — qué hace · dónde está ligado · **su modo de fallo** · su palanca de mejora — y
 las tres herramientas de mejora continua (`validate_algorithms.py` / `improve_algorithms.py` /

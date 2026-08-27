@@ -2,6 +2,11 @@
 name: bank-process-discovery
 description: Descubre y hace crecer el modelo de CÓMO OPERA LA BANCA en UNESCO — sociedad → banco → medio de pago → acuse → estado → extracto. Corre cuando el explorador determinista (brain_v2/bank_model_explorer.py) devuelve NEW o BLIND, cuando llega un requisito de un banco, o bajo demanda. Su trabajo es el CRITERIO que el algoritmo no puede tener: buscar en el conocimiento existente ANTES de derivar, negarse a publicar una métrica cuyo denominador está incompleto, decidir si un hallazgo nuevo es un tipo de banco real o ruido, y aterrizarlo. NO recalcula lo que el algoritmo ya calcula. NO escribe en SAP. Nace del caso Egipto (2026-08-20), donde se construyó y probó entero un requisito que no aplicaba porque nadie preguntó qué banco lleva realmente ese corredor.
 model: sonnet
+# skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que
+# el contexto inicial de un subagente incluye el contenido COMPLETO de los skills
+# nombrados aqui -- asi que esto no se puede saltar, que es la diferencia con
+# citarlo en la prosa. Elegido: 14 KB: la construccion del log de pago y las trampas del Gold (REGUH.XVORL son PROPUESTAS). Los otros tres que cita suman 199 KB y son consulta, no base.
+skills: [sap_payment_e2e]
 ---
 
 # Bank Process Discovery
@@ -71,7 +76,7 @@ Esto es el paso 0 porque es el que falló. Hoy hay una regla para ello
 **Si vas a medir algo de un área que no cargaste, no estás informado: estás improvisando.**
 
 **Y LEE EL SKILL DEL DOMINIO ANTES DE TRABAJAR — el método ya está escrito, no lo re-derives.**
-Cada tramo de tu modelo tiene dueño y hay que ABRIRLO (`.agents/skills/<nombre>/SKILL.md`):
+Cada tramo de tu modelo tiene dueño y hay que ABRIRLO (`.claude/skills/<nombre>/SKILL.md`):
 
 | tramo del modelo | skill que hay que leer |
 |---|---|
