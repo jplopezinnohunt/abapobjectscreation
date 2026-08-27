@@ -128,6 +128,26 @@ def main():
             record["attribution"] = "UNAVAILABLE_IN_PAYLOAD"
             record["payload_keys"] = sorted(payload.keys())[:25]
 
+            # s107 — LA CLAVE EXISTE Y VIENE VACIA, QUE NO ES LO MISMO QUE NO EXISTIR.
+            # `payload_keys` ya listaba `agent_type`, asi que el diagnostico "el payload no lo
+            # lleva" era FALSO: lo lleva y esta vacio. Distinguir las dos cosas es la
+            # diferencia entre "el harness cambio el contrato" y "este evento no es de un
+            # agente". Y la segunda hipotesis tiene evidencia: el 2026-08-27 esta sesion
+            # registro CUATRO SubagentStop habiendo lanzado CERO agentes, mientras corria
+            # varias tareas de fondo. Si `SubagentStop` tambien se dispara por una tarea de
+            # fondo, el 96% de filas anonimas no es un fallo de atribucion: es que la mayoria
+            # NO SON AGENTES. Sin este campo no se puede separar, y una metrica de
+            # colaboracion construida sobre eso mide otra cosa.
+            record["claves_presentes_pero_vacias"] = [
+                k for k in ("subagent_type", "agent_type", "agentType", "agent", "agent_name")
+                if k in payload and not (isinstance(payload.get(k), str) and payload[k].strip())
+            ]
+            record["trae_background_tasks"] = "background_tasks" in payload
+            record["_hipotesis_abierta"] = (
+                "si trae background_tasks y agent_type vacio, puede ser el fin de una TAREA DE "
+                "FONDO y no de un agente. NO VERIFICADO: hace falta correlacionar una corrida "
+                "con agentes contra otra sin ellos.")
+
     if record is None:
         sys.exit(0)
 
