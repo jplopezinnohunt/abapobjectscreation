@@ -143,7 +143,33 @@ class Memorias:
               "contestar('<tu id>', '<sujeto>', '<respuesta>', '<evidencia>')")
             p("   dejarla abierta pudiendo contestarla es la OCASION PERDIDA que mide "
               "mining_collaboration_check")
-            marcar_visita(minero, [q["sujeto"] for q in mias], [])
+
+            # --- Y AHORA SE CONTESTA, no solo se enseña (s107) ------------------------
+            # Enseñar la pregunta y marcar `contestadas=[]` era exactamente la ocasion
+            # perdida que este mismo aviso denuncia. Un mecanismo que muestra el trabajo y
+            # deja la accion en otra funcion que llama UN minero de 72 no es un mecanismo.
+            # Aqui se intenta la respuesta automatica: si este minero YA publico algo sobre
+            # ese sujeto, ese hallazgo es su respuesta -- no hay criterio nuevo que inventar.
+            # Si no publico nada, CALLA: un foro que responde por responder miente.
+            contestadas = []
+            try:
+                from colaborar import _respuesta_desde_lo_publicado, contestar
+                for q in mias:
+                    r = _respuesta_desde_lo_publicado(minero, q)
+                    if not r:
+                        continue
+                    try:
+                        if contestar(minero, q["sujeto"], r[0], r[1], para=q.get("para")):
+                            contestadas.append(q["sujeto"])
+                    except ValueError:
+                        pass          # sujeto ambiguo: se niega, y hace bien
+                if contestadas:
+                    p(f"   [foro] CONTESTADAS automaticamente desde lo ya publicado: "
+                      f"{', '.join(contestadas[:4])}")
+            except Exception:
+                pass
+
+            marcar_visita(minero, [q["sujeto"] for q in mias], contestadas)
         except Exception:
             pass          # el foro no puede tumbar a un minero: avisa o calla, nunca rompe
 
