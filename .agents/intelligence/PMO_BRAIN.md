@@ -550,6 +550,74 @@ FEBKO parcial ya es claim 535/536.
      agente localizarlo (ver Explore/miner-onboarding en paralelo); este agente no lo
      busco por nombre ni contenido.
 
+**H137 -- CERRADO EL TRAMO PRINCIPAL (s107, 2026-08-27). NO HABIA NADA PERDIDO: FALTABA EL
+ORDEN.**
+
+**1. El companion existe y se llama `payment_bcm_companion.html` (828 KB).** Localizado por
+CONTENIDO, no por nombre (barrido de los 142 HTML del repo por la combinacion Role Management
++ PPC + BCM). Contiene lo que el dueno recordaba, literalmente: *UNESCO Payment End-to-End
+Flow*, *Workflow Identity*, *Actor Resolution Rules*, *WF Call Chain (step by step)* con
+`Z_GET_CERTIF_OFFICER_UNESDIR -> role.hq.int.unesco.org`, *BCM Release Rules*, DMEE y los
+tiers por sociedad. **Lo que no tiene es el principio**: arranca en *FI document posted*, no
+en el pedido. Por eso no se reconocia como "el circuito completo".
+
+**2. El circuito esta en CINCO piezas, y las once etapas estan CUBIERTAS.** Barrido de los 52
+HTML de `companions/` contra los tokens de cada etapa: ninguna etapa se quedo sin companion.
+`p2p_process_mining.html` cubre pedido -> recepcion -> hoja de servicios -> factura MM;
+`payment_bcm_companion.html` cubre documento FI -> PPC -> WF/RM -> F110 -> BCM -> fichero;
+`p2p_purpose_of_payment.html` + `inc_egypt_ppc_configuration.html` el PPC;
+`bcm_signatory_companion.html` el panel; `bank_statement_ebs_companion.html` el extracto.
+**No hay perdida de conocimiento** -- que era lo unico que H137 temia de verdad.
+
+**3. POR QUE EL GRAFO NO CONOCIA LA CADENA, y por que no era un umbral mal puesto.**
+`companion_graph.json` tenia **UN SOLO tipo de arista**: coseno IDF sobre vocabulario
+compartido, que mide **PARECIDO**. Dos etapas **contiguas** comparten poco vocabulario
+*precisamente porque son etapas distintas* -- `EBAN`/`EKPO` no se parece a
+`BNK_BATCH_HEADER`. **La similitud no puede expresar secuencia, por construccion.** Medido
+antes de tocar nada: de los 10 pares entre las 5 piezas, **6 sin arista**, y
+`p2p_purpose_of_payment.html` **sin ninguna** con las otras cuatro. Bajar el umbral no habria
+cosido el circuito: habria metido ruido. Es el mismo defecto que el driver OCEL 2.0 de
+`braintoolbox.yaml` nombra -- tratar el proceso como un CONTENEDOR plano (`process_map` da un
+conjunto de dominios) en vez de como una PERSPECTIVA con orden.
+
+**4. LO HECHO -- la secuencia como segunda clase de arista, declarada y vigilada:**
+- `brain_v2/domains/domains.json -> process_map.P2P.stages`: **11 etapas** con sus objetos,
+  sus `evidence_tokens`, sus companions, cuales son **CONDICIONALES** (hoja de servicios,
+  PPC, BCM por tier de sociedad) y cuales pueden **PARAR el circuito** (metodo O/U termina el
+  WF; IBC17/IBC06 paran BCM). `domains` sigue diciendo QUIEN participa; `stages` dice EN QUE
+  ORDEN. Son campos distintos a proposito.
+- `scripts/build_companion_graph.py`: emite **`sequence_edges` (SIGUE_A)** -- **20 aristas, 9
+  companions dentro de la cadena** -- proyectadas de esa declaracion, separadas de las 130 de
+  parecido, y dibujadas con flecha (discontinua donde la etapa anterior puede parar). **La
+  arista que el PMO daba por ausente, `p2p_purpose_of_payment <-> payment_bcm_companion`, ya
+  existe como SIGUE_A -- y sigue sin existir como parecido, que es exactamente el punto.**
+- `Zagentexecution/quality_checks/process_circuit_check.py` (**gate nuevo**): comprueba que
+  cada etapa siga cubierta, que el companion declarado la contenga **de verdad**, que el orden
+  sea consecutivo, y dibuja las juntas.
+
+**5. EL FALSO POSITIVO QUE SE CAZO A SI MISMO, y es el aprendizaje que vale.** La primera
+version del gate declaro el circuito **entero cosido**... acreditando la junta factura->FI a
+`transport_companion_D01K9B0CBF_v2.html` y la de servicios->factura a
+`fm_ps_avc_temporal_forecast_v1.html`: **un companion de TRANSPORTES y uno de AVC**, que citan
+`MIRO`/`BKPF` de pasada. Su propio docstring ya advertia de esto y aun asi lo hizo. **Una cita
+no es una narracion** -- el mismo limite que el `LEE` del toolgraph, tercera capa del patron
+"medir la FORMA en vez del EFECTO". Regla que quedo en el codigo: una junta esta cosida cuando
+un fichero **DECLARADO** para una etapa (alguien lo abrio y lo juzgo) **MIDE** cobertura de la
+contigua -- **juicio Y medida, ninguno de los dos solo**. Segunda version: la junta 40->45 baja
+de COSIDA a **ARISTA** (parecido 0,297, senal debil), que es la verdad.
+
+**QUE QUEDA ABIERTO de H137** (no se toco, y se dice en vez de darlo por hecho):
+- **El barrido de los 44 companions** para contestar MEDIDA la tesis del dueno -- *cuales son
+  de facto un skill de dominio sin declarar*. Es el punto 4 de "como atacarlo" y sigue entero.
+- **El skill `presupuesto-al-pago`**: no creado. Ahora hay de que sacarlo -- las 11 etapas son
+  su indice -- pero crearlo es trabajo aparte.
+- **El minero end-to-end**: sin veredicto. La evidencia nueva empuja a COMPOSICION y no a
+  minero nuevo (cada tramo ya esta minado), pero eso lo decide `miner-onboarding` con la
+  cadena delante, no yo por gusto.
+- **Las etapas 1-3 no producen arista SIGUE_A** porque las tres viven en el mismo fichero:
+  son bucles, y un bucle no es travesia (`braintoolbox` seccion 6). Correcto, pero significa
+  que el grafo no muestra el tramo de compras como cadena.
+
  -- EL BOUNDARY LLAMA DEAD A 38 DESTINOS QUE SU EVIDENCIA NO PUEDE VER (medido 2026-08-27,
 claim 620).** `process_mining/interface_boundary.py` correlaciona `RFCDES` contra
 `rsau_audit_history.PARAMX`, que registra llamadas **RFC**. Un `cl_http_client=>create_by_destination`

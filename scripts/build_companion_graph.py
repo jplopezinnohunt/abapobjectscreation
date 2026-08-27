@@ -27,6 +27,64 @@ ROOT = Path(__file__).parent.parent
 COMP = ROOT / "companions"
 REG = COMP / "companions.json"
 OUT = COMP / "companion_graph.json"
+DOMAINS = ROOT / "brain_v2" / "domains" / "domains.json"
+
+
+def circuit_edges(on_disk):
+    """H137 (s107) — LA SEGUNDA CLASE DE ARISTA: SIGUE_A, la secuencia del proceso.
+
+    Hasta s107 este grafo tenia UN solo tipo de arista, el coseno IDF sobre vocabulario
+    compartido, que mide PARECIDO. Y por eso no conocia la cadena presupuesto-a-pago: dos
+    etapas CONTIGUAS comparten poco vocabulario justo porque son etapas distintas (EBAN/EKPO
+    no se parece a BNK_BATCH_HEADER). La similitud no puede expresar SECUENCIA — no era un
+    umbral mal puesto, era el tipo de arista equivocado.
+
+    La secuencia NO se deriva: se DECLARA en brain_v2/domains/domains.json ->
+    process_map.<P>.stages, donde `domains` dice QUIEN participa y `stages` EN QUE ORDEN.
+    Aqui solo se proyecta esa declaracion sobre los companions que cada etapa nombra.
+    Lo que la valida (que el companion declarado contenga de verdad los tokens de su etapa)
+    es Zagentexecution/quality_checks/process_circuit_check.py, no esto.
+    """
+    try:
+        dom = json.loads(DOMAINS.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return [], {}
+    en_disco = set(on_disk)
+    edges, circuits = [], {}
+    for clave, circ in (dom.get("process_map") or {}).items():
+        if not isinstance(circ, dict) or not circ.get("stages"):
+            continue
+        stages = circ["stages"]
+        circuits[clave] = {
+            "name": circ.get("name", clave),
+            "n_stages": len(stages),
+            "stages": [{"n": s.get("n"), "id": s.get("id"), "name": s.get("name"),
+                        "companions": [c for c in (s.get("companions") or []) if c in en_disco],
+                        "conditional": bool(s.get("conditional")),
+                        "can_stop_here": bool(s.get("can_stop_here"))} for s in stages],
+            "juntas_secas_declaradas": circ.get("_stages_juntas_secas") or [],
+        }
+        for i in range(len(stages) - 1):
+            A, B = stages[i], stages[i + 1]
+            for x in (A.get("companions") or []):
+                for y in (B.get("companions") or []):
+                    if x == y or x not in en_disco or y not in en_disco:
+                        continue
+                    edges.append({
+                        "a": x, "b": y, "type": "SIGUE_A", "circuit": clave,
+                        "from_stage": A.get("id"), "to_stage": B.get("id"),
+                        "can_stop_here": bool(A.get("can_stop_here")),
+                        "conditional": bool(B.get("conditional")),
+                    })
+    # dedup manteniendo el primer tramo que la produjo
+    visto, uniq = set(), []
+    for e in edges:
+        k = (e["a"], e["b"], e["circuit"])
+        if k in visto:
+            continue
+        visto.add(k)
+        uniq.append(e)
+    return uniq, circuits
 
 # companions that are not content nodes (index / assembly source / generated views)
 SKIP = {"unesco_sap_landing.html", "companion_graph_v1.html"}
@@ -198,11 +256,15 @@ def emit_html(graph, out_html):
                    "reg": n["registered"], "x": round(x, 1), "y": round(y, 1)})
     je = [{"a": by_file[e["a"]], "b": by_file[e["b"]], "w": e["weight"],
            "s": e["shared"][:6]} for e in graph["edges"]]
+    jq = [{"a": by_file[e["a"]], "b": by_file[e["b"]], "c": e["circuit"],
+           "f": e["from_stage"], "t": e["to_stage"], "stop": e["can_stop_here"]}
+          for e in graph.get("sequence_edges", []) if e["a"] in by_file and e["b"] in by_file]
     legend = [{"i": ci, "label": c["label"], "size": c["size"],
                "color": CLUSTER_COLORS[ci % len(CLUSTER_COLORS)]} for ci, c in enumerate(clusters)]
     inv = graph["inventory"]
-    data = json.dumps({"nodes": jn, "edges": je, "legend": legend, "inv": inv,
-                       "stats": graph["stats"]}, ensure_ascii=False)
+    data = json.dumps({"nodes": jn, "edges": je, "seq": jq, "legend": legend, "inv": inv,
+                       "circuits": graph.get("circuits", {}), "stats": graph["stats"]},
+                      ensure_ascii=False)
     html = _HTML_TEMPLATE.replace("/*DATA*/", data).replace("__W__", str(W)).replace("__H__", str(H))
     out_html.write_text(html, encoding="utf-8")
 
@@ -257,6 +319,16 @@ function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAt
 const eg=el('g',{});svg.appendChild(eg);
 G.edges.forEach((e,i)=>{const a=G.nodes[e.a],b=G.nodes[e.b];
   const l=el('line',{class:'edge',x1:a.x,y1:a.y,x2:b.x,y2:b.y,'stroke-width':(0.5+e.w*3).toFixed(2),'data-e':i});eg.appendChild(l);e._l=l;});
+// SIGUE_A — la SECUENCIA del proceso. Otra clase de arista: el parecido no puede expresar orden.
+const defs=el('defs',{});svg.appendChild(defs);
+const mk=el('marker',{id:'arw',viewBox:'0 0 10 10',refX:'9',refY:'5',markerWidth:'6',markerHeight:'6',orient:'auto-start-reverse'});
+const pth=el('path',{d:'M0,0 L10,5 L0,10 z',fill:'#ffb454'});mk.appendChild(pth);defs.appendChild(mk);
+const sg=el('g',{});svg.appendChild(sg);
+(G.seq||[]).forEach(e=>{const a=G.nodes[e.a],b=G.nodes[e.b];
+  const l=el('line',{class:'seq',x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:'#ffb454','stroke-width':2.2,
+    'stroke-opacity':0.85,'marker-end':'url(#arw)','stroke-dasharray':e.stop?'6 4':''});
+  const ttl=el('title',{});ttl.textContent=`${e.c}: ${e.f} -> ${e.t}`+(e.stop?'  (la etapa anterior PUEDE PARAR el circuito)':'');
+  l.appendChild(ttl);sg.appendChild(l);});
 // nodes
 const ng=el('g',{});svg.appendChild(ng);
 G.nodes.forEach(n=>{const r=8+adj[n.id].length*0.7;
@@ -286,6 +358,8 @@ document.querySelectorAll('.leg').forEach(d=>d.addEventListener('mouseenter',()=
   G.edges.forEach(e=>e._l.style.strokeOpacity=(G.nodes[e.a].c===ci&&G.nodes[e.b].c===ci)?0.8:0.08);}));
 document.getElementById('bar').innerHTML=
   `<span class="chip">${G.stats.nodes} companions</span><span class="chip">${G.stats.edges} relations</span>`+
+  `<span class="chip" style="border-color:#ffb454;color:#ffb454">${(G.seq||[]).length} SIGUE_A (secuencia)</span>`+
+  Object.entries(G.circuits||{}).map(([k,c])=>`<span class="chip" style="border-color:#ffb454;color:#ffb454">${k}: ${c.n_stages} etapas</span>`).join('')+
   `<span class="chip">${G.legend.length} clusters</span>`+
   `<span class="chip orph">${G.inv.orphans_unregistered.length} orphans</span>`+
   (G.inv.registered_missing_file.length?`<span class="chip">${G.inv.registered_missing_file.length} missing files</span>`:'');
@@ -418,9 +492,19 @@ def main():
         rel[e["b"]].append((e["a"], e["weight"]))
     related = {f: [n for n, _ in sorted(v, key=lambda t: -t[1])[:a.topk]] for f, v in rel.items()}
 
+    seq_edges, circuits = circuit_edges(on_disk)
+    en_cadena = sorted({e["a"] for e in seq_edges} | {e["b"] for e in seq_edges})
+    for n in nodes:
+        n["circuit_stages"] = [f"{c}:{s['id']}" for c, cc in circuits.items()
+                               for s in cc["stages"] if n["file"] in s["companions"]]
+
     graph = {
-        "_design": "Companion relationship graph. Deterministic Jaccard over {domain, keywords, "
-                   "INC-ids, SAP-vocabulary}; every edge lists the shared tokens (CP-003 traceable). "
+        "_design": "Companion relationship graph. DOS clases de arista, a proposito: "
+                   "`edges` = PARECIDO (coseno IDF sobre {domain, keywords, INC-ids, SAP-vocabulary}; "
+                   "cada arista lista sus tokens compartidos, CP-003 trazable) y "
+                   "`sequence_edges` = SECUENCIA (SIGUE_A, proyectada de process_map.<P>.stages en "
+                   "domains.json). La primera se DERIVA y no puede expresar orden; la segunda se "
+                   "DECLARA y es la unica que sabe que BCM esta EN MEDIO. H137/s107. "
                    "Rebuild: python scripts/build_companion_graph.py",
         "generated_for": "UNESCO SAP companions",
         "threshold": a.threshold,
@@ -430,9 +514,13 @@ def main():
         },
         "html_inventory_repo_wide": repo_html_inventory(),
         "stats": {"nodes": len(nodes), "edges": len(edges), "clusters": len(clusters),
-                  "cluster_method": method},
+                  "cluster_method": method,
+                  "sequence_edges": len(seq_edges), "circuits": len(circuits),
+                  "nodes_in_a_circuit": len(en_cadena)},
         "nodes": nodes,
         "edges": edges,
+        "sequence_edges": seq_edges,
+        "circuits": circuits,
         "clusters": clusters,
         "related": related,
     }
@@ -441,6 +529,15 @@ def main():
 
     # ---- summary ----
     print(f"COMPANION GRAPH  ·  nodes={len(nodes)}  edges={len(edges)}  clusters={len(clusters)}")
+    print(f"SECUENCIA (SIGUE_A)  ·  {len(seq_edges)} aristas  ·  {len(circuits)} circuito(s)  ·  "
+          f"{len(en_cadena)} companions dentro de una cadena")
+    for clave, cc in circuits.items():
+        print(f"   {clave} — {cc['name']}: " + " -> ".join(s["id"] for s in cc["stages"]))
+        sin = [s["id"] for s in cc["stages"] if not s["companions"]]
+        if sin:
+            print(f"      ETAPAS SIN COMPANION EN DISCO: {sin}")
+        for j in cc["juntas_secas_declaradas"]:
+            print(f"      junta declarada: {j[:110]}")
     print(f"on_disk={len(on_disk)}  registered={len(registered)}")
     print(f"ORPHANS (on disk, NOT in companions.json): {orphans or 'none'}")
     print(f"MISSING (registered, no file): {missing or 'none'}")

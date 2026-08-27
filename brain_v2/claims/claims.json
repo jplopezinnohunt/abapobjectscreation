@@ -29556,5 +29556,87 @@
     "created_session": 106,
     "resolved_session": 106,
     "resolution_notes": "Cierra en parte el claim 624 (contradiccion abierta D01 vs P01): los objetos EXISTEN en P01, asi que la muerte declarada en D01 no se hereda. Lo que queda abierto es si la LLAMADA funciona, y ahora se sabe exactamente que hace falta para saberlo."
+  },
+  {
+    "id": 627,
+    "claim": "EL CIRCUITO PRESUPUESTO-A-PAGO NO ESTABA PERDIDO NI INCOMPLETO: ESTABA REPARTIDO EN CINCO COMPANIONS Y LO QUE FALTABA ERA EL ORDEN. Medido el 2026-08-27 barriendo los 52 HTML de companions/ contra los tokens de evidencia de cada etapa: las ONCE etapas del circuito (pedido -> entrada de mercancias -> hoja de entrada de servicios -> factura MM -> documento FI con bloqueo -> PPC si aplica -> aprobacion WF que resuelve actor contra RoleManagement -> F110 -> BCM -> fichero al banco -> acuse/extracto) tienen al menos un companion que las contiene. NINGUNA etapa quedo sin cobertura, que era lo unico que la peticion del dueno temia de verdad. El companion que el dueno recordaba como 'el circuito completo de pagos, muy bueno y detallado' es payment_bcm_companion.html (828 KB), localizado por CONTENIDO y no por nombre: contiene UNESCO Payment End-to-End Flow, Workflow Identity, Actor Resolution Rules, WF Call Chain (step by step) con Z_GET_CERTIF_OFFICER_UNESDIR -> role.hq.int.unesco.org, BCM Release Rules, DMEE y los tiers por sociedad. NO ARRANCA EN EL PEDIDO sino en 'FI document posted', y por eso no se reconocia como el circuito entero. El reparto medido: p2p_process_mining.html cubre pedido/recepcion/hoja de servicios/factura MM (848.135 eventos, 193.296 casos); payment_bcm_companion.html de documento FI a fichero; p2p_purpose_of_payment.html + inc_egypt_ppc_configuration.html el PPC; bcm_signatory_companion.html el panel de firmas; bank_statement_ebs_companion.html el extracto.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Payment_BCM",
+    "domain_axes": {
+      "functional": "Payment_BCM",
+      "process": "P2P"
+    },
+    "evidence_for": [
+      "barrido 2026-08-27 de companions/*.html (52 ficheros) contra los evidence_tokens de las 11 etapas; ninguna etapa con 0 cubridores",
+      "companions/payment_bcm_companion.html — secciones 'UNESCO Payment End-to-End Flow', 'Actor Resolution Rules', 'WF Call Chain (step by step)', 'BCM Release Rules'",
+      "companions/p2p_process_mining.html — EBAN -> EKKO/EKPO -> ESSR/ESLL -> RBKP/RSEG -> EKBE, termina en 'Invoice Posted'",
+      "brain_v2/domains/domains.json -> process_map.P2P.stages (11 etapas declaradas con su cobertura medida)",
+      "Zagentexecution/quality_checks/process_circuit_check.py — exit 0 con las 11 etapas cubiertas"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "payment_bcm_companion.html",
+      "p2p_process_mining.html",
+      "p2p_purpose_of_payment.html",
+      "bcm_signatory_companion.html",
+      "bank_statement_ebs_companion.html",
+      "inc_egypt_ppc_configuration.html",
+      "EBAN",
+      "EKKO",
+      "EKPO",
+      "ESSR",
+      "ESLL",
+      "RBKP",
+      "RSEG",
+      "BKPF",
+      "BSEG",
+      "ZLSPR",
+      "T015L",
+      "YTFI_PPC_STRUC",
+      "WS90000003",
+      "Z_GET_CERTIF_OFFICER_UNESDIR",
+      "REGUH",
+      "BNK_BATCH_HEADER",
+      "SAPFPAYM",
+      "FEBKO"
+    ],
+    "created_session": 107,
+    "resolved_session": 107,
+    "resolution_notes": "Cierra el tramo principal de H137. Queda abierto el barrido de los 44 companions (tesis del dueno: un companion es un skill de dominio sin declarar), el skill presupuesto-al-pago, y el veredicto sobre el minero end-to-end."
+  },
+  {
+    "id": 628,
+    "claim": "LA SIMILITUD NO PUEDE EXPRESAR SECUENCIA, Y POR ESO EL GRAFO DE COMPANIONS NO PODIA CONOCER NINGUNA CADENA DE PROCESO -- NO ERA UN UMBRAL MAL PUESTO, ERA EL TIPO DE ARISTA EQUIVOCADO. companion_graph.json tenia UNA sola clase de arista: coseno IDF sobre vocabulario compartido, que mide PARECIDO. Dos etapas CONTIGUAS de un proceso comparten poco vocabulario precisamente porque son etapas distintas -- EBAN/EKPO no se parece a BNK_BATCH_HEADER -- asi que cuanto mejor separadas estan las etapas, MENOS arista sale. Medido antes de tocar nada el 2026-08-27: de los 10 pares posibles entre las 5 piezas del circuito, SEIS sin arista, y p2p_purpose_of_payment.html sin NINGUNA con las otras cuatro. Bajar el umbral (0,18) no habria cosido el circuito: habria metido ruido. La misma forma del defecto esta en process_map de domains.json, que dice QUE DOMINIOS pertenecen a un proceso como si la pertenencia fuera plana -- la restriccion de CASO UNICO que el driver OCEL 2.0 de braintoolbox.yaml nombra explicitamente. ARREGLADO EN EL GENERADOR: la secuencia se DECLARA (process_map.P2P.stages, 11 etapas con objetos, evidence_tokens, companions, cuales son CONDICIONALES y cuales pueden PARAR el circuito) y build_companion_graph.py la proyecta como SEGUNDA CLASE DE ARISTA, sequence_edges tipo SIGUE_A: 20 aristas, 9 companions dentro de la cadena, separadas de las 130 de parecido. La arista concreta que el PMO daba por ausente, p2p_purpose_of_payment <-> payment_bcm_companion, ahora EXISTE como SIGUE_A y SIGUE SIN EXISTIR como parecido -- que es exactamente la demostracion de que nunca fue una relacion de similitud.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Payment_BCM",
+    "domain_axes": {
+      "functional": "Payment_BCM",
+      "process": "P2P"
+    },
+    "evidence_for": [
+      "companions/companion_graph.json antes de s107: 130 edges, 0 de secuencia; pares entre las 5 piezas medidos uno a uno -> 6 de 10 sin arista",
+      "companions/companion_graph.json despues: stats.sequence_edges=20, stats.circuits=1, stats.nodes_in_a_circuit=9",
+      "verificado en el fichero: {p2p_purpose_of_payment.html, payment_bcm_companion.html} presente en sequence_edges y AUSENTE en edges",
+      "scripts/build_companion_graph.py -> circuit_edges(), proyecta brain_v2/domains/domains.json process_map.<P>.stages",
+      "brain_v2/braintoolbox.yaml -> conocimiento_driver.process_mining_object_centric (OCEL 2.0, CLOSED_VERIFIED): el proceso es una PERSPECTIVA calculada, no un contenedor"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "companion_graph.json",
+      "build_companion_graph.py",
+      "process_circuit_check.py",
+      "domains.json",
+      "process_map",
+      "p2p_purpose_of_payment.html",
+      "payment_bcm_companion.html",
+      "braintoolbox.yaml"
+    ],
+    "created_session": 107,
+    "resolved_session": 107,
+    "resolution_notes": "H137. El gate process_circuit_check.py cazo en su PRIMERA corrida su propio falso positivo: acredito la junta factura->documento-FI a transport_companion_D01K9B0CBF_v2.html y la de servicios->factura a fm_ps_avc_temporal_forecast_v1.html -- un companion de TRANSPORTES y uno de AVC que citan MIRO/BKPF de pasada. Una CITA no es una NARRACION: mismo limite que el LEE del toolgraph, tercera capa del patron 'medir la FORMA en vez del EFECTO'. Regla que quedo en el codigo: una junta esta cosida cuando un fichero DECLARADO para una etapa (juicio humano) MIDE cobertura de la contigua (medida) -- juicio Y medida, ninguno solo."
   }
 ]

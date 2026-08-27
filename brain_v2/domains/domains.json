@@ -2158,6 +2158,359 @@
     "_design": "UNESCO end-to-end process chains â€” each maps to a set of functional domains that participate. Enables cross-domain queries.",
     "P2P": {
       "name": "Procure-to-Pay",
+      "_stages_design": "H137 (s107). `domains` dice QUIEN participa; `stages` dice EN QUE ORDEN y DONDE puede pararse. Son campos distintos a proposito: la pertenencia es un conjunto, el circuito es una secuencia, y confundirlos es la restriccion de CASO UNICO que el driver OCEL 2.0 de braintoolbox.yaml nombra como el defecto a evitar. La SECUENCIA NO SE PUEDE DERIVAR del vocabulario compartido: dos etapas contiguas comparten POCAS palabras justo porque son etapas distintas -- por eso el grafo de companions (coseno IDF) no la encontro nunca y no era un umbral mal puesto. Se DECLARA aqui, y lo que se MIDE es la cobertura: cada etapa lleva `evidence_tokens` y la puerta process_circuit_check.py comprueba que el companion declarado los contiene de verdad. Una etapa puede pertenecer a varios procesos (`also_in`): eso es convergencia OCEL, no un error.",
+      "_stages_medido": "2026-08-27. Barrido de los 52 HTML de companions/ contra los tokens de cada etapa. RESULTADO: las 10 etapas estan cubiertas -- NO hay conocimiento perdido. Lo que faltaba es la COSTURA: de los 10 pares posibles entre las 5 piezas del circuito, 6 no tienen arista en companion_graph.json, y p2p_purpose_of_payment.html no tiene NINGUNA con las otras cuatro. El companion que el dueno recordaba ('muy bueno y detallado') es payment_bcm_companion.html (828 KB): existe, y cubre de la factura al fichero, no desde el pedido.",
+      "stages": [
+        {
+          "n": 1,
+          "id": "10_requisition_po",
+          "name": "Solicitud y pedido de compra",
+          "objects": [
+            "EBAN",
+            "EKKO",
+            "EKPO",
+            "ME51N",
+            "ME21N"
+          ],
+          "evidence_tokens": [
+            "EBAN",
+            "EKKO",
+            "EKPO",
+            "ME21N",
+            "ME51N"
+          ],
+          "companions": [
+            "p2p_process_mining.html"
+          ],
+          "cobertura_medida": "3/5",
+          "domains": [
+            "Procurement",
+            "PSM_FM"
+          ],
+          "conditional": false,
+          "can_stop_here": false,
+          "minado_por": [
+            "B1_dfg_discovery",
+            "B2_variant_analysis",
+            "B4_declarative_conformance"
+          ]
+        },
+        {
+          "n": 2,
+          "id": "20_goods_receipt",
+          "name": "Entrada de mercancias",
+          "objects": [
+            "EKBE",
+            "MSEG",
+            "MIGO"
+          ],
+          "evidence_tokens": [
+            "EKBE",
+            "MIGO",
+            "MSEG",
+            "Goods Receipt"
+          ],
+          "companions": [
+            "p2p_process_mining.html"
+          ],
+          "cobertura_medida": "2/4",
+          "domains": [
+            "Procurement"
+          ],
+          "conditional": false,
+          "can_stop_here": false,
+          "anadida_por_el_dueno": "2026-08-27 -- faltaba en la cadena corta"
+        },
+        {
+          "n": 3,
+          "id": "30_service_entry_sheet",
+          "name": "Hoja de entrada de servicios",
+          "objects": [
+            "ESSR",
+            "ESLL",
+            "ML81N"
+          ],
+          "evidence_tokens": [
+            "ESSR",
+            "ESLL",
+            "ML81N",
+            "Service Entry"
+          ],
+          "companions": [
+            "p2p_process_mining.html"
+          ],
+          "cobertura_medida": "3/4",
+          "domains": [
+            "Procurement"
+          ],
+          "conditional": true,
+          "condicion": "compras de SERVICIO. En una casa que compra sobre todo servicios este es el tramo NORMAL, no la excepcion (correccion del dueno 2026-08-27).",
+          "can_stop_here": false
+        },
+        {
+          "n": 4,
+          "id": "40_invoice_mm",
+          "name": "Factura de logistica registrada (lado MM)",
+          "objects": [
+            "RBKP",
+            "RSEG",
+            "MIRO"
+          ],
+          "evidence_tokens": [
+            "RBKP",
+            "RSEG",
+            "MIRO"
+          ],
+          "companions": [
+            "p2p_process_mining.html"
+          ],
+          "cobertura_medida": "p2p_process_mining TERMINA aqui, en 'Invoice Posted'",
+          "domains": [
+            "Procurement",
+            "FI"
+          ],
+          "conditional": false,
+          "can_stop_here": false
+        },
+        {
+          "n": 5,
+          "id": "45_fi_doc_payment_block",
+          "name": "Documento FI con bloqueo de pago (lado FI) -- LA JUNTA",
+          "objects": [
+            "BKPF",
+            "BSEG",
+            "ZLSPR",
+            "YBSEG"
+          ],
+          "evidence_tokens": [
+            "ZLSPR",
+            "BSEG",
+            "BKPF"
+          ],
+          "companions": [
+            "payment_bcm_companion.html"
+          ],
+          "cobertura_medida": "payment_bcm_companion EMPIEZA aqui, en 'FI document posted'",
+          "domains": [
+            "FI",
+            "Payment_BCM"
+          ],
+          "conditional": false,
+          "can_stop_here": false,
+          "LA_JUNTA_SECA": "ESTA es la costura original de H137, y esta partida en dos etapas a proposito para que se VEA: 40_invoice_mm termina donde 45 empieza y son el MISMO hecho de negocio visto por dos artefactos que no se citan. Ningun fichero cubre los dos lados. No es un hueco de mineria -- los dos tramos estan minados, 848.135 eventos de un lado y el WF Call Chain del otro -- es un hueco de COMPOSICION."
+        },
+        {
+          "n": 6,
+          "id": "50_ppc",
+          "name": "Purpose of Payment Code, si aplica",
+          "objects": [
+            "T015L",
+            "YTFI_PPC_STRUC",
+            "T042Z"
+          ],
+          "evidence_tokens": [
+            "T015L",
+            "YTFI_PPC_STRUC",
+            "Purpose of Payment",
+            "PurposeCode"
+          ],
+          "companions": [
+            "p2p_purpose_of_payment.html",
+            "inc_egypt_ppc_configuration.html",
+            "payment_bcm_companion.html"
+          ],
+          "cobertura_medida": "3/4 en los tres",
+          "domains": [
+            "Payment_BCM"
+          ],
+          "conditional": true,
+          "condicion": "pago CROSS-BORDER de proveedor/beneficiario a uno de los 9 paises de T015L, Y sociedad FRANCESA (unica clase BAdI que despacha, claims 494/531), Y metodo/moneda en un T042Z de la familia SG. El 'TIPO de factura' que el dueno recordaba, medido, es proveedor vs NOMINA (LAUF1 sufijo 'P' -> codigo SALA), no un campo de la factura.",
+          "can_stop_here": false,
+          "aislado_en_el_grafo": "p2p_purpose_of_payment.html no tiene arista con NINGUNA de las otras 4 piezas del circuito (medido 2026-08-27)"
+        },
+        {
+          "n": 7,
+          "id": "60_wf_approval_rm",
+          "name": "Aprobacion por workflow -- resuelve el actor contra RoleManagement",
+          "objects": [
+            "YBSEG",
+            "WS90000003",
+            "WS90000002",
+            "Z_GET_CERTIF_OFFICER_UNESDIR",
+            "Z_WF_FI_PR_WF_ACTOR1_DET",
+            "ZFI_PAYREL_EMAIL"
+          ],
+          "evidence_tokens": [
+            "WS90000003",
+            "90000001",
+            "Z_GET_CERTIF_OFFICER_UNESDIR",
+            "ZFI_PAYREL_EMAIL",
+            "YBSEG"
+          ],
+          "companions": [
+            "payment_bcm_companion.html"
+          ],
+          "cobertura_medida": "5/5 -- unico companion que cubre la etapa entera",
+          "domains": [
+            "HR-Workflows",
+            "FI",
+            "Payment_BCM"
+          ],
+          "conditional": false,
+          "can_stop_here": true,
+          "parada": "metodo de pago O/U -> se quita el bloqueo y el WF TERMINA (via oficina de terreno, no pasa por F110 de la central)",
+          "claims": [
+            619,
+            624,
+            626
+          ],
+          "defecto_vivo_no_verificado": "el proxy tipado ZROLE_MGTCO_FACADE/LP_ROLE_MGT que resuelve el Certifying Officer esta declarado runtime-DEAD por el skill crp/unesdir-role-management (unescrp, S-118). Si esa muerte es del PROXY y no del caso de uso de CRP, este workflow podria estar cayendo SIEMPRE al fallback ZFI_PAYREL_EMAIL sin que nadie lo note. INVERIFICABLE hoy: la traza YTBC_TRACE de WF_PAYMENT esta APAGADA en P01 (claim 626, decision del dueno)."
+        },
+        {
+          "n": 8,
+          "id": "70_f110",
+          "name": "Programa de pagos",
+          "objects": [
+            "REGUH",
+            "REGUP",
+            "F110",
+            "LAUFI"
+          ],
+          "evidence_tokens": [
+            "F110",
+            "REGUH",
+            "REGUP",
+            "LAUFI"
+          ],
+          "companions": [
+            "payment_bcm_companion.html",
+            "inc_egypt_ppc_configuration.html",
+            "BCM_StructuredAddressChange.html"
+          ],
+          "cobertura_medida": "4/4 en inc_egypt_ppc y BCM_StructuredAddressChange; 3/4 en payment_bcm_companion",
+          "domains": [
+            "Payment_BCM",
+            "FI"
+          ],
+          "conditional": false,
+          "can_stop_here": false,
+          "corte_obligatorio": "toda medida sobre REGUH se parte por DORIGIN (quien cobra) y por T042Z (FORMI=fichero / XSCHK=cheque). LAUFI prefijo B = via BCM, 0 = directo."
+        },
+        {
+          "n": 9,
+          "id": "80_bcm",
+          "name": "Bank Communication Management -- lote, panel de firmas, liberacion",
+          "objects": [
+            "BNK_BATCH_HEADER",
+            "BNK_BATCH_ITEM",
+            "BNK_MONI",
+            "BNK_APP",
+            "OOCU_RESP",
+            "HRP1001"
+          ],
+          "evidence_tokens": [
+            "BNK_BATCH_HEADER",
+            "BNK_BATCH_ITEM",
+            "BNK_MONI",
+            "BNK_APP",
+            "BCM"
+          ],
+          "companions": [
+            "bcm_signatory_companion.html",
+            "payment_bcm_companion.html"
+          ],
+          "cobertura_medida": "5/5 en bcm_signatory_companion; 3/5 en payment_bcm_companion",
+          "domains": [
+            "Payment_BCM",
+            "Treasury"
+          ],
+          "conditional": true,
+          "condicion": "solo las sociedades Tier1 (UNES/UBO/IIEP/UIL/UIS). ICTP corre F110 SIN BCM; IBE/MGIE/ICBA no corren F110.",
+          "can_stop_here": true,
+          "parada": "IBC17 Fallido / IBC06 Rechazado son paradas reales del circuito",
+          "claims": [
+            623,
+            625
+          ],
+          "EN_MEDIO_NO_AL_FINAL": "correccion del dueno verificada (claim 623): BCM esta ENTRE la propuesta F110 y el fichero, no despues del pago. El fichero solo se genera y transmite cuando el panel ha firmado.",
+          "tambien_relevantes": [
+            "bcm_amount_bands_uil.html",
+            "bcm_dual_control_audit.html"
+          ],
+          "_tambien_relevantes_por_que": "tratan el MISMO sujeto (panel, tramos de importe, doble control) pero NO contienen las tablas del lote: no son cobertura de la etapa y la puerta no los mide como tal. Separarlos es lo que evita que un fichero relacionado pase por cubridor."
+        },
+        {
+          "n": 10,
+          "id": "90_file_to_bank",
+          "name": "Generacion y transmision del fichero al banco",
+          "objects": [
+            "SAPFPAYM",
+            "DMEE",
+            "T042Z",
+            "FORMI"
+          ],
+          "evidence_tokens": [
+            "SAPFPAYM",
+            "DMEE",
+            "FORMI",
+            "T042Z"
+          ],
+          "companions": [
+            "payment_bcm_companion.html",
+            "BCM_StructuredAddressChange.html",
+            "unesco_bank_operation_design.html"
+          ],
+          "cobertura_medida": "4/4 en payment_bcm_companion y BCM_StructuredAddressChange",
+          "domains": [
+            "Payment_BCM",
+            "Treasury"
+          ],
+          "conditional": false,
+          "can_stop_here": false,
+          "claims": [
+            536
+          ]
+        },
+        {
+          "n": 11,
+          "id": "95_ack_statement",
+          "name": "Acuse del banco y extracto electronico",
+          "objects": [
+            "FEBKO",
+            "FEBEP",
+            "FF_5",
+            "MT940"
+          ],
+          "evidence_tokens": [
+            "FEBKO",
+            "FEBEP",
+            "MT940",
+            "bank statement",
+            "FF_5"
+          ],
+          "companions": [
+            "bank_statement_ebs_companion.html",
+            "treasury_operations_companion_v1.html"
+          ],
+          "cobertura_medida": "5/5 en bank_statement_ebs_companion",
+          "domains": [
+            "Treasury_EBS",
+            "Treasury"
+          ],
+          "also_in": [
+            "T2R"
+          ],
+          "conditional": false,
+          "can_stop_here": false,
+          "limite_declarado": "FEBKO_2024_2026 en el Gold DB es un extracto PARCIAL (claim 535): no se puede contestar 'que bancos reciben extracto electronico' con el tal como esta."
+        }
+      ],
+      "_stages_juntas_secas": [
+        "45_fi_doc_payment_block: 40_invoice_mm (p2p_process_mining, termina en 'Invoice Posted') y 45 (payment_bcm_companion, empieza en 'FI document posted') son el MISMO hecho y ningun fichero cubre los dos lados -- LA junta original de H137",
+        "50_ppc: p2p_purpose_of_payment.html no tiene arista con NINGUNA de las otras 4 piezas del circuito en companion_graph.json",
+        "80_bcm -> 90_file_to_bank -> 95_ack_statement: payment_bcm_companion y bank_statement_ebs_companion sin arista directa"
+      ],
+      "_stages_se_vigila_con": "python Zagentexecution/quality_checks/process_circuit_check.py",
       "domains": [
         "FI",
         "PM",
