@@ -130,6 +130,26 @@ def _t042z():
         return {}, {}, {}
 
 
+def _q_febko():
+    """HBKID -> (n extractos, ultima fecha, sociedades) desde FEBKO_2024_2026.
+
+    Conexion propia porque build() ya cerro la suya para cuando esto se necesita. Si la
+    tabla no existe (Gold DB sin extracto todavia) devuelve None, no [] -- son cosas
+    distintas: "sin tabla" no es "tabla vacia", y confundirlas fue el error de la sesion
+    del 2026-08-20 (claim 535).
+    """
+    try:
+        con = sqlite3.connect("file:%s?mode=ro" % GOLD, uri=True)
+        cur = con.cursor()
+        cur.execute("SELECT TRIM(HBKID), COUNT(*), MAX(AZDAT), TRIM(BUKRS) "
+                    "FROM FEBKO_2024_2026 GROUP BY 1, 4")
+        rows = cur.fetchall()
+        con.close()
+        return rows
+    except sqlite3.OperationalError:
+        return None
+
+
 def build():
     if not os.path.exists(GOLD):
         print("Gold DB no encontrado: %s" % GOLD)
@@ -283,11 +303,40 @@ def build():
         c_["cheque_share"] = round(c_["cheque"] / float(c_["lines"] or 1), 3)
         c_["banks"] = dict(c_["banks"])
 
+    # CUENTA RECEPTORA: extracto con cero pagos. Antes esto salia como NEW en el explorador,
+    # sesion tras sesion, porque el tipo estaba descrito en prosa (claim 535) pero nunca
+    # programado en ESTE clasificador -- que solo lee REGUH, ciego por construccion a quien
+    # solo cobra. Se deriva sin inventar: un banco con filas en FEBKO y CERO lineas en REGUH
+    # (banks{}) recibe extracto y no paga. La ausencia de un banco aqui NO prueba que no
+    # reciba extracto -- FEBKO_2024_2026 es un extracto PARCIAL (3 de 8 sociedades, claim 535)
+    # -- asi que esto solo produce POSITIVOS, nunca ausencias declaradas como certeza.
+    receiving = {}
+    feb_rows = _q_febko()
+    if feb_rows is not None:
+        for hbkid, n, last_run, bukrs in feb_rows:
+            if not hbkid or hbkid in banks:
+                continue
+            r = receiving.setdefault(hbkid, {"house_bank": hbkid, "statements": 0,
+                                              "last_statement": "", "company_codes": set()})
+            r["statements"] += n
+            if last_run and last_run > r["last_statement"]:
+                r["last_statement"] = last_run
+            if bukrs:
+                r["company_codes"].add(bukrs)
+        for r in receiving.values():
+            r["role"] = "CUENTA RECEPTORA (extracto, cero pagos en REGUH)"
+            r["company_codes"] = sorted(r["company_codes"])
+
     doc = {"_what_this_is": ("Rol operativo de cada banco casa, derivado de REGUH+LFBK+T042Z. "
                             "Responde 'quien sirve este corredor' y 'este banco emite fichero "
                             "o papel' sin volver a derivarlo. Claim 530."),
            "_generated_by": "brain_v2/house_bank_roles.py",
-           "companies": companies, "banks": out, "corridors": corridors}
+           "companies": companies, "banks": out, "corridors": corridors,
+           "receiving_accounts": receiving,
+           "_receiving_accounts_caveat": (
+               "Poblacion limitada a FEBKO_2024_2026, que cubre solo 3 de 8 sociedades "
+               "(claim 535). Un banco AUSENTE de aqui no esta probado que no reciba "
+               "extracto -- puede ser que su sociedad no este extraida todavia.")}
     io.open(OUT, "w", encoding="utf-8", newline="\n").write(
         json.dumps(doc, indent=2, ensure_ascii=False))
     return doc

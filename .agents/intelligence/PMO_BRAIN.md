@@ -334,7 +334,61 @@ esta tarea.
 **No confundir con H135/H136**, que son defectos del propio PMO. Esto es conocimiento de
 negocio potencialmente perdido, y vale mas.
 
-**H134 -- EL BOUNDARY LLAMA DEAD A 38 DESTINOS QUE SU EVIDENCIA NO PUEDE VER (medido 2026-08-27,
+**H137 -- HALLAZGOS DE bank-process-discovery (s107), tramo pago->BCM y verificacion RM.**
+Corrida `python brain_v2/bank_model_explorer.py` primero (no recalculado a mano). Veredictos:
+RISK 2, NEW 3, BLIND 1, STABLE 5 -- ninguno requiere accion nueva de este agente: RISK
+"4 sociedades no francesas sin clase PPC" ya es el modelo conocido (claims 494/531, doc
+`house_bank_roles.py`); NEW "16 cuentas RECEPTORA" ya esta en claim 535, pendiente
+programar el tipo en el clasificador (no hecho esta pasada, queda para la proxima); BLIND
+FEBKO parcial ya es claim 535/536.
+
+1. **CORRECCION DEL DUENO EN CALIENTE, verificada: BCM va DENTRO del tramo de pago, no
+   despues.** F110 crea BKPF BLART=ZP -> BCM agrupa en LOTE por RULE_ID (BNK_BATCH_HEADER
+   27.443 filas, BNK_BATCH_ITEM 600.042 filas via VBLNR) -> panel firma via BNK_APP
+   (workflow 90000003) -> SOLO ENTONCES se genera y transmite el fichero (BNK_MONI:
+   "Approved" = file creation scheduled; "Sent to Bank" = file created and transferred).
+   IBC17 Fallido / IBC06 Rechazado son PARADAS reales -- el circuito puede detenerse ahi.
+   Lo que cambia por SOCIEDAD es DOBLE: (a) si BCM existe siquiera (Tier1 UNES/UBO/IIEP/
+   UIL/UIS con BCM; Tier2 ICTP F110 sin BCM; Tier3 IBE/MGIE/ICBA sin F110); (b) cuantos
+   firmantes y si hay 2a validacion en Coupa, dentro de las que si tienen BCM. Aterrizado
+   en claim 623.
+
+2. **PPC: no re-derivado, ya esta medido.** Aplica a pagos CROSS-BORDER de proveedor/
+   beneficiario en 9 paises (T015L), solo cuando la sociedad es FRANCESA (unica clase BAdI
+   que despacha, claim 494/531) y el metodo/moneda cae en un T042Z de la familia SG. La
+   distincion de "TIPO de factura" real medida es proveedor vs NOMINA (LAUF1 sufijo 'P' ->
+   codigo SALA), no un campo de la factura. Ver `sap_payment_bcm_agent/SKILL.md` seccion
+   PPC y `Zagentexecution/quality_checks/ppc_country_consistency_check.py`.
+
+3. **RM: claim 619 se quedaba corto -- hay un TERCER consumidor, y es el que H137 pedia.**
+   CRP (claim 619) NO es el workflow de facturas: es un Fiori app distinto (certificados de
+   personal/consultoria, JV directo, sin LIFNR, sin evidencia de que entre en F110/BCM). El
+   que SI es "workflow de aprobacion de facturas -> Role Management" es el workflow SAP
+   90000003/90000001 (doc types KR/KA/KT/ER/IT, sociedad UNES) via
+   `Z_GET_CERTIF_OFFICER_UNESDIR` -> proxy tipado `ZROLE_MGTCO_FACADE`/`LP_ROLE_MGT` ->
+   RoleManagement. **MEDIDO, con una contradiccion abierta y declarada, no oculta**: el
+   skill `crp/unesdir-role-management` (unescrp, S-118) dice que ese MISMO proxy tipado es
+   runtime-DEAD (0 oficiales para un email valido) y que por eso CRP lo abandono. Si esa
+   muerte es del proxy y no del caso de uso de CRP, el workflow de facturas podria estar
+   cayendo SIEMPRE al fallback `ZFI_PAYREL_EMAIL` sin que nadie lo note -- un defecto vivo,
+   no verificado. Aterrizado en claim 624 (OPEN_QUESTION) y publicado como pregunta en el
+   bus de mineria (`process_mining/mining_findings.json`, sujeto
+   `ZROLE_MGTCO_FACADE_LP_ROLE_MGT_liveness`) porque cerrarlo exige leer ABAP o probar en
+   vivo -- fuera del alcance de este instrumento (solo Gold DB + prosa).
+
+4. **Tramos NO modelados -- nombrados, no rellenados con suposicion:**
+   - **PO -> recepcion -> factura**: no hay medicion de este agente sobre MM (pedido,
+     entrada de mercancias, MIRO). Dominio de `sap_payment_e2e`/mineria P2P (A21/B1-B4), no
+     de banca.
+   - **El propio ABAP de `Z_GET_CERTIF_OFFICER_UNESDIR`**: no leido (punto 3).
+   - **Si un certificado CRP alguna vez desemboca en pago via F110/BCM**: no encontrado en
+     el esquema OData revisado; no descartado del todo (requeriria leer el codigo de
+     posteo de la extension DPC de `Z_CRP_SRV`).
+   - **El companion de presupuesto-a-pago que el dueno recuerda**: no es tarea de este
+     agente localizarlo (ver Explore/miner-onboarding en paralelo); este agente no lo
+     busco por nombre ni contenido.
+
+ -- EL BOUNDARY LLAMA DEAD A 38 DESTINOS QUE SU EVIDENCIA NO PUEDE VER (medido 2026-08-27,
 claim 620).** `process_mining/interface_boundary.py` correlaciona `RFCDES` contra
 `rsau_audit_history.PARAMX`, que registra llamadas **RFC**. Un `cl_http_client=>create_by_destination`
 no es RFC y no deja fila ahi. De los 227 destinos DEAD, **38 son `HTTP external` (tipo G)**: para

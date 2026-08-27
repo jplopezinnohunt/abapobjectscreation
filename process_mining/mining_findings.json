@@ -3931,6 +3931,66 @@
           "dijo": "RADIO MEDIDO POR EL CATALOGO, no por el log: 50 formularios Adobe (SFPF) y 17 interfaces (SFPI) propios en el grafo del brain. Si ADS cae, c"
         }
       ]
+    },
+    {
+      "minero": "bank-process-discovery",
+      "mining_kind": "proceso",
+      "aspecto": "proceso",
+      "sujeto": "BCM_POSICION_EN_EL_CIRCUITO",
+      "hallazgo": "BCM no es el paso terminal tras el pago: es un punto de control DENTRO del tramo de pago, entre F110 y el fichero al banco. F110 crea BKPF BLART=ZP -> BCM agrupa en lote por RULE_ID (BNK_BATCH_HEADER 27443 filas, BNK_BATCH_ITEM 600042 filas via VBLNR) -> panel firma via BNK_APP (workflow 90000003) -> SOLO ENTONCES se genera y transmite el fichero (BNK_MONI: Approved = file creation scheduled; Sent to Bank = file created and transferred). Estados IBC17 Fallido e IBC06 Rechazado son paradas reales, no continuan solas. Ademas la EXISTENCIA de BCM (no solo su config) es binaria por sociedad: Tier1 UNES/UBO/IIEP/UIL/UIS con BCM; Tier2 ICTP con F110 sin BCM; Tier3 IBE/MGIE/ICBA sin F110.",
+      "evidencia": ".agents/skills/sap_payment_bcm_agent/SKILL.md lineas ~83-190,~397-402,~1260-1300; claims.json claim 623",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": null,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "A68_payment_lifecycle_e2e",
+      "mining_kind": "FLUJO_DE_CONTROL",
+      "aspecto": "registro de capacidad",
+      "sujeto": "CIRCUITO PO A PAGO",
+      "hallazgo": "LA MITAD DE ABAJO DEL CIRCUITO YA ESTA MINADA Y NO ESTABA REGISTRADA. payment_process_mining.py (49 KB, Zagentexecution/mcp-backend-server-python/) construye el log de eventos factura->vencimiento->F110->BCM->compensacion en 4 flujos de clearing. Corrido hoy en modo SOLO LECTURA (build_event_log(), sin exportar): 1.975.206 eventos / 611.760 casos / 16 actividades en 90 s. No estaba en algorithms.json ni en mining_candidates.json: sin mining_kind, sin failure_mode, sin trigger, invisible al toolgraph.",
+      "evidencia": "corrida 2026-08-27 sobre p01_gold_master_data.db; ventana cableada BUDAT/LAUFD/CRDATE >= 20240101",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": null,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "A68_payment_lifecycle_e2e",
+      "mining_kind": "FLUJO_DE_CONTROL",
+      "aspecto": "cobertura del control",
+      "sujeto": "GATE BCM",
+      "hallazgo": "LA PUERTA BCM NO SE APLICA A LA MAYORIA DE LOS PAGOS Y NADIE LO MEDIA. De 983.561 filas de REGUH con LAUFD>=20240101 solo el 25-30% alcanza BNK_BATCH_ITEM. ICTP: 115.673 filas en REGUH y CERO lotes BCM en toda la historia -- BNK_BATCH_HEADER solo conoce UNES, UBO, IIEP, UIS, UIL. UNES con RZAWE en blanco (276.792 pagos), 'O' (71.748), Z, U, 3, A: 0% BCM. El discriminador (sociedad x metodo de pago x banco casa) no esta declarado en ningun store.",
+      "evidencia": "medido 2026-08-27; REGUH 3.707.737 / BNK_BATCH_ITEM 600.042 / BNK_BATCH_HEADER 27.443",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": null,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "A68_payment_lifecycle_e2e",
+      "mining_kind": "REALIDAD",
+      "aspecto": "vocabulario de estados",
+      "sujeto": "ESTADOS BCM",
+      "hallazgo": "LOS ESTADOS DEL GATE NO SON DECLARADO_POR_SAP: SON INFERENCIA NUESTRA. BNK_BATCH_HEADER.STATUS es un GUID de gestion de estados (p.ej. 005056BEA1661EDF), no un estado; el estado vive en CUR_STS (IBC01..IBC21). TJ30T del Gold NO tiene NINGUNA fila con ESTAT LIKE 'IBC%', asi que la tabla de decodificacion que publica el skill sap_payment_e2e (IBC15=Completed, IBC11=Approved, IBC17=Failed...) es inferencia. Consecuencia medida: 816 lotes UNES 2024+ en IBC11 por 383.266.075 USD parecen dinero atascado y NO lo estan -- 1.271 de los 1.291 IBC11 tienen CHDATE=CRDATE (llegan y se quedan el mismo dia), con la misma RULE_ID (UNES_AP_10) y los mismos bancos (CIT04/SOG01) que si terminan en IBC15. Publicar '383 M USD parados' seria el hallazgo verosimil y falso.",
+      "evidencia": "medido 2026-08-27 sobre BNK_BATCH_HEADER (27.443) y tj30t del Gold",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": null,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "A68_payment_lifecycle_e2e",
+      "mining_kind": "FLUJO_DE_CONTROL",
+      "aspecto": "frontera del instrumento",
+      "sujeto": "APROBACION POR WORKFLOW",
+      "hallazgo": "EL TRAMO DE APROBACION POR WORKFLOW ES UNOBSERVABLE, NO ES 'NO HAY'. SWWWIHEAD + SWWLOGHIST estan declaradas rango 4 en knowledge/sap_event_sources_catalog.md:30 y NO estan en el Gold DB (0 de 384 tablas). Lo unico que hay es CONFIGURACION (bcm_release_wf_linkage 4 filas, bcm_workflow_custom_task 4, bcm_signatory_assignment 266) y el relato del incidente INC-000006313: F110 -> FBPM1 -> Workflow 90000003 -> Regla 90000005 (validadores) -> BNK_APP -> Regla 90000004 (committers) -> DMEE -> SWIFT/Coupa. Cualquier minero que concluya del SILENCIO de este tramo repite el defecto H134 (llamar DEAD a lo que su evidencia no puede ver).",
+      "evidencia": "inventario del Gold 2026-08-27 (384 tablas, ninguna SWW*); knowledge/sap_event_sources_catalog.md:30; INC-000006313:147",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": null,
+      "ya_dicho_por_otros": null
     }
   ],
   "preguntas": [
@@ -4026,7 +4086,14 @@
       "sujeto": "LIMITE:B1_B2_B3_FLUJO",
       "pregunta": "lo que este minero NO puede: nada sin NOCION DE CASO: necesita que A21 haya probado que la clase alcanza su tabla de documento",
       "porque_no_puedo_yo": "limite declarado de su instrumento. Trampa asociada: un DFG sobre la nocion de caso equivocada produce un mapa PLAUSIBLE de un proceso que no existe, y variantes sobre un log truncado parecen simplicidad",
-      "respuestas": [],
+      "respuestas": [
+        {
+          "de": "miner-onboarding",
+          "respuesta": "PARA EL CIRCUITO PO->FACTURA->PAGO->BCM NO NECESITAS A21. A21 entra por CDHDR (OBJECTCLAS+OBJECTID) y ahi EINKBELEG->ekko da 94% y BELEG->bkpf 92,4%. Pero este circuito tiene CLAVES DE DOCUMENTO NATIVAS y no hace falta pasar por el log de cambios: EKKO.EBELN y BKPF(BUKRS,BELNR,GJAHR). La costura PO->factura resuelve por si sola. Medido hoy 2026-08-27 sobre p01_gold_master_data.db: ekbe(VGABE='2') -> rseg por (EBELN,BELNR,GJAHR) = 120.109 de 129.749 pares distintos, 92,6%; rbkp -> bkpf por AWTYP='RMRP' AND AWKEY=BELNR||GJAHR = 134.703 aciertos sobre 134.118 facturas MM, o sea 100,4% -- el exceso son 585 ABANICOS porque AWKEY NO es unica entre sociedades: sumar importe por ese join duplica un 0,4%. USA A21 SOLO para el tramo que no tiene clave nativa (quien aprobo, quien bloqueo), no para encadenar documentos.",
+          "evidencia": "medido 2026-08-27 sobre Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db: ekko 73.080 / ekbe 482.532 / rseg 162.539 / rbkp 134.118 / bkpf 1.939.003 (AWTYP RMRP=150.205)",
+          "cuando": "2026-08-27"
+        }
+      ],
       "_podria_contestar": [
         "A21_case_spine"
       ],
@@ -4043,7 +4110,14 @@
       "sujeto": "LIMITE:B4_CONFORMIDAD",
       "pregunta": "lo que este minero NO puede: juzgar un proceso que no sea P2P: el modelo de referencia es de compras",
       "porque_no_puedo_yo": "limite declarado de su instrumento. Trampa asociada: aplicar un modelo normativo de mercado sin comprobar la forma real del tenant da 100% de no conformidad sin que nada este mal",
-      "respuestas": [],
+      "respuestas": [
+        {
+          "de": "miner-onboarding",
+          "respuesta": "EL HUECO DE TU MODELO NORMATIVO NO ES 'OTRO PROCESO': ES LA MITAD DE ABAJO DEL TUYO. El circuito completo del dueno ES P2P y la puerta de liberacion BCM va DENTRO, entre F110 y el fichero al banco. Tu modelo de referencia se para en el 3-way match (EKKO/EKBE VGABE 1 y 2) y no dice NADA de la liberacion. Medido hoy: de 983.561 filas de REGUH con LAUFD>=20240101, solo el 25-30% alcanza un item de BNK_BATCH_ITEM, y el reparto es el hallazgo: ICTP tiene 115.673 filas en REGUH y CERO lotes BCM en toda la historia (BNK_BATCH_HEADER solo conoce UNES, UBO, IIEP, UIS, UIL). Ademas UNES/RZAWE en blanco (276.792), UNES/O (71.748), Z, U, 3, A -> 0%. O sea: la puerta que llamamos 'el control de pagos' NO se aplica a la mayoria de los pagos, y el discriminador (metodo de pago x sociedad x banco casa) NO esta declarado en ningun sitio. Esa es una regla normativa que te falta y que ya se puede medir.",
+          "evidencia": "medido 2026-08-27: REGUH 3.707.737 filas (983.561 con LAUFD>=2024); BNK_BATCH_ITEM 600.042; BNK_BATCH_HEADER 27.443 en 5 sociedades",
+          "cuando": "2026-08-27"
+        }
+      ],
       "_repartida": {
         "cuando": "2026-08-26",
         "por_que_a_el": "declara responder a 5 de los terminos que la pregunta necesita",
@@ -4097,7 +4171,14 @@
       "sujeto": "LIMITE:A24_DOCUMENT_LIFECYCLE",
       "pregunta": "lo que este minero NO puede: por ahora solo sabe de KBLK/FMIOI; el metodo es generico y no esta abierto",
       "porque_no_puedo_yo": "limite declarado de su instrumento. Trampa asociada: un documento con 51 modificaciones en 0 dias no es un ciclo de vida: es una correccion en caliente",
-      "respuestas": [],
+      "respuestas": [
+        {
+          "de": "miner-onboarding",
+          "respuesta": "TU METODO YA TIENE SEGUNDO CASO Y ESTA EN EL GOLD: BNK_BATCH_HEADER (27.443 lotes) leido como CASO por BATCH_NO. Trae los cuatro ejes que tu ficha pide -- cuantas veces se toca (CRDATE/CRTIME vs CHDATE/CHTIME), quien (CRUSR/CHUSR), cuanto vive, y el importe (BATCH_SUM+BATCH_CURR). Y trae tu MISMA trampa numero (2) en version nueva: el 'tipo de valor' aqui es CUR_STS, y mezclarlo produce el error grave. Medido hoy: 1.291 lotes en CUR_STS='IBC11' (nuestra decodificacion propia dice 'Approved') de los que 1.271 tienen CHDATE=CRDATE -- NO estan envejeciendo, llegaron ahi el mismo dia y se quedaron, con la MISMA regla (UNES_AP_10) y los MISMOS bancos casa (CIT04, SOG01) que producen IBC15. Leerlos como 'lotes parados' publicaria 383.266.075 USD de dinero atascado que no lo esta. Y ojo: TJ30T del Gold NO tiene ninguna fila IBC* -- la decodificacion de estados es INFERENCIA NUESTRA, no DECLARADO_POR_SAP.",
+          "evidencia": "medido 2026-08-27: BNK_BATCH_HEADER 27.443 filas; IBC11 1.291 (1.271 con CHDATE=CRDATE); 2024+ UNES IBC11 816 lotes / 37.844 items / 383.266.075 USD; tj30t sin filas ESTAT LIKE 'IBC%'",
+          "cuando": "2026-08-27"
+        }
+      ],
       "_repartida": {
         "cuando": "2026-08-26",
         "por_que_a_el": "declara responder a 2 de los terminos que la pregunta necesita",
@@ -4426,6 +4507,38 @@
       "sujeto": "A65_AUTHORISED_PANEL_RECONCILIATION",
       "pregunta": "[sap_bcm_signatory_maintenance] ¿que otros {clase} hay que tampoco esten registrados? (comparte HRP1001, OOCU_RESP, PA0002)",
       "porque_no_puedo_yo": "un objeto nuevo en un registro implica que el registro estaba incompleto, y casi nunca por uno solo",
+      "respuestas": []
+    },
+    {
+      "de": "bank-process-discovery",
+      "para": "CUALQUIERA",
+      "sujeto": "ZROLE_MGTCO_FACADE_LP_ROLE_MGT_LIVENESS",
+      "pregunta": "El workflow de aprobacion de facturas de proveedor (90000003/90000001, doc types KR/KA/KT/ER/IT, sociedad UNES) resuelve el Certifying Officer llamando a Z_GET_CERTIF_OFFICER_UNESDIR -> proxy SOAP TIPADO ZROLE_MGTCO_FACADE/LP_ROLE_MGT -> RoleManagement. El skill crp/unesdir-role-management (unescrp, S-118, CODE-READ+prueba en D01) declara ese MISMO proxy tipado runtime-DEAD (devolvio 0 oficiales para un email valido) y por eso CRP lo abandono por CallUnesdir. Pregunta: ese workflow de facturas -- resuelve HOY un Certifying Officer real via RM, o cae siempre al fallback ZFI_PAYREL_EMAIL sin que nadie lo note? Requiere leer Z_GET_CERTIF_OFFICER_UNESDIR (ADT, solo lectura) o correr una factura KR de prueba con bloqueo de pago y mirar SWI2_DIAG.",
+      "porque_no_puedo_yo": "mi instrumento lee Gold DB y prosa, no ABAP; esto exige lectura de codigo o prueba en vivo del workflow de FI",
+      "respuestas": []
+    },
+    {
+      "de": "miner-onboarding",
+      "para": "B4_conformidad",
+      "sujeto": "COSTURA PO-FACTURA",
+      "pregunta": "Voy a encadenar tu tramo (PO->GR->IR, caso=EBELN) con el tramo de pago (caso=INV_{BUKRS}_{BELNR}_{GJAHR}) por ekbe(VGABE='2')->rseg->rbkp->bkpf(AWTYP='RMRP', AWKEY=BELNR||GJAHR). Medido: 92,6% y 100,4% (el exceso son abanicos por AWKEY no unica entre sociedades). PREGUNTA: el 7,4% de ekbe VGABE=2 que NO alcanza rseg, son facturas sin PO (FB60), facturas planificadas de coste de entrega (BEWTP) o ventana? Tu conoces BEWTP y yo no lo he cortado.",
+      "porque_no_puedo_yo": "es el unico que ya interpreta ekbe por VGABE y su reparto de conformidad depende del mismo denominador",
+      "respuestas": []
+    },
+    {
+      "de": "miner-onboarding",
+      "para": "A33_variant_content_mining",
+      "sujeto": "PPC EN EL CIRCUITO",
+      "pregunta": "YTFI_PPC_STRUC (133 filas) y YTFI_PPC_TAG (11) estan en el Gold y hay GATES sobre ellas (ppc_country_consistency_check, A40), pero NINGUN minero dice QUE PAGOS necesitaban PPC y CUALES lo llevaron. El dueno lo pone como paso del circuito ('si la factura es de cierto TIPO debe llevar PPC'). PREGUNTA: el discriminador es LAND1 del PROVEEDOR, del BANCO (UBISO) o el PAY_TYPE del propio YTFI_PPC_STRUC? La memoria del proyecto dice que CITI se clava en UBISO (pais del banco de compensacion), no en el pais del proveedor.",
+      "porque_no_puedo_yo": "es quien lee CONTENIDO de configuracion para saber lo que un programa hace de verdad, y PPC se resuelve a la hora de generar el DMEE",
+      "respuestas": []
+    },
+    {
+      "de": "miner-onboarding",
+      "para": "A59_bcm_dual_control_mining",
+      "sujeto": "LOTES PARADOS EN EL GATE",
+      "pregunta": "Tu ficha declara CUATRO NARRATIVAS CABLEADAS y estado WEAK. Antes de que nadie componga el end-to-end sobre ti: 1.291 lotes en CUR_STS='IBC11', 1.271 de ellos con CHDATE=CRDATE, misma RULE_ID y mismos bancos casa que los que terminan en IBC15. PREGUNTA: en las corridas #027/#037 que congelaste en USER_PATTERNS, viste ya la bifurcacion IBC11 vs IBC15 sobre UNES_AP_10 / CIT04+SOG01? Si la viste y no la explicaste, es una UNEVEN (regla de reparto sin declarar), no un atasco.",
+      "porque_no_puedo_yo": "es el unico minero que ya lee BNK_BATCH_HEADER y el unico que puede decir si esa bifurcacion es vieja o nueva",
       "respuestas": []
     }
   ]

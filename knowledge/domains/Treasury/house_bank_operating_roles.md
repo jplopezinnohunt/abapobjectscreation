@@ -127,6 +127,8 @@ BCM sí distingue el **destino** —usa `ZLAND` y `ZBNKS` para agrupar el lote�
 
 Puede ser política deliberada y defendible —el riesgo se mide por importe, no por corredor— pero **no está escrito en ningún sitio**, así que no consta que se haya decidido a propósito. `claim 532`
 
+**Corrección de posición, verificada 2026-08-27 (`claim 623`): BCM no es un paso posterior al pago, es un punto de control DENTRO del tramo, entre F110 y el fichero.** F110 crea el documento de pago (`BKPF` `BLART=ZP`) → BCM lo agrupa en LOTE por `RULE_ID` (`BNK_BATCH_HEADER` 27.443 filas, `BNK_BATCH_ITEM` 600.042 filas, enlazadas por `VBLNR`) → el panel firma vía `BNK_APP` (workflow `90000003`) → **sólo entonces** se genera y transmite el fichero — `BNK_MONI` lo dice literal: *Approved = file creation scheduled*, *Sent to Bank = file created and transferred*. `IBC17` Fallido e `IBC06` Rechazado son **paradas reales**: sin liberación del panel no se mueve dinero. Y lo que cambia por sociedad no es sólo la regla de aprobación (línea de arriba): es también si BCM **existe siquiera** en el circuito — Tier 1 (UNES/UBO/IIEP/UIL/UIS) corre F110+BCM completo; Tier 2 (ICTP) corre F110 **sin** BCM; Tier 3 (IBE/MGIE/ICBA) ni siquiera corre F110. Fuente: `.agents/skills/sap_payment_bcm_agent/SKILL.md`.
+
 ## 4c. La topología: hub, regional, oficina de campo
 
 Un concentrador no se distingue de una cuenta de oficina por el **volumen** sino por la **diversidad de destinos**.
