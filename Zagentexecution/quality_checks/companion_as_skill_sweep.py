@@ -207,7 +207,7 @@ def main():
     FM_RE = re.compile(r"^---\s*\n(.*?)\n---", re.S)
 
     def front_matter(sk):
-        f = os.path.join(REPO, ".agents", "skills", sk, "SKILL.md")
+        f = os.path.join(REPO, ".claude", "skills", sk, "SKILL.md")
         try:
             return (FM_RE.search(io.open(f, encoding="utf-8", errors="replace").read())
                     or [None, ""])[1].lower()

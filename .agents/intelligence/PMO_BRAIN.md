@@ -29,7 +29,87 @@
 
 > ## PENDIENTE AL ABRIR - S107 (2026-08-28). LEE ESTO ANTES QUE EL INDICE.
 >
-> ### 1. EL INDICE PUEDE MENTIRTE
+> ### 1. EL INDICE ESTA AL DIA -- se corrio el rebuild al cerrar s107
+>  y  son del 28-ago 01:28/01:36, con los 630 claims y las
+> 258 reglas materializados. Y se SONDEO: el indice lleva ahora el bloque LOS CIRCUITOS
+> DECLARADOS con las 12 etapas del P2P, sus paradas y sus condicionales -- antes daba CERO
+> menciones de 'circuito'. Aun asi, comprueba antes de fiarte:
+> {
+  "freshness": {
+    "brain_state_age_hours": 0.3,
+    "stale_sources": [],
+    "status": "FRESH"
+  },
+  "objects": 4658,
+  "rules": 258,
+  "claims": 630,
+  "incidents": 18,
+  "domains": {
+    "BASIS": 55,
+    "BI": 2,
+    "Basis_Security": 10,
+    "Brain_Architecture": 107,
+    "BusinessPartner": 20,
+    "CTS": 163,
+    "CUSTOM": 87,
+    "Closing_Activities": 86,
+    "Cost_Recovery_CRP": 2,
+    "Cross_Domain": 35,
+    "DATA_MODEL": 194,
+    "D_DATA": 58,
+    "Data_Quality": 2,
+    "FI": 102,
+    "FI_AA": 1,
+    "F_INTERFACE_FILE": 10,
+    "G_CONFORMANCE": 3,
+    "HCM": 87,
+    "HR-Workflows": 1,
+    "HR_Workflows": 40,
+    "H_IMPROVE": 6,
+    "Infrastructure": 42,
+    "Integration": 209,
+    "Landscape": 5,
+    "MM": 2,
+    "Master_Data_Governance": 12,
+    "Output": 4,
+    "PBC": 21,
+    "PM": 1,
+    "PS": 22,
+    "PSM": 183,
+    "PSM_FM": 203,
+    "PSM_PS": 7,
+    "PY-Finance": 5,
+    "Payment": 112,
+    "Payment_BCM": 21,
+    "Process_Mining": 5,
+    "Procurement_P2P": 48,
+    "RE_FX": 5,
+    "SAP_STANDARD": 9,
+    "Security": 73,
+    "Support": 16,
+    "System Lifecycle": 3,
+    "TV": 32,
+    "Technical_Substrate": 187,
+    "ThirdParty_Addon": 3,
+    "Transport_Management": 4,
+    "Travel": 62,
+    "Treasury": 165,
+    "Treasury_EBS": 2
+  },
+  "agi_layers": {
+    "known_unknowns": 1,
+    "falsification_pending": 6,
+    "user_questions_open": 0,
+    "data_quality_open": 9,
+    "superseded": 19
+  }
+}. Guardar no es recuperar.
+>
+> ### 1b. LO QUE COSTO LLEGAR AHI, por si se repite
+> El primer rebuild MURIO en el paso 0: un agente publico el claim 630 con dominio
+> , que no esta en la ontologia. Y el bloque del indice se anadio, se engancho,
+> el build salio VERDE y el indice seguia vacio: usaba , que no existe en ese modulo, y
+> el  se lo trago. Las dos veces el sintoma fue el mismo -- verde y sin efecto.
 > `BRAIN_INDEX.md` y `brain_state.json` son del 27-ago 16:21/16:36 -- ANTES de 24 commits.
 > Si el rebuild no corrio al cerrar s107, el indice NO SABE NADA de: las 50 skills migradas,
 > los 12 skills de mineria, el circuito P2P declarado, ni el arreglo del bus.

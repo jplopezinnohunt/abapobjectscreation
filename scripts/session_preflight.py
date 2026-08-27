@@ -289,7 +289,7 @@ def check_8_skill_growth_tracking() -> CheckResult:
     Session #036 decision (user): no consolidation, ever. Same principle as
     MEMORY.md having no line limit — knowledge accumulates, never compresses.
     See .claude/skills/skill_coordinator/SKILL.md."""
-    skills_dir = REPO / ".agents" / "skills"
+    skills_dir = REPO / ".claude" / "skills"
     if not skills_dir.exists():
         return CheckResult("", "SKIP", "skills dir missing")
     skill_dirs = [p for p in skills_dir.iterdir() if p.is_dir() and (p / "SKILL.md").exists()]

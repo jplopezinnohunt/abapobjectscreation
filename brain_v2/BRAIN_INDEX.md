@@ -55,6 +55,24 @@ public-sector finance, not manufacturing or sales.
 - **Cross-cutting by construction** (serve NO single process because they touch all): Integration, Output, Support, Transport_Intelligence
 - **⚠️ Stranded** (no process AND not technical — neither in a flow nor across one): RE-FX
 
+## 🔗 LOS CIRCUITOS DECLARADOS — el ORDEN, no solo quien participa
+`domains` dice QUIEN participa; `stages` dice EN QUE ORDEN y DONDE PUEDE PARARSE.
+Son campos distintos a proposito: la pertenencia es un conjunto, el circuito es una
+secuencia, y confundirlos es la restriccion de CASO UNICO que el driver OCEL 2.0
+nombra como el defecto a evitar.
+
+- **P2P — Procure-to-Pay**: 12 etapas
+  `10_requisition_po -> 20_goods_receipt -> 30_service_entry_sheet -> 40_invoice_mm -> 45_fi_doc_payment_block -> 50_ppc -> 60_wf_approval_rm -> 70_f110 -> 80_bcm -> 85_pago_manual_f53 -> 90_file_to_bank -> 95_ack_statement`
+  ⛔ **puede PARARSE en**: `60_wf_approval_rm` (metodo de pago O o U -> el WF NO termina: repone el bloqueo a 'W' (blo), `80_bcm` (IBC17 Fallido / IBC06 Rechazado son paradas reales del circuito)
+  ◇ condicionales (no siempre ocurren): `30_service_entry_sheet`, `50_ppc`, `80_bcm`, `85_pago_manual_f53`
+  · junta declarada: 45_fi_doc_payment_block: 40_invoice_mm (p2p_process_mining, termina en 'Invoice Posted') y 45 (payment_bcm_companion, empieza en 'FI document posted')
+  · junta declarada: 50_ppc: p2p_purpose_of_payment.html no tiene arista con NINGUNA de las otras 4 piezas del circuito en companion_graph.json
+
+El grafo de companions lleva estas etapas como aristas **`SIGUE_A`**, separadas de
+las de PARECIDO: la similitud de vocabulario NO puede expresar secuencia -- dos
+etapas contiguas comparten poco vocabulario justo porque son distintas.
+Vigilado por `python Zagentexecution/quality_checks/process_circuit_check.py`.
+
 ## 🔌 INTEGRATION — the richest surface, and the one that explains the operating model
 **SAP here is a system-of-record fed by satellites, not a dialog system.** Any answer about how
 the system is used that assumes people in screens is wrong before it starts.
@@ -119,13 +137,13 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 625 | `python brain_v2/graph_queries.py search <termino>` |
+| **claims** | 630 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 145 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 15 | `python brain_v2/graph_queries.py incident <id>` |
-| **reglas** | 254 | `brain_v2/agent_rules/feedback_rules.json` |
-| **memorias de MÉTODO** | 168 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 95 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **reglas** | 258 | `brain_v2/agent_rules/feedback_rules.json` |
+| **memorias de MÉTODO** | 172 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
+| **algoritmos** | 96 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -134,7 +152,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 95 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 96 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -343,13 +361,13 @@ lo deja — solo que nadie lo publicaba.
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A51_skill_registry` | convertir cada SKILL en un NODO con sus aristas: que tablas SAP documenta, | Integration, Output, Procurement | `brain_v2/skills/skill_registry.json` |
+| `A51_skill_registry` | convertir cada SKILL en un NODO con sus aristas: que tablas SAP documenta, | -- | `brain_v2/skills/skill_registry.json` |
 
 **skills x agentes x alg...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A52_toolgraph` | EL BRAIN DEL BRAIN: un grafo de mis PROPIOS instrumentos con quien usa a q | Closing_Activities, Integration, Master_Data_Governance, Output +2 | `brain_v2/toolgraph.json` |
+| `A52_toolgraph` | EL BRAIN DEL BRAIN: un grafo de mis PROPIOS instrumentos con quien usa a q | Closing_Activities, Master_Data_Governance, Output, Treasury | `brain_v2/toolgraph.json` |
 
 **el foro de mineros x e...**
 
@@ -422,11 +440,12 @@ lo deja — solo que nadie lo publicaba.
 | `A55_query_discipline_lint` ⚠️ | comprobar lo real (nuestro codigo) contra la norma (tres reglas de consulta que eran solo prosa) | `Zagentexecution/quality_checks/query_discipline_check.py` |
 | `A60_outbound_channel_availability` | contestar la pregunta que ningun inventario nuestro contestaba: DE LOS 239 DESTINOS SALIENTES, ¿ | `Zagentexecution/quality_checks/outbound_channel_availability_check.py` |
 | `A61_capability_footprint_in_log` | contestar SI UNA CAPACIDAD DEJA HUELLA ANTES DE CONCLUIR NADA DE SU SILENCIO. Se le da el conjun | `Zagentexecution/tasks/2026_08_26_inc16471_ads_log_mining/ads_outage_window_check.py` |
-| `A61_event_dating_without_a_trace` | FECHAR UN EVENTO QUE EL SISTEMA NO REGISTRA. Seis pasos: (1) comprobar si el hecho deja traza -- | `.agents/skills/sap_log_forensics/SKILL.md` |
+| `A61_event_dating_without_a_trace` | FECHAR UN EVENTO QUE EL SISTEMA NO REGISTRA. Seis pasos: (1) comprobar si el hecho deja traza -- | `.claude/skills/sap_log_forensics/SKILL.md` |
 | `A64_authority_vs_request_delta` | SEPARAR LO QUE UN DOCUMENTO AUTORIZA DE LO QUE UN CORREO PIDE, y aplicar los cinco gates: (1) DE | `process_mining/authority_delta.py` |
 | `A65_authorised_panel_reconciliation` | RECONCILIAR QUIEN PUEDE FIRMAR CONTRA QUIEN ESTA AUTORIZADO A FIRMAR, y separar las cuatro salid | `Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py` |
 | `A66_master_data_replication_by_standard_api` | MEDIR EL HUECO REAL LEYENDO LOS DOS SISTEMAS EN VIVO Y REPLICAR POR LA API DEL OBJETO, con readb | `Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_master_sync.py` |
 | `A67_variant_write_safety` | COPIAR UNA VARIANTE SIN ROMPERLA, sabiendo que las dos formas de romperla NO DAN ERROR. (1) La l | `Zagentexecution/tasks/2026_08_21_variant_alignment/variant_align.py` |
+| `A69_agent_roster_enumeration` | enumerar que agentes existen y cuales se OFRECIERON esta sesion, separandolos por PROCEDENCIA (p | `brain_v2/record_agent_roster.py` |
 | `A6_frontier_with_substrate_tier` | coverage % + explicit worklist, with a third tier for technical substrate (connectivity, session | `process_mining/executed_objects_domain_map.py` |
 | `C1_component_resolution_chain` | object -> TADIR (package) -> TDEVC (component id) -> DF14L (application component) | `brain_v2/system_profile/probes/extract_component_hierarchy.py` |
 | `C3_static_edge_extraction` | parse ABAP source for reads_tables / writes_tables / calls_fms and merge the edges into the grap | `brain_v2/parse_abap_edges.py` |
@@ -471,21 +490,21 @@ _5 more open, drill by id:_ `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED
 
 ## AGENTES - lo que sabemos HACER (14 disponibles)
 - **`authority-doc-reader`** - LECTURA. Extrae hechos ESTRUCTURADOS del documento que AUTORIZA un cambio — la carta, el formulario, el carton, el aviso del banco — que casi sie
-- **`bank-process-discovery`** - model: sonnet ---
-- **`batch-input-explorer`** - model: sonnet ---
+- **`bank-process-discovery`** - model: sonnet # skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que # el contexto inicial de un subagente incluye el con
+- **`batch-input-explorer`** - model: sonnet # skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que # el contexto inicial de un subagente incluye el con
 - **`bcm-signatory-panel`** - 
 - **`brain-steward`** - Promotes knowledge that surfaced in a working conversation into the CENTRAL brain before it is lost. This is the missing "transcript-pattern-extr
-- **`document-output-discovery`** - model: sonnet ---
+- **`document-output-discovery`** - model: sonnet # skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que # el contexto inicial de un subagente incluye el con
 - **`fx-revaluation-scope`** - Audita QUE CUENTAS ENTRAN Y CUALES SE QUEDAN FUERA de la revaluacion FX (F.05 / SAPF100), entrando por la NATURALEZA de la cuenta — banco, deposi
 - **`incident-analyst`** - Processes UNESCO SAP support incidents end-to-end. Use this agent whenever the user passes an incident — whether as an .eml file, pasted email te
-- **`log-process-discovery`** - model: sonnet ---
+- **`log-process-discovery`** - model: sonnet # skills: PRECARGA, no recomendacion. La documentacion de Claude Code dice que # el contexto inicial de un subagente incluye el con
 - **`master-data-sync`** - Alinea MASTER DATA de P01 (fuente, read-only) hacia D01 / V01: cuentas GL, centros de coste, fondos, centros gestores, proyectos/WBS. Mide primer
 - **`miner-onboarding`** - Convierte un script que MINA en una CAPACIDAD registrada — con su proceso completo, no con un esqueleto. Recibe un candidato (de `mining_capabili
 - **`mining-arbiter`** - El JUICIO del foro de mineros. Resuelve lo que la jerarquía de evidencia no puede: dos medidas del mismo peso que dicen cosas distintas del mismo
 - **`process-guardian`** - model: sonnet ---
 - **`variant-intelligence`** - Lee el CONTENIDO REAL de las variantes de ejecucion de programas ABAP y lo convierte en conocimiento de proceso. El programa dice lo que se PUEDE
 
-**Modelo de ejecutores de alineamiento P01 -> D01/V01**: `knowledge/alignment_executors_model.md` - la escalera de canales (API estandar / BC-Set / escritura directa bajo excepcion), los medidores, los actuadores por objeto y el metodo comun. Excepciones autorizadas, lista cerrada: `.agents/skills/sap_master_data_sync/SKILL.md`.
+**Modelo de ejecutores de alineamiento P01 -> D01/V01**: `knowledge/alignment_executors_model.md` - la escalera de canales (API estandar / BC-Set / escritura directa bajo excepcion), los medidores, los actuadores por objeto y el metodo comun. Excepciones autorizadas, lista cerrada: `.claude/skills/sap_master_data_sync/SKILL.md`.
 
 ## BANCA - el explorador del modelo encontro 6 cosa(s) que pedir accion
 > `python brain_v2/bank_model_explorer.py` (paso 2i del rebuild). El CRITERIO lo pone el
@@ -517,7 +536,7 @@ _5 more open, drill by id:_ `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4633 objects · 254 rules · 625 claims · 18 incidents · 9 closed researches)
+## Brain at a glance (4658 objects · 258 rules · 630 claims · 18 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -552,7 +571,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 254 total)
+## Rules to load first (behavioral DNA — 258 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).

@@ -209,7 +209,7 @@ def main():
             # skill antes de declarar" sea comprobable y no una buena intencion.
             sk = s.get("skill")
             if sk:
-                ruta = os.path.join(REPO, ".agents", "skills", sk, "SKILL.md")
+                ruta = os.path.join(REPO, ".claude", "skills", sk, "SKILL.md")
                 if not os.path.exists(ruta):
                     fallos.append(f"{clave}/{s['id']}: declara el skill `{sk}` y no existe en .claude/skills/")
                 else:

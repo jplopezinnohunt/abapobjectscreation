@@ -50,7 +50,7 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SKILLS = os.path.join(ROOT, ".agents", "skills")
+SKILLS = os.path.join(ROOT, ".claude", "skills")
 AGENTS = os.path.join(ROOT, ".claude", "agents")
 ALGOS = os.path.join(ROOT, "brain_v2", "methods", "algorithms.json")
 

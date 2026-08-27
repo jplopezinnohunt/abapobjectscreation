@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent.parent
-AGENTS = [REPO / ".claude" / "agents", REPO / ".agents" / "skills"]
+AGENTS = [REPO / ".claude" / "agents", REPO / ".claude" / "skills"]
 REGISTRY = REPO / "brain_v2" / "gold_table_registry.json"
 CATALOGUE = REPO / "knowledge" / "gold_db_table_catalog.md"
 ATTRIB = REPO / "brain_v2" / "change_attribution.json"

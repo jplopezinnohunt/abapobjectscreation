@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 PROJECT = Path(__file__).parent.parent.parent
-SKILLS_DIR = PROJECT / ".agents" / "skills"
+SKILLS_DIR = PROJECT / ".claude" / "skills"
 
 # Skill name keyword -> 3-axis domain (conservative, skills already have clear scope)
 SKILL_DOMAIN_MAP = {

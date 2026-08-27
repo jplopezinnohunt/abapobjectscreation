@@ -638,6 +638,55 @@ def _agents_block():
             + NL.join(out) + NL + tail)
 
 
+def _circuits_block():
+    """Los CIRCUITOS declarados: el orden, y donde puede pararse.
+
+    s107. Sondeado tras un rebuild: el indice daba CERO menciones de «circuito» y CERO de
+    `SIGUE_A`. El spine de arriba dice QUE DOMINIOS sirven a un proceso -- pertenencia plana,
+    que es la restriccion de caso unico que el driver OCEL nombra como defecto. El ORDEN y las
+    PARADAS viven en `process_map.<P>.stages` y no llegaban al punto de entrada.
+    """
+    try:
+        # HERE es brain_v2/ en este modulo -- no existe ROOT. La primera version uso ROOT,
+        # el except se lo trago y el bloque devolvio VACIO con el build en verde: el no-op
+        # silencioso, y hoy mismo se escribio la regla CRITICAL sobre esto.
+        with open(str(HERE / "domains" / "domains.json"), encoding="utf-8") as fh:
+            pm = (json.load(fh).get("process_map") or {})
+    except Exception:
+        return ""
+    circ = {k: v for k, v in pm.items()
+            if isinstance(v, dict) and v.get("stages")}
+    if not circ:
+        return ""
+    out = ["## 🔗 LOS CIRCUITOS DECLARADOS — el ORDEN, no solo quien participa",
+           "`domains` dice QUIEN participa; `stages` dice EN QUE ORDEN y DONDE PUEDE PARARSE.",
+           "Son campos distintos a proposito: la pertenencia es un conjunto, el circuito es una",
+           "secuencia, y confundirlos es la restriccion de CASO UNICO que el driver OCEL 2.0",
+           "nombra como el defecto a evitar.", ""]
+    for clave, c in circ.items():
+        st = c.get("stages") or []
+        paradas = [s for s in st if s.get("can_stop_here")]
+        cond = [s for s in st if s.get("conditional")]
+        out.append(f"- **{clave} — {c.get('name', clave)}**: {len(st)} etapas")
+        out.append("  `" + " -> ".join(s.get("id", "?") for s in st) + "`")
+        if paradas:
+            out.append("  ⛔ **puede PARARSE en**: " + ", ".join(
+                f"`{s['id']}` ({str(s.get('parada') or s.get('EN_MEDIO_NO_AL_FINAL') or '')[:70]})"
+                for s in paradas))
+        if cond:
+            out.append("  ◇ condicionales (no siempre ocurren): " + ", ".join(
+                f"`{s['id']}`" for s in cond))
+        for j in (c.get("_stages_juntas_secas") or [])[:2]:
+            out.append(f"  · junta declarada: {str(j)[:150]}")
+    out += ["",
+            "El grafo de companions lleva estas etapas como aristas **`SIGUE_A`**, separadas de",
+            "las de PARECIDO: la similitud de vocabulario NO puede expresar secuencia -- dos",
+            "etapas contiguas comparten poco vocabulario justo porque son distintas.",
+            "Vigilado por `python Zagentexecution/quality_checks/process_circuit_check.py`.",
+            ""]
+    return chr(10).join(out)
+
+
 def run():
     s = json.load(open(STATE, encoding="utf-8"))
     cm = s.get("capability_model", {})
@@ -675,6 +724,7 @@ domain. Measured on DMEE: 40 docs + 20 companions + 165 claims + 11 incidents th
 {_installation_block()}
 {_profile_block()}
 {_process_spine()}
+{_circuits_block()}
 {_integration_block()}
 {_security_block()}
 {_maturity_block()}

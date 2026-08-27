@@ -48,7 +48,7 @@ def main():
     companions_dir = PROJECT / "companions"
     existing_companions = {str(p.relative_to(PROJECT)).replace("\\", "/") for p in companions_dir.glob("*.html")}
 
-    skills_dir = PROJECT / ".agents" / "skills"
+    skills_dir = PROJECT / ".claude" / "skills"
     existing_skills = {p.name for p in skills_dir.iterdir() if p.is_dir()}
 
     rule_ids = {r["id"] for r in rules}

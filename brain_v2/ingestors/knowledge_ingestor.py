@@ -43,7 +43,7 @@ def ingest_knowledge(brain, project_root: str):
             _ingest_knowledge_doc(brain, md_file, root, stats)
 
     # ── Skills ──
-    skills_dir = root / '.agents' / 'skills'
+    skills_dir = root / '.claude' / 'skills'
     if skills_dir.exists():
         for skill_md in sorted(skills_dir.rglob('SKILL.md')):
             _ingest_skill(brain, skill_md, root, stats)

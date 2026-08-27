@@ -25,7 +25,7 @@ from pathlib import Path
 HERE = Path(__file__).parent
 BRAIN = HERE.parent
 REPO = BRAIN.parent
-SKILL = REPO / ".agents" / "skills" / "sap_installation_profiling" / "SKILL.md"
+SKILL = REPO / ".claude" / "skills" / "sap_installation_profiling" / "SKILL.md"
 METHODS = HERE / "model_maturity_methods.json"
 ASSETS = HERE / "asset_registry.json"
 
