@@ -120,7 +120,12 @@ def _process_spine():
                     + (f" · avg coverage {avg}%" if avg is not None else " · none measured"))
     orphans = [n for n, d in doms.items()
                if isinstance(d, dict) and not (d.get("primary_processes") or [])]
-    cross = [n for n in orphans if "BASIS" in (doms[n].get("primary_modules") or [])
+    # Cross-cutting se DECLARA o se deriva. La derivacion por modulo (BASIS/CTS) es un PROXY y
+    # misclasifica: Output no lleva BASIS ni CTS y sin embargo sirve a H2R, T2R/P2P y A2R a la vez
+    # -- medido por el radio de una caida del motor de render (INC-000016471, s105). Un dominio
+    # mal marcado STRANDED se queda sin dueno, y eso fue la causa de fondo de tres dias de caida.
+    cross = [n for n in orphans if doms[n].get("cross_cutting") is True
+             or "BASIS" in (doms[n].get("primary_modules") or [])
              or "CTS" in (doms[n].get("primary_modules") or [])]
     stranded = [n for n in orphans if n not in cross]
     return f"""## 🎯 THE PROCESS SPINE — B2R is the heart, and it is measured that way
@@ -292,6 +297,7 @@ def _findings_block():
     except Exception:
         return ""
     by = {}
+    pure = []          # instrumentos que contestan en pantalla (s105)
     for aid, a in algos.items():
         li = str(a.get("lands_in") or "")
         art = ""
@@ -300,7 +306,14 @@ def _findings_block():
                 art = tok
                 break
         if not art:
-            continue          # tecnicas puras: no producen fichero, no van en este indice
+            # INSTRUMENTOS: contestan en PANTALLA y no dejan fichero. Antes se descartaban aqui
+            # -- y eso los hacia INVISIBLES desde el punto de entrada, que es exactamente la
+            # queja que A48 dejo escrita en s104. Un monitor que contesta '¿este canal responde?'
+            # es justo lo que la siguiente sesion necesita saber que existe. Van en su propia
+            # tabla (s105).
+            pure.append((aid, str(a.get("does") or "")[:96], str(a.get("state") or ""),
+                         (a.get("bound_in") or ["-"])[0]))
+            continue
         grp = str(a.get("operates_on") or "otros")
         if len(grp) > 22:
             grp = grp[:22] + "..."
@@ -316,7 +329,14 @@ def _findings_block():
         for aid, does, art, st, srv in sorted(by[grp]):
             flag = " ⚠️" if st in ("FRAGILE", "WEAK") else ""
             out.append(f"| `{aid}`{flag} | {does} | {srv} | `{art}` |")
-    n = sum(len(v) for v in by.values())
+    if pure:
+        out.append("\n**INSTRUMENTOS — contestan en PANTALLA, no dejan fichero**\n")
+        out.append("| instrumento | qué contesta | se corre con |")
+        out.append("|---|---|---|")
+        for aid, does, st, bound in sorted(pure):
+            flag = " ⚠️" if st in ("FRAGILE", "WEAK") else ""
+            out.append(f"| `{aid}`{flag} | {does} | `{bound}` |")
+    n = sum(len(v) for v in by.values()) + len(pure)
     return f"""## 🧭 LOS {n} ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban

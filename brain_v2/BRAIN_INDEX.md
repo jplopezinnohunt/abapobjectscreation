@@ -22,7 +22,7 @@ AGENT's constitution** (how we work) · **installation = the SUBJECT** (what we 
 container — it holds identity, axes, pointers and the firing order; never content a store owns.
 - **UNESCO — United Nations Educational, Scientific and Cultural Organization** — UN specialised agency (public sector, non-profit, multi-currency, multi-country)
 - **SAP ERP 6.0 EhP8 (ECC) — NOT S/4HANA** · character: public-sector finance: budget-and-grants, not manufacturing or sales
-- Systems: **P01** (production) · **D01** (development) · **V01** (validation)
+- Systems: **P01** (production) · **D01** (development) · **V01** (validation) · **SBP** (satellite — Solution Manager (ABAP, instancia 01) + AS JAVA que sirve ADS (50300))
   · ⚠️ There is no QA system between D01 and P01. Recorded here because it is a STRUCTURAL risk of the installation itself, not of any one change.
 - **FIRING ORDER** (deterministic, steps 0–1 mandatory before ANY scope answer — rule #171):
   installation → profile → operation → capability → delta → evidence
@@ -52,8 +52,8 @@ public-sector finance, not manufacturing or sales.
 - **P2D** — 2 domains: BusinessPartner, Master_Data_Governance · avg coverage 48%
 - **A2R** — 1 domains: FI_AA · none measured
 - **O2C** — 1 domains: SD · none measured
-- **Cross-cutting by construction** (serve NO single process because they touch all): Integration, Support, Transport_Intelligence
-- **⚠️ Stranded** (no process AND not technical — neither in a flow nor across one): Output, RE-FX
+- **Cross-cutting by construction** (serve NO single process because they touch all): Integration, Output, Support, Transport_Intelligence
+- **⚠️ Stranded** (no process AND not technical — neither in a flow nor across one): RE-FX
 
 ## 🔌 INTEGRATION — the richest surface, and the one that explains the operating model
 **SAP here is a system-of-record fed by satellites, not a dialog system.** Any answer about how
@@ -89,18 +89,18 @@ Not a self-assessment: each dimension is derived from what is on disk.
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
 
-## 🔍 ¿ENTENDEMOS LO QUE EL SISTEMA EJECUTA? — 0.71% sin clasificar
+## 🔍 ¿ENTENDEMOS LO QUE EL SISTEMA EJECUTA? — 0.72% sin clasificar
 Cuatro superficies, porque ejecutar no es solo un programa: lo que corre, lo que CAMBIA, lo que
 corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta en SLGREPNA.
-- **objects** — 28,499,551 ejec · tecnico 86.9% · negocio 7.5% · sin clasificar **0.0%**
-- **changes** — 2,873,448 ejec · tecnico 13.2% · negocio 84.5% · sin clasificar **0.0%**
-- **jobs** — 219,167 ejec · tecnico 54.1% · negocio 18.4% · sin clasificar **0.2%**
-- **rfc** — 12,589,665 ejec · tecnico 52.5% · negocio 34.7% · sin clasificar **2.5%**
+- **objects** — 29,348,937 ejec · tecnico 86.9% · negocio 7.4% · sin clasificar **0.0%**
+- **changes** — 2,881,752 ejec · tecnico 13.2% · negocio 84.5% · sin clasificar **0.0%**
+- **jobs** — 235,523 ejec · tecnico 54.7% · negocio 18.2% · sin clasificar **0.2%**
+- **rfc** — 12,974,845 ejec · tecnico 52.5% · negocio 34.7% · sin clasificar **2.5%**
 - **TECNICO es una respuesta, no un hueco** (el despachador y el planificador son fontaneria).
-  El hueco real es SIN CLASIFICAR: 315,305 de 44,181,831.
+  El hueco real es SIN CLASIFICAR: 324,909 de 45,441,057.
 - **Situar no es explicar:** solo el **75.6%** de las ejecuciones de negocio llega a grado 3
   (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
-- Movimiento: **no se movio** desde la ultima corrida — eso ES el hallazgo · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
+- Movimiento: +0.01 desde la ultima corrida · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
 - **354 objetos por explorar** (36 custom) —
   la lista es `brain_v2/comprehension_index.json` → `keep_exploring`, ordenada por ejecuciones,
   y es el trabajo del agente `log-process-discovery`.
@@ -115,13 +115,13 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 612 | `python brain_v2/graph_queries.py search <termino>` |
-| **docs de dominio** | 144 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
-| **companions** | 43 | `companions/how_unesco_works.html` los indexa todos |
-| **incidentes** | 14 | `python brain_v2/graph_queries.py incident <id>` |
-| **reglas** | 245 | `brain_v2/agent_rules/feedback_rules.json` |
-| **memorias de MÉTODO** | 158 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 84 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **claims** | 616 | `python brain_v2/graph_queries.py search <termino>` |
+| **docs de dominio** | 145 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
+| **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
+| **incidentes** | 15 | `python brain_v2/graph_queries.py incident <id>` |
+| **reglas** | 251 | `brain_v2/agent_rules/feedback_rules.json` |
+| **memorias de MÉTODO** | 168 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
+| **algoritmos** | 91 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -130,7 +130,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 59 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 91 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -169,9 +169,9 @@ lo deja — solo que nadie lo publicaba.
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
 | `A9_business_rules_from_source` | extract the DECISIONS that live in code rather than in configuration — qua | Travel | `brain_v2/business_rules.json` |
-| `C1c_custom_fm_domain` | custom Z/Y function module -> canonical domain, via the curated tfdir_cust | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, HR-Workflows +7 | `brain_v2/code_inventory.json` |
+| `C1c_custom_fm_domain` | custom Z/Y function module -> canonical domain, via the curated tfdir_cust | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, HR-Workflows +8 | `brain_v2/code_inventory.json` |
 | `C2_ascent_with_provenance_rung` | climb from any object to the installation, ALWAYS recording which rung of  | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +7 | `brain_v2/capability_model/capability_model.json` |
-| `C5_source_identity_and_integrity` | resolve a SAP object name to the file that actually holds its BODY, across | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, HR-Workflows +7 | `brain_v2/code_inventory.json` |
+| `C5_source_identity_and_integrity` | resolve a SAP object name to the file that actually holds its BODY, across | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, HR-Workflows +8 | `brain_v2/code_inventory.json` |
 | `C6_routine_level_behaviour_extraction` | split a source file into ROUTINES with line ranges and derive, per routine | BusinessPartner, Cost_Recovery_CRP, HR-Workflows, Integration +7 | `brain_v2/code_sections.json` |
 
 **model**
@@ -377,6 +377,53 @@ lo deja — solo que nadie lo publicaba.
 |---|---|---|---|
 | `A59_bcm_dual_control_mining` ⚠️ | encontrar los lotes de pago donde el que crea es el que aprueba (CRUSR=CHU | -- | `Zagentexecution/mcp-backend-server-python/bcm_dual_control_audit.json` |
 
+**tfdir_all (modulos de ...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A62_lazy_generated_object_as_usage_proof` | distinguir LO INSTALADO de LO VIVO usando la generacion PEREZOSA como prue | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
+
+**un descubrimiento ya a...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A63_discovery_raises_questions` | CONVERTIR UN HALLAZGO EN PREGUNTAS PARA QUIEN NO SABIA QUE LE AFECTABA. Un | Treasury | `['process_mining/mining_findings.json` |
+
+**INSTRUMENTOS — contestan en PANTALLA, no dejan fichero**
+
+| instrumento | qué contesta | se corre con |
+|---|---|---|
+| `A11_shared_algorithm_memory` | hold what each algorithm LEARNED about the substrate — which log is a filtered subset, which con | `brain_v2/methods/algorithm_memory.py` |
+| `A1_chunked_temporal_read` | read a purging log in bounded time windows (<=6h) because a wide call hangs and the connection d | `Zagentexecution/sap_data_extraction/scripts/accumulate_logs.py` |
+| `A25_artifact_reachability` | comprobar que cada artefacto que un algoritmo promete en lands_in exista, lo lea alguien, y se l | `Zagentexecution/quality_checks/artifact_reachability_check.py` |
+| `A26_knowledge_connectivity` | comprobar que el conocimiento guardado se pueda ENCONTRAR: que este en el campo que su store lee | `Zagentexecution/quality_checks/knowledge_connectivity_check.py` |
+| `A28_graph_landing` | comprobar que lo generado llegue al GRAFO -- no a un JSON al lado --, que cada algoritmo tenga q | `Zagentexecution/quality_checks/graph_landing_check.py` |
+| `A2_rolling_window_accumulation` ⚠️ | capture a window the source purges (7-120 days) into *_history tables, turning a window into a h | `Zagentexecution/sap_data_extraction/scripts/accumulate_logs.py` |
+| `A35_mining_artifact_detector` | avisar EN EL MOMENTO de que acabas de construir un artefacto que mina y no lo has registrado: un | `Zagentexecution/quality_checks/mining_artifact_detector.py` |
+| `A36_mining_capability_router` | convertir cada minero en una CAPACIDAD INVOCABLE: se pregunta por tema, en el idioma de quien lo | `process_mining/ask.py` |
+| `A41_extract_fund_center_hierarchy` | Descubre BAJO QUÉ SETCLASS vive de verdad la jerarquía estándar de centros gestores (el rollup o | `Zagentexecution/sap_data_extraction/scripts/extract_fund_center_hierarchy.py` |
+| `A43_fsv_alignment_check` | Mide, clave a clave, cuanto se ha ido la VERSION DE BALANCE (FSV) de produccion respecto de D01/ | `Zagentexecution/quality_checks/fsv_alignment_check.py` |
+| `A46_mine_domain` | Descubre, por DOMINIO, quien mueve de verdad cada objeto ejecutado y por que canal: separa el tr | `process_mining/mine_domain.py` |
+| `A47_ob09_vs_variant_check` | Encuentra la cuenta que esta PERFECTAMENTE configurada para revaluacion FX y NO SE VALORA NUNCA  | `Zagentexecution/quality_checks/ob09_vs_variant_check.py` |
+| `A48_run_progress_from_its_own_log` | contestar POR DONDE VA un proceso largo leyendo la ultima marca de paso de su log y si el log se | `brain_v2/rebuild_progress.py` |
+| `A48_semantic_activity_map` | Convierte un log crudo de arranques de transaccion en un log de PROCESO etiquetado: cada tcode - | `process_mining/semantic_activity_map.py` |
+| `A50_transport_content_extraction` | traer al Gold QUE OBJETO viaja en QUE transporte. Sin esto se sabe que hubo un transporte y no q | `scripts/extraction/extract_fsv_structure.py` |
+| `A53_skill_binding_gate` | parar cuando alguien opera sobre un tema que YA tiene skill y no lo nombra. Es el control que co | `Zagentexecution/quality_checks/skill_binding_check.py` |
+| `A55_query_discipline_lint` ⚠️ | comprobar lo real (nuestro codigo) contra la norma (tres reglas de consulta que eran solo prosa) | `Zagentexecution/quality_checks/query_discipline_check.py` |
+| `A60_outbound_channel_availability` | contestar la pregunta que ningun inventario nuestro contestaba: DE LOS 239 DESTINOS SALIENTES, ¿ | `Zagentexecution/quality_checks/outbound_channel_availability_check.py` |
+| `A61_capability_footprint_in_log` | contestar SI UNA CAPACIDAD DEJA HUELLA ANTES DE CONCLUIR NADA DE SU SILENCIO. Se le da el conjun | `Zagentexecution/tasks/2026_08_26_inc16471_ads_log_mining/ads_outage_window_check.py` |
+| `A61_event_dating_without_a_trace` | FECHAR UN EVENTO QUE EL SISTEMA NO REGISTRA. Seis pasos: (1) comprobar si el hecho deja traza -- | `.agents/skills/sap_log_forensics/SKILL.md` |
+| `A64_authority_vs_request_delta` | SEPARAR LO QUE UN DOCUMENTO AUTORIZA DE LO QUE UN CORREO PIDE, y aplicar los cinco gates: (1) DE | `process_mining/authority_delta.py` |
+| `A6_frontier_with_substrate_tier` | coverage % + explicit worklist, with a third tier for technical substrate (connectivity, session | `process_mining/executed_objects_domain_map.py` |
+| `C1_component_resolution_chain` | object -> TADIR (package) -> TDEVC (component id) -> DF14L (application component) | `brain_v2/system_profile/probes/extract_component_hierarchy.py` |
+| `C3_static_edge_extraction` | parse ABAP source for reads_tables / writes_tables / calls_fms and merge the edges into the grap | `brain_v2/parse_abap_edges.py` |
+| `C4_object_role_derivation` | derive what each object is FOR — posting engine, report, interface, worklist, master-data mainte | `process_mining/derive_object_roles.py` |
+| `D1_D3_delta_strategies` | PK-delta for master, value-compare for totals, high-water-mark for transactional | `scripts/extraction/gold_refresh.py` |
+| `D4_field_splitting` | split a wide table read into column groups against the 512-byte line buffer, re-join locally | `Zagentexecution/mcp-backend-server-python/rfc_helpers.py` |
+| `D5_bounded_probe_with_cap_reporting` | read with an explicit cap and date filter; report a hit cap as '>=cap', NEVER as a count | `brain_v2/system_profile/probes/probe_footprint.py` |
+| `D6_aggregate_before_resolve` | push the row reduction into SQL (GROUP BY), then resolve the expensive enrichment ONCE per disti | `process_mining/detect_drift.py` |
+| `E4_canonicalisation` | resolve any spelling to a canonical key through a declared alias contract, in exactly one place | `brain_v2/canonical.py` |
+
 - 📐 **Cómo encajan entre sí:** `knowledge/exploration_architecture.md` — la cadena completa,
   las 4 superficies, las 5 vías, los 4 grados y las trampas que costó llegar ahí.
 - **Ninguno de estos ficheros se lee entero.** Se abren con
@@ -385,7 +432,7 @@ lo deja — solo que nadie lo publicaba.
 - **Comprobar que siguen siendo alcanzables:**
   `python Zagentexecution/quality_checks/artifact_reachability_check.py`
 
-## OPEN WORK - incidents awaiting action (12 live, deadline first)
+## OPEN WORK - incidents awaiting action (13 live, deadline first)
 - `INC-EGYPT-PPC` - CLOSED_NOT_REQUIRED - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
   - NEXT: CERRADO como NOT_REQUIRED el 2026-08-20: SG confirma que no hay codigo para Egipto y el canal Citi no lleva este flujo (76,2% SocGen vs 1,9% Citi; la cuenta Citi Egipto emite el 100% en cheque prenumerado). QUEDA UNA SOLA ACCION, y es de higiene, no del incide
   - drill: `python brain_v2/graph_queries.py incident INC-EGYPT-PPC`
@@ -406,15 +453,16 @@ lo deja — solo que nadie lo publicaba.
 - `INC-000016338` - EXECUTED_VERIFIED_ROLE_PENDING - Add Bettina REISS to UIL BCM signatory panel + build the <=10K amount tier on BOTH rules (verifi
   - drill: `python brain_v2/graph_queries.py incident INC-000016338`
 
-_4 more open, drill by id:_ `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
+_5 more open, drill by id:_ `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED)  `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
 
 
-## AGENTES - lo que sabemos HACER (13 disponibles)
+## AGENTES - lo que sabemos HACER (14 disponibles)
 - **`authority-doc-reader`** - LECTURA. Extrae hechos ESTRUCTURADOS del documento que AUTORIZA un cambio — la carta, el formulario, el carton, el aviso del banco — que casi sie
 - **`bank-process-discovery`** - model: sonnet ---
 - **`batch-input-explorer`** - model: sonnet ---
 - **`bcm-signatory-panel`** - 
 - **`brain-steward`** - Promotes knowledge that surfaced in a working conversation into the CENTRAL brain before it is lost. This is the missing "transcript-pattern-extr
+- **`document-output-discovery`** - model: sonnet ---
 - **`fx-revaluation-scope`** - Audita QUE CUENTAS ENTRAN Y CUALES SE QUEDAN FUERA de la revaluacion FX (F.05 / SAPF100), entrando por la NATURALEZA de la cuenta — banco, deposi
 - **`incident-analyst`** - Processes UNESCO SAP support incidents end-to-end. Use this agent whenever the user passes an incident — whether as an .eml file, pasted email te
 - **`log-process-discovery`** - model: sonnet ---
@@ -437,7 +485,7 @@ _4 more open, drill by id:_ `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE
 - `NEW` - 35 banco(s) ejecutan UN SOLO metodo de pago
 - `RISK` - 6 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
 
-## WHAT WE KNOW DEEPLY - 49 companions; the 10 densest, and what each covers
+## WHAT WE KNOW DEEPLY - 50 companions; the 10 densest, and what each covers
 > Do NOT re-derive these. Search any term across every store AND the companions: `python brain_v2/graph_queries.py search <term>`.
 
 - `how_unesco_works.html` - Como trabaja UNESCO — vista general - basis, busarea, business area, carry forward, conformance, connectivity, derivation, donor, epi-use
@@ -456,7 +504,7 @@ _4 more open, drill by id:_ `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4562 objects · 245 rules · 612 claims · 17 incidents · 9 closed researches)
+## Brain at a glance (4591 objects · 247 rules · 616 claims · 18 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -491,7 +539,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 245 total)
+## Rules to load first (behavioral DNA — 247 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
