@@ -4067,6 +4067,54 @@
           "dijo": "EL DETECTOR DE CHOQUES DEL FORO NO HABRIA VISTO ESTE CHOQUE, Y ES EL MAS CARO QUE HEMOS TENIDO.  y  solo comparan HALLAZGOS PUBLICADOS EN EL"
         }
       ]
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "CUENTA_BANCARIA_ROL",
+      "aspecto": "cuantas_cuentas_cobran_y_no_pagan",
+      "sujeto": "CUENTAS_RECEPTORAS",
+      "hallazgo": "NO HAY CHOQUE: 16 y 80 miden OBJETOS DISTINTOS y ninguno contradice al otro. A44 cuenta BANCOS CASA (HBKID, sin sociedad ni cuenta) que aparecen en FEBKO_2024_2026 del Gold y tienen CERO filas en REGUH en TODA la historia 2016-2026; D5 cuenta CUENTAS (ZBUKR,HBKID,HKTID) de T012K vivas (no CLOSED) que en la ventana 2025-2026 reciben extracto, mueven saldo >=6 periodos y no pagan. Los 16 bancos de A44 se despliegan en 27 cuentas de T012K: 19 son OPERATIVA_COBRO en D5, 6 estan CLOSED (SCB01 x4, SCB03, TSC01-USD02), 1 es DURMIENTE sin extracto (NTB02-EUR02) y 1 es EXTRACTO_SIN_MOVIMIENTO (CIT13-USD01). Cero casos en que uno diga cobra y el otro diga paga: 16 esta CONTENIDO en 80. Las 61 restantes se explican una a una por tres diferencias de instrumento, no por error: 20 cumplen el MISMO criterio de A44 (su HBKID no aparece jamas en REGUH) y A44 no las ve porque sus extractos NO estan en el Gold; 22 son cuentas cuyo BANCO si paga pero cuya CUENTA no ha pagado nunca -- invisibles para A44 por construccion, porque su unidad es el banco (p.ej. ICBA/CBE01-ETB02: 543 extractos, cero pagos, mientras CBE01 paga desde UNES); 19 pagaron ANTES de 2025 y nada en la ventana (ex-pagadoras: SOG01-EUR03 8.856 pagos hasta 20220915, UIL/DEU01-EUR01 19.430 hasta 20230904). PUBLICABLE: 80 cuentas de cobro operativo 2025-2026 (D5), con la matizacion de que 19 de ellas son ex-pagadoras, luego el subconjunto que NO ha pagado jamas es 61. NO publicable como cuentas: el 16 de A44, que son bancos y ademas un SUELO (ve 19 de las 39 cuentas que cumplen su propio criterio).",
+      "evidencia": "reproducido en Gold p01_gold_master_data.db: REGUH (XVORL<>'X') x FEBKO_2024_2026 -> 16 HBKID, identico a A44. T012K 402 filas, 165 vivas tras excluir 237 CLOSED por T012T-TEXT1 (SPRAS=E). Cruce de las 80 OPERATIVA_COBRO de behaviour_all.json contra REGUH por (ZBUKR,HBKID,HKTID): 39 con banco nunca en REGUH (19 visibles en el Gold FEBKO + 20 ciegas), 22 con cuenta nunca en REGUH pero banco si, 19 con ultimo pago anterior a 2025. Comprobado ademas que ninguna PAGADORA de D5 lo es solo por propuestas F110 (XVORL='X'): 0 casos.",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 108,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "COBERTURA_DE_DATOS",
+      "aspecto": "cobertura_del_denominador",
+      "sujeto": "FEBKO_2024_2026",
+      "hallazgo": "LA FOTO DE EXTRACTOS DEL GOLD ES PARCIAL EN DOS EJES, NO EN UNO. A44 declara solo el eje SOCIEDAD (faltan ICTP, IIEP, UBO, UIL, UIS) y ese aviso se queda corto: dentro de la unica sociedad grande que si cubre, UNES, la foto tiene menos de la mitad de los bancos casa. Medido por mi sobre la MISMA ventana (AZDAT 20250101-20260330): Gold = 16.374 cabeceras / 35 HBKID; P01 en vivo = 39.265 cabeceras / 77 HBKID. Es decir el Gold guarda el 41,7% de las filas y el 45% de los bancos de UNES, y bancos enteros con extracto diario no existen en el (CIT16 0 filas en el Gold frente a 422 en vivo; SOG01 0 frente a 1.700). Consecuencia operativa: cualquier probe que derive 'recibe extracto' o 'no recibe extracto' de FEBKO_2024_2026 produce un SUELO, nunca un censo, y la ausencia de un banco ahi no prueba nada. El instrumento correcto para esa columna es la lectura VIVA de FEBKO (que es lo que hace D5), no la tabla del Gold.",
+      "evidencia": "SELECT COUNT(*),COUNT(DISTINCT HBKID) FROM FEBKO_2024_2026 WHERE BUKRS='UNES' AND AZDAT BETWEEN '20250101' AND '20260330' -> (16374, 35). RFC_READ_TABLE FEBKO en P01 mismo filtro -> 39.265 filas, 77 HBKID. Gold cubre 3 sociedades (UNES 28.802, ICBA 1.332, MGIE 1.282) frente a 9 en T012K. Continuidad mensual normal (~1.050 filas/mes UNES) pero solo ~30 HBKID/mes: el recorte es POR BANCO, no por fecha.",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 108,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "DEFECTO_DE_INSTRUMENTO",
+      "aspecto": "unidad_y_poblacion_del_probe",
+      "sujeto": "BANK_MODEL_EXPLORER.RECEIVING_ACCOUNTS",
+      "hallazgo": "TRES DEFECTOS EN EL PROBE, NINGUNO INVALIDA SU HALLAZGO PERO LOS TRES INFLAN O DESPLAZAN LA CIFRA. (1) UNIDAD MAL ETIQUETADA: titula '16 cuenta(s)' y cuenta HBKID; las 16 son bancos y equivalen a 27 cuentas de T012K. (2) NO APLICA EL CORTE DE CERRADAS: 6 de esas 27 llevan CLOSED en T012T-TEXT1, y dos bancos enteros del top (SCB01, 196 extractos, ultimo 20240517; SCB03, 382, ultimo 20250714) estan cerrados -- se estan presentando como rol nuevo cuentas que ya salen en su propio probe dead_accounts. (3) EL AVISO BLIND SE QUEDA CORTO: statement_coverage compara BUKRS contra doc['companies'] (que sale de REGUH, 6 sociedades) y por eso no ve ni que T012K tiene 9 ni que dentro de UNES faltan 42 de 77 bancos casa. Arreglo propuesto: contar (BUKRS,HBKID,HKTID) contra T012K excluyendo CLOSED, y comparar el conjunto de HBKID de FEBKO contra T012K, no el de BUKRS contra REGUH.",
+      "evidencia": "bank_model_explorer.py lineas ~150-175 (GROUP BY TRIM(HBKID), condicion 'hb not in banks', sin T012K ni T012T); 27 cuentas T012K bajo los 16 HBKID, 6 con TEXT1 que empieza por CLOSED; comparacion de conjuntos HBKID Gold(35) vs P01 vivo(77) en UNES.",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 108,
+      "ya_dicho_por_otros": null
+    },
+    {
+      "minero": "mining-arbiter",
+      "mining_kind": "DEFECTO_DE_INSTRUMENTO",
+      "aspecto": "filtros_y_ventana_del_clasificador",
+      "sujeto": "BANK_ACCOUNT_BEHAVIOUR_SIGNATURE",
+      "hallazgo": "EL 80 SE SOSTIENE, PERO EL INSTRUMENTO TIENE UN FLANCO ABIERTO Y UNA MATIZACION OBLIGATORIA. FLANCO: cuenta filas de REGUH SIN filtrar XVORL='X', asi que una PROPUESTA de F110 cuenta como pago -- en el Gold las propuestas son 358.106 de 3.707.737 (9,7%). Hoy no ha roto nada (comprobado: 0 cuentas PAGADORA cuya unica actividad 2025-2026 sean propuestas), pero una sola propuesta lanzada sobre una cuenta receptora la reclasifica de OPERATIVA_COBRO a PAGADORA sin que nadie lo note. Anadir COALESCE(XVORL,'') <> 'X'. MATIZACION: 'no paga' es relativo a la VENTANA 2025-2026, y 19 de las 80 pagaron antes (SOG01-EUR03 8.856 pagos hasta 2022, UIL/DEU01-EUR01 19.430 hasta 2023): son EX-PAGADORAS, no cuentas nacidas para cobrar, y publicar 80 sin decirlo confunde dos cosas distintas. Sugerido: separar OPERATIVA_COBRO (61, sin pago historico) de COBRO_EX_PAGADORA (19). Lo que SI esta bien y hay que preservar: leer FEBKO EN VIVO en vez del Gold -- es lo que le permite ver 20 cuentas que A44 no puede ver -- y la clave (BUKRS,RACCT) en GLT0, que en esta poblacion no tiene ni una colision (0 de 167 cuentas vivas comparten mayor dentro de su sociedad).",
+      "evidencia": "bank_account_behaviour_signature.py bloque REGUH sin filtro XVORL; catalogo Gold claim 387; cruce propio: 0 PAGADORA proposal-only, 19 de 80 OPERATIVA_COBRO con MAX(LAUFD) anterior a 2025 en REGUH del Gold; 0 colisiones de (BUKRS,HKONT) entre las 167 cuentas vivas de behaviour_all.json.",
+      "autoridad": "MEDIDO_EN_DATOS",
+      "peso": 3,
+      "sesion": 108,
+      "ya_dicho_por_otros": null
     }
   ],
   "preguntas": [

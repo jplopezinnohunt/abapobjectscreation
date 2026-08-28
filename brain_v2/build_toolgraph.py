@@ -64,6 +64,38 @@ def cargar(p, d=None):
         return d if d is not None else {}
 
 
+FM_RE = r"^---\s*\r?\n(.*?)\r?\n---\s*$"
+DESC_RE = r"^description:\s*(.*?)(?=\n[a-zA-Z_]+:\s|\Z)"
+
+
+def _descripcion_de(fichero):
+    """La DESCRIPTION del front-matter: el resumen mas intencionado de para que sirve un
+    instrumento, y lo que el propio harness usa para enrutar.
+
+    NO estaba en el grafo. El nodo SKILL llevaba solo los TITULOS de seccion
+    (`de_que_habla`), asi que el indice cargaba de media el 28% de lo que la descripcion
+    dice, y 55 de 61 skills perdian mas de la mitad. Medido en s108:
+    `sap_variant_analysis` no contenia "revaluation", "SAPF100" ni "FX" aunque su propia
+    descripcion los nombra -- y por tanto no se podia encontrar preguntando por ellos.
+    """
+    import os as _os
+    import re as _re
+    import io as _io
+    if not fichero:
+        return ""
+    p = fichero if _os.path.isabs(fichero) else _os.path.join(ROOT, fichero)
+    try:
+        txt = _io.open(p, encoding="utf-8").read()
+    except Exception:
+        return ""
+    m = _re.search(FM_RE, txt, _re.S | _re.M)
+    if not m:
+        return ""
+    d = _re.search(DESC_RE, m.group(1), _re.S | _re.M)
+    if not d:
+        return ""
+    return " ".join(d.group(1).split())[:1500]
+
 def main():
     nodos, aristas = {}, []
 
@@ -77,6 +109,7 @@ def main():
     reg = cargar(REG_SKILLS)
     for s, r in (reg.get("por_skill") or {}).items():
         nodo("SKILL", s, bytes=r.get("bytes"), fichero=r.get("fichero"),
+             descripcion=_descripcion_de(r.get("fichero")),
              de_que_habla=r.get("de_que_habla"), cubre_tablas=len(r.get("cubre_tablas") or []))
         for tipo in ("agentes", "algoritmos"):
             for q in (r.get("leido_por") or {}).get(tipo, []):

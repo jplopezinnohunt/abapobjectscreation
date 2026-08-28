@@ -879,16 +879,44 @@ def tool(brain, q):
 
     if q.lower().startswith("para "):
         tarea = q[5:].strip().lower()
-        pal = {w for w in re.split(r"\W+", tarea) if len(w) > 2}
+        # PALABRAS VACIAS en los DOS idiomas. Filtrar solo por longitud >2 deja pasar "que",
+        # "los", "para", "con"... que no informan de nada y ademas estan en los 14 skills
+        # `mining-*`, que son los unicos escritos en español: cualquier pregunta en español
+        # los arrastraba a los cinco primeros puestos. Medido en s108.
+        _VACIAS = {
+            "que", "los", "las", "del", "una", "unos", "unas", "por", "para", "con", "sin",
+            "sobre", "como", "cuando", "donde", "cual", "cuales", "esta", "este", "esto",
+            "esos", "esas", "hay", "son", "the", "and", "for", "with", "from", "that",
+            "this", "any", "all", "its", "into", "over", "was", "are", "has", "have",
+        }
+        pal = {w for w in re.split(r"\W+", tarea) if len(w) > 2 and w not in _VACIAS}
         if not pal:
             return {"error": "di de que va la tarea"}
 
         variantes = _expandir(sorted(pal))
 
+        # PESO POR RAREZA (IDF). Contar palabras a peso igual deja que el vocabulario
+        # ubicuo mande: medido en s108, "que jobs y variantes procesan los extractos
+        # bancarios" devolvia los cinco skills `mining-*` -- generados, con texto generico
+        # y largo -- y NO devolvia sap_variant_analysis. Los terminos comunes no informan;
+        # los raros son los que identifican al experto. Es exactamente lo que braintoolbox
+        # prescribe: "pesa por IDF y exige al menos un termino raro".
+        import math as _math
+        _blobs = {n: (json.dumps(v, ensure_ascii=False).lower() + " " + n.lower())
+                  for n, v in nodos.items()}
+        _N = max(1, len(_blobs))
+
+        def _idf(formas):
+            df = sum(1 for b in _blobs.values() if any(f in b for f in formas))
+            return _math.log((_N + 1) / (df + 1)) + 0.1   # +0.1: un termino ubicuo suma poco, no cero
+
+        _pesos = [(formas, _idf(formas)) for formas in variantes]
+
         def puntua(n, v):
-            blob = json.dumps(v, ensure_ascii=False).lower() + " " + n.lower()
-            # una palabra cuenta si aparece ELLA o cualquiera de sus equivalentes
-            return sum(1 for formas in variantes if any(f in blob for f in formas))
+            blob = _blobs.get(n) or (json.dumps(v, ensure_ascii=False).lower() + " " + n.lower())
+            # una palabra cuenta si aparece ELLA o cualquiera de sus equivalentes, y pesa
+            # segun lo rara que sea en el corpus de instrumentos
+            return round(sum(w for formas, w in _pesos if any(f in blob for f in formas)), 3)
 
         por_tipo = {}
         for n, v in nodos.items():

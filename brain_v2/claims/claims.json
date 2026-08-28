@@ -30020,5 +30020,81 @@
     ],
     "created_session": 108,
     "resolution_notes": "INC-000013624. Explica por que el usuario seguia diciendo que el cambio no funciono cuando la configuracion ya estaba completa y verificada."
+  },
+  {
+    "domain_axes": {
+      "functional": [
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    },
+    "evidence_against": [],
+    "created_session": 108,
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "id": 640,
+    "domain": "Treasury_EBS",
+    "claim": "CUENTAS QUE COBRAN Y NO PAGAN: LA CIFRA PUBLICABLE ES 80 CUENTAS (2025-2026), DE LAS CUALES 61 NO HAN PAGADO JAMAS Y 19 SON EX-PAGADORAS. Arbitrado el 2026-08-28 entre dos medidas que parecian contradecirse -- 16 (brain_v2/bank_model_explorer.py, probe receiving_accounts) frente a 80 (Zagentexecution/quality_checks/bank_account_behaviour_signature.py, tipo OPERATIVA_COBRO) -- y NO se contradicen: miden objetos distintos. El 16 son BANCOS CASA (HBKID, sin sociedad ni cuenta) presentes en FEBKO_2024_2026 del Gold y con cero filas en REGUH en toda la historia 2016-2026. El 80 son CUENTAS (ZBUKR,HBKID,HKTID) de T012K vivas -- 165 de 402 en el Gold tras excluir 237 marcadas CLOSED en T012T-TEXT1 -- que en 2025-2026 reciben extracto, mueven saldo en >=6 periodos y no pagan. Los 16 bancos se despliegan en 27 cuentas de T012K y el segundo instrumento las clasifica asi: 19 OPERATIVA_COBRO, 6 CLOSED (SCB01 x4, SCB03, TSC01-USD02), 1 DURMIENTE sin extracto (NTB02-EUR02) y 1 EXTRACTO_SIN_MOVIMIENTO (CIT13-USD01). Cero casos en que uno diga cobra y el otro diga paga: 16 esta CONTENIDO en 80. Las 61 cuentas restantes se explican una a una por tres diferencias de instrumento: 20 cumplen el MISMO criterio (su banco no aparece jamas en REGUH) y el primer instrumento no las ve porque sus extractos no estan en el Gold; 22 son cuentas cuyo BANCO paga pero cuya CUENTA no ha pagado nunca -- invisibles por construccion para una medida cuya unidad es el banco, p.ej. ICBA/CBE01-ETB02 con 543 extractos y cero pagos mientras CBE01 paga desde UNES; y 19 pagaron antes de 2025 y nada en la ventana (SOG01-EUR03: 8.856 pagos hasta 20220915; UIL/DEU01-EUR01: 19.430 hasta 20230904). REGLA QUE DEJA: antes de llamar contradiccion a dos recuentos de cuentas bancarias, comprobar las tres coordenadas -- unidad (banco vs cuenta), poblacion (con o sin CLOSED, que sociedades) y ventana (historia completa vs 2025-2026).",
+    "evidence_for": [
+      "Zagentexecution/tasks/2026_08_28_ebs_ntb02_uno18eur/behaviour_all.json",
+      "brain_v2/bank_model_findings.json",
+      "process_mining/mining_findings.json#mining-arbiter/CUENTAS_RECEPTORAS"
+    ],
+    "related_objects": [
+      "T012K",
+      "T012T",
+      "REGUH",
+      "FEBKO",
+      "GLT0",
+      "CBE01",
+      "NTB02",
+      "SCB01",
+      "SCB03",
+      "CIT13",
+      "SOG01",
+      "DEU01"
+    ],
+    "resolution_notes": "Arbitraje s108. Reproducido en el Gold DB: los 16 salen identicos con REGUH(XVORL<>'X') x FEBKO_2024_2026; las 80 cruzadas contra REGUH por (ZBUKR,HBKID,HKTID) dan 39 + 22 + 19. Comprobado ademas que ninguna PAGADORA lo es solo por propuestas F110 (0 casos), asi que el 80 no esta inflado por ese lado."
+  },
+  {
+    "domain_axes": {
+      "functional": [
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    },
+    "evidence_against": [],
+    "created_session": 108,
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "id": 641,
+    "domain": "Treasury_EBS",
+    "claim": "LA TABLA FEBKO_2024_2026 DEL GOLD ES PARCIAL EN DOS EJES -- SOCIEDAD Y BANCO CASA -- ASI QUE SOLO PRODUCE SUELOS, NUNCA CENSOS DE 'RECIBE EXTRACTO'. El eje sociedad ya estaba declarado (cubre UNES, ICBA y MGIE; faltan ICTP, IIEP, UBO, UIL, UIS, IBE frente a las 9 de T012K). El eje BANCO no lo estaba y es igual de grande: medido el 2026-08-28 sobre la MISMA ventana AZDAT 20250101-20260330 y la misma sociedad UNES, el Gold tiene 16.374 cabeceras y 35 HBKID mientras P01 en vivo devuelve 39.265 cabeceras y 77 HBKID -- el 41,7% de las filas y el 45% de los bancos. Bancos enteros con extracto practicamente diario no existen en el Gold: CIT16 tiene 0 filas frente a 422 en vivo, SOG01 tiene 0 frente a 1.700. El recorte no es de fecha: la serie mensual es continua (~1.050 filas/mes de UNES desde 202401 hasta 202603) pero solo con ~30 HBKID por mes. CONSECUENCIA: la ausencia de un banco casa en FEBKO_2024_2026 no prueba que no reciba extracto, y cualquier columna de 'recibe / no recibe extracto' debe derivarse de la lectura VIVA de FEBKO en P01, no de esta tabla.",
+    "evidence_for": [
+      "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db#FEBKO_2024_2026",
+      "process_mining/mining_findings.json#mining-arbiter/FEBKO_2024_2026"
+    ],
+    "related_objects": [
+      "FEBKO",
+      "FEBKO_2024_2026",
+      "T012K",
+      "CIT16",
+      "SOG01",
+      "UNES",
+      "bank_model_explorer.py"
+    ],
+    "resolution_notes": "Arbitraje s108. Amplia y precisa el aviso BLIND del probe statement_coverage, que solo comparaba BUKRS contra las sociedades de REGUH. Accion para el explorador: comparar el conjunto de HBKID de FEBKO contra T012K, no el de BUKRS contra REGUH."
   }
 ]
