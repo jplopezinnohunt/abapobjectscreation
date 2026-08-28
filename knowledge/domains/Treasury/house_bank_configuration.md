@@ -42,8 +42,14 @@ House bank configuration is a **multi-step, cross-module** SAP configuration act
 The **YBANK_ACCOUNTS_ALL** set hierarchy is used by:
 
 1. **GS02 — Average Balance Interest Calculation**: Treasury runs this report to see average daily balances across all bank accounts. The hierarchy allows drill-down by HQ vs FO, by currency.
-2. **Report Painter forms (ZCASH, ZCASHFO, ZCASHFODET)**: Cash position reports reference individual G/L accounts, but the YBANK sets define which accounts are "bank accounts" for reporting purposes.
-3. **Treasury reporting**: Any report that needs to identify "all bank accounts" uses this set as the master list.
+2. ⚠️ **CORREGIDO s108 — medido, el consumidor es UNO SOLO.** `SETUSE_REP` (tabla de uso de sets
+   en Report Painter) tiene 7.693 referencias en 894 informes, y **exactamente una** nombra un set
+   YBANK: `0B1 / ZAVERAGE / 0000YBANK_ACCOUNTS_ALL`. Y **sólo el nodo RAÍZ**: las 10 hojas y los
+   subnodos (`_HQ_CA`, `_SIGHT`, `_DEPOSIT`…) no los nombra ningún informe — existen únicamente
+   como estructura de desglose de ZAVERAGE.
+3. **Lo que decía antes no se sostiene:** no hay ningún informe con `CASH` en el nombre en
+   `SETUSE_REP`. ZCASH/ZCASHFO/ZCASHFODET podrán existir por otra vía, pero **no consumen estos
+   sets**. Y en ABAP el uso es **cero**: ningún programa del corpus extraído los lee.
 
 **Set hierarchy:**
 ```

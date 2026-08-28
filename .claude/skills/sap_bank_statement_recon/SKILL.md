@@ -209,6 +209,27 @@ Two nodes ARE about nature, and both are partial: `_SIGHT` (6 real house bank ac
 reliable) and `_DEPOSIT` (4 G/L accounts in the `404xxxx` range, **none of which is a house bank
 account** — it is a set of term-deposit G/Ls, not of bank accounts).
 
+**Where it is actually used — measured, one consumer.** `SETUSE_REP` (the set-usage table for
+Report Painter) has 7,693 rows across 894 reports. Exactly **one** references a YBANK set:
+
+```
+LIB  RNAME       SETID
+0B1  ZAVERAGE    0000YBANK_ACCOUNTS_ALL      (+ &BUKRS and standard period variables)
+```
+
+`ZAVERAGE` is the average-balance report (library `0B1` = FI-GL totals, `GLT0`), run from GS02.
+Two things follow:
+- **Only the ROOT node is referenced.** The 10 leaves and the sub-nodes (`_HQ_CA`, `_SIGHT`,
+  `_DEPOSIT`, `_HQ_EUR`…) are never named by any report — they exist purely to give `ZAVERAGE`
+  its drill-down structure.
+- **Zero uses in ABAP.** Grep over the whole extracted corpus (`extracted_code/`,
+  `extracted_sap/`, `extracted_sap_p01/`): no custom program reads these sets. The only hit is
+  `MYBANKDETAILS` in an HCM Fiori program — a substring false positive.
+
+⚠️ The claim that `ZCASH` / `ZCASHFO` / `ZCASHFODET` use YBANK is **not supported**: no report
+whose name contains `CASH` appears in `SETUSE_REP` at all. Those cash-position reports may exist
+by another route, but they do not consume these sets.
+
 **And it only covers UNES**: 32 of the 167 live accounts are in no set at all, nearly all of
 them institute accounts (IBE, ICBA, ICTP, IIEP, MGIE, UBO).
 
