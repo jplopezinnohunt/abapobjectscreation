@@ -374,11 +374,10 @@ def informe(filas, ciclo, bukrs, desde, moneda):
     print("  No es un defecto de configuracion: son pagos en CHEQUE (T042Z-XSCHK), y BCM")
     print("  libera FICHEROS. El control compensatorio (dos firmas en el cheque) es FISICO")
     print("  y NO ESTA EN SAP — asi que este instrumento no puede confirmarlo ni negarlo.")
-    return {"viv": viv, "conpago": conpago, "trio": trio, "gente": gente,
-            "n_total": len(filas),
-            "n_a": n_a, "usd_a": usd_a, "n_t": n_t, "usd_t": usd_t,
-            "sm": sm, "tl": tl, "ts": ts, "moneda": moneda}
-
+    # El bloque de abajo estaba DESPUES del return: NUNCA corrio. El hallazgo mas grave
+    # -- el de 4 eslabones -- se publico al bus como "9 pares" y los pares no se
+    # imprimieron nunca ni se guardaron. Una cifra sin nombres no la puede accionar
+    # nadie. Ahora se imprimen Y se serializan.
     if ciclo and ciclo.get("n"):
         print("\n  CICLO COMPLETO (4 eslabones: crea la factura + postea el pago + teclea")
         print("  el extracto de esa misma cuenta):")
@@ -386,6 +385,15 @@ def informe(filas, ciclo, bukrs, desde, moneda):
             print("     %-14s %-14s %3d pagos  %.2f %s"
                   % (k[0], k[1], ciclo["n"][k], ciclo["usd"][k], moneda))
     print()
+
+    return {"viv": viv, "conpago": conpago, "trio": trio, "gente": gente,
+            "n_total": len(filas),
+            "n_a": n_a, "usd_a": usd_a, "n_t": n_t, "usd_t": usd_t,
+            "sm": sm, "tl": tl, "ts": ts, "moneda": moneda,
+            "ciclo_pares": [{"cuenta": k[0], "persona": k[1],
+                             "pagos": ciclo["n"][k], "importe": ciclo["usd"][k]}
+                            for k in sorted((ciclo or {}).get("n", {}),
+                                            key=lambda x: -ciclo["usd"][x])]}
 
 
 def emitir_hallazgos(r, ciclo, datos, a):
@@ -440,7 +448,7 @@ def emitir_hallazgos(r, ciclo, datos, a):
                         % (sum(ciclo["n"].values()), sum(ciclo["usd"].values()), r["moneda"],
                            len(ciclo["n"])),
                  evidencia="REGUP→BKPF.USNAM de la factura vs BKPF.USNAM del pago vs FEBKO.EUSER",
-                 limite="no dice si la factura tenia aprobacion previa fuera de FI",
+                 limite="no dice si la factura tenia aprobacion previa fuera de FI. Y OJO: estos pares NO son un subconjunto del hallazgo de 3 eslabones -- alli el eslabon 'teclea' exige teclear Y contabilizar lineas (T&C), aqui basta con teclear el extracto. Por eso CBE01-ETB04/M_TADESSE (16 pagos, 1654 USD) sale en el ciclo de 4 y no en el de 3: su extracto tecleado tiene CERO lineas, asi que no hay nada que contabilizar. Es el eslabon mas debil de los nueve pares.",
                  accion="revision dirigida de esos pares por Auditoria/Tesoreria")
 
     h.desafio("El censo de canales publica UNA persona por cuenta manual; medido son hasta 5 "
@@ -518,7 +526,8 @@ def main():
                 g[k] = dict(f[k])
             ser.append(g)
         with open(a.json, "w", encoding="utf-8") as fh:
-            json.dump(ser, fh, ensure_ascii=False, indent=1)
+            json.dump({"cuentas": ser, "ciclo_pares": r.get("ciclo_pares", [])},
+                      fh, ensure_ascii=False, indent=1)
         print("  -> %s" % a.json)
     return 0
 
