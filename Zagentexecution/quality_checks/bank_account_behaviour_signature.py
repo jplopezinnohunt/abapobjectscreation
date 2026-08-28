@@ -135,9 +135,14 @@ def main():
     pagos = collections.Counter()
     for yr in ANIOS:
         try:
-            for r in rd(conn, "REGUH", ["ZBUKR", "HBKID", "HKTID", "LAUFD"],
+            # XVORL='X' son PROPUESTAS de F110, no pagos emitidos -- el 9,7% de las filas del
+            # Gold. Contarlas como pago reclasifica una cuenta RECEPTORA en PAGADORA. Hoy no
+            # rompe nada -- medido por mining-arbiter al arbitrar el choque 16-vs-80: CERO
+            # cuentas cuya unica actividad 2025-2026 sean propuestas -- pero una sola bastaria,
+            # y el instrumento no debe depender de que la poblacion siga siendo benigna.
+            for r in rd(conn, "REGUH", ["ZBUKR", "HBKID", "HKTID", "LAUFD", "XVORL"],
                         _y("ZBUKR = '%s'" % a.bukrs if a.bukrs else "",
-                           "LAUFD LIKE '%s%%'" % yr)):
+                           "LAUFD LIKE '%s%%'" % yr, "XVORL <> 'X'")):
                 pagos[(r["ZBUKR"], r["HBKID"], r["HKTID"])] += 1
         except Exception as e:
             print("  REGUH %s -> %s" % (yr, str(e)[:80]))
