@@ -54,6 +54,24 @@ Fichero MT940 → Coupa → job `EBS INTEGRATION` (ver
 con el número de cuenta ACTUAL.** Estado hoy: **1 sin fila** — `UNES/NTB02-EUR01`, el incidente.
 Mudas para su propio ritmo: **1**, la misma.
 
+> ## ⚠️ CORRECCIÓN 2026-08-28 (mismo día) — las cifras de abajo SUBESTIMAN entre 5 y 10 veces
+>
+> Un cruce de instrumentos midió la población de verdad: **no son 8 cuentas manuales y 4
+> personas, son 39 cuentas (34 vivas), 41 usuarios, 802 extractos y 13.942 líneas.**
+>
+> **Causa:** la etiqueta `canal` se deriva de que *existan* extractos E y M, así que una cuenta
+> **97 % tecleada a mano sale MIXTO** y desaparece. Caso puro: **SOG06 (Haití)** tiene 55
+> extractos tecleados con **9.623 líneas — el 69 % de todo lo tecleado a mano en UNESCO** —
+> frente a 5 electrónicos con **cero** líneas en FEBEP. Es 100 % manual de hecho y figuraba como
+> MIXTO. Segundo defecto: el filtro usaba un porcentaje **redondeado**, así que 1 extracto
+> tecleado entre 500 daba `0` y salía de la población.
+>
+> **Y se cae un argumento que publiqué:** «1.712 líneas frente a 11.669 de una sola cuenta
+> electrónica» ya no desmonta la oportunidad — son **13.942 frente a 11.669, comparables**.
+> Tampoco la confirma: la restricción sigue aguas arriba, en que el banco emita MT940.
+>
+> Las dos causas están corregidas en el instrumento. Claims 642 y 643.
+
 ### 2 · MANUAL — 8 cuentas · **el hueco de proceso**
 
 Alguien las teclea en FF67. La columna *quién* es **un usuario con nombre y apellidos**:

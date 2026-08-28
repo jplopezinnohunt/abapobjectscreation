@@ -173,6 +173,10 @@ def main():
             # SUBESTIMA -- medido en s108, los dominantes son 4 y el reparto real son 10
             "quienes": (sorted(e["user"]) if e else []),
             "pct_manual": (round(100.0 * e["efart"].get("M", 0) / max(1, e["n"])) if e else 0),
+            # el CONTEO crudo, no el porcentaje: pct_manual esta REDONDEADO, asi que una
+            # cuenta con 1 extracto tecleado entre 500 da 0 y desaparece del filtro. Es el
+            # mismo cero silencioso de siempre -- no falla, resta poblacion.
+            "n_manual": (e["efart"].get("M", 0) if e else 0),
             "bankn": r["BANKN"], "bankl": bl,
             "tiene_t028b": (bl, r["BANKN"]) in t028b,
         })
@@ -317,7 +321,13 @@ def main():
     # El canal MANUAL mete una PERSONA en el eslabon de entrada. El automatico no: es
     # JOBBATCH. Esa ausencia es lo que hace mas seguro el canal automatico, y es justo lo
     # que se pierde cuando una cuenta se teclea.
-    manuales = [f for f in vivas if f["canal"] == "MANUAL"]
+    # LA POBLACION NO ES "canal == MANUAL". Ese es el defecto de denominador que este
+    # minero cometio y que un agente cazo cruzandolo: la etiqueta `canal` se deriva de que
+    # EXISTAN extractos E y M, asi que una cuenta 97% tecleada a mano sale MIXTO y desaparece
+    # del relato. Medido: por etiqueta salen 8 cuentas y 4 personas; la poblacion real de
+    # "alguien teclea esto" son 39 cuentas (34 vivas) y 41 usuarios. Subestimaba 5-10x.
+    # Quien necesita responsable y cadencia es TODA cuenta con al menos un extracto tecleado.
+    manuales = [f for f in vivas if (f.get("n_manual") or 0) > 0]
     if manuales:
         # OJO: f["quien"] es el usuario DOMINANTE de cada cuenta, no todos los que la tocan.
         # Publicar ese recuento como "personas" SUBESTIMA -- medido en s108: los dominantes son
@@ -325,12 +335,14 @@ def main():
         personas = sorted({u for f in manuales for u in (f.get("quienes") or [])})
         dominantes = sorted({f["quien"] for f in manuales if f["quien"]})
         h.riesgo(
-            "El extracto MANUAL mete una persona en el eslabon de ENTRADA, donde el canal "
-            "automatico no tiene ninguna (JOBBATCH)",
-            tamano=("%d cuentas · %d usuarios con nombre las han tecleado (%d son el "
-                    "usuario dominante de alguna): %s"
-                    % (len(manuales), len(personas), len(dominantes),
-                       ", ".join(personas[:8]))),
+            "El extracto TECLEADO mete una persona en el eslabon de ENTRADA, donde el "
+            "canal automatico no tiene ninguna (JOBBATCH)",
+            tamano=("%d cuentas VIVAS reciben algun extracto tecleado (%d de ellas al "
+                    "100%%) · %d usuarios con nombre lo hacen · las mas tecleadas: %s"
+                    % (len(manuales), sum(1 for f in manuales if f.get("pct_manual") == 100),
+                       len(personas),
+                       ", ".join("%s %d%%" % (f["cuenta"], f["pct_manual"])
+                                 for f in sorted(manuales, key=lambda x: -(x.get("pct_manual") or 0))[:5]))),
             evidencia="FEBKO.EUSER de esas cuentas",
             limite=("solo veo QUIEN teclea. Si esa misma persona ademas contabiliza o "
                     "compensa el documento resultante (BKPF.USNAM) o emite pagos (REGUH), "

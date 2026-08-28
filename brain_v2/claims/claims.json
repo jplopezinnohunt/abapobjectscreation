@@ -30096,5 +30096,77 @@
       "bank_model_explorer.py"
     ],
     "resolution_notes": "Arbitraje s108. Amplia y precisa el aviso BLIND del probe statement_coverage, que solo comparaba BUKRS contra las sociedades de REGUH. Accion para el explorador: comparar el conjunto de HBKID de FEBKO contra T012K, no el de BUKRS contra REGUH."
+  },
+  {
+    "claim_type": "SYSTEM_FACT",
+    "confidence": "TIER_1",
+    "status": "OPEN_QUESTION",
+    "domain": "Treasury_EBS",
+    "created_session": 108,
+    "domain_axes": {
+      "functional": [
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    },
+    "claim": "SEGREGACION DE FUNCIONES EN EL EXTRACTO BANCARIO: 420 PAGOS Y 2.401.283 USD LOS EMITE QUIEN ADEMAS TECLEA Y CONTABILIZA EL EXTRACTO DE ESA MISMA CUENTA. Medido en P01, UNES, 2025-2026. La cadena tiene cuatro eslabones y hay que separarlos porque solo uno es remediable. (1->2) De 802 extractos tecleados a mano salen 13.942 lineas FEBEP, 10.285 con documento FI, y 10.217 (99,3%) las contabiliza EXACTAMENTE la misma persona que las teclea: eso es MECANICO, no un fallo de asignacion -- FF67 contabiliza bajo el usuario que entra, y no se arregla repartiendo usuarios. Control: 5 cuentas electronicas suman 23.082 lineas con 2 casos de humano en los dos extremos (0,009%), porque ahi el eslabon de entrada es JOBBATCH. (3) EL ESLABON REMEDIABLE: de 1.249 pagos, 420 (34%) y 2.401.283 USD (57%) los emite alguien que tambien teclea y contabiliza esa cuenta -- 16 personas, 14 cuentas. La mayor es AIB01-USD01 (Kabul) con 262 pagos y 2.118.599 USD, seguida de BTE01-IRR02 (Teheran, 355 pagos) y BMN01-USD01 (La Habana, 73). (4) CICLO COMPLETO: 60 pagos y 65.409 USD donde la misma persona crea la factura, emite el pago y teclea el extracto que lo confirma -- pequeno en dinero, y se dice aunque quite el titular. POR QUE NINGUN CONTROL AUTOMATICO LO VE: los 1.253 pagos son 100% metodo '3', cheque prenumerado (T042Z-XSCHK), y hay CERO filas en BNK_BATCH_ITEM para los 39 bancos casa frente a 82.678 de SOG01 y 12.827 de CIT04 en la misma ventana. NO es un defecto de configuracion: BCM libera FICHEROS y un cheque no tiene fichero.",
+    "evidence_for": [
+      "Zagentexecution/quality_checks/bank_statement_sod_check.py",
+      "Zagentexecution/tasks/2026_08_28_ebs_ntb02_uno18eur/sod_bank_statement.json"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FEBKO",
+      "FEBEP",
+      "BKPF",
+      "REGUH",
+      "T042Z",
+      "BNK_BATCH_ITEM",
+      "AIB01",
+      "BTE01",
+      "BMN01",
+      "FF67"
+    ],
+    "resolution_notes": "LIMITE DECLARADO, y es lo que convierte esto en accionable en vez de en una acusacion: el control compensatorio son DOS FIRMAS FISICAS del cheque, que estan FUERA de SAP. Este instrumento no puede confirmarlo ni negarlo. Tampoco ve el portal del banco local, ni si la factura tuvo aprobacion fuera de FI, ni QUIEN DEBIA teclear -- el log dice quien lo hizo. Es SoD CONDUCTUAL, no de roles: no se leyeron AGR_*.",
+    "id": 642
+  },
+  {
+    "claim_type": "SYSTEM_FACT",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Treasury_EBS",
+    "created_session": 108,
+    "domain_axes": {
+      "functional": [
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    },
+    "claim": "LA POBLACION DE EXTRACTO TECLEADO A MANO ES 5-10 VECES MAYOR DE LO QUE PUBLIQUE: NO SON 8 CUENTAS Y 4 PERSONAS, SON 34 CUENTAS VIVAS Y 40 USUARIOS. Medido en P01, UNES, 2025-2026: 39 cuentas tienen al menos un extracto con FEBKO.EFART='M' (34 vivas, 5 cerradas por texto), 41 usuarios distintos los han tecleado, y suman 802 extractos y 13.942 lineas FEBEP. CAUSA DEL ERROR: la etiqueta `canal` se deriva de que EXISTAN extractos E y M, asi que una cuenta 97% tecleada a mano sale MIXTO y desaparece del relato. Caso puro: SOG06 (Haiti) tiene 55 extractos tecleados con 9.623 lineas -- el 69% de todo lo tecleado a mano en UNESCO -- frente a 5 electronicos con CERO lineas en FEBEP; es 100% manual de hecho y estaba etiquetada MIXTO. Segundo defecto del mismo instrumento: filtraba por un porcentaje REDONDEADO, asi que una cuenta con 1 extracto tecleado entre 500 daba 0 y salia de la poblacion. CONSECUENCIA: el argumento publicado de que '1.712 lineas frente a 11.669 de una sola cuenta electronica desmonta la oportunidad' SE CAE en su propio denominador -- son 13.942 frente a 11.669, comparables. El tamano ya no la desmonta; tampoco la confirma, porque la restriccion sigue aguas arriba: que el banco emita MT940.",
+    "evidence_for": [
+      "Zagentexecution/quality_checks/bank_statement_channel_census.py",
+      "knowledge/domains/Treasury/bank_statement_channels_by_company.md"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FEBKO",
+      "FEBEP",
+      "SOG06",
+      "BMN01",
+      "BLN01",
+      "BTE01"
+    ],
+    "resolution_notes": "SUPERSEDE las cifras 8 cuentas / 4 personas / 1.712 lineas publicadas antes en bank_statement_channels_by_company.md, el companion de EBS y el skill. Los dos defectos del instrumento estan corregidos: filtra por conteo crudo y la poblacion es toda cuenta con al menos un extracto tecleado, no la etiqueta `canal`.",
+    "id": 643
   }
 ]

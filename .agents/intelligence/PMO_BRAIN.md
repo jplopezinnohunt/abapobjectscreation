@@ -365,6 +365,48 @@ INCOMING (2026-08-19 — s101: Egipto pasa de especificacion a fichero probado, 
 
 ---
 
+
+---
+
+## H145 — Segregación de funciones en el extracto bancario tecleado a mano
+
+**Abierto:** 2026-08-28 (s108) · **Dueño propuesto:** BFM/TRS · **Estado:** RIESGO MEDIDO, pendiente de valoración
+**Instrumento:** `Zagentexecution/quality_checks/bank_statement_sod_check.py` (solo lectura, `--autotest`)
+**Claims:** 642 (el hallazgo) · 643 (la corrección del denominador que lo hizo visible)
+
+### El hecho
+De 1.249 pagos emitidos por cuentas con extracto tecleado a mano, **420 (34 %) y 2.401.283 USD
+(57 %) los emite alguien que además teclea y contabiliza el extracto de ESA misma cuenta**.
+**16 personas, 14 cuentas.** La mayor es **AIB01-USD01 (Kabul): 262 pagos, 2.118.599 USD**, y no
+estaba en ninguna lista previa. Le siguen BTE01-IRR02 (Teherán, 355 pagos) y BMN01-USD01 (La
+Habana, 73).
+
+**Ciclo completo:** 60 pagos y 65.409 USD donde la misma persona **crea la factura, emite el pago
+y teclea el extracto que lo confirma**. Pequeño en dinero — se dice igual.
+
+### Lo que NO es
+El 99,3 % de «quien teclea también contabiliza» es **mecánico**: FF67 contabiliza bajo el usuario
+que entra. No se arregla repartiendo usuarios. **El eslabón remediable es el tercero**: quien
+teclea el extracto no debería emitir los pagos de esa cuenta.
+
+### Por qué ningún control automático lo ve
+Los 1.253 pagos son **100 % método `3`, cheque prenumerado**. **Cero filas en `BNK_BATCH_ITEM`**
+para esos 39 bancos casa, frente a 82.678 de SOG01 y 12.827 de CIT04 en la misma ventana. **No es
+un defecto de configuración: BCM libera FICHEROS y un cheque no tiene fichero.**
+
+### El límite, y es lo que lo hace accionable en vez de una acusación
+El control compensatorio son **dos firmas físicas** del cheque, **fuera de SAP**. El instrumento
+no puede confirmarlo ni negarlo. Tampoco ve el portal del banco local, ni si la factura tuvo
+aprobación fuera de FI, ni **quién debía** teclear — el log dice quién lo hizo. Es SoD
+**conductual**, no de roles: no se leyeron `AGR_*`.
+
+### Qué hay que decidir
+1. ¿Existe y está documentado el control de dos firmas en esas 14 cuentas? Si sí, esto se cierra
+   como riesgo aceptado y declarado. Si no, hay 2,4 M USD sin segregación efectiva.
+2. Separar el eslabón 3 donde la oficina tenga dos personas — empezando por Kabul.
+3. Las cuentas de una sola persona en terreno no tienen solución interna: el control tiene que
+   ser externo y explícito.
+
 ## H144 — Naturaleza de cuenta bancaria: declararla y derivar de ella la configuración
 
 **Abierto:** 2026-08-28 (s108) · **Origen:** INC-000013624 · **Estado:** PROPUESTA MEDIDA, pendiente de decisión de Tesorería
