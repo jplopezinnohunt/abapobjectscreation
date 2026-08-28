@@ -598,11 +598,14 @@ def search(brain, text):
     _STOP = {"of", "the", "a", "an", "in", "on", "for", "to", "and", "is", "at", "by"}
     words = [w for w in re.split(r"[^a-z0-9_]+", q) if w and w not in _STOP]
 
+    _var = _expandir(words)
+
     def hit(blob):
         low = blob.lower()
         if q in low:
             return True
-        return bool(words) and all(w in low for w in words)
+        # ALL-WORDS-PRESENT, pero cada palabra vale por si misma O por su equivalente
+        return bool(_var) and all(any(f in low for f in formas) for formas in _var)
 
     out = {"query": text, "matched_words": words, "claims": [], "rules": [],
            "incidents": [], "annotations": [], "code": [], "domains": [],
@@ -791,6 +794,60 @@ def account_class(brain, q):
                                  "o HEURISTICA. No uses una heuristica para decidir nada")}
 
 
+# --- PUENTE BILINGUE -------------------------------------------------------------------
+# Preguntamos en español; los skills, algoritmos y agentes se describen en ingles. El
+# emparejamiento es por token literal, asi que "extracto bancario electronico" puntuaba CERO
+# contra un skill cuya descripcion dice "electronic bank statement". Medido en s108: la
+# pregunta en ingles devolvia sap_bank_statement_recon el PRIMERO; en español, NADA -- y por
+# eso se re-derivo a mano un pipeline que el skill ya documentaba.
+#
+# Es ADITIVO: una palabra cuenta si aparece ella O cualquiera de sus equivalentes. No puede
+# empeorar una busqueda que ya acertaba, solo añade formas de acertar.
+GLOSARIO_ES_EN = {
+    "extracto": ["statement"], "extractos": ["statement", "statements"],
+    "banco": ["bank"], "bancos": ["bank", "banks"], "bancario": ["bank", "banking"],
+    "bancaria": ["bank", "banking"], "electronico": ["electronic"], "electronica": ["electronic"],
+    "cuenta": ["account"], "cuentas": ["account", "accounts"],
+    "pago": ["payment"], "pagos": ["payment", "payments"], "pagar": ["payment", "pay"],
+    "cobro": ["collection", "incoming"], "conciliacion": ["reconciliation"],
+    "fichero": ["file"], "ficheros": ["file", "files"], "formato": ["format"],
+    "sociedad": ["company", "bukrs"], "sociedades": ["company", "companies"],
+    "mayor": ["ledger", "gl", "account"], "saldo": ["balance"], "saldos": ["balance", "balances"],
+    "divisa": ["currency"], "moneda": ["currency"], "revaluacion": ["revaluation", "valuation"],
+    "transporte": ["transport"], "transportes": ["transport", "transports"],
+    "proveedor": ["vendor"], "proveedores": ["vendor", "vendors"],
+    "cliente": ["customer"], "clientes": ["customer", "customers"],
+    "factura": ["invoice"], "facturas": ["invoice", "invoices"],
+    "asiento": ["document", "posting"], "contabilizacion": ["posting"],
+    "cierre": ["closing"], "presupuesto": ["budget"], "fondo": ["fund"], "fondos": ["fund", "funds"],
+    "empleado": ["employee"], "nomina": ["payroll"], "viaje": ["travel"],
+    "firmante": ["signatory"], "firmantes": ["signatory", "signatories"],
+    "autorizacion": ["authorization", "authorisation"], "aprobacion": ["approval"],
+    "interfaz": ["interface"], "interfaces": ["interface", "interfaces"],
+    "trabajo": ["job"], "variante": ["variant"], "variantes": ["variant", "variants"],
+    "regla": ["rule"], "reglas": ["rule", "rules"], "puerta": ["gate", "check"],
+    "deriva": ["drift"], "hueco": ["gap"], "huecos": ["gap", "gaps"],
+    "incidencia": ["incident"], "incidente": ["incident"],
+    "configuracion": ["configuration", "customizing", "config"],
+    "maestro": ["master"], "codigo": ["code"], "programa": ["program"],
+    "usuario": ["user"], "usuarios": ["user", "users"], "rol": ["role"], "roles": ["role", "roles"],
+    "informe": ["report"], "informes": ["report", "reports"],
+    "proceso": ["process"], "procesos": ["process", "processes"],
+    "naturaleza": ["nature"], "canal": ["channel"], "canales": ["channel", "channels"],
+    "manual": ["manual"], "automatico": ["automatic", "automated"],
+    "tesoreria": ["treasury"], "inversion": ["investment"], "deposito": ["deposit"],
+    "cheque": ["check", "cheque"], "iban": ["iban"], "mandato": ["mandate"],
+}
+
+
+def _expandir(palabras):
+    """Cada palabra mas sus equivalentes. Se conserva SIEMPRE la original."""
+    fuera = []
+    for w in palabras:
+        fuera.append([w] + GLOSARIO_ES_EN.get(w, []))
+    return fuera
+
+
 def tool(brain, q):
     """EL BRAIN DEL BRAIN, y sobre todo: ANTE UNA TAREA, QUE TENGO YA.
 
@@ -826,9 +883,12 @@ def tool(brain, q):
         if not pal:
             return {"error": "di de que va la tarea"}
 
+        variantes = _expandir(sorted(pal))
+
         def puntua(n, v):
             blob = json.dumps(v, ensure_ascii=False).lower() + " " + n.lower()
-            return sum(1 for w in pal if w in blob)
+            # una palabra cuenta si aparece ELLA o cualquiera de sus equivalentes
+            return sum(1 for formas in variantes if any(f in blob for f in formas))
 
         por_tipo = {}
         for n, v in nodos.items():

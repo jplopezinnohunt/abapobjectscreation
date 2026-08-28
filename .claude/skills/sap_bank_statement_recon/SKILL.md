@@ -257,6 +257,27 @@ whose cash accounts receive daily statements. Treating them as such misclassifie
 operational accounts, including the one from the incident. Reliable markers are manager or
 programme names: `MANDATE`, `PIMCO`, `MORGAN`, `RAMP`, `IMIP`.
 
+## Before publishing any number over the account estate — three cuts, five times each in s108
+
+1. **DENOMINATOR** — closed accounts are marked **in the text** (`T012T-TEXT1` starts with
+   `CLOSED`: **237 of 411** in UNES). There is no status field. Without this cut, 2 of the first
+   4 "broken wiring" findings were accounts closed years ago.
+2. **APPLICABILITY** — does the rule even apply? A **manual** statement does not need `T028B`;
+   only **131 of 143** accounts that receive statements are electronic. Demanding it publishes a
+   defect that does not exist.
+3. **MOVEMENT** — does the object actually do anything? `CBE01-ETB02` had the model wired and
+   unused, and is **dormant**: zero statements, zero payments, zero movement. Not an opportunity.
+
+Cross-cutting: **always split by company code.** `CBE01-ETB02` gets 543 statements a year in
+ICBA and zero in UNES. By proportion UIL has 40 % anomalies and UNES 10 % — the aggregate
+inverts it.
+
+**And size an opportunity before proposing it, even when that kills it.** "7 accounts typed by
+hand" looked like a clerical saving; measured, it is **1,712 lines in two years** against
+**11,669** for a single electronic account. The saving argument was false. The real opportunity
+was elsewhere — those lines never auto-clear, and the accounts pay millions with no bank
+corroboration.
+
 ## E2E Bank Statement Chain
 
 ```
