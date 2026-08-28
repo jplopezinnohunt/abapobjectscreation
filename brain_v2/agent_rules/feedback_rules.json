@@ -1908,10 +1908,10 @@
   },
   {
     "id": "feedback_sample_before_aggregating",
-    "rule": "Before computing aggregates (sum, avg, count, groupby) on an unfamiliar table or data shape, ALWAYS read 3+ raw rows first to verify sign convention, units, scale, and duplicate semantics. Write the aggregation ONLY after the raw sample is understood.",
+    "rule": "Before computing aggregates (sum, avg, count, groupby) on an unfamiliar table or data shape, ALWAYS read 3+ raw rows first to verify sign convention, units, scale, and duplicate semantics. Write the aggregation ONLY after the raw sample is understood. ⬆ SUBIDA A HIGH EN s108, Y EXTENDIDA DE TABLAS A CUALQUIER FICHERO ESTRUCTURADO. El caso: para contestar «que controla lo pendiente» conte las tareas de `execution_backlog.json` buscando las claves `tasks` y `backlog` -- que ESE FICHERO NO TIENE. Devolvio 0, y publique al dueno que el registro estaba muerto y que «nadie lo alimenta». Falso: sus tareas viven en `extraction_tasks`, `analysis_tasks_no_extraction` y `research_tasks_followups`, y son 132. La primera correccion tampoco valia -- conto las CLAVES del diccionario y dio 15. Tres cifras seguidas sobre el mismo fichero, todas mal, por no abrirlo. LO QUE HACE ESTO PEOR QUE UN ERROR DE CUENTA: un cero no parece un fallo, parece un HALLAZGO. Sumar mal da un numero raro que invita a revisar; contar cero sobre un registro sano da una historia coherente -- «esta abandonado» -- que encaja con lo que uno ya sospechaba. Es el modo ALIAS QUE DA CERO aplicado a la forma de un fichero.",
     "why": "Session #053 retro §10: the agent misinterpreted FMIOI sign convention twice — took absolute sums assuming all rows were positive, when in reality FMIOI WRTTP=81 rows for an FR include creation (positive), period-016 year-end reversal (negative), and period-000 carryforward-in (positive). Naive sum returned inflated commitment numbers. Same pattern with FMAVCT duplicates by RVERS/RPMAX. Root cause: the agent wrote the aggregation SQL before reading any raw row. For unfamiliar SAP tables with cluster or time-dependent semantics, this is guaranteed to produce wrong numbers.",
-    "how_to_apply": "For any new SAP table the agent queries for the first time in a session: (1) SELECT * FROM table LIMIT 5 with all fields visible; (2) inspect sign patterns of amount fields (HSL*, WRBTR, FKBTR) for the same key across rows; (3) check for version/status columns (RVERS, RPMAX, WRTTP, STATUS); (4) document sign convention in a comment before the aggregation SQL. For FMIOI specifically: always filter by GJAHR + WRTTP and trace by BUDAT for carryforward interpretation. For FMAVCT: dedup by RVERS/RPMAX before summing. For cluster tables (BSEG, KBLE, KBLEW): use the appropriate wrapper FM, never raw RFC_READ_TABLE.",
-    "severity": "MEDIUM",
+    "how_to_apply": "For any new SAP table the agent queries for the first time in a session: (1) SELECT * FROM table LIMIT 5 with all fields visible; (2) inspect sign patterns of amount fields (HSL*, WRBTR, FKBTR) for the same key across rows; (3) check for version/status columns (RVERS, RPMAX, WRTTP, STATUS); (4) document sign convention in a comment before the aggregation SQL. For FMIOI specifically: always filter by GJAHR + WRTTP and trace by BUDAT for carryforward interpretation. For FMAVCT: dedup by RVERS/RPMAX before summing. For cluster tables (BSEG, KBLE, KBLEW): use the appropriate wrapper FM, never raw RFC_READ_TABLE. Y para un JSON o un store, la version concreta: imprime `list(d)` o `type(d)` ANTES de contar. Si la clave que buscas no esta, di que no esta -- nunca devuelvas 0 por no encontrarla. Un contador que confunde «no existe esa clave» con «hay cero elementos» fabrica hallazgos, y el hallazgo falso siempre es el que confirma la sospecha previa.",
+    "severity": "HIGH",
     "derives_from_core_principle": "CP-003",
     "created_session": 54,
     "source_file": "knowledge/session_retros/session_053_retro.md",
@@ -1934,7 +1934,10 @@
         "P2P",
         "T2R"
       ]
-    }
+    },
+    "evidence": [
+      "s108 (2026-08-28): execution_backlog.json contado como 0, luego 15, real 132 -- publicado como 'registro muerto' antes de abrirlo. Corregido en brain_v2/session_start_hook.py -> registros_pendientes()"
+    ]
   },
   {
     "id": "feedback_explicit_aggregation_filter",
