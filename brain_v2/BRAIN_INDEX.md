@@ -137,7 +137,7 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 631 | `python brain_v2/graph_queries.py search <termino>` |
+| **claims** | 637 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 149 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 16 | `python brain_v2/graph_queries.py incident <id>` |
@@ -536,7 +536,7 @@ _6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `I
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4680 objects · 258 rules · 631 claims · 19 incidents · 10 closed researches)
+## Brain at a glance (4695 objects · 258 rules · 637 claims · 19 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
