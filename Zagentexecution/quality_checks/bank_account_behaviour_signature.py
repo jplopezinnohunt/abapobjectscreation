@@ -110,7 +110,7 @@ def autotest():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--bukrs", default="UNES")
+    ap.add_argument("--bukrs", default="", help="vacio = TODAS las sociedades")
     ap.add_argument("--system", default="P01")
     ap.add_argument("--json", default="")
     ap.add_argument("--autotest", action="store_true")
@@ -161,14 +161,17 @@ def main():
     for yr in ANIOS:
         for ch in CH:
             try:
-                rows = rd(conn, "GLT0", ["RACCT", "RYEAR", "DRCRK"] + ch,
-                          "BUKRS = '%s' AND RYEAR = '%s' AND RACCT LIKE '00010%%'"
-                          % (a.bukrs, yr))
+                rows = rd(conn, "GLT0", ["RACCT", "RYEAR", "DRCRK", "BUKRS"] + ch,
+                          _y(("BUKRS = '%s'" % a.bukrs) if a.bukrs else "",
+                             "RYEAR = '%s'" % yr, "RACCT LIKE '00010%%'"))
             except Exception as e:
                 print("  GLT0 %s %s -> %s" % (yr, ch[0], str(e)[:70]))
                 continue
             for r in rows:
-                k = r["RACCT"]
+                # CLAVE = sociedad + mayor. El MISMO numero de mayor existe en varias
+                # sociedades (CBE01-ETB02 vive en ICBA y en UNES con comportamiento opuesto):
+                # agregando solo por RACCT se suma el movimiento de una a la otra.
+                k = (r.get("BUKRS", ""), r["RACCT"])
                 for c in ch:
                     v = abs(num(r.get(c)))
                     if v > 0.005:
@@ -193,11 +196,43 @@ def main():
         filas.append({
             "cuenta": "%s/%s-%s" % k, "texto": t, "waers": r["WAERS"], "gl": gl, "zona": zona,
             "pagos": pagos.get(k, 0), "extractos": ext, "canal": canal,
-            "periodos_mov": per.get(gl, 0), "movimiento": round(mov.get(gl, 0.0), 2),
-            "tipo": tipo(pagos.get(k, 0), ext, canal, per.get(gl, 0), mov.get(gl, 0.0)),
+            "periodos_mov": per.get((r["BUKRS"], gl), 0),
+            "movimiento": round(mov.get((r["BUKRS"], gl), 0.0), 2),
+            "tipo": tipo(pagos.get(k, 0), ext, canal,
+                         per.get((r["BUKRS"], gl), 0), mov.get((r["BUKRS"], gl), 0.0)),
         })
 
+    for f in filas:
+        f["bukrs"] = f["cuenta"].split("/")[0]
     print("\ncuentas VIVAS: %d · ventana 2025-2026" % len(filas))
+
+    # ---- NIVEL 1: POR SOCIEDAD -----------------------------------------------
+    # Partir por sociedad no es presentacion. El MISMO banco y la MISMA cuenta se comportan
+    # distinto segun la sociedad -- CBE01-ETB02 recibe 543 extractos al ano en ICBA y cero en
+    # UNES -- y el agregado la deja como "activa". Ademas cada sociedad tiene su propio perfil
+    # de operacion: UNES paga y cobra por todo el mundo, los institutos son casos limpios.
+    TIPOS = ["PAGADORA", "OPERATIVA_COBRO", "BAJA_ROTACION",
+             "EXTRACTO_SIN_MOVIMIENTO", "MUEVE_SIN_EXTRACTO", "INMOVIL_CON_SALDO", "DURMIENTE"]
+    ABR = {"PAGADORA": "PAGA", "OPERATIVA_COBRO": "COBRO", "BAJA_ROTACION": "BAJA-ROT",
+           "EXTRACTO_SIN_MOVIMIENTO": "EXT-S/MOV", "MUEVE_SIN_EXTRACTO": "MOV-S/EXT",
+           "INMOVIL_CON_SALDO": "INMOVIL", "DURMIENTE": "DURMIEN."}
+    print("\n" + "=" * 104)
+    print("NIVEL 1 — COMPORTAMIENTO POR SOCIEDAD (2025-2026)")
+    print("=" * 104)
+    print("  %-6s %5s  %s  %s" % ("soc", "ctas", " ".join("%-10s" % ABR[t] for t in TIPOS), "perfil"))
+    for soc in sorted({f["bukrs"] for f in filas},
+                      key=lambda s: -len([f for f in filas if f["bukrs"] == s])):
+        g = [f for f in filas if f["bukrs"] == soc]
+        cc = collections.Counter(f["tipo"] for f in g)
+        raros = sum(cc.get(t, 0) for t in ("EXTRACTO_SIN_MOVIMIENTO", "MUEVE_SIN_EXTRACTO",
+                                           "INMOVIL_CON_SALDO", "DURMIENTE"))
+        perfil = ("limpia" if raros == 0
+                  else "%d de %d piden explicacion" % (raros, len(g)))
+        print("  %-6s %5d  %s  %s"
+              % (soc, len(g), " ".join("%-10d" % cc.get(t, 0) for t in TIPOS), perfil))
+    print("\n  PAGA=paga · COBRO=recibe extracto y se mueve · BAJA-ROT=recibe y se mueve poco")
+    print("  EXT-S/MOV=llega extracto y el mayor no se mueve · MOV-S/EXT=mueve saldo sin extracto")
+    print("  INMOVIL=saldo parado · DURMIEN.=no hace nada")
     print("\n" + "=" * 96)
     print("TIPO DE COMPORTAMIENTO  x  ZONA (YBANK)")
     print("=" * 96)

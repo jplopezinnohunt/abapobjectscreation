@@ -225,7 +225,27 @@ Tres ejes que no dependen de cómo se llame la cuenta: **paga** (`REGUH`), **rec
 **130 de 144 quedan explicadas por su comportamiento.** Las otras 14 son las que piden
 explicación — y son mejores preguntas que las que salían del texto.
 
-### Las tres anomalías que importan
+### El corte por SOCIEDAD — lo que el agregado escondía
+
+| Sociedad | ctas | paga | cobro | baja rot. | **ext. s/mov** | **mov. s/ext** | durmiente | perfil |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| **UNES** | 144 | 58 | 70 | 2 | 3 | **3** | 8 | 14 de 144 · **10 %** |
+| IIEP | 5 | 2 | 3 | — | — | — | — | limpia |
+| **UIL** | 5 | 2 | 1 | — | 1 | — | 1 | 2 de 5 · **40 %** |
+| **UBO** | 3 | 2 | — | — | 1 | — | — | 1 de 3 · **33 %** |
+| ICBA · UIS · ICTP · MGIE · IBE | 2 c/u | | | | | | | **limpias** |
+
+**Seis de las nueve sociedades no tienen ni una anomalía.** Y la proporción invierte la
+intuición: UNES tiene el 10 % de sus cuentas pidiendo explicación, pero **UIL tiene el 40 % y
+UBO el 33 %**. En números absolutos UNES domina y las demás desaparecen; en proporción, las dos
+pequeñas están peor. Ésa es exactamente la lectura que un total agregado no permite hacer.
+
+Las dos anomalías de los institutos son del mismo tipo — extractos que llegan y no mueven el
+mayor: `UIL/DEU01-USD01` (422 extractos) y `UBO/CIT01-BRL02` (416, *Brasilia Donations*).
+Sumadas a las tres de UNES, son **cinco cuentas y 2.321 extractos en dos años que no producen
+ningún movimiento contable.**
+
+### Las anomalías que importan
 
 **① `MUEVE_SIN_EXTRACTO` — los tres mandatos de Northern Trust.** `NTB01-USD04` (PIMCO),
 `USD05` (JP Morgan) y `USD06` (RAMP) **mueven saldo** (3 a 5 periodos con movimiento en
@@ -234,9 +254,10 @@ dinero moviéndose en una cuenta sin extracto que lo corrobore. Y matiza lo que 
 las cuatro de mandato no son un bloque: **tres se mueven y una (`NTB02-EUR02`, IMIP) está
 realmente durmiente.**
 
-**② `EXTRACTO_SIN_MOVIMIENTO` — Pekín ×2 y Bangkok.** `BKC01-USD02` (603 extractos),
-`CIT13-USD01` (481) y `SCB13-USD01` (399): llegan cientos de extractos y **el mayor 10xxxxx no
-se mueve en dos años**. O son extractos a cero, o la contabilización va a otro mayor. En
+**② `EXTRACTO_SIN_MOVIMIENTO` — cinco cuentas, 2.321 extractos, cero movimiento.**
+`BKC01-USD02` Pekín (603), `CIT13-USD01` Pekín (481), `SCB13-USD01` Bangkok (399),
+`UIL/DEU01-USD01` Hamburgo (422) y `UBO/CIT01-BRL02` Brasilia Donations (416): llegan cientos
+de extractos y **el mayor 10xxxxx no se mueve en dos años**. O son extractos a cero, o la contabilización va a otro mayor. En
 cualquiera de los dos casos, alguien está procesando 1.483 extractos que no producen nada.
 
 **③ 58 cuentas pagan, y solo 12 están en la determinación automática de banco** (`T042I`).

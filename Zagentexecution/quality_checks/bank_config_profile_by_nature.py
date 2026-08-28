@@ -94,7 +94,7 @@ def linea(nombre, g):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--bukrs", default="UNES")
+    ap.add_argument("--bukrs", default="", help="vacio = TODAS las sociedades")
     ap.add_argument("--system", default="P01")
     ap.add_argument("--desde", default="20250101")
     ap.add_argument("--json", default="")
@@ -128,7 +128,7 @@ def main():
     # OBA1 / revaluacion: T030H. El campo de cuenta es HKONT, NO 'KONKO' -- esa tabla no
     # tiene KONKO. Con el campo equivocado la lectura no falla: devuelve 0 filas y el perfil
     # publica "OBA1 = 0% en TODAS las naturalezas", que es una respuesta segura y falsa.
-    t030h = {r["HKONT"] for r in rd(conn, "T030H", ["KTOPL", "HKONT"], "KTOPL = 'UNES'", 0)}
+    t030h = {r["HKONT"] for r in rd(conn, "T030H", ["KTOPL", "HKONT"], "", 0)}
 
     zc = rd(conn, "FAGL_011ZC", ["VERSN", "ERGSL", "VONKT", "BISKT"], "VERSN = 'FS10'", 0)
     leaf = rd(conn, "SETLEAF", ["SETNAME", "VALFROM"], "SETNAME LIKE 'YBANK%'")
