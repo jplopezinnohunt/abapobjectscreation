@@ -128,16 +128,23 @@ desfasado con el repo**, que es peor que uno claramente viejo.
 
 | cuándo | comando |
 |---|---|
-| Añadiste un **claim, regla, incidente** o tocaste  — o sea, cambiaste un **store** |  · **~14 s** |
-| Quieres repetir **un paso** que falló, o depurar |  |
-| Tocaste **código, algoritmo, skill, agente, companion o gate** — todo lo que se DERIVA del repo |  · ~56 min |
+| Añadiste un **claim, regla, incidente**, o tocaste `domains.json` — cambiaste un **store** | `python brain_v2/rebuild_all.py --rapido` · **~14 s** |
+| Quieres repetir **un paso** que falló, o depurar uno | `python brain_v2/rebuild_all.py --solo <patrón>` |
+| Tocaste **código, algoritmo, skill, agente, companion o gate** — lo que se DERIVA del repo | `python brain_v2/rebuild_all.py` · ~56 min |
 | **No estás seguro de qué cambiaste** | el completo. La duda se resuelve con el completo |
 
- NO corre puertas, grafo, casos golden, madurez ni companions. La ontología sí, y
-no es opcional: es la puerta que impide materializar un dominio inventado.
+`--rapido` corre tres pasos: ontología → `brain_state` → índice. **No** corre puertas, grafo,
+casos golden, madurez ni companions. La ontología sí, y no es opcional: es la puerta que
+impide materializar un dominio inventado — el 28-ago paró un rebuild entero por un claim con
+un dominio que no existía.
 
-Y ** te lo dice**: desde s108 imprime el criterio y sale. Antes arrancaba el rebuild
-entero — preguntar qué hace una herramienta costaba 56 minutos.
+Y **`--help` te lo dice**: desde s108 imprime este criterio y sale, igual que cualquier flag
+desconocido. Antes `--help` no estaba manejado y **arrancaba el rebuild entero**: preguntar
+qué hace una herramienta costaba 56 minutos.
+
+**Dónde se van los minutos del completo** (medido sobre `curation.log`): enlazar docs 18,9% ·
+la suite de puertas ~20% · casos golden 8,8% · índice de comprensión 7,8% · grafo NetworkX
+7,6%. Cinco pasos son ~60% del tiempo.
 
 ## Para ir más lejos
 
