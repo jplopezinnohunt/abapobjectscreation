@@ -138,9 +138,9 @@ inventario del resto; el contenido se abre con su comando.
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
 | **claims** | 631 | `python brain_v2/graph_queries.py search <termino>` |
-| **docs de dominio** | 145 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
+| **docs de dominio** | 149 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
-| **incidentes** | 15 | `python brain_v2/graph_queries.py incident <id>` |
+| **incidentes** | 16 | `python brain_v2/graph_queries.py incident <id>` |
 | **reglas** | 258 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 172 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
 | **algoritmos** | 96 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
@@ -464,7 +464,7 @@ lo deja — solo que nadie lo publicaba.
 - **Comprobar que siguen siendo alcanzables:**
   `python Zagentexecution/quality_checks/artifact_reachability_check.py`
 
-## OPEN WORK - incidents awaiting action (13 live, deadline first)
+## OPEN WORK - incidents awaiting action (14 live, deadline first)
 - `INC-EGYPT-PPC` - CLOSED_NOT_REQUIRED - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
   - NEXT: CERRADO como NOT_REQUIRED el 2026-08-20: SG confirma que no hay codigo para Egipto y el canal Citi no lleva este flujo (76,2% SocGen vs 1,9% Citi; la cuenta Citi Egipto emite el 100% en cheque prenumerado). QUEDA UNA SOLA ACCION, y es de higiene, no del incide
   - drill: `python brain_v2/graph_queries.py incident INC-EGYPT-PPC`
@@ -482,10 +482,10 @@ lo deja — solo que nadie lo publicaba.
   - drill: `python brain_v2/graph_queries.py incident INC-000006906`
 - `INC-000011781` - EXECUTED_PARTIAL_OPEN_ITEMS - Add Renata Da Silva Freire RITTER to UBO BCM signatory panel (+ Martin/Ba/De Sousa delimitation,
   - drill: `python brain_v2/graph_queries.py incident INC-000011781`
-- `INC-000016338` - EXECUTED_VERIFIED_ROLE_PENDING - Add Bettina REISS to UIL BCM signatory panel + build the <=10K amount tier on BOTH rules (verifi
-  - drill: `python brain_v2/graph_queries.py incident INC-000016338`
+- `INC-000013624` - ROOT_CAUSE_CONFIRMED_ACTION_PENDING - El extracto bancario electronico de NTB02/EUR01 (Northern Trust ASHI EUR) dejo de entrar al camb
+  - drill: `python brain_v2/graph_queries.py incident INC-000013624`
 
-_5 more open, drill by id:_ `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED)  `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
+_6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED)  `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
 
 
 ## AGENTES - lo que sabemos HACER (14 disponibles)
@@ -536,7 +536,7 @@ _5 more open, drill by id:_ `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4672 objects · 258 rules · 631 claims · 18 incidents · 10 closed researches)
+## Brain at a glance (4680 objects · 258 rules · 631 claims · 19 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.

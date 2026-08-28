@@ -139,3 +139,32 @@ Un hallazgo que se queda en la conversación no existe. Cada uno va a **uno** de
 
 Corta. Por hallazgo: **qué es, cómo se deriva, qué población, qué NO se puede ver, y dónde aterrizó.**
 Si no hay nada nuevo, una línea diciéndolo. Un informe largo sin hallazgos es ruido con formato.
+
+## El eje que te faltaba: la CUENTA, no solo el banco (s108)
+
+Tu modelo cubre el papel de **PAGO del BANCO** — rol, corredores, métodos, DMEE, PPC. Desde
+s108 existe el otro eje, el perfil de **TENENCIA y COBRO de la CUENTA**, con seis instrumentos
+en `Zagentexecution/quality_checks/`. **Léelos antes de derivar nada sobre extractos:**
+
+| Instrumento | Contesta |
+|---|---|
+| `house_bank_ebs_wiring_check.py` | ¿sigue cableada al extracto? (`T028B` con el número ACTUAL) |
+| `bank_statement_channel_census.py` | ¿por qué canal entra? electrónico / manual FF67 / ninguno |
+| `bank_account_nature_model.py` | naturaleza: operativa · transferencia · a la vista · mandato |
+| `bank_account_behaviour_signature.py` | qué HACE: paga · recibe · mueve saldo |
+| `bank_config_profile_by_nature.py` | qué configuración lleva de hecho cada naturaleza |
+| `ebs_format_consolidation.py` | cuántos modelos de extracto y quién los usa |
+
+**Solape que tienes que reconciliar, no volver a publicar:** tu hallazgo `receiving_accounts`
+(«16 cuentas con extracto y CERO pagos») es el mismo objeto que el tipo `OPERATIVA_COBRO` de
+`bank_account_behaviour_signature.py`. Si las cifras no coinciden, eso ES el hallazgo.
+
+**Y la lección de método que s108 pagó:** se re-derivó el job `FEB_FILE_HANDLING` —
+13 minutos, el bloque más caro de la sesión— cuando tú ya lo publicabas como `channel_jobs
+STABLE`. La causa fue no correr `python brain_v2/load_domain.py <tema>` antes de medir.
+Córrelo siempre; el índice orienta, no da competencia.
+
+Conocimiento nuevo del eje de cuenta:
+`knowledge/domains/Treasury/bank_account_nature_model.md` ·
+`bank_statement_channels_by_company.md` · `ebs_format_models.md` ·
+`ebs_file_pipeline_and_jobs.md`
