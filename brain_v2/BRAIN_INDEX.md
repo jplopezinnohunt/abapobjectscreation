@@ -137,7 +137,7 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 630 | `python brain_v2/graph_queries.py search <termino>` |
+| **claims** | 631 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 145 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 15 | `python brain_v2/graph_queries.py incident <id>` |
@@ -361,13 +361,13 @@ lo deja — solo que nadie lo publicaba.
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A51_skill_registry` | convertir cada SKILL en un NODO con sus aristas: que tablas SAP documenta, | -- | `brain_v2/skills/skill_registry.json` |
+| `A51_skill_registry` | convertir cada SKILL en un NODO con sus aristas: que tablas SAP documenta, | Integration, Output, Procurement | `brain_v2/skills/skill_registry.json` |
 
 **skills x agentes x alg...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A52_toolgraph` | EL BRAIN DEL BRAIN: un grafo de mis PROPIOS instrumentos con quien usa a q | Closing_Activities, Master_Data_Governance, Output, Treasury | `brain_v2/toolgraph.json` |
+| `A52_toolgraph` | EL BRAIN DEL BRAIN: un grafo de mis PROPIOS instrumentos con quien usa a q | Closing_Activities, Integration, Master_Data_Governance, Output +2 | `brain_v2/toolgraph.json` |
 
 **el foro de mineros x e...**
 
@@ -536,7 +536,7 @@ _5 more open, drill by id:_ `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4658 objects · 258 rules · 630 claims · 18 incidents · 10 closed researches)
+## Brain at a glance (4672 objects · 258 rules · 631 claims · 18 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
