@@ -162,12 +162,14 @@ Measured on P01: of the **41 customizing tables** able to hold a bank account nu
 there is no way to skip the second.
 
 The `house_bank_ebs_wiring_check.py` gate compares, account by account across the whole
-estate, the number in `T012K` against the one in `T028B`. Its first run found the incident's
-account **and a second broken one nobody had reported** (`BTE01-USD01`, UNESCO Tehran).
+estate, the number in `T012K` against the one in `T028B`.
 
-**Denominator it declares — do not measure without it:** closed accounts are marked **in the
-text**, `T012T-TEXT1` starting with `CLOSED` (237 of 411 in UNES). Without that cut, 2 of the
-first 4 "broken" findings were accounts closed years ago.
+**Two denominators it declares — the measure is false without them:** (1) closed accounts are
+marked **in the text**, `T012T-TEXT1` starting with `CLOSED` (237 of 411 in UNES); (2) the
+`T028B` row is only required where the statement is **electronic** (`FEBKO.EFART='E'` — 131 of
+the 143 accounts that receive statements). `BTE01-USD01` imported 116 **manual** statements
+with no `T028B` row at all. Without those two cuts the first run reported 4 broken accounts and
+**3 were false** — 2 closed for years, 1 manual.
 
 Full procedure for an account-number change: `knowledge/domains/Treasury/house_bank_configuration.md` §2b.
 

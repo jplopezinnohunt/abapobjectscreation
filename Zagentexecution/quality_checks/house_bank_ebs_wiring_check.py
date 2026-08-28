@@ -86,7 +86,7 @@ def esta_cerrada(texto):
 
 
 def analizar(t012k, t012, t028b, t035d, ultimo_extracto, dias_umbral, hoy, n_extractos=None,
-             textos=None):
+             textos=None, electronicas=None):
     """La DECISION, pura y sin SAP delante: se puede probar sin red.
 
     t012k  [{BUKRS,HBKID,HKTID,BANKN,BNKN2,HKONT}]
@@ -99,6 +99,7 @@ def analizar(t012k, t012, t028b, t035d, ultimo_extracto, dias_umbral, hoy, n_ext
     hallazgos = []
     n_extractos = n_extractos or {}
     textos = textos or {}
+    electronicas = electronicas if electronicas is not None else None
 
     cable = {(r["BANKL"], r["KTONR"]) for r in t028b}
     bnkko = {(r["BANKL"], r["KTONR"]): r.get("BNKKO", "") for r in t028b}
@@ -122,10 +123,18 @@ def analizar(t012k, t012, t028b, t035d, ultimo_extracto, dias_umbral, hoy, n_ext
             continue
         if esta_cerrada(textos.get(k, "")):
             continue   # cuenta cerrada: no se le exige cable
+        # SOLO se le exige fila de T028B a las cuentas cuyo extracto es ELECTRONICO
+        # (FEBKO.EFART='E'). Medido en BTE01 (Teheran): USD01 importo 116 extractos y IRR01
+        # otros 156, los dos con EFART='M' (entrada manual por FF67) y SIN NINGUNA fila en
+        # T028B. O sea que para el extracto manual esa fila no hace falta, y exigirsela
+        # publica un defecto que no existe. Fue el primer falso positivo de esta puerta.
+        if electronicas is not None and k not in electronicas:
+            continue
         if (bl, r["BANKN"]) not in cable:
             otras = [k for k in cable if k[0] == bl]
             hallazgos.append({
                 "clase": "A_CABLE_ROTO", "grave": True,
+                "efart": "E",
                 "cuenta": "%s/%s-%s" % (r["BUKRS"], r["HBKID"], r["HKTID"]),
                 "detalle": "T012K.BANKN=%s pero no hay fila T028B para (%s, %s). "
                            "T028B de esa clave de banco tiene: %s"
@@ -271,6 +280,21 @@ def autotest():
     assert not any(x["clase"] == "A_CABLE_ROTO" for x in h3), \
         "inventa un cable roto en una cuenta que nunca recibio fichero (denominador)"
     print("CASO QUE NO DEBE DISPARAR (cuenta sin extractos): ok")
+
+    # y el falso positivo REAL que cometio esta puerta: cuenta de extracto MANUAL sin
+    # fila en T028B. Importa extractos igual; exigirsela publica un defecto inexistente.
+    t012k_man = t012k + [{"BUKRS": "UNES", "HBKID": "BTE01", "HKTID": "USD01",
+                          "BANKN": "0050070646", "BNKN2": ""}]
+    t012_man = dict(t012)
+    t012_man[("UNES", "BTE01")] = "IR000029"
+    ult_man = dict(ult_fix); ult_man[("UNES", "BTE01", "USD01")] = "20251212"
+    nh_man = dict(nh); nh_man[("UNES", "BTE01", "USD01")] = 116
+    txt_man = {("UNES", "BTE01", "USD01"): "UNESCO TEHRAN - USD"}
+    elec = {("UNES", "NTB02", "EUR01"), ("UNES", "NTB01", "USD01"), ("UNES", "NTB01", "USD02")}
+    h4 = analizar(t012k_man, t012_man, t028b_fix, t035d, ult_man, 7, "20260828",
+                  nh_man, txt_man, elec)
+    assert not any(x["clase"] == "A_CABLE_ROTO" for x in h4),         "exige fila T028B a una cuenta de extracto MANUAL: %s" % h4
+    print("CASO QUE NO DEBE DISPARAR (extracto MANUAL, EFART=M): ok")
     print("\nAUTOTEST OK")
     return 0
 
@@ -297,12 +321,14 @@ def main():
     t028b = rd(conn, "T028B", ["BANKL", "KTONR", "VGTYP", "BNKKO", "BUKRS"], "")
     t035d = {(r["BUKRS"], r["DISKB"]) for r in rd(conn, "T035D", ["BUKRS", "DISKB", "BNKKO"], "")}
 
-    feb = rd(conn, "FEBKO", ["BUKRS", "HBKID", "HKTID", "AZDAT"],
+    feb = rd(conn, "FEBKO", ["BUKRS", "HBKID", "HKTID", "AZDAT", "EFART"],
              (w + " AND " if w else "") + "AZDAT >= '20250101'")
+    efart = collections.defaultdict(set)
     ult, n_ext = {}, collections.Counter()
     for r in feb:
         k = (r["BUKRS"], r["HBKID"], r["HKTID"])
         n_ext[k] += 1
+        efart[k].add(r.get("EFART", ""))
         if r["AZDAT"] and (k not in ult or r["AZDAT"] > ult[k]):
             ult[k] = r["AZDAT"]
 
@@ -316,7 +342,10 @@ def main():
     cerradas = sum(1 for v in txt.values() if esta_cerrada(v))
     print("textos de cuenta: %d · marcadas CERRADAS en el texto: %d (se excluyen)"
           % (len(txt), cerradas))
-    h = analizar(t012k, t012, t028b, t035d, ult, a.dias, hoy, n_ext, txt)
+    elec = {k for k, v in efart.items() if "E" in v}
+    print("cuentas con extracto ELECTRONICO (EFART=E): %d de %d con extractos "
+          "(al resto no se le exige fila en T028B)" % (len(elec), len(ult)))
+    h = analizar(t012k, t012, t028b, t035d, ult, a.dias, hoy, n_ext, txt, elec)
 
     por = collections.defaultdict(list)
     for x in h:

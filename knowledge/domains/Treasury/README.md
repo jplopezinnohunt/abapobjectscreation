@@ -130,6 +130,13 @@ TREASURY (BFM-TRS)
 ### Bank Statement Processing
 | Table | Transaction | Content |
 |-------|-----------|---------|
+
+> **Censo de canales (s108):** el parque de cuentas NO es homogeneo. 167 cuentas vivas
+> (404 menos 237 cerradas por texto): **120 electronicas · 8 MANUALES · 27 mixtas · 12 sin
+> extracto**. Toda la complejidad esta en UNES; los institutos son automaticos. Las 8
+> manuales dependen de 4 personas nombradas, sin responsable ni cadencia declarados.
+> Ver [bank_statement_channels_by_company.md](bank_statement_channels_by_company.md).
+
 | T035D | SM30 V_T035D | Cash Management Account Names: clave corta -> G/L (DISKB -> BNKKO). NO es la asignacion de tipos de operacion |
 | T028B | SM30 V_T028B | Transaction Type of Sender Bank: (clave de banco + NUMERO DE CUENTA) -> formato + cuenta interna. Se rompe al cambiar el numero de cuenta (INC-000013624) |
 | FCLM_BSM_CUST | FTE_BSM_CUST | Bank statement monitor |

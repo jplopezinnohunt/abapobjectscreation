@@ -218,10 +218,21 @@ Sin ese corte el barrido acusaba a 4 cuentas y **2 eran cerradas desde hace año
 | Cuenta | Texto | `T012K.BANKN` | Lo que tiene `T028B` |
 |---|---|---|---|
 | **UNES/NTB02-EUR01** | NORTHERN TRUST - UNESCO ASHI - EUR | `18747647` | `11939389` ← **el ticket** |
-| **UNES/BTE01-USD01** | UNESCO TEHRAN - USD | `0050070646` | `4190205431`, `342518788` |
 
-**BTE01/USD01 (UNESCO Teherán) está rota igual y nadie la ha reportado.** Es una cuenta
-viva, con el mismo síntoma silencioso.
+**Es la unica.** El barrido acusó primero a cuatro cuentas y las tres restantes se cayeron al
+aplicar dos cortes que la primera version del instrumento no tenia — y cada corte salio de
+mirar la evidencia, no de afinar un umbral:
+
+1. **Cuentas CERRADAS** (marcadas en el texto): `SCB01-USD01` y `BPO01-USD01` llevaban años
+   cerradas.
+2. **Extracto MANUAL**: `BTE01-USD01` (UNESCO Teherán) tiene `EFART='M'` — se teclea por FF67.
+   **Importó 116 extractos sin haber tenido nunca fila en `T028B`**, igual que `BTE01-IRR01`
+   con otros 156. Para el extracto manual esa fila no hace falta, asi que exigírsela publicaba
+   un defecto inexistente. Medido: de 143 cuentas con extractos en UNES, solo **131 son
+   electrónicas**; a las otras 12 no se les puede aplicar esta regla.
+
+Ese fue el primer falso positivo de la puerta, y esta clavado como caso de autotest para que
+no vuelva.
 
 Además, informativo: **25 filas huérfanas** en `T028B` (números que ya no son de ninguna
 cuenta viva — el rastro acumulado de cambios sin barrer) y **9 canales mudos** de cuentas

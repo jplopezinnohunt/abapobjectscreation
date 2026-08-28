@@ -478,8 +478,13 @@ eran cuentas cerradas hace años.
 
 | Cuenta | `T012K` | `T028B` | |
 |---|---|---|---|
-| UNES/NTB02-EUR01 | `18747647` | `11939389` | el ticket |
-| **UNES/BTE01-USD01** (UNESCO Teherán) | `0050070646` | `4190205431` | **nadie lo había reportado** |
+| UNES/NTB02-EUR01 | `18747647` | `11939389` | el ticket — y la unica |
+
+**Dos cortes mas que la puerta declara, y sin los cuales miente:** se excluyen las cuentas
+**cerradas** (marca `CLOSED` en `T012T-TEXT1`: 237 de 411 en UNES) y las de extracto
+**manual** (`FEBKO.EFART='M'`: solo 131 de las 143 cuentas con extractos son electrónicas).
+BTE01-USD01 importó 116 extractos manuales sin fila en `T028B` — a esas cuentas esa fila no
+se les exige.
 
 ### Cómo se comprueba que el canal está vivo, sin herramientas
 
