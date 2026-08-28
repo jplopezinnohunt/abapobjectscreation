@@ -21,7 +21,7 @@ House bank configuration is a **multi-step, cross-module** SAP configuration act
 - **Bank Accounting** (FI12 / SPRO) → T012, T012K, BNKA, TIBAN
 - **Cash Management** (TRM5, GS02) → SETLEAF, SETHEADER, SETNODE
 - **Payment Program** (FBZP / OBPM4) → T042I, T018V
-- **Bank Statement Processing** (FTE_BSM_CUST, V_T035D) → T035D, T028B
+- **Bank Statement Processing** (FTE_BSM_CUST, **V_T028B**, V_T035D) → T028B, T035D
 - **Exchange Rate Management** (OBA1) → T030H
 - **Business Area Substitution** (YFI_BASU_MOD)
 
@@ -86,20 +86,25 @@ YBANK_ACCOUNTS_ALL (HQ & FO Accounts Total)
 
 ### Overview Table
 
-| Step | Description | Transaction/Table | ADD | CLOSE |
-|------|-------------|-------------------|-----|-------|
-| 1 | Check/Create G/L Account | FS00 | X | — |
-| 2 | Add House Bank + Account ID | FI12 (SPRO) | X | X (modify text + alt account) |
-| 3 | Bank Statement Monitor | FTE_BSM_CUST | X | X removes |
-| 4 | OBA1 Exchange Rate Differences | OBA1 (11* accounts) | X (non-USD only) | X removes |
-| 5 | Cash Management Account Name | SPRO | X | X removes |
-| 6 | Bank Statement Integration | V_T035D (SM30) | X (if electronic) | X removes |
-| 7 | Business Area for Electronic Integration | YFI_BASU_MOD | X | No need (per range) |
-| 8 | Receiving Account for Payment Requests | V_T018V (SM30) | X | X removes |
-| 9 | Payment Configuration (if paying bank) | V_T042IY0, OBPM4, FBZP | X | X removes (partial) |
-| 10 | Average Balance Report Sets | GS02 | X | X removes |
-| 11 | Cash Position Reports | TRM5 (ZCASH/ZCASHFO/ZCASHFODET) | X (after TRS confirmation) | X removes |
-| 12 | Verify Grouping | V_T038 (SM30) | X | Not needed (symbolic) |
+La columna **CHG** se añadió el 2026-08-28 (s108) — hasta entonces el procedimiento solo
+contemplaba ALTA y CIERRE, y **cambiar el número de cuenta de una cuenta existente no estaba
+cubierto por ningún camino**. Ese hueco es INC-000013624.
+
+| Step | Description | Transaction/Table | ADD | **CHG nº cuenta** | CLOSE |
+|------|-------------|-------------------|-----|-----|-------|
+| 1 | Check/Create G/L Account | FS00 | X | — | — |
+| 2 | Add House Bank + Account ID | FI12 (SPRO) | X | **X — número, IBAN, cuenta alternativa** | X (modify text + alt account) |
+| 3 | Bank Statement Monitor | FTE_BSM_CUST | X | verificar | X removes |
+| 4 | OBA1 Exchange Rate Differences | OBA1 (11* accounts) | X (non-USD only) | — (cuelga del G/L) | X removes |
+| 5 | Cash Management Account Name | SPRO / V_T035D | X | — (clave = DISKB, no el número) | X removes |
+| 6 | Bank Statement Integration | **V_T028B** (SM30) | X (if electronic) | **X — OBLIGATORIO. Clave = número de cuenta** | X removes |
+| 7 | Business Area for Electronic Integration | YFI_BASU_MOD | X | — (por rango de G/L) | No need (per range) |
+| 8 | Receiving Account for Payment Requests | V_T018V (SM30) | X | verificar | X removes |
+| 9 | Payment Configuration (if paying bank) | V_T042IY0, OBPM4, FBZP | X | verificar (clave = HBKID/HKTID) | X removes (partial) |
+| 10 | Average Balance Report Sets | GS02 | X | — | X removes |
+| 11 | Cash Position Reports | TRM5 (ZCASH/ZCASHFO/ZCASHFODET) | X (after TRS confirmation) | — | X removes |
+| 12 | Verify Grouping | V_T038 (SM30) | X | — | Not needed (symbolic) |
+| **G** | **PUERTA: cableado del extracto** | `house_bank_ebs_wiring_check.py` | **X** | **X — no se cierra sin correrla** | X |
 
 ### Transport Orders Required
 The process requires **2 transport orders**:
@@ -227,19 +232,40 @@ Format: `{HouseBank}-{AcctID}` (e.g., NTB02-EUR2)
 
 ---
 
-### Step 6: Automatic Bank Statement Integration (V_T035D)
+### Step 6: Automatic Bank Statement Integration (**V_T028B**, no V_T035D)
 
-**Path:** SPRO → Financial Accounting → Bank Accounting → Business Transactions → Payment Transactions → Electronic Bank Statement → Make Global Settings for Electronic Bank Statement
+> ⚠️ **CORREGIDO 2026-08-28 (s108, INC-000013624).** Este paso decía `V_T035D`. Es la vista
+> equivocada, y esa confusión es lo que dejó pasar el incidente. Según el propio diccionario
+> de SAP: **`T028B` = *Transaction Type of Sender Bank*** (la pantalla «Allocate Banks to
+> Transaction Types for Electronic Banking», que es lo que este paso describe) y
+> **`T035D` = *Cash Management Account Names*** — que es el **paso 5**, ya cubierto.
+> Quien seguía el texto mantenía T035D y creía haber hecho la asignación de tipos de
+> operación. En un alta se hace igualmente porque se copia de una cuenta parecida y se tocan
+> las dos; **en un cambio de número de cuenta, la única que importa es T028B y era la que el
+> procedimiento no nombraba.**
 
-**SM30 V_T035D**
+**Path:** SPRO → Financial Accounting → Bank Accounting → Business Transactions → Payment
+Transactions → Electronic Bank Statement → **Assign Bank Accounts to Transaction Types**
 
-Copy from similar account type, assign Transaction type.
+**SM30 `V_T028B`**
 
-**Only "Assign Bank Accounts to Transaction Types"** is configured (not Account Symbols, Posting Rules, etc.)
+| Campo | Qué va | Ejemplo (NTB02/EUR01) |
+|---|---|---|
+| Bank Key | clave del banco (`T012.BANKL`) | `SP0000000MX7` |
+| **Bank Account** | **el número de cuenta de `T012K.BANKN`** | `18747647` |
+| Trans. type | grupo de formato del extracto | `TR_TRNF` |
+| Currency class · P · Su · Worklist · N · D | vacíos salvo requisito expreso | — |
+| Co. code | sociedad | `UNES` |
+| Cash Management acct | clave corta de la cuenta (`T035D.DISKB`) | `NTB02-EUR1` |
 
-**Note:** Before adding, change the account as currency may differ. Check if bank requires electronic bank statement — if no, skip this step.
+**La clave de esta tabla es el NÚMERO DE CUENTA.** Copiar de una cuenta parecida del mismo
+banco y cambiar el número. Antes de añadir, revisar que la divisa coincide. Si el banco no
+manda extracto electrónico, saltar el paso.
 
-**REMOVE:** SPRO same path → delete entry.
+**REMOVE:** mismo path → borrar la entrada.
+
+**⛔ AL CAMBIAR EL NÚMERO DE CUENTA DE UNA CUENTA EXISTENTE, ESTE PASO HAY QUE REHACERLO.**
+Ver §2b.
 
 ---
 
@@ -395,6 +421,79 @@ Verify those related to Savings/At Sight accounts.
 
 ---
 
+## 2b. CHANGE — cambiar el NÚMERO DE CUENTA de una cuenta existente
+
+**Añadido 2026-08-28 (s108) a raíz de INC-000013624.** Este camino no existía: el
+procedimiento solo tenía ALTA y CIERRE, y un cambio de número se trataba como «una
+modificación en FI12». No lo es.
+
+### La regla, en una frase
+
+> **El número de cuenta vive en DOS tablas de configuración, y FI12 solo escribe en una.**
+
+Medido en P01 (s108): de las **41 tablas de customizing** del sistema capaces de guardar un
+número de cuenta bancaria, solo dos contienen las cuentas de UNESCO —
+**`T012K`** (ficha del banco casa, la que toca FI12) y **`T028B`** (tipo de operación del
+banco emisor, la que usa el extracto electrónico). Ninguna tercera. Pero `T028B` está
+**tecleada por el número de cuenta**, así que al cambiarlo su fila queda huérfana y el
+extracto deja de entrar — **en silencio**: la ficha se ve perfecta, el job `EBS INTEGRATION`
+sigue terminando en verde cada hora, y nadie se entera hasta que alguien mira un saldo.
+
+### Los pasos
+
+| # | Qué | Dónde |
+|---|---|---|
+| 1 | Cambiar número de cuenta, IBAN y cuenta alternativa | FI12 → `T012K` (+ `TIBAN` se genera) |
+| 2 | **Rehacer la asignación de tipo de operación con el número NUEVO** | SM30 `V_T028B` — ver Step 6 |
+| 3 | Comprobar el transporte antes de liberar | `config_transport_prerelease_check.py <TRKORR>` |
+| 4 | Importar, y **esperar a que entre el primer extracto** | `FEBKO` / FF67 |
+| 5 | **Solo entonces**, borrar la fila vieja de `T028B` | SM30 `V_T028B` |
+| 6 | **PUERTA de cierre** | `house_bank_ebs_wiring_check.py` |
+
+**El paso 5 va después del 4, nunca antes.** Si se borra la fila vieja y algo falla, se pierde
+la referencia de cómo estaba configurada.
+
+### La puerta de cierre — no se declara terminado sin esto
+
+```bash
+python Zagentexecution/quality_checks/house_bank_ebs_wiring_check.py --bukrs UNES
+```
+
+Compara, cuenta por cuenta de todo el parque, el número que tiene `T012K` contra el que tiene
+`T028B`, y sale con 1 si alguna no coincide. Cuatro comprobaciones:
+
+| | qué mira |
+|---|---|
+| **A CABLE ROTO** | cuenta viva cuyo `BANKN` actual no tiene fila en `T028B` ← el defecto de este incidente |
+| **B HUÉRFANA** | fila de `T028B` con un número que ya no es de ninguna cuenta viva ← el rastro que deja el paso 5 sin hacer |
+| **C CANAL MUERTO** | cuenta con historial que lleva N días sin extracto mientras la sociedad sigue recibiendo |
+| **D / E** | informativos: sospecha de `T035D` ausente · fechas imposibles en `FEBKO` |
+
+**Denominador declarado** (sin esto la medida es falsa): se excluyen las cuentas
+**cerradas**, que en UNESCO se marcan **en el texto** — `T012T-TEXT1` empieza por `CLOSED`.
+Medido: **237 de las 411** cuentas de UNES. En la primera corrida, 2 de 4 «cables rotos»
+eran cuentas cerradas hace años.
+
+### Lo que la puerta encontró la primera vez que se corrió
+
+| Cuenta | `T012K` | `T028B` | |
+|---|---|---|---|
+| UNES/NTB02-EUR01 | `18747647` | `11939389` | el ticket |
+| **UNES/BTE01-USD01** (UNESCO Teherán) | `0050070646` | `4190205431` | **nadie lo había reportado** |
+
+### Cómo se comprueba que el canal está vivo, sin herramientas
+
+Último `FEBKO-AZDAT` por `HBKID`/`HKTID`. Una cuenta cuyo último extracto sea de hace más de
+una semana **mientras sus hermanas del mismo banco entran a diario** está rota — da igual lo
+que digan el estado del job o la ficha del banco casa.
+
+⚠️ Y **la cabecera de FF67 no es configuración**: el «Account» que muestra es `FEBKO-ABSND`,
+o sea la identidad que traía *el último fichero importado*. Es historia. Un usuario que mira
+FF67 después de un cambio verá siempre el valor viejo, y eso no significa que la ficha esté
+mal.
+
+---
+
 ## 3. Close/Delete House Bank Account
 
 House banks are **NEVER deleted** from SAP. The closure process involves:
@@ -496,7 +595,7 @@ The current process uses **Excel forms** emailed between teams. A digital form c
 □ Step 3: FTE_BSM_CUST — Bank Statement Monitor
 □ Step 4: OBA1 — Exchange Rate (if non-USD)
 □ Step 5: Cash Management Account Name
-□ Step 6: V_T035D — Bank Statement Integration (if electronic)
+□ Step 6: V_T028B — Bank Statement Integration / Assign Bank Accounts to Transaction Types (if electronic)  ← NO es V_T035D (s108)
 □ Step 7: YFI_BASU_MOD — Business Area Substitution
 □ Step 8: V_T018V — Receiving Account
 □ Step 9: Payment Config (if paying bank)

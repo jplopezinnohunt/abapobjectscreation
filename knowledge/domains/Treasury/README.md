@@ -130,8 +130,8 @@ TREASURY (BFM-TRS)
 ### Bank Statement Processing
 | Table | Transaction | Content |
 |-------|-----------|---------|
-| T035D | SM30 V_T035D | Account symbol → G/L mapping (DISKB → BNKKO) |
-| T028B | SM30 V_T035D | Bank key + bank acct → transaction type (XRT940) |
+| T035D | SM30 V_T035D | Cash Management Account Names: clave corta -> G/L (DISKB -> BNKKO). NO es la asignacion de tipos de operacion |
+| T028B | SM30 V_T028B | Transaction Type of Sender Bank: (clave de banco + NUMERO DE CUENTA) -> formato + cuenta interna. Se rompe al cambiar el numero de cuenta (INC-000013624) |
 | FCLM_BSM_CUST | FTE_BSM_CUST | Bank statement monitor |
 | FEBKO | FF_5 | Bank statement headers |
 | FEBEP | FF_5 | Bank statement items |

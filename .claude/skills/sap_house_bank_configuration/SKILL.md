@@ -25,8 +25,12 @@ subtopics: [13_config_steps, compliance_checker, cross_system_comparison_D01_P01
 
 - New bank account request arrives (email from TRS/BFM)
 - Existing bank account needs modification (new IBAN, address change, currency change)
+- **The ACCOUNT NUMBER of an existing account changes** — its own path, not "a modification in
+  FI12". FI12 is step 1 of 6; see `house_bank_configuration.md` §2b and the Pre-Close Checklist
+  step 4. Skipping it silently kills the electronic bank statement (INC-000013624)
 - Bank account closure request
 - Compliance audit of existing house bank configuration
+- **The bank statement of an account stopped arriving** — start at the wiring gate, not at FI12
 
 ## Input Documents
 
@@ -136,11 +140,36 @@ Run these checks BEFORE writing the report or updating companions. Do NOT skip.
 1. python house_bank_compliance_checker.py D01 {HBKID}     → must be 0 FAIL
 2. python house_bank_compliance_checker.py P01 {HBKID}     → must be 0 FAIL
 3. python uba01_3system_comparison.py                       → must show ALL IDENTICAL
-4. grep -r "{HBKID}" companions/                           → update EVERY companion that mentions this bank
-5. grep -r "{HBKID}" knowledge/                            → update EVERY report that mentions this bank
+4. python Zagentexecution/quality_checks/house_bank_ebs_wiring_check.py --bukrs {BUKRS}
+                                                            → must be LIMPIO (exit 0)
+5. grep -r "{HBKID}" companions/                           → update EVERY companion that mentions this bank
+6. grep -r "{HBKID}" knowledge/                            → update EVERY report that mentions this bank
 ```
 
-If step 4 or 5 finds stale references, fix them BEFORE closing. A closed report with stale data in another file is not closed.
+If step 5 or 6 finds stale references, fix them BEFORE closing. A closed report with stale data in another file is not closed.
+
+### ⛔ Step 4 is MANDATORY when an ACCOUNT NUMBER changed (added s108, INC-000013624)
+
+**Changing a bank account number orphans every configuration keyed on that number.** FI12
+writes `T012K` and does **not** carry over to **`T028B`** (*Transaction Type of Sender Bank* —
+SM30 `V_T028B`), whose key is `BANKL + KTONR`. When the number changes, that row stops
+matching and **the electronic bank statement silently stops arriving**: the house bank record
+looks perfect, the `EBS INTEGRATION` job keeps finishing green every hour, and nobody notices
+for weeks.
+
+Measured on P01: of the **41 customizing tables** able to hold a bank account number, only
+**two** hold UNESCO's accounts — `T012K` and `T028B`. There is no third thing to fix, and
+there is no way to skip the second.
+
+The `house_bank_ebs_wiring_check.py` gate compares, account by account across the whole
+estate, the number in `T012K` against the one in `T028B`. Its first run found the incident's
+account **and a second broken one nobody had reported** (`BTE01-USD01`, UNESCO Tehran).
+
+**Denominator it declares — do not measure without it:** closed accounts are marked **in the
+text**, `T012T-TEXT1` starting with `CLOSED` (237 of 411 in UNES). Without that cut, 2 of the
+first 4 "broken" findings were accounts closed years ago.
+
+Full procedure for an account-number change: `knowledge/domains/Treasury/house_bank_configuration.md` §2b.
 
 ---
 
