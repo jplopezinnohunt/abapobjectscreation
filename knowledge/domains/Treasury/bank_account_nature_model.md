@@ -185,6 +185,71 @@ que ya recibían. **No sirve para las 12 que nunca han recibido nada**: ahí no 
 contra el que comparar, y sin naturaleza declarada no se distingue *«no aplica»* de *«nunca se
 configuró»*.
 
+## Clasificar por lo que la cuenta HACE — y las 119 se caen a 14
+
+El texto es una convención humana: orienta y miente cuando alguien no la siguió. Lo que la
+cuenta **hace** no miente. Dos pasadas, en este orden.
+
+### Pasada 1 — la señal que ya estaba y no se miraba
+
+De las 119 «sin clasificar», **102 están en un set `YBANK_ACCOUNTS_FO_*`**, o sea que la
+configuración **ya declara** que son cuentas de oficina de terreno — a grado `CONFIG`, no a
+grado texto. Mi primer clasificador solo miraba palabras clave e ignoraba la señal más fuerte
+que tenía delante.
+
+| | n | grado |
+|---|---:|---|
+| **TERRENO** — set `YBANK_..._FO_*` | **102** | `CONFIG` |
+| OPERATIVA — está en determinación de banco de pagos | 3 | `HECHO` |
+| SEDE con uso sin declarar — set `_HQ_*`, sin palabra clave | 5 | `CONFIG` parcial |
+| **RESIDUO — ni set ni texto reconocible** | **9** | ninguna |
+
+**El «problema de 119» son 14.** Y 105 de las 119 tienen además el texto con la forma
+`UNESCO <SITIO> - <DIVISA>`, que confirma el patrón sin ser la fuente.
+
+### Pasada 2 — la firma de comportamiento, medida sobre 2025-2026
+
+Tres ejes que no dependen de cómo se llame la cuenta: **paga** (`REGUH`), **recibe extracto**
+(`FEBKO`/`EFART`), **mueve saldo** (`GLT0`, periodos con movimiento). Instrumento:
+`bank_account_behaviour_signature.py` (con autotest de 7 casos).
+
+| Comportamiento | HQ | FO | SIGHT | sin set | total |
+|---|---:|---:|---:|---:|---:|
+| PAGADORA | 13 | 43 | 1 | 1 | **58** |
+| OPERATIVA_COBRO | 7 | 54 | 5 | 4 | **70** |
+| BAJA_ROTACION | 0 | 2 | 0 | 0 | 2 |
+| **EXTRACTO_SIN_MOVIMIENTO** | 0 | 3 | 0 | 0 | **3** |
+| **MUEVE_SIN_EXTRACTO** | 3 | 0 | 0 | 0 | **3** |
+| DURMIENTE | 1 | 1 | 0 | 6 | **8** |
+
+**130 de 144 quedan explicadas por su comportamiento.** Las otras 14 son las que piden
+explicación — y son mejores preguntas que las que salían del texto.
+
+### Las tres anomalías que importan
+
+**① `MUEVE_SIN_EXTRACTO` — los tres mandatos de Northern Trust.** `NTB01-USD04` (PIMCO),
+`USD05` (JP Morgan) y `USD06` (RAMP) **mueven saldo** (3 a 5 periodos con movimiento en
+2025-2026) y **no reciben ni un extracto bancario**. Es un hueco de control concreto: hay
+dinero moviéndose en una cuenta sin extracto que lo corrobore. Y matiza lo que se dijo antes —
+las cuatro de mandato no son un bloque: **tres se mueven y una (`NTB02-EUR02`, IMIP) está
+realmente durmiente.**
+
+**② `EXTRACTO_SIN_MOVIMIENTO` — Pekín ×2 y Bangkok.** `BKC01-USD02` (603 extractos),
+`CIT13-USD01` (481) y `SCB13-USD01` (399): llegan cientos de extractos y **el mayor 10xxxxx no
+se mueve en dos años**. O son extractos a cero, o la contabilización va a otro mayor. En
+cualquiera de los dos casos, alguien está procesando 1.483 extractos que no producen nada.
+
+**③ 58 cuentas pagan, y solo 12 están en la determinación automática de banco** (`T042I`).
+No es contradicción — un pago se puede hacer indicando el banco casa, o localmente en terreno —
+pero **46 cuentas pagan por fuera del mecanismo de selección automática**, y eso no estaba dicho
+en ninguna parte.
+
+### Por qué esta clasificación es mejor que la del texto
+
+Sobrevive a que alguien escriba mal el nombre, y **el desacuerdo entre las dos es en sí un
+hallazgo**: donde el comportamiento y la etiqueta no coinciden, uno de los dos está mal. Ésa es
+la comprobación que ninguna de las dos puede hacer sola.
+
 ## Cuál de los tres clasifica mejor: YBANK, y con distancia
 
 | | Dimensiones | Cuentas que discrimina | ¿Nodo de naturaleza? |
