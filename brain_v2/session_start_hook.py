@@ -155,6 +155,103 @@ def pendiente_al_abrir():
         return ""
 
 
+def pedir_titulo_de_sesion():
+    """PIDE que la sesion se renombre con su numero. El hook no puede hacerlo.
+
+    Peticion del dueno (s108). El titulo lo pone el cliente, no el disco: ningun hook puede
+    renombrar la sesion. Pero SI puede calcular cual toca -- la ultima retro que hay en
+    knowledge/session_retros/ mas uno -- y pedirlo, igual que se hace con el roster de
+    agentes. Sin numero, una sesion no se puede citar en un commit ni en un claim, y este
+    proyecto cita la sesion en cada uno.
+    """
+    try:
+        import re as _re                             # noqa: PLC0415
+        d = HERE.parent / "knowledge" / "session_retros"
+        ns = [int(m.group(1)) for f in d.iterdir()
+              for m in [_re.search(r"session_(\d+)", f.name)] if m]
+        if not ns:
+            return ""
+        return (" TITULO DE LA SESION: renombrala a s%d mas dos palabras de lo que hagas "
+                "(set_session_title, o /rename). La ultima retro es la s%d. Sin numero, la "
+                "sesion no se puede citar en un commit ni en un claim -- y aqui se cita en "
+                "cada uno." % (max(ns) + 1, max(ns)))
+    except Exception:
+        return ""
+
+
+def registros_pendientes():
+    """Los SEIS registros de lo pendiente, contados AHORA.
+
+    Pedido del dueno (s107): que lo relevante salga como alerta al arrancar, igual que la
+    peticion del roster. Lo relevante aqui es que lo pendiente esta repartido en seis sitios
+    y nadie los mira todos -- y que uno de ellos esta a CERO teniendo el resto lleno.
+
+    Se cuenta, no se declara. La cifra del golden llevaba once dias mal en este mismo hook
+    por ir escrita a mano.
+    """
+    try:
+        import json as _j                            # noqa: PLC0415
+        import re as _re                             # noqa: PLC0415
+        raiz = HERE.parent
+        n = {}
+
+        def _n(p, campos=()):
+            try:
+                d = _j.loads((raiz / p).read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                return None
+            if isinstance(d, list):
+                return len(d)
+            for c in campos:
+                if isinstance(d.get(c), list):
+                    return len(d[c])
+            return len(d) if isinstance(d, dict) else None
+
+        try:
+            t = (raiz / ".agents" / "intelligence" / "PMO_BRAIN.md").read_text(
+                encoding="utf-8", errors="replace")
+            n["PMO"] = len(set(_re.findall(r"\*\*(H\d+)", t)))
+        except OSError:
+            n["PMO"] = None
+        try:
+            b = _j.loads((raiz / "process_mining" / "mining_findings.json").read_text(
+                encoding="utf-8", errors="replace"))
+            n["bus"] = len([q for q in (b.get("preguntas") or []) if not q.get("respuestas")])
+        except Exception:
+            n["bus"] = None
+        n["known_unknowns"] = _n("brain_v2/agi/known_unknowns.json", ("known_unknowns",))
+        n["data_quality"] = _n("brain_v2/agi/data_quality_issues.json", ("issues",))
+        # ⛔ SUMAR LAS LISTAS, no adivinar la clave. La primera version busco "tasks" y
+        # "backlog", que ese fichero NO TIENE, y devolvio 0 -- y ese cero se publico como
+        # "registro muerto, nadie lo alimenta". Falso: las tareas viven en extraction_tasks,
+        # analysis_tasks_no_extraction y research_tasks_followups. Adivinar la forma de un
+        # dato en vez de leerla produjo un hallazgo inventado sobre un registro sano.
+        try:
+            _b = _j.loads((raiz / "brain_v2" / "capability_model"
+                           / "execution_backlog.json").read_text(
+                              encoding="utf-8", errors="replace"))
+            n["backlog"] = sum(len(v) for k, v in _b.items()
+                               if isinstance(v, list) and not k.startswith("_"))
+        except Exception:
+            n["backlog"] = None
+
+        partes = " · ".join("%s %s" % (k, "?" if v is None else v) for k, v in n.items())
+        aviso = (" LO PENDIENTE VIVE EN SEIS REGISTROS y ninguna sesion los mira todos: %s. "
+                 % partes)
+        vacios = [k for k, v in n.items() if v == 0]
+        if vacios:
+            aviso += ("⛔ %s a CERO teniendo el resto lleno: un registro vacio que deberia "
+                      "tener contenido es INDISTINGUIBLE de uno sano si nadie lo mira -- "
+                      "comprueba si alguien lo alimenta ANTES de leerlo como 'no hay trabajo'. "
+                      % ", ".join(vacios))
+        aviso += ("Y NINGUNO dice DESDE CUANDO esta parado un pendiente: todos dicen QUE "
+                  "falta. Con esa cifra de items, es la diferencia entre una lista viva y un "
+                  "cementerio.")
+        return aviso
+    except Exception:
+        return ""
+
+
 def roster_request():
     """PIDE que la sesion declare que agentes le ofrecieron. No puede medirlo el hook.
 
@@ -201,6 +298,8 @@ def main():
     loop = cycle_headline()
     roster = roster_request()
     pend = pendiente_al_abrir()
+    regs = registros_pendientes()
+    titulo = pedir_titulo_de_sesion()
     ctx = (
         "MANDATORY FIRST ACTION (TIERED LOADING): read brain_v2/BRAIN_INDEX.md FIRST (~800 tokens, lean L1 "
         "index) — NOT the full 400K brain_state.json. Then DRILL on demand: python brain_v2/graph_queries.py "
@@ -228,7 +327,7 @@ def main():
         "invent exotic channels (ADT-HTTP, SPNEGO/password, deploy-to-P01) — that re-litigates settled constraints (rule #156). "
         "(2) CLOSE — commit SOURCE changes FOCUSED (never 'git add -A'; brain_state.json is GENERATED, don't commit it entangled) "
         "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (" + _golden_size() + ", gitignored) + ~/.claude memory "
-        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop + roster + pend
+        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop + roster + pend + regs + titulo
     )
     print(json.dumps({
         "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta + loop + roster + pend,
