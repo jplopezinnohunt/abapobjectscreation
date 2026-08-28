@@ -181,6 +181,35 @@ def main():
     print("  el huerfano se podria absorber. Un parecido bajo es una excepcion legitima —")
     print("  y entonces lo que hace falta es saber POR QUE, no consolidarla.")
 
+
+    # ---- LO QUE ESTE MINERO ENCUENTRA -------------------------------------------
+    from _hallazgos import Hallazgos
+    h = Hallazgos("ebs_format_consolidation",
+                  denominador="%d cuentas VIVAS de %s, %d con extracto en la ventana"
+                              % (len(filas), a.bukrs or "todas",
+                                 sum(1 for f in filas if f["extractos"])))
+    if solos:
+        nr = sum(len(reglas.get(v, ())) for v, _ in solos)
+        nc = sum(len(g) for _, g in solos)
+        h.oportunidad("Modelos de extracto que existen para UN SOLO banco: cada uno es un modelo "
+                      "entero -- con su prueba y su riesgo -- sosteniendo muy pocas cuentas",
+                      tamano="%d modelos, %d reglas para %d cuentas, sobre un total de %d reglas"
+                             % (len(solos), nr, nc, tot_reglas),
+                      evidencia="T028B agrupado por VGTYP y T028G contado por modelo",
+                      limite=("parecido alto NO significa consolidable: absorber uno dentro de "
+                              "otro puede CAMBIAR su algoritmo y con el la contabilizacion"),
+                      accion="mirar primero los pares con parecido alto, no los mas pequenos")
+    sin_modelo = [f for f in filas if f["vgtyp"] == "(sin modelo)" and f["extractos"] > 0]
+    if sin_modelo:
+        h.riesgo("Cuentas que RECIBEN extracto y no tienen modelo de formato asignado",
+                 tamano="%d cuenta(s), %d extractos: %s"
+                        % (len(sin_modelo), sum(f["extractos"] for f in sin_modelo),
+                           ", ".join(f["cuenta"] for f in sin_modelo[:5])),
+                 evidencia="sin fila en T028B para su clave de banco y numero de cuenta",
+                 limite="el extracto pudo entrar antes de que el numero cambiara",
+                 accion="es la firma exacta del defecto de INC-000013624")
+    h.emitir()
+
     if a.json:
         json.dump({"cuentas": filas,
                    "reglas_por_modelo": {k: len(v) for k, v in reglas.items()}},

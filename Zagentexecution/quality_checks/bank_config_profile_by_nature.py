@@ -215,6 +215,40 @@ def main():
             print("  %-22s %s" % (f["cuenta"],
                                   " ".join("%s=%s" % (e, "SI" if f[e] else "no") for e in ELEM)))
 
+
+    # ---- LO QUE ESTE MINERO ENCUENTRA -------------------------------------------
+    from _hallazgos import Hallazgos
+    h = Hallazgos("bank_config_profile_by_nature",
+                  denominador="%d cuentas VIVAS de %s" % (len(filas), a.bukrs or "todas las sociedades"))
+    # (5) DISCREPANCIA: grupos donde las cuentas de una misma naturaleza NO coinciden.
+    # No es una regla rota: es que NO HAY regla, o hay deriva. Las dos hay que resolverlas.
+    disc = []
+    for nat in sorted({f["naturaleza"] for f in filas}):
+        g = [f for f in filas if f["naturaleza"] == nat]
+        for e in ELEM:
+            p = pct(g, e)
+            if 15 <= p <= 85 and len(g) >= 4:
+                disc.append("%s/%s %d%%" % (nat, e, p))
+    if disc:
+        h.desafio("Cuentas de la MISMA naturaleza no coinciden en su configuracion: o es una "
+                  "regla que nadie escribio, o es deriva",
+                  tamano="%d combinaciones naturaleza x elemento sin consenso: %s"
+                         % (len(disc), ", ".join(disc[:8])),
+                  evidencia="porcentaje de cuentas del grupo que tienen el elemento",
+                  limite="no se cual de las dos es sin preguntar: el dato no lo distingue",
+                  quien_puede_contestar="Tesoreria / DBS: decidir si es regla o deriva")
+    paga = [f for f in filas if f["PAGA_T042I"]]
+    ops = [f for f in filas if f["naturaleza"] == "OPERATIVA"]
+    if ops and paga:
+        h.dato("La naturaleza YA PREDICE la configuracion de pago, aunque nadie la haya declarado",
+               tamano="%d de %d OPERATIVAS estan en determinacion de banco; de las demas "
+                      "naturalezas, %d" % (sum(1 for f in ops if f["PAGA_T042I"]), len(ops),
+                                           len([f for f in paga if f["naturaleza"] != "OPERATIVA"])),
+               evidencia="T042I frente a la naturaleza derivada",
+               limite="correlacion medida, no regla declarada en el sistema",
+               accion="es el argumento para declarar la naturaleza (PMO H144)")
+    h.emitir()
+
     if a.json:
         json.dump(filas, open(a.json, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
         print("\nescrito %s" % a.json)

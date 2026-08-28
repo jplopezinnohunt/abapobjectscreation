@@ -238,6 +238,34 @@ def main():
     if len(sinclas) > 15:
         print("    ... +%d" % (len(sinclas) - 15))
 
+
+    # ---- LO QUE ESTE MINERO ENCUENTRA -------------------------------------------
+    from _hallazgos import Hallazgos
+    h = Hallazgos("bank_account_nature_model",
+                  denominador="%d cuentas VIVAS (excluidas las marcadas CLOSED en el texto)"
+                              % len(filas))
+    sinc = [f for f in filas if f["naturaleza"] == "SIN_CLASIFICAR"]
+    if sinc:
+        h.desafio("La NATURALEZA de la cuenta no esta declarada en ninguna parte del sistema: "
+                  "se deduce del texto libre, y en la mayoria no hay ni texto reconocible",
+                  tamano="%d de %d cuentas vivas sin ninguna senal (%.0f%%)"
+                         % (len(sinc), len(filas), 100.0 * len(sinc) / max(1, len(filas))),
+                  evidencia="ni pertenencia a un set YBANK ni palabra reconocible en T012T",
+                  limite=("YBANK clasifica geografia x divisa, no naturaleza; SKB1-FDLEV es "
+                          "binario; y el balance mete todas las cuentas en Cash with Banks"),
+                  quien_puede_contestar="Tesoreria: declarar el vocabulario y extender YBANK")
+    mand = [f for f in filas if f["naturaleza"] == "MANDATO_INVERSION"]
+    sin_ext = [f for f in mand if f["canal"] == "SIN EXTRACTO"]
+    if mand and len(sin_ext) == len(mand):
+        h.riesgo("TODAS las cuentas de mandato de inversion carecen de extracto bancario, y aun "
+                 "asi se presentan en el balance como Cash and Cash Equivalents",
+                 tamano="%d de %d cuentas de mandato" % (len(sin_ext), len(mand)),
+                 evidencia="cero FEBKO y posicion FS10 = 1.1.1.1 Cash with Banks",
+                 limite=("la pata de EFECTIVO de un mandato de custodia es legitimamente "
+                         "efectivo: NO se afirma error contable"),
+                 accion="preguntar a Finanzas: si el saldo es efectivo, por que no llega extracto")
+    h.emitir()
+
     if a.json:
         json.dump(filas, open(a.json, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
         print("\nescrito %s" % a.json)

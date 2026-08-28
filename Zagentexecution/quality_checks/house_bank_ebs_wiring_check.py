@@ -345,10 +345,10 @@ def main():
     elec = {k for k, v in efart.items() if "E" in v}
     print("cuentas con extracto ELECTRONICO (EFART=E): %d de %d con extractos "
           "(al resto no se le exige fila en T028B)" % (len(elec), len(ult)))
-    h = analizar(t012k, t012, t028b, t035d, ult, a.dias, hoy, n_ext, txt, elec)
+    h_ = analizar(t012k, t012, t028b, t035d, ult, a.dias, hoy, n_ext, txt, elec)
 
     por = collections.defaultdict(list)
-    for x in h:
+    for x in h_:
         por[x["clase"]].append(x)
     for cl in ("A_CABLE_ROTO", "C_CANAL_MUERTO", "B_HUERFANA",
                "C_MUDO_ANTIGUO_probable_cierre", "D_SOSPECHA_SIN_MAYOR", "E_FECHA_IMPOSIBLE"):
@@ -361,9 +361,43 @@ def main():
         if len(lst) > 60:
             print("   ... +%d" % (len(lst) - 60))
 
-    graves = [x for x in h if x["grave"]]
+
+    # ---- LO QUE ESTE MINERO ENCUENTRA -------------------------------------------
+    from _hallazgos import Hallazgos
+    h = Hallazgos("house_bank_ebs_wiring_check",
+                  denominador=("%d cuentas T012K; se excluyen las CERRADAS (marca CLOSED en "
+                               "T012T-TEXT1: %d de %d con texto) y las de extracto MANUAL, que "
+                               "no necesitan T028B" % (len(t012k), cerradas, len(txt))))
+    rotos = [x for x in h_ if x["clase"] == "A_CABLE_ROTO"]
+    if rotos:
+        h.riesgo("Cuentas VIVAS con extracto electronico cuyo cableado T028B apunta a un numero "
+                 "de cuenta que ya no existe: el extracto deja de entrar EN SILENCIO",
+                 tamano="%d cuenta(s): %s" % (len(rotos), ", ".join(x["cuenta"] for x in rotos)),
+                 evidencia="T028B no tiene fila para el BANKN actual de T012K",
+                 limite="veo el cable roto, no si el banco sigue emitiendo el fichero",
+                 accion="anadir la fila en V_T028B con el numero ACTUAL y transportar")
+    huerf = [x for x in h_ if x["clase"] == "B_HUERFANA"]
+    if huerf:
+        h.oportunidad("Filas de T028B con numeros de cuenta que ya no son de ninguna cuenta "
+                      "viva: el rastro acumulado de cambios que nadie barrio",
+                      tamano="%d filas huerfanas de %d" % (len(huerf), len(t028b)),
+                      evidencia="T028B.KTONR sin correspondencia en T012K.BANKN",
+                      limite="no se si alguna se dejo a proposito como historico",
+                      accion="borrar tras confirmar que su cuenta ya no recibe")
+    mudos = [x for x in h_ if x["clase"] == "C_CANAL_MUERTO"]
+    if mudos:
+        h.desafio("Cuentas que recibian con regularidad y llevan dias mudas mientras su sociedad "
+                  "sigue recibiendo: no se si el banco dejo de mandar o si nadie lo procesa",
+                  tamano="%d cuenta(s): %s" % (len(mudos),
+                                               "; ".join(x["cuenta"] for x in mudos[:6])),
+                  evidencia="ultimo FEBKO.AZDAT frente al maximo de su sociedad",
+                  limite="no puedo ver el directorio del banco desde aqui",
+                  quien_puede_contestar="Tesoreria (BFM/MO) y el equipo de interfaces")
+    h.emitir()
+
+    graves = [x for x in h_ if x["grave"]]
     print("\n%s — %d hallazgos graves, %d informativos"
-          % ("FALLO" if graves else "LIMPIO", len(graves), len(h) - len(graves)))
+          % ("FALLO" if graves else "LIMPIO", len(graves), len(h_) - len(graves)))
     return 1 if graves else 0
 
 

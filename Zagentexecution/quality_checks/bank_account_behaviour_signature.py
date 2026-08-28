@@ -262,6 +262,41 @@ def main():
                   % (f["cuenta"], f["waers"], f["zona"], f["extractos"], f["pagos"],
                      f["periodos_mov"], (f["texto"] or "")[:34]))
 
+
+    # ---- LO QUE ESTE MINERO ENCUENTRA -------------------------------------------
+    from _hallazgos import Hallazgos
+    h = Hallazgos("bank_account_behaviour_signature",
+                  denominador="%d cuentas VIVAS (excluidas las marcadas CLOSED en el texto)"
+                              % len(filas))
+    mse = [f for f in filas if f["tipo"] == "MUEVE_SIN_EXTRACTO"]
+    if mse:
+        h.riesgo("Cuentas que MUEVEN SALDO sin recibir ni un extracto bancario: nada corrobora "
+                 "el movimiento",
+                 tamano="%d cuenta(s), %s" % (len(mse), "; ".join(
+                     "%s %d periodos" % (f["cuenta"], f["periodos_mov"]) for f in mse[:5])),
+                 evidencia="GLT0 con movimiento y cero cabeceras en FEBKO",
+                 limite="no se si el banco emite extracto y no llega, o no lo emite",
+                 accion="reclamar el extracto al banco o declarar por que no aplica")
+    ese = [f for f in filas if f["tipo"] == "EXTRACTO_SIN_MOVIMIENTO"]
+    if ese:
+        h.oportunidad("Cuentas que reciben extractos y no producen NINGUN movimiento contable: "
+                      "trabajo que se procesa sin efecto",
+                      tamano="%d cuentas, %d extractos en la ventana"
+                             % (len(ese), sum(f["extractos"] for f in ese)),
+                      evidencia="FEBKO con cabeceras y GLT0 sin periodos con movimiento",
+                      limite=("puede que sean extractos a cero legitimos, o que la "
+                              "contabilizacion vaya a otro mayor: el dato no lo distingue"),
+                      accion="mirar una de ellas en FEBAN antes de generalizar")
+    durm = [f for f in filas if f["tipo"] == "DURMIENTE"]
+    if durm:
+        h.desafio("Cuentas VIVAS que no pagan, no reciben y no mueven: no se si estan cerradas "
+                  "de hecho y nadie lo declaro",
+                  tamano="%d cuentas: %s" % (len(durm), ", ".join(f["cuenta"] for f in durm[:8])),
+                  evidencia="cero en los tres ejes durante toda la ventana",
+                  limite="'CLOSED' en el texto es la unica marca de estado y estas no la llevan",
+                  quien_puede_contestar="Tesoreria: cerrarlas o declarar por que siguen abiertas")
+    h.emitir()
+
     if a.json:
         json.dump(filas, open(a.json, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
         print("\nescrito %s" % a.json)
