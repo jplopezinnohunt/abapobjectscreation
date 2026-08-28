@@ -191,6 +191,20 @@ Son genéricas: sirven para cualquier objeto de este dominio y para otros domini
 | **③ Entra y no produce nada** | ¿qué se procesa sin efecto aguas abajo? | 5 cuentas, **2.321 extractos**, cero movimiento contable |
 | **④ Único donde otros comparten** | ¿qué se sostiene para uno solo? | 5 formatos para **una** cuenta cada uno; 73 reglas para 6 cuentas |
 | **⑤ Dos fuentes discrepan** | ¿dónde el comportamiento contradice la etiqueta? | `receiving_accounts` (A44) vs `OPERATIVA_COBRO`; naturaleza por texto vs por conducta |
+| **⑥ La misma persona en dos eslabones** | ¿quién hace dos cosas que deberían estar separadas? | en pagos apareció que el **creador coincidía con el autorizador** |
+
+**La ⑥ es de otra clase que las cinco primeras y por eso se olvida.** Las cinco preguntan por
+*objetos* — qué existe, qué se mueve, qué discrepa. La ⑥ pregunta por **personas**: quién ocupa
+dos eslabones de una cadena que se diseñó para tener dos ocupantes distintos. Sale gratis con los
+datos que ya se leen, porque casi toda tabla SAP lleva el usuario que la tocó (`FEBKO.EUSER`,
+`BKPF.USNAM`, `REGUH`, `CDHDR.USERNAME`), y **casi nadie la cruza**. Nació de un hallazgo real en
+el dominio de pagos: el creador de un documento coincidía con quien lo autorizaba.
+
+Aplícala siempre que la cadena tenga un paso *humano*: quien **introduce** un hecho externo (un
+extracto tecleado, un maestro, una autorización) no debería ser quien lo **valida** ni quien
+**dispone** del dinero que ese hecho justifica. Y ojo al control invertido: donde el eslabón de
+entrada es `JOBBATCH`, no hay persona — y esa ausencia es justamente lo que hace más seguro el
+canal automático que el manual.
 
 **La ⑤ es la más productiva y la más incómoda**: cuando dos medidas del mismo objeto no
 coinciden, **una de las dos está mal** — y averiguar cuál es el hallazgo, no el desacuerdo.
