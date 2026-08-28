@@ -27,6 +27,13 @@
 -->
 
 
+> ### 📡 REGISTRO VIVO DE OPORTUNIDADES, RIESGOS Y DESAFÍOS — generado, no escrito
+> `.agents/intelligence/PMO_OPORTUNIDADES.md` · companion `companions/oportunidades_y_desafios.html`
+> Sale del bus `process_mining/mining_findings.json`, que los mineros escriben al correr.
+> Se regenera con `python scripts/build_oportunidades.py`. **Es el único registro de este
+> proyecto que dice DESDE CUÁNDO** lleva abierto cada item — los otros cinco dicen QUÉ falta.
+> Hoy: 19 hallazgos vivos de 7 mineros · **7 desafíos esperando que alguien conteste**.
+
 > ## PENDIENTE AL ABRIR - S107 (2026-08-28). LEE ESTO ANTES QUE EL INDICE.
 >
 > ### 1. EL INDICE ESTA AL DIA -- se corrio el rebuild al cerrar s107

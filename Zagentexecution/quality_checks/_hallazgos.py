@@ -144,15 +144,26 @@ class Hallazgos(object):
             d = {}
         if not isinstance(d, dict):
             d = {"hallazgos": d if isinstance(d, list) else []}
+        import datetime as _dt
+        hoy = _dt.date.today().isoformat()
         lst = d.setdefault("hallazgos", [])
         mx = 0
+        # DESDE CUANDO. Ningun registro de pendientes de este proyecto dice desde cuando lleva
+        # parado un item: todos dicen QUE falta. Con cientos de items, esa es la diferencia
+        # entre una lista viva y un cementerio. Se conserva la PRIMERA fecha en que el
+        # hallazgo aparecio -- reconocido por (minero, que) -- y se actualiza la ultima vista.
+        antes = {}
         for x in lst:
+            if isinstance(x, dict) and x.get("minero") == self.minero and x.get("que"):
+                antes[x["que"]] = x.get("visto_primero") or x.get("fecha") or hoy
             if isinstance(x, dict) and isinstance(x.get("id"), int):
                 mx = max(mx, x["id"])
         # reemplaza lo que este mismo minero publicó antes: la última corrida manda
         lst[:] = [x for x in lst if not (isinstance(x, dict) and x.get("minero") == self.minero)]
         for i, x in enumerate(self.items, 1):
-            lst.append(dict(x, id=mx + i))
+            lst.append(dict(x, id=mx + i,
+                            visto_primero=antes.get(x["que"], hoy),
+                            visto_ultima=hoy))
         try:
             os.makedirs(os.path.dirname(BUS), exist_ok=True)
             json.dump(d, io.open(BUS, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
