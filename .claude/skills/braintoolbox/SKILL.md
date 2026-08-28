@@ -120,6 +120,25 @@ Puerta: `Zagentexecution/quality_checks/work_triad_check.py`.
 ⚠️ Una skill cargada **se queda en contexto todo el turno**. Mantén el `SKILL.md` bajo 500
 líneas y manda lo largo a `reference.md`.
 
+## 8. Reconstruir el brain: TRES modos, y elegir mal cuesta en los dos sentidos
+
+Correr de más son **56 minutos que nadie corre** — y un brain que no se reconstruye es cómo
+el índice acaba mintiendo. Correr de menos deja un brain **coherente consigo mismo y
+desfasado con el repo**, que es peor que uno claramente viejo.
+
+| cuándo | comando |
+|---|---|
+| Añadiste un **claim, regla, incidente** o tocaste  — o sea, cambiaste un **store** |  · **~14 s** |
+| Quieres repetir **un paso** que falló, o depurar |  |
+| Tocaste **código, algoritmo, skill, agente, companion o gate** — todo lo que se DERIVA del repo |  · ~56 min |
+| **No estás seguro de qué cambiaste** | el completo. La duda se resuelve con el completo |
+
+ NO corre puertas, grafo, casos golden, madurez ni companions. La ontología sí, y
+no es opcional: es la puerta que impide materializar un dominio inventado.
+
+Y ** te lo dice**: desde s108 imprime el criterio y sale. Antes arrancaba el rebuild
+entero — preguntar qué hace una herramienta costaba 56 minutos.
+
 ## Para ir más lejos
 
 - El modelo con sus cifras medidas y su historia: `brain_v2/braintoolbox.yaml`

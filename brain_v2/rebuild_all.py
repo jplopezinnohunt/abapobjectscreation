@@ -135,6 +135,35 @@ def _step_selected(description):
     return True
 
 
+_AYUDA = """
+rebuild_all.py — reconstruir el brain. TRES MODOS, y elegir mal cuesta caro en los dos
+sentidos: correr de mas son 56 minutos que nadie corre; correr de menos deja un brain
+coherente consigo mismo y desfasado con el repo, que es peor que uno claramente viejo.
+
+  python brain_v2/rebuild_all.py --rapido
+      ~14 s. Ontologia -> brain_state -> indice.
+      USALO CUANDO: anadiste un CLAIM, una REGLA, un INCIDENTE o tocaste domains.json.
+      O sea, cuando cambiaste un STORE y quieres que el brain lo refleje.
+      NO corre: puertas, grafo, casos golden, madurez, companions.
+
+  python brain_v2/rebuild_all.py --solo <patron>
+      Un paso suelto, el que casa con el patron. Para depurar o repetir uno que fallo.
+      Ej: --solo brain_state · --solo "toolgraph" · --solo indice
+
+  python brain_v2/rebuild_all.py
+      COMPLETO, ~56 min.
+      USALO CUANDO: tocaste CODIGO, un ALGORITMO, un SKILL, un AGENTE, un COMPANION o un
+      GATE. Todo lo que se DERIVA del repo y no de un store.
+      Tambien: si no estas seguro de que cambiaste. La duda se resuelve con el completo.
+
+  --force    copiar/reconstruir aunque nada haya cambiado
+
+DONDE SE VAN LOS MINUTOS DEL COMPLETO (medido sobre curation.log):
+  enlazar docs 18,9% · suite de puertas ~20% · casos golden 8,8% ·
+  indice de comprension 7,8% · grafo NetworkX 7,6%   -> cinco pasos, ~60% del tiempo.
+"""
+
+
 def run(cmd, description, fatal=True):
     """Run one pipeline step.
 
@@ -223,6 +252,18 @@ def regenerate_dynamic_companions():
 
 def main():
     global _SOLO, _RAPIDO
+    # --help NO estaba manejado: caia al camino por defecto y ARRANCABA EL REBUILD ENTERO.
+    # Preguntar que hace una herramienta no puede costar 56 minutos. Y un flag desconocido
+    # tampoco: un rebuild que empieza por una errata es el mismo coste por menos razon.
+    _CONOCIDOS = {"--force", "--rapido", "--solo", "--help", "-h"}
+    _raros = [a for a in sys.argv[1:]
+              if a.startswith("-") and a not in _CONOCIDOS]
+    if "--help" in sys.argv or "-h" in sys.argv or _raros:
+        if _raros:
+            _safe_print("NO ARRANCO: no conozco %s. Un rebuild que empieza por una errata "
+                        "cuesta 56 minutos." % ", ".join(_raros))
+        _safe_print(_AYUDA)
+        return 0
     _RAPIDO = "--rapido" in sys.argv
     if "--solo" in sys.argv:
         i = sys.argv.index("--solo")
