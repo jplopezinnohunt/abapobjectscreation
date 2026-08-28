@@ -466,6 +466,14 @@ sigue terminando en verde cada hora, y nadie se entera hasta que alguien mira un
 **El paso 5 va después del 4, nunca antes.** Si se borra la fila vieja y algo falla, se pierde
 la referencia de cómo estaba configurada.
 
+> ⚠️ **Una cuenta nueva NO aparece en FF67 hasta que llega su primer extracto — y eso no es un
+> defecto.** La lista de cuentas de FF67 es **historial de extractos recibidos**, no configuración.
+> Probado el 2026-08-28: ofrece el par `(SP0000000MX7, UNO10)`, que **no existe en `T012K`** —NTB01
+> usa hoy `SP0000000MXL`— pero sí en `FEBKO.ABSND`, con 10 extractos cuyo último es del
+> **05.03.2015**. Una lista derivada de configuración no puede producir eso.
+> **Ante «la cuenta nueva no está en FF67»: no revises la ficha del banco, comprueba si ha llegado
+> algún extracto.** (claim 639 · INC-000013624)
+
 ### La puerta de cierre — no se declara terminado sin esto
 
 ```bash

@@ -125,6 +125,14 @@ extracto — y es lo que FF67 pinta en su cabecera como «Bank Key | Account». 
 configuración: es historia. Un usuario que mira FF67 y dice «la cuenta sigue siendo la
 vieja» está leyendo el último fichero importado, no la ficha del banco.
 
+> ⚠️ **Una cuenta nueva NO aparece en FF67 hasta que llega su primer extracto — y eso no es un
+> defecto.** La lista de cuentas de FF67 es **historial de extractos recibidos**, no configuración.
+> Probado el 2026-08-28: ofrece el par `(SP0000000MX7, UNO10)`, que **no existe en `T012K`** —NTB01
+> usa hoy `SP0000000MXL`— pero sí en `FEBKO.ABSND`, con 10 extractos cuyo último es del
+> **05.03.2015**. Una lista derivada de configuración no puede producir eso.
+> **Ante «la cuenta nueva no está en FF67»: no revises la ficha del banco, comprueba si ha llegado
+> algún extracto.** (claim 639 · INC-000013624)
+
 ## Cómo se comprueba que un canal está vivo
 
 ```bash
