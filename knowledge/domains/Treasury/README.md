@@ -136,6 +136,12 @@ TREASURY (BFM-TRS)
 > extracto**. Toda la complejidad esta en UNES; los institutos son automaticos. Las 8
 > manuales dependen de 4 personas nombradas, sin responsable ni cadencia declarados.
 > Ver [bank_statement_channels_by_company.md](bank_statement_channels_by_company.md).
+> **El pipeline de ficheros y los modelos de extracto (s108):** el extracto NO entra por
+> `RFEBKA00` ni por SWIFT -- es el job `EBS INTEGRATION` -> `FEB_FILE_HANDLING`, variante
+> `EBS JOB_COUPA`, sobre `\\hq-sapitf\coupa$`. Y se sostienen **9 modelos de formato con 259
+> reglas** para 133 cuentas, cinco de ellos para UNA sola cuenta.
+> Ver [ebs_file_pipeline_and_jobs.md](ebs_file_pipeline_and_jobs.md) y
+> [ebs_format_models.md](ebs_format_models.md).
 > **Naturaleza de la cuenta (s108):** NO esta modelada. YBANK clasifica por geografia x
 > divisa -- los mandatos PIMCO/JP Morgan/RAMP estan en el mismo cajon que las cuentas
 > operativas de sede. 141 de 167 cuentas vivas sin clasificar. Las 4 de mandato son
