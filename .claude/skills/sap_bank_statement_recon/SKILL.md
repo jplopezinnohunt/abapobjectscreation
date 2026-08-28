@@ -238,6 +238,16 @@ signal at all. What does hold: the **4 investment-mandate accounts are exactly t
 receive no statement**, while the same custodian's 4 cash accounts (PFF Nessim Habif, Cash Pool,
 ASHI USD, ASHI EUR) get daily files. The cut is the account, not the bank.
 
+**The balance sheet does not classify them either.** Measured on **FS10** (the version UNES
+actually runs, derived from the `RFBILA00` variant, not `T011`): **all 352 UNES bank accounts fall
+into one single position, `1.1.1.1 Cash with Banks`** — mandates, cash accounts, at-sight and
+operating alike. The only exceptions are `UNDP` (`1.1.7.3`) and two CLOSED accounts with no
+position. And the FSV **does have** `1.1.2.1 Short Term Deposits` and `1.2.1.1 Other Investments`
+— they exist and no bank account uses them. Not asserted as an accounting error (a custody
+account's cash leg legitimately is cash), but it is an open question for Finance: those four
+accounts receive **no bank statement** and are presented as *Cash and Cash Equivalents*. Both
+cannot be fine at once.
+
 ⚠️ **`ASHI` and `PFF` are NOT investment markers** though they look like it — they are funds
 whose cash accounts receive daily statements. Treating them as such misclassifies four
 operational accounts, including the one from the incident. Reliable markers are manager or

@@ -113,6 +113,61 @@ MT940, y carteras gestionadas, que no.
 > cuentas operativas — incluida la del incidente. Los marcadores fiables son nombres de
 > **gestora o programa**: `MANDATE`, `PIMCO`, `MORGAN`, `RAMP`, `IMIP`.
 
+## ¿Y el balance? Tampoco — pero sí tiene el sitio donde ponerlas
+
+Tercer candidato, y el más interesante: la **versión de balance** (FSV). Una posición de balance
+sí es una afirmación sobre la naturaleza de lo que hay ahí. Medido sobre **FS10**, la versión que
+UNES ejecuta de verdad (derivada de la variante de `RFBILA00`, no de `T011`):
+
+| Grupo | Posición FS10 |
+|---|---|
+| **Mandato** — PIMCO · JP Morgan · RAMP · IMIP | `1.1.1.1 Cash with Banks` |
+| **Efectivo del mismo custodio** — Nessim Habif · Cash Pool · ASHI USD · ASHI EUR | `1.1.1.1 Cash with Banks` |
+| **Operativas** — SOG01-EUR01 · SOG01-USDD1 · CIT04-USD04 | `1.1.1.1 Cash with Banks` |
+| **A la vista / ahorro** — SOG03-EURD1 · BNP01-EURD1 · SCB14-USDD1 | `1.1.1.1 Cash with Banks` |
+
+**Las 352 cuentas de banco de UNES caen en UNA sola posición.** Las únicas excepciones: `UNDP`
+(`1.1.7.3 UNDP Accounts`) y dos sin posición, que son **cuentas cerradas** (`BKT01-USD01`,
+`JPS01-USD01`) — o sea, ningún hueco real de cobertura.
+
+### Lo llamativo: las posiciones para inversión SÍ existen, y están vacías de cuentas de banco
+
+```
+1.1.1    Cash and Cash Equivalents
+  1.1.1.1  Cash with Banks          ← aquí están las 352
+1.1.2    Investments
+  1.1.2.1  Short Term Deposits      ← existe
+1.2.1    Investments
+  1.2.1.1  Other Investments        ← existe
+```
+
+El balance tiene estructura para separar inversión de tesorería, **corriente y no corriente**, y
+ninguna cuenta de banco casa la usa.
+
+### Qué significa y qué NO significa
+
+**No es automáticamente un error contable, y no se afirma que lo sea.** Hay una lectura
+perfectamente correcta: en una cuenta de custodia, lo que SAP lleva como cuenta bancaria es la
+**pata de efectivo** del mandato; los títulos no están en FI como cuenta de banco. Si el saldo de
+esas cuatro cuentas es efectivo, `Cash with Banks` es donde va.
+
+**Lo que sí es una pregunta abierta para Finanzas/Tesorería**, con la evidencia delante: las
+cuatro cuentas de mandato **no reciben extracto bancario** y se presentan como *Cash and Cash
+Equivalents*. Si su saldo es efectivo, ¿por qué no llega extracto? Y si no lo es, la posición de
+balance no es la que les toca. **Las dos preguntas no pueden ser ambas “no pasa nada”.**
+
+### Conclusión sobre dónde vive la clasificación
+
+Tres sitios candidatos, los tres medidos, **ninguno la lleva**:
+
+| Candidato | Qué clasifica de verdad |
+|---|---|
+| YBANK (Report Painter, GS02) | geografía × divisa. Y lo consume **un solo informe**, `ZAVERAGE` |
+| `SKB1-FDLEV` | reparte B0/B1, pero las 8 de Northern Trust son B0 |
+| **FSV / balance (FS10)** | **todo en `Cash with Banks`** — aunque tiene posiciones de inversión sin usar |
+
+La naturaleza de la cuenta no está en ninguna parte del sistema. Está en el texto libre.
+
 ## Lo que esto cambia para el EBS
 
 La naturaleza **decide qué extracto esperar**, y por tanto **cuándo el silencio es una alarma**:
