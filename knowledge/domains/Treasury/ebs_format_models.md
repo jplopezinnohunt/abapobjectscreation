@@ -70,6 +70,52 @@ extractos al año — tiene un modelo propio de 11 reglas, mientras 60 bancos co
 Si la respuesta es «porque su fichero es distinto», es legítimo y hay que escribirlo. Si es
 «porque se hizo así», es deuda.
 
+## La pregunta que hay que responder: mismo modelo, uso distinto
+
+Para un modelo dado, **¿qué bancos lo usan y cuáles no, teniéndolo asignado igual?**
+
+| Formato | Ctas | Electrónico | Mixto | Manual | Sin extracto | Bancos que NO lo procesan |
+|---|---:|---:|---:|---:|---:|---|
+| **XRT940** | 104 | 70 | 26 | **7** | 1 | BLN01 · BMN01 · BTE01 · CBE01 · ECO08 |
+| TR_TRNF | 17 | 14 | 0 | 0 | **3** | NTB01 |
+| los otros 7 formatos | 15 | 15 | 0 | 0 | 0 | — ninguno |
+| *(sin modelo)* | 8 | 0 | 0 | 1 | 7 | BRA01 · BTE01 · DEU01 · DEU02 · **NTB02** · UBS02 · UNDP |
+
+### El hueco: 11 cuentas tienen el modelo montado y no lo usan
+
+**Siete se teclean a mano** teniendo `XRT940` asignado — el mismo modelo que **96 cuentas
+procesan electrónicamente**:
+
+| Cuenta | Canal | Extractos | Banco |
+|---|---|---:|---|
+| BLN01-USD01 · SDD01 | manual | 168 · 126 | Blue Nile Mashreg — Jartum |
+| BMN01-CUP02 · EUR01 | manual | 63 · 49 | Banco Metropolitano — La Habana |
+| BTE01-IRR02 · EUR01 | manual | 40 · 8 | Bank Tejarat — Teherán |
+| ECO08-ZWG01 | manual | 10 | Ecobank — Harare |
+| CBE01-ETB02 | sin extracto | 0 | Commercial Bank of Ethiopia |
+| NTB01-USD04 · USD05 · USD06 | sin extracto | 0 | Northern Trust — mandatos |
+
+**El coste en SAP es cero.** El modelo está construido, probado y corriendo para 96 cuentas: no
+hay que diseñar reglas ni transportar customizing.
+
+> ⚠️ **Lo que la medida NO dice:** tener el modelo asignado no prueba que el fichero *pueda*
+> llegar. La restricción está **aguas arriba** — que el banco emita MT940 y que el fichero
+> alcance el share de Coupa. Los cinco son bancos locales de contextos difíciles (Jartum, La
+> Habana, Teherán, Harare, Addis Abeba) y es plausible que ahí esté el límite real. **Eso
+> convierte el trabajo en una conversación de canal con el banco, no en un proyecto de
+> configuración** — y esa distinción es la que hace la lista accionable en vez de una idea.
+
+### El caso puro: mismo banco, mismo formato, comportamiento opuesto
+
+**Northern Trust `NTB01`, formato `TR_TRNF`, seis cuentas:** `USD01/02/03` reciben extracto a
+diario; `USD04/05/06` no reciben nada. Mismo banco, mismo custodio, mismo formato, misma
+configuración.
+
+**No es el banco y no es el formato: es la cuenta.** Las tres que no reciben son los mandatos
+de inversión, y **mueven saldo sin ningún extracto que lo corrobore**. Ése es el hueco de
+control — y la razón por la que la naturaleza de la cuenta tiene que estar declarada: es lo
+único que explica por qué tres hermanas sí y tres no.
+
 ## Las 9 sin modelo asignado
 
 | Cuenta | Extractos | |
