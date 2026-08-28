@@ -99,6 +99,22 @@ def cycle_headline():
     return f" | loop healthy: cycle ran {days}d ago, {d.get('steps_ran')} steps, 0 failed"
 
 
+def _golden_size():
+    """El tamano del golden se MIDE, no se lleva a fuego.
+
+    s107: el aviso decia «15.2GB measured 2026-08-17» cuando son 21,25 GB. Una cifra
+    mantenida a mano se degrada -- es lo que este proyecto documenta de UNES_DEPOSIT,
+    aplicado a su propio aviso de arranque. Si no se puede medir, se dice.
+    """
+    try:
+        p = (HERE.parent / "Zagentexecution" / "sap_data_extraction" / "sqlite"
+             / "p01_gold_master_data.db")
+        gb = p.stat().st_size / (1024 ** 3)
+        return "%.2f GB medido ahora" % gb
+    except OSError:
+        return "tamano NO MEDIBLE ahora mismo — el fichero no responde"
+
+
 def pendiente_al_abrir():
     """Saca el bloque PENDIENTE AL ABRIR del PMO, si lo hay.
 
@@ -115,8 +131,17 @@ def pendiente_al_abrir():
         if not m:
             return ""
         cab = m.group(1).strip()
-        prim = re.search(r"^> 1\. \*\*([^*]+)\*\*", txt[m.end():], re.M)
-        h = re.search(r"^> - \*\*(H\d+)[^\n]*PRIMERO", txt[m.end():], re.M)
+        # ⛔ ACOTAR AL BLOQUE EN CURSO. Sin esto la busqueda se derrama al bloque de la
+        # sesion ANTERIOR: medido el 28-ago, la cabecera decia S107 y el aviso terminaba en
+        # «EMPIEZA POR H137», cerrado el dia antes, porque el bloque nuevo no traia ningun
+        # «PRIMERO» y el regex siguio leyendo hacia abajo. Un arranque que manda empezar por
+        # trabajo terminado es peor que no decir nada.
+        resto = txt[m.end():]
+        sig = re.search(r"^> ## PENDIENTE AL ABRIR", resto, re.M)
+        if sig:
+            resto = resto[:sig.start()]
+        prim = re.search(r"^> 1\. \*\*([^*]+)\*\*", resto, re.M)
+        h = re.search(r"^> - \*\*(H\d+)[^\n]*PRIMERO", resto, re.M)
         extra = ""
         if h:
             extra += " EMPIEZA POR %s." % h.group(1)
@@ -202,7 +227,7 @@ def main():
         "prod; NO new objects/transports in P01; Excel is NEVER a source]. Park the gap as an execution_backlog task. Do NOT "
         "invent exotic channels (ADT-HTTP, SPNEGO/password, deploy-to-P01) — that re-litigates settled constraints (rule #156). "
         "(2) CLOSE — commit SOURCE changes FOCUSED (never 'git add -A'; brain_state.json is GENERATED, don't commit it entangled) "
-        "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (15.2GB measured 2026-08-17, gitignored) + ~/.claude memory "
+        "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (" + _golden_size() + ", gitignored) + ~/.claude memory "
         "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop + roster + pend
     )
     print(json.dumps({
