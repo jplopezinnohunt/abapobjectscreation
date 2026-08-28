@@ -278,6 +278,15 @@ hand" looked like a clerical saving; measured, it is **1,712 lines in two years*
 was elsewhere — those lines never auto-clear, and the accounts pay millions with no bank
 corroboration.
 
+> ⚠️ **CORRECTION same day (claim 643) — the 1,712/8-accounts denominator above was itself
+> wrong, by 5-10x.** A cross-instrument check found **39 accounts (34 live) and 41 users**, not
+> 8 and 4 — the `channel` label is derived from whether E and M statements both exist, so a
+> 97%-manual account (`SOG06-HTG01`, 9,623 lines, 69% of all manual typing in UNESCO) reads as
+> MIXED and disappears. Corrected population: **13,942 lines vs 11,669** — comparable, not a
+> 15% sliver. The saving argument still does not hold (the constraint stays upstream, in whether
+> the bank issues MT940), but the size no longer refutes it either. See
+> `knowledge/domains/Treasury/bank_statement_channels_by_company.md` §"CORRECCIÓN 2026-08-28".
+
 ## E2E Bank Statement Chain
 
 ```

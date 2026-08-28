@@ -1692,7 +1692,8 @@
       "failure_mode": "SER UNA SEPTIMA LISTA. El riesgo de un grafo de herramientas es duplicar los stores que ya existen y quedarse viejo aparte; por eso NO copia contenido -- cada store sigue siendo la fuente de su tipo de nodo -- y solo construye y mide las ARISTAS, que es lo que no existia en ningun sitio. | SEGUNDO: el modo coordinador cruza por PALABRAS de la tarea, asi que una tarea descrita con otro vocabulario no encuentra a quien la sabe, y el silencio se lee como 'no hay nada'. Por eso su salida dice explicitamente que no salir no significa no existir, y sugiere buscar por el nombre de la TABLA, que es lo que indexa mejor.",
       "improve": "que el coordinador se llame SOLO al empezar una tarea, en vez de depender de que alguien se acuerde de preguntarle: es el mismo fallo que existe para cazar",
       "_hallazgo_2026_08_26": "226 instrumentos y 537 aristas. LEE 30 frente a DEBERIA_LEER 269: por cada relacion que existe faltan NUEVE. 40 de 48 skills sin ni un lector, entre ellos sap_payment_bcm_agent con 106 KB de metodo de banca y CERO. 57 de 75 algoritmos no leen ningun skill. 6 de 13 agentes no nombran ningun instrumento registrado: su metodo vive en su prompt y muere con el.",
-      "_nace_de": "2026-08-26, dicho por el operador: «tiene que haber un grafo de tus propias herramientas, un gestor de ellas. Asi como tienes un brain de la data, tienes que tener un brain del brain». Y despues: «cuando tengas una tarea, debes ver en tu grafo de herramientas que podrias usar»"
+      "_nace_de": "2026-08-26, dicho por el operador: «tiene que haber un grafo de tus propias herramientas, un gestor de ellas. Asi como tienes un brain de la data, tienes que tener un brain del brain». Y despues: «cuando tengas una tarea, debes ver en tu grafo de herramientas que podrias usar»",
+      "_hallazgo_2026_08_28_s109": "LA PUERTA DE ENTRADA PERDIA EL 72% DE LO QUE LOS SKILLS DICEN. Validado con las 12 preguntas REALES de s108 (toolgraph_retrieval_check.py), 4 defectos medidos y corregidos, no uno: (1) CIEGO A NUESTRO IDIOMA -- puntua por palabras del nodo, los instrumentos se describen en INGLES y preguntamos en espanol; 'extracto bancario electronico' devolvia NADA. Glosario bilingue, aditivo. (2) SIN PESO POR RAREZA -- a peso igual manda el vocabulario ubicuo: 'que jobs y variantes procesan los extractos bancarios' devolvia los cinco skills mining-* genericos. Aplicado IDF. (3) SIN PALABRAS VACIAS -- filtraba solo por longitud >2, asi que 'que'/'los'/'para'/'con' puntuaban y arrastraban cualquier pregunta en espanol hacia los 14 skills mining-*, los unicos escritos en espanol. Lista bilingue de stopwords. (4) EL DEFECTO DE FONDO -- el nodo SKILL cargaba solo los TITULOS de seccion, no la `description`: medido, el indice llevaba de media el 28% de lo que la descripcion dice y 55 de 61 skills perdian mas de la mitad (sap_variant_analysis no tenia 'revaluation' ni 'SAPF100' ni 'FX' aunque su propia descripcion los nombra). Corregido a 100%. Bateria de regresion: 10 de 12 casos pasan tras el arreglo; los 2 que fallan quedan VISIBLES en el gate en vez de ajustar el instrumento a la expectativa."
     },
     "A53_skill_binding_gate": {
       "operates_on": "agentes y algoritmos contra los skills, por nombres SAP en comun",
@@ -2196,6 +2197,203 @@
         "brain_v2/braintoolbox.yaml -> procedencia (el tercer eje)",
         "claim 616 (UNOBSERVABLE para la mitad no enumerable desde disco)"
       ]
+    },
+    "A70_mining_output_contract": {
+      "operates_on": "lo que un minero ya calculo, antes de que la sesion termine",
+      "origin": "OURS",
+      "state": "WORKS",
+      "mining_kind": "COLABORACION",
+      "does": "EL CONTRATO DE SALIDA de un minero: datos NO bastan. Da tres clases -- OPORTUNIDAD (a quien decide inversion), RIESGO (a quien responde del control), DESAFIO (lo que no cuadra y el minero no puede resolver solo -- va al foro de mineros y a un humano nombrado) y DATO -- y SEIS FORMAS DE BUSQUEDA genericas y reutilizables para que el minero se haga las preguntas el mismo sobre sus propios datos: configurado_sin_uso, movimiento_sin_contraparte, entrada_sin_efecto, unico_donde_otros_comparten, discrepancia, misma_persona_dos_eslabones. Impone TRES reglas por excepcion en tiempo de ejecucion: sin TAMAÑO no se emite (lanza ValueError), se declara el LIMITE de lo que el instrumento no puede ver, se declara el DENOMINADOR (poblacion contra la que se mide).",
+      "bound_in": [
+        "Zagentexecution/quality_checks/_hallazgos.py"
+      ],
+      "lands_in": "process_mining/mining_findings.json",
+      "lands_in_kind": "store",
+      "failure_mode": "SER UN DATO SIN LECTOR. Medido en s108: los seis instrumentos nuevos de banca produjeron cifras correctas y las seis oportunidades y los cuatro riesgos los encontro un HUMANO leyendolas a mano -- nadie las lee cada semana, asi que sin este contrato existir en los datos no es lo mismo que ser encontrado. Y las tres reglas nacen de errores medidos ese mismo dia: una oportunidad sin tamano parecia un ahorro (7 cuentas a mano) y medida eran 1.712 lineas en dos anos frente a 11.669 de una sola cuenta electronica -- el tamano la desmonto, que es un resultado, no un fracaso; un hallazgo sin DENOMINADOR declarado (cuentas cerradas marcadas solo en el TEXTO T012T, 237 de 411) convertia 2 de los primeros 4 hallazgos en cuentas muertas; y sin LIMITE declarado, tener el modelo asignado parecia probar que el fichero podia llegar cuando la restriccion real esta aguas arriba, en el banco.",
+      "improve": "las seis formas de busqueda son genericas y estructurales (comparan presencia / ausencia / superposicion de campos); no saben interpretar SEMANTICA de dominio, asi que un minero sigue teniendo que decidir CUALES aplicar y con que campos.",
+      "_registrado_por": "brain-steward, s108/s109 close -- el fichero existia y describia el estandar de los 7 mineros de banca (D1-D7) sin estar declarado en ningun sitio como tal."
+    },
+    "A71_toolgraph_retrieval_check": {
+      "operates_on": "el propio toolgraph (A52) x las preguntas reales de la sesion",
+      "origin": "OURS",
+      "state": "WORKS",
+      "mining_kind": "COLABORACION",
+      "does": "bateria de regresion para la puerta de entrada del toolgraph: cada caso es una PREGUNTA REAL de una sesion (no inventada) con el instrumento que DEBERIA salir y el puesto maximo aceptable. Si el glosario bilingue, el peso IDF o el indice de descripciones se rompen al tocar build_toolgraph.py, esto se pone en rojo.",
+      "bound_in": [
+        "Zagentexecution/quality_checks/toolgraph_retrieval_check.py"
+      ],
+      "lands_in": "n/a - gate: su salida es OK/FALLA por caso a consola",
+      "lands_in_kind": "gate",
+      "failure_mode": "un caso se anade cuando una pregunta REAL no encontro a su experto -- no se inventan casos. El riesgo simetrico es el contrario: fijar el puesto maximo tan laxo que el gate deje de detectar una regresion real.",
+      "_nace_de": "2026-08-28 (s108/s109) -- el fallo mas caro de la sesion no fue de conocimiento: fue de RECUPERACION. Preguntado en espanol 'el extracto bancario electronico de una cuenta dejo de procesarse', el toolgraph no devolvia sap_bank_statement_recon -- que en ingles sale el primero -- y se re-derivo a mano un pipeline que el skill ya documentaba: 13 minutos, el bloque mas caro de la sesion."
+    },
+    "A72_house_bank_ebs_wiring": {
+      "origin": "OURS",
+      "state": "WORKS",
+      "generaliza": true,
+      "_session": 108,
+      "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
+      "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
+      "operates_on": "T012K + T028B + T035D + FEBKO + T012T. Store: salida por consola, exit 1 si hay grave.",
+      "mining_kind": "CONFORMIDAD",
+      "tipo_mineria": [
+        "CONFORMIDAD"
+      ],
+      "does": "comprobar que cada cuenta de banco casa sigue CABLEADA al extracto electronico: T028B tiene una fila con su numero de cuenta ACTUAL, no hay filas huerfanas de numeros que ya no existen, y su canal sigue vivo frente a su propio ritmo.",
+      "bound_in": [
+        "Zagentexecution/quality_checks/house_bank_ebs_wiring_check.py"
+      ],
+      "failure_mode": "TRES denominadores que si no se declaran producen hallazgos falsos, y los tres se cometieron antes de encontrarlos: (1) las cuentas CERRADAS se marcan EN EL TEXTO (T012T-TEXT1 empieza por CLOSED, 237 de 411 en UNES) y sin ese corte 2 de los 4 primeros hallazgos eran cuentas cerradas hace anos; (2) solo se le exige fila de T028B a la cuenta cuyo extracto es ELECTRONICO (EFART='E'): BTE01-USD01 importo 116 extractos MANUALES sin esa fila jamas, y exigirsela publicaba un defecto inexistente; (3) FEBKO tiene fechas en los anos 2201/2203/2207/2208 -- un 2022 mal tecleado -- que envenenan cualquier max() de 'ultimo extracto' y hacian aparecer 147 cuentas como muertas.",
+      "_busca_y_publica_s109": "actualizado s109 (steward): via `_hallazgos.py` este minero ya no solo censa -- BUSCA (seis formas genericas: configurado_sin_uso, movimiento_sin_contraparte, entrada_sin_efecto, unico_donde_otros_comparten, discrepancia, misma_persona_dos_eslabones) y PUBLICA en process_mining/mining_findings.json, clasificado OPORTUNIDAD/RIESGO/DESAFIO/DATO con tamano+evidencia+limite obligatorios.",
+      "lands_in": "process_mining/mining_findings.json",
+      "lands_in_kind": "store",
+      "_renombrado_de": "D1_house_bank_ebs_wiring",
+      "_por_que": "s108: estaba en la RAIZ de algorithms.json, fuera del registro, y su prefijo D chocaba con una entrada distinta que ya existia dentro (D4=troceado de campos, D5=sonda acotada). Fuera del registro ninguna puerta lo veia: algorithm_landing_check daba PASS sin mirarlo."
+    },
+    "A73_bank_statement_channel_census": {
+      "origin": "OURS",
+      "state": "WORKS",
+      "generaliza": true,
+      "_session": 108,
+      "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
+      "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
+      "operates_on": "FEBKO.EFART + T012K + T012T + T028B. Salida por consola y --json.",
+      "mining_kind": "CANAL_Y_ACTOR",
+      "tipo_mineria": [
+        "CANAL_Y_ACTOR",
+        "DERIVA"
+      ],
+      "does": "censar POR QUE CANAL entra el extracto de cada cuenta -- electronico, manual (tecleado en FF67), mixto o ninguno -- con su cadencia real y quien lo hace, partido SIEMPRE por sociedad.",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_statement_channel_census.py"
+      ],
+      "failure_mode": "AGREGAR SOCIEDADES. La MISMA cuenta se comporta al reves segun la sociedad: CBE01-ETB02 recibe 543 extractos al ano en ICBA y CERO en UNES, y en un total agregado figura como activa. Ademas el silencio solo significa algo contra el RITMO PROPIO de la cuenta: 30 dias es alarma en una diaria y rutina en una mensual.",
+      "_busca_y_publica_s109": "actualizado s109 (steward): via `_hallazgos.py` este minero ya no solo censa -- BUSCA (seis formas genericas: configurado_sin_uso, movimiento_sin_contraparte, entrada_sin_efecto, unico_donde_otros_comparten, discrepancia, misma_persona_dos_eslabones) y PUBLICA en process_mining/mining_findings.json, clasificado OPORTUNIDAD/RIESGO/DESAFIO/DATO con tamano+evidencia+limite obligatorios.",
+      "lands_in": "process_mining/mining_findings.json",
+      "lands_in_kind": "store",
+      "_renombrado_de": "D2_bank_statement_channel_census",
+      "_por_que": "s108: estaba en la RAIZ de algorithms.json, fuera del registro, y su prefijo D chocaba con una entrada distinta que ya existia dentro (D4=troceado de campos, D5=sonda acotada). Fuera del registro ninguna puerta lo veia: algorithm_landing_check daba PASS sin mirarlo."
+    },
+    "A74_bank_account_nature_model": {
+      "origin": "OURS",
+      "state": "WORKS",
+      "generaliza": true,
+      "_session": 108,
+      "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
+      "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
+      "operates_on": "T012T (texto) + SETLEAF YBANK + FEBKO + T012K. Salida --json.",
+      "mining_kind": "REALIDAD",
+      "tipo_mineria": [
+        "REALIDAD",
+        "RESTO_SIN_EXPLICAR"
+      ],
+      "does": "derivar la NATURALEZA de cada cuenta (operativa / transferencia / a la vista / mandato de inversion) en tres niveles sociedad -> banco -> cuenta, marcando de que GRADO de evidencia sale cada fila: CONFIG (un set del sistema), TEXTO (el nombre que alguien escribio) o NINGUNA.",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_account_nature_model.py"
+      ],
+      "failure_mode": "TOMAR EL TEXTO POR UN DATO. ASHI y PFF parecen marcadores de inversion y NO lo son: son fondos cuyas cuentas de efectivo reciben extracto diario, y meterlos en la lista clasifica como inversion cuatro cuentas operativas, incluida la del incidente. Los marcadores fiables son nombres de gestora o programa (MANDATE, PIMCO, MORGAN, RAMP, IMIP). Y segundo: mirar solo el texto ignora que 102 de las 119 'sin clasificar' YA estaban declaradas como terreno por su set YBANK_ACCOUNTS_FO_*.",
+      "_busca_y_publica_s109": "actualizado s109 (steward): via `_hallazgos.py` este minero ya no solo censa -- BUSCA (seis formas genericas: configurado_sin_uso, movimiento_sin_contraparte, entrada_sin_efecto, unico_donde_otros_comparten, discrepancia, misma_persona_dos_eslabones) y PUBLICA en process_mining/mining_findings.json, clasificado OPORTUNIDAD/RIESGO/DESAFIO/DATO con tamano+evidencia+limite obligatorios.",
+      "lands_in": "process_mining/mining_findings.json",
+      "lands_in_kind": "store",
+      "_renombrado_de": "D3_bank_account_nature_model",
+      "_por_que": "s108: estaba en la RAIZ de algorithms.json, fuera del registro, y su prefijo D chocaba con una entrada distinta que ya existia dentro (D4=troceado de campos, D5=sonda acotada). Fuera del registro ninguna puerta lo veia: algorithm_landing_check daba PASS sin mirarlo."
+    },
+    "A75_bank_config_profile_by_nature": {
+      "origin": "OURS",
+      "state": "WORKS",
+      "generaliza": true,
+      "_session": 108,
+      "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
+      "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
+      "operates_on": "T028B + T035D + TIBAN + T042I + T030H + FAGL_011ZC + SETLEAF. Salida --json.",
+      "mining_kind": "CONFORMIDAD",
+      "tipo_mineria": [
+        "CONFORMIDAD"
+      ],
+      "does": "medir que configuracion lleva DE HECHO cada naturaleza de cuenta, para poder derivar el alcance del alta de la NATURALEZA en vez de sacarlo de casillas de un formulario. Marca con * los grupos donde las cuentas NO coinciden: o es una regla que nadie escribio, o es deriva.",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_config_profile_by_nature.py"
+      ],
+      "failure_mode": "LEER UNA TABLA POR UN CAMPO QUE NO TIENE. T030H no tiene KONKO: su campo de cuenta es HKONT. Con el campo equivocado la lectura NO falla -- devuelve cero filas -- y el perfil publicaba 'OBA1 = 0% en TODAS las naturalezas', que es una respuesta segura y falsa. Verificar contra el diccionario antes de publicar un cero uniforme.",
+      "_busca_y_publica_s109": "actualizado s109 (steward): via `_hallazgos.py` este minero ya no solo censa -- BUSCA (seis formas genericas: configurado_sin_uso, movimiento_sin_contraparte, entrada_sin_efecto, unico_donde_otros_comparten, discrepancia, misma_persona_dos_eslabones) y PUBLICA en process_mining/mining_findings.json, clasificado OPORTUNIDAD/RIESGO/DESAFIO/DATO con tamano+evidencia+limite obligatorios.",
+      "lands_in": "process_mining/mining_findings.json",
+      "lands_in_kind": "store",
+      "_renombrado_de": "D4_bank_config_profile_by_nature",
+      "_por_que": "s108: estaba en la RAIZ de algorithms.json, fuera del registro, y su prefijo D chocaba con una entrada distinta que ya existia dentro (D4=troceado de campos, D5=sonda acotada). Fuera del registro ninguna puerta lo veia: algorithm_landing_check daba PASS sin mirarlo."
+    },
+    "A76_bank_account_behaviour_signature": {
+      "origin": "OURS",
+      "state": "WORKS",
+      "generaliza": true,
+      "_session": 108,
+      "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
+      "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
+      "operates_on": "REGUH + FEBKO + GLT0 (HSL01..16). Salida --json. Tiene --autotest.",
+      "mining_kind": "REALIDAD",
+      "tipo_mineria": [
+        "REALIDAD",
+        "DERIVA"
+      ],
+      "does": "clasificar cada cuenta por lo que HACE y no por como se llama: paga (REGUH), recibe extracto (FEBKO/EFART), mueve saldo (GLT0, periodos con movimiento). El desacuerdo entre el comportamiento y la etiqueta del texto es en si un hallazgo.",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_account_behaviour_signature.py"
+      ],
+      "failure_mode": "AGREGAR GLT0 SOLO POR RACCT. El mismo numero de mayor existe en varias sociedades y se suma el movimiento de una a la otra: la clave es SOCIEDAD + mayor. Y las 16 columnas HSL no caben en una lectura de RFC_READ_TABLE (buffer de 512): se leen por trozos y se juntan por la CLAVE, nunca por posicion.",
+      "_solapa_con": "bank_model_findings.receiving_accounts del explorador A44, que ya publicaba '16 cuentas con extracto y CERO pagos'. Reconciliar antes de publicar cifras nuevas sobre lo mismo.",
+      "_busca_y_publica_s109": "actualizado s109 (steward): via `_hallazgos.py` este minero ya no solo censa -- BUSCA (seis formas genericas: configurado_sin_uso, movimiento_sin_contraparte, entrada_sin_efecto, unico_donde_otros_comparten, discrepancia, misma_persona_dos_eslabones) y PUBLICA en process_mining/mining_findings.json, clasificado OPORTUNIDAD/RIESGO/DESAFIO/DATO con tamano+evidencia+limite obligatorios.",
+      "lands_in": "process_mining/mining_findings.json",
+      "lands_in_kind": "store",
+      "_renombrado_de": "D5_bank_account_behaviour_signature",
+      "_por_que": "s108: estaba en la RAIZ de algorithms.json, fuera del registro, y su prefijo D chocaba con una entrada distinta que ya existia dentro (D4=troceado de campos, D5=sonda acotada). Fuera del registro ninguna puerta lo veia: algorithm_landing_check daba PASS sin mirarlo."
+    },
+    "A77_ebs_format_consolidation": {
+      "origin": "OURS",
+      "state": "WORKS",
+      "generaliza": true,
+      "_session": 108,
+      "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
+      "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
+      "operates_on": "T028B.VGTYP + T028G (juego de reglas por formato) + FEBKO. Salida --json.",
+      "mining_kind": "CONFORMIDAD",
+      "tipo_mineria": [
+        "CONFORMIDAD",
+        "RESTO_SIN_EXPLICAR"
+      ],
+      "does": "contar cuantos MODELOS de extracto se sostienen, cuantos bancos y cuentas cubre cada uno, cuantas reglas cuesta, y -- la pregunta util -- para un formato dado, que bancos lo procesan electronicamente y cuales no teniendolo asignado igual.",
+      "bound_in": [
+        "Zagentexecution/quality_checks/ebs_format_consolidation.py"
+      ],
+      "failure_mode": "MEDIR EL PARECIDO POR LA TUPLA EXACTA Y CONCLUIR QUE NO SE PARECEN. El Jaccard sobre (codigo externo, regla, algoritmo) da 0% entre XRT940 y SCB19_IQ, y de ahi se publico 'la consolidacion facil no existe'. Mirando la FORMA, SCB19_IQ y CIT24_GA son SUBC/SUBD 8+8, la MISMA estructura que XRT940: difieren en los codigos y en el algoritmo (001 vs 015). La metrica medía lo que no era. Y al reves: CIT04_US (algoritmo 019, ficheros DME) y SOG_EUR4 (reglas 201I/O de cliente) son legitimamente distintos -- absorberlos destruiria automatizacion en vez de ganarla.",
+      "_busca_y_publica_s109": "actualizado s109 (steward): via `_hallazgos.py` este minero ya no solo censa -- BUSCA (seis formas genericas: configurado_sin_uso, movimiento_sin_contraparte, entrada_sin_efecto, unico_donde_otros_comparten, discrepancia, misma_persona_dos_eslabones) y PUBLICA en process_mining/mining_findings.json, clasificado OPORTUNIDAD/RIESGO/DESAFIO/DATO con tamano+evidencia+limite obligatorios.",
+      "lands_in": "process_mining/mining_findings.json",
+      "lands_in_kind": "store",
+      "_renombrado_de": "D6_ebs_format_consolidation",
+      "_por_que": "s108: estaba en la RAIZ de algorithms.json, fuera del registro, y su prefijo D chocaba con una entrada distinta que ya existia dentro (D4=troceado de campos, D5=sonda acotada). Fuera del registro ninguna puerta lo veia: algorithm_landing_check daba PASS sin mirarlo."
+    },
+    "A78_bank_statement_sod_check": {
+      "origin": "OURS",
+      "state": "WORKS",
+      "generaliza": true,
+      "_session": 108,
+      "_nace_de": "INC-000013624 -- el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
+      "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44) y a los otros seis mineros de banca de s108 (D1-D6). Aquellos modelan CANAL, NATURALEZA y FORMATO de la cuenta; este modela QUIEN, cruzando FEBKO.EUSER (teclea) x BKPF.USNAM via FEBEP (contabiliza) x BKPF.USNAM via REGUH/PAYR (paga/emite cheque) x REGUP (crea la factura, opcional con --facturas).",
+      "mining_kind": "CANAL_Y_ACTOR",
+      "tipo_mineria": [
+        "CANAL_Y_ACTOR",
+        "REALIDAD"
+      ],
+      "does": "buscar y publicar la SEGREGACION DE FUNCIONES en el extracto bancario tecleado a mano: si la MISMA persona teclea el extracto, lo contabiliza y ademas emite el pago/cheque de esa cuenta, no queda tercero en el circuito. Emite por el contrato _hallazgos.py (OPORTUNIDAD/RIESGO/DESAFIO/DATO con tamano+evidencia+limite), no solo censa.",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_statement_sod_check.py"
+      ],
+      "lands_in": "process_mining/mining_findings.json + PMO H145",
+      "lands_in_kind": "store",
+      "failure_mode": "TRES CORTES OBLIGATORIOS, y los tres se pagaron con hallazgos falsos antes de imponerlos: (1) DENOMINADOR -- las cuentas CERRADAS se marcan en el TEXTO (T012T-TEXT1 empieza por CLOSED, 237 de 411 en UNES); sin el corte se acusa a cuentas muertas. (2) APLICABILIDAD -- la poblacion NO es 'las cuentas etiquetadas MANUAL' (8), es 'toda cuenta que recibe AL MENOS un extracto tecleado a mano' (39, 34 vivas): medir sobre la etiqueta de canal pierde SOG06-HTG01 (97% manual, etiquetada MIXTO) y BMN01-USD01 (58% manual, 73 pagos) -- ese fue el defecto real, corregido en claim 643. (3) MOVIMIENTO -- una cuenta que no paga no tiene eslabon 3; se informa, no se acusa. Ademas: FEBKO.ANZES esta a CERO en 51.315 de 51.319 extractos electronicos porque el importador no lo rellena -- contar por ANZES publicaria 'el fichero llega vacio' para todo el parque; las posiciones estan en FEBEP. Y la atribucion tiene que ser POR PAGO, no por cuenta: contar el importe entero de una cuenta porque alguien del trio pago algo en ella infla la cifra del 57% real al 96%.",
+      "improve": "el 4o eslabon (--facturas, ciclo completo factura+pago+extracto) es lento -- REGUP no tiene indice por VBLNR y hay que entrar por LAUFD+LAUFI -- y por eso no corre por defecto; medirlo siempre exigiria cachear REGUP por corrida de pago.",
+      "_no_puede_ver": "la firma FISICA del cheque (control compensatorio de dos firmas) no esta en SAP; el portal del banco local; ni si la persona actuo mal -- mide CONCENTRACION DE CONTROL, no fraude. Es SoD CONDUCTUAL (por log), no de roles: no lee AGR_*.",
+      "_hallazgo_2026_08_28": "420 pagos (34%) y 2.401.283 USD (57%) de los emitidos por cuentas con extracto manual los emite quien tambien teclea y contabiliza esa misma cuenta -- 16 personas, 14 cuentas. Mayor: AIB01-USD01 (Kabul), 262 pagos, 2.118.599 USD. Ciclo completo (4 eslabones): 60 pagos, 65.409 USD. Los 1.253 pagos son 100% metodo 3 (cheque prenumerado, T042Z-XSCHK) con CERO filas en BNK_BATCH_ITEM para esos 39 bancos casa -- BCM libera FICHEROS y un cheque no tiene fichero, asi que ningun control automatico lo ve.",
+      "_renombrado_de": "D7_bank_statement_sod_check",
+      "_por_que": "s108: estaba en la RAIZ de algorithms.json, fuera del registro, y su prefijo D chocaba con una entrada distinta que ya existia dentro (D4=troceado de campos, D5=sonda acotada). Fuera del registro ninguna puerta lo veia: algorithm_landing_check daba PASS sin mirarlo."
     }
   },
   "_portfolio": {
@@ -2377,118 +2575,5 @@
       "TECNICA_DE_LECTURA": "no mina: hace posible minar. Como se lee un log sin romperlo",
       "CODIGO_COMO_FUENTE": "QUE HACE el sistema, leido de su PROPIO CODIGO. No es mirar datos, ni trafico, ni configuracion: es que las reglas que DECIDEN viven muchas veces en el fuente y no en la config -- MV_EXTENSION_YEARS=10 decide hasta donde se financia un puesto temporal y es una constante en ABAP, invisible a cualquier analisis de customizing. Se mina con RPY_PROGRAM_READ, CLIF_GET_SOURCE, TADIR, SEOCLASS y el corpus extraido. Anadida 2026-08-27 (s105) tras medir que TRECE algoritmos leen objetos ABAP y estaban repartidos en seis cajones distintos, CINCO de ellos sin clase ninguna: el hueco era de la taxonomia, no de ellos."
     }
-  },
-  "D1_house_bank_ebs_wiring": {
-    "origin": "OURS",
-    "state": "WORKS",
-    "generaliza": true,
-    "_session": 108,
-    "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
-    "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
-    "operates_on": "T012K + T028B + T035D + FEBKO + T012T. Store: salida por consola, exit 1 si hay grave.",
-    "mining_kind": "CONFORMIDAD",
-    "tipo_mineria": [
-      "CONFORMIDAD"
-    ],
-    "does": "comprobar que cada cuenta de banco casa sigue CABLEADA al extracto electronico: T028B tiene una fila con su numero de cuenta ACTUAL, no hay filas huerfanas de numeros que ya no existen, y su canal sigue vivo frente a su propio ritmo.",
-    "bound_in": [
-      "Zagentexecution/quality_checks/house_bank_ebs_wiring_check.py"
-    ],
-    "failure_mode": "TRES denominadores que si no se declaran producen hallazgos falsos, y los tres se cometieron antes de encontrarlos: (1) las cuentas CERRADAS se marcan EN EL TEXTO (T012T-TEXT1 empieza por CLOSED, 237 de 411 en UNES) y sin ese corte 2 de los 4 primeros hallazgos eran cuentas cerradas hace anos; (2) solo se le exige fila de T028B a la cuenta cuyo extracto es ELECTRONICO (EFART='E'): BTE01-USD01 importo 116 extractos MANUALES sin esa fila jamas, y exigirsela publicaba un defecto inexistente; (3) FEBKO tiene fechas en los anos 2201/2203/2207/2208 -- un 2022 mal tecleado -- que envenenan cualquier max() de 'ultimo extracto' y hacian aparecer 147 cuentas como muertas."
-  },
-  "D2_bank_statement_channel_census": {
-    "origin": "OURS",
-    "state": "WORKS",
-    "generaliza": true,
-    "_session": 108,
-    "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
-    "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
-    "operates_on": "FEBKO.EFART + T012K + T012T + T028B. Salida por consola y --json.",
-    "mining_kind": "CANAL_Y_ACTOR",
-    "tipo_mineria": [
-      "CANAL_Y_ACTOR",
-      "DERIVA"
-    ],
-    "does": "censar POR QUE CANAL entra el extracto de cada cuenta -- electronico, manual (tecleado en FF67), mixto o ninguno -- con su cadencia real y quien lo hace, partido SIEMPRE por sociedad.",
-    "bound_in": [
-      "Zagentexecution/quality_checks/bank_statement_channel_census.py"
-    ],
-    "failure_mode": "AGREGAR SOCIEDADES. La MISMA cuenta se comporta al reves segun la sociedad: CBE01-ETB02 recibe 543 extractos al ano en ICBA y CERO en UNES, y en un total agregado figura como activa. Ademas el silencio solo significa algo contra el RITMO PROPIO de la cuenta: 30 dias es alarma en una diaria y rutina en una mensual."
-  },
-  "D3_bank_account_nature_model": {
-    "origin": "OURS",
-    "state": "WORKS",
-    "generaliza": true,
-    "_session": 108,
-    "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
-    "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
-    "operates_on": "T012T (texto) + SETLEAF YBANK + FEBKO + T012K. Salida --json.",
-    "mining_kind": "REALIDAD",
-    "tipo_mineria": [
-      "REALIDAD",
-      "RESTO_SIN_EXPLICAR"
-    ],
-    "does": "derivar la NATURALEZA de cada cuenta (operativa / transferencia / a la vista / mandato de inversion) en tres niveles sociedad -> banco -> cuenta, marcando de que GRADO de evidencia sale cada fila: CONFIG (un set del sistema), TEXTO (el nombre que alguien escribio) o NINGUNA.",
-    "bound_in": [
-      "Zagentexecution/quality_checks/bank_account_nature_model.py"
-    ],
-    "failure_mode": "TOMAR EL TEXTO POR UN DATO. ASHI y PFF parecen marcadores de inversion y NO lo son: son fondos cuyas cuentas de efectivo reciben extracto diario, y meterlos en la lista clasifica como inversion cuatro cuentas operativas, incluida la del incidente. Los marcadores fiables son nombres de gestora o programa (MANDATE, PIMCO, MORGAN, RAMP, IMIP). Y segundo: mirar solo el texto ignora que 102 de las 119 'sin clasificar' YA estaban declaradas como terreno por su set YBANK_ACCOUNTS_FO_*."
-  },
-  "D4_bank_config_profile_by_nature": {
-    "origin": "OURS",
-    "state": "WORKS",
-    "generaliza": true,
-    "_session": 108,
-    "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
-    "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
-    "operates_on": "T028B + T035D + TIBAN + T042I + T030H + FAGL_011ZC + SETLEAF. Salida --json.",
-    "mining_kind": "CONFORMIDAD",
-    "tipo_mineria": [
-      "CONFORMIDAD"
-    ],
-    "does": "medir que configuracion lleva DE HECHO cada naturaleza de cuenta, para poder derivar el alcance del alta de la NATURALEZA en vez de sacarlo de casillas de un formulario. Marca con * los grupos donde las cuentas NO coinciden: o es una regla que nadie escribio, o es deriva.",
-    "bound_in": [
-      "Zagentexecution/quality_checks/bank_config_profile_by_nature.py"
-    ],
-    "failure_mode": "LEER UNA TABLA POR UN CAMPO QUE NO TIENE. T030H no tiene KONKO: su campo de cuenta es HKONT. Con el campo equivocado la lectura NO falla -- devuelve cero filas -- y el perfil publicaba 'OBA1 = 0% en TODAS las naturalezas', que es una respuesta segura y falsa. Verificar contra el diccionario antes de publicar un cero uniforme."
-  },
-  "D5_bank_account_behaviour_signature": {
-    "origin": "OURS",
-    "state": "WORKS",
-    "generaliza": true,
-    "_session": 108,
-    "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
-    "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
-    "operates_on": "REGUH + FEBKO + GLT0 (HSL01..16). Salida --json. Tiene --autotest.",
-    "mining_kind": "REALIDAD",
-    "tipo_mineria": [
-      "REALIDAD",
-      "DERIVA"
-    ],
-    "does": "clasificar cada cuenta por lo que HACE y no por como se llama: paga (REGUH), recibe extracto (FEBKO/EFART), mueve saldo (GLT0, periodos con movimiento). El desacuerdo entre el comportamiento y la etiqueta del texto es en si un hallazgo.",
-    "bound_in": [
-      "Zagentexecution/quality_checks/bank_account_behaviour_signature.py"
-    ],
-    "failure_mode": "AGREGAR GLT0 SOLO POR RACCT. El mismo numero de mayor existe en varias sociedades y se suma el movimiento de una a la otra: la clave es SOCIEDAD + mayor. Y las 16 columnas HSL no caben en una lectura de RFC_READ_TABLE (buffer de 512): se leen por trozos y se juntan por la CLAVE, nunca por posicion.",
-    "_solapa_con": "bank_model_findings.receiving_accounts del explorador A44, que ya publicaba '16 cuentas con extracto y CERO pagos'. Reconciliar antes de publicar cifras nuevas sobre lo mismo."
-  },
-  "D6_ebs_format_consolidation": {
-    "origin": "OURS",
-    "state": "WORKS",
-    "generaliza": true,
-    "_session": 108,
-    "_nace_de": "INC-000013624 — el extracto de NTB02/EUR01 dejo de entrar al cambiar el numero de cuenta",
-    "_eje": "COMPLEMENTA a house_bank_roles.json / bank_model_explorer.py (A44). Aquel modela el papel de PAGO del BANCO (rol, corredores, metodos, DMEE, PPC); estos modelan el perfil de TENENCIA y COBRO de la CUENTA (canal de extracto, formato, naturaleza, comportamiento). Antes de usar cualquiera de los dos: correr load_domain.py sobre el tema. En s108 no se hizo y se re-derivo el job FEB_FILE_HANDLING, que el explorador ya publicaba como channel_jobs STABLE.",
-    "operates_on": "T028B.VGTYP + T028G (juego de reglas por formato) + FEBKO. Salida --json.",
-    "mining_kind": "CONFORMIDAD",
-    "tipo_mineria": [
-      "CONFORMIDAD",
-      "RESTO_SIN_EXPLICAR"
-    ],
-    "does": "contar cuantos MODELOS de extracto se sostienen, cuantos bancos y cuentas cubre cada uno, cuantas reglas cuesta, y -- la pregunta util -- para un formato dado, que bancos lo procesan electronicamente y cuales no teniendolo asignado igual.",
-    "bound_in": [
-      "Zagentexecution/quality_checks/ebs_format_consolidation.py"
-    ],
-    "failure_mode": "MEDIR EL PARECIDO POR LA TUPLA EXACTA Y CONCLUIR QUE NO SE PARECEN. El Jaccard sobre (codigo externo, regla, algoritmo) da 0% entre XRT940 y SCB19_IQ, y de ahi se publico 'la consolidacion facil no existe'. Mirando la FORMA, SCB19_IQ y CIT24_GA son SUBC/SUBD 8+8, la MISMA estructura que XRT940: difieren en los codigos y en el algoritmo (001 vs 015). La metrica medía lo que no era. Y al reves: CIT04_US (algoritmo 019, ficheros DME) y SOG_EUR4 (reglas 201I/O de cliente) son legitimamente distintos -- absorberlos destruiria automatizacion en vez de ganarla."
   }
 }

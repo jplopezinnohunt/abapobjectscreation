@@ -143,7 +143,7 @@ inventario del resto; el contenido se abre con su comando.
 | **incidentes** | 16 | `python brain_v2/graph_queries.py incident <id>` |
 | **reglas** | 258 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 172 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 96 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **algoritmos** | 105 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -152,7 +152,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 96 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 105 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -417,6 +417,54 @@ lo deja — solo que nadie lo publicaba.
 |---|---|---|---|
 | `A68_payment_lifecycle_e2e` | construir el log de eventos del ciclo de vida del PAGO -- factura contabil | Treasury | `process_mining/mining_findings.json` |
 
+**lo que un minero ya ca...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A70_mining_output_contract` | EL CONTRATO DE SALIDA de un minero: datos NO bastan. Da tres clases -- OPO | Treasury | `process_mining/mining_findings.json` |
+
+**T012K + T028B + T035D ...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A72_house_bank_ebs_wiring` | comprobar que cada cuenta de banco casa sigue CABLEADA al extracto electro | Treasury | `process_mining/mining_findings.json` |
+
+**FEBKO.EFART + T012K + ...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A73_bank_statement_channel_census` | censar POR QUE CANAL entra el extracto de cada cuenta -- electronico, manu | Treasury | `process_mining/mining_findings.json` |
+
+**T012T (texto) + SETLEA...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A74_bank_account_nature_model` | derivar la NATURALEZA de cada cuenta (operativa / transferencia / a la vis | Treasury | `process_mining/mining_findings.json` |
+
+**T028B + T035D + TIBAN ...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A75_bank_config_profile_by_nature` | medir que configuracion lleva DE HECHO cada naturaleza de cuenta, para pod | Treasury | `process_mining/mining_findings.json` |
+
+**REGUH + FEBKO + GLT0 (...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A76_bank_account_behaviour_signature` | clasificar cada cuenta por lo que HACE y no por como se llama: paga (REGUH | Treasury | `process_mining/mining_findings.json` |
+
+**T028B.VGTYP + T028G (j...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A77_ebs_format_consolidation` | contar cuantos MODELOS de extracto se sostienen, cuantos bancos y cuentas  | Treasury | `process_mining/mining_findings.json` |
+
+**otros**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A78_bank_statement_sod_check` | buscar y publicar la SEGREGACION DE FUNCIONES en el extracto bancario tecl | Treasury | `process_mining/mining_findings.json` |
+
 **INSTRUMENTOS — contestan en PANTALLA, no dejan fichero**
 
 | instrumento | qué contesta | se corre con |
@@ -447,6 +495,7 @@ lo deja — solo que nadie lo publicaba.
 | `A67_variant_write_safety` | COPIAR UNA VARIANTE SIN ROMPERLA, sabiendo que las dos formas de romperla NO DAN ERROR. (1) La l | `Zagentexecution/tasks/2026_08_21_variant_alignment/variant_align.py` |
 | `A69_agent_roster_enumeration` | enumerar que agentes existen y cuales se OFRECIERON esta sesion, separandolos por PROCEDENCIA (p | `brain_v2/record_agent_roster.py` |
 | `A6_frontier_with_substrate_tier` | coverage % + explicit worklist, with a third tier for technical substrate (connectivity, session | `process_mining/executed_objects_domain_map.py` |
+| `A71_toolgraph_retrieval_check` | bateria de regresion para la puerta de entrada del toolgraph: cada caso es una PREGUNTA REAL de  | `Zagentexecution/quality_checks/toolgraph_retrieval_check.py` |
 | `C1_component_resolution_chain` | object -> TADIR (package) -> TDEVC (component id) -> DF14L (application component) | `brain_v2/system_profile/probes/extract_component_hierarchy.py` |
 | `C3_static_edge_extraction` | parse ABAP source for reads_tables / writes_tables / calls_fms and merge the edges into the grap | `brain_v2/parse_abap_edges.py` |
 | `C4_object_role_derivation` | derive what each object is FOR — posting engine, report, interface, worklist, master-data mainte | `process_mining/derive_object_roles.py` |
@@ -536,7 +585,7 @@ _6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `I
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4714 objects · 258 rules · 642 claims · 19 incidents · 10 closed researches)
+## Brain at a glance (4724 objects · 258 rules · 642 claims · 19 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
