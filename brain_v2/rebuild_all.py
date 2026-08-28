@@ -114,6 +114,27 @@ def _lock_or_die(force):
     return rebuild_lock
 
 
+# --- s108: correr un SUBCONJUNTO ------------------------------------------------------
+# Los pasos ya eran atomicos -- scripts independientes invocados uno a uno. Lo que faltaba
+# era pedir menos. Un rebuild de 56 minutos no se corre, y un brain que no se reconstruye es
+# el «el indice puede mentirte» que hubo que escribir en el PMO.
+_SOLO = None
+_RAPIDO = False
+# El camino minimo para que el brain refleje las fuentes. La ontologia va PRIMERO y no es
+# opcional: es la puerta que impide materializar un dominio inventado, y el 28-ago fue lo
+# que paro un rebuild entero por un claim con `Basis_Security`.
+_PASOS_RAPIDO = ("Validate canonical ontology", "Rebuild brain_state", "LEAN bootstrap index")
+
+
+def _step_selected(description):
+    """¿Se corre este paso? Se decide por su DESCRIPCION, que es lo que el usuario ve."""
+    if _SOLO:
+        return _SOLO.lower() in (description or "").lower()
+    if _RAPIDO:
+        return any(p.lower() in (description or "").lower() for p in _PASOS_RAPIDO)
+    return True
+
+
 def run(cmd, description, fatal=True):
     """Run one pipeline step.
 
@@ -123,6 +144,8 @@ def run(cmd, description, fatal=True):
     the rebuild with sys.exit(1). Returns the CompletedProcess (None if the process
     could not be launched at all).
     """
+    if not _step_selected(description):
+        return None
     cmd_str = " ".join(str(c) for c in cmd)
     _safe_print(f"\n[{description}]")
     _safe_print(f"$ {cmd_str}")
@@ -164,6 +187,11 @@ def run(cmd, description, fatal=True):
 
 
 def regenerate_dynamic_companions():
+    # s108: este paso NO pasa por run(), asi que el filtro de --solo/--rapido no lo veia y
+    # se colaba en toda corrida parcial. Un "--solo X" que corre X y ademas otra cosa no es
+    # "solo": es una promesa rota, y de las que no se notan porque no fallan.
+    if not _step_selected("Regenerate dynamic companions"):
+        return
     _safe_print("\n[Step 5/7: Regenerate dynamic companions]")
     log(f"\n{'=' * 78}\n[{_now()}] START  Step 5/7: Regenerate dynamic companions")
     registry_path = PROJECT_ROOT / "companions" / "companions.json"
@@ -194,6 +222,21 @@ def regenerate_dynamic_companions():
 
 
 def main():
+    global _SOLO, _RAPIDO
+    _RAPIDO = "--rapido" in sys.argv
+    if "--solo" in sys.argv:
+        i = sys.argv.index("--solo")
+        _SOLO = sys.argv[i + 1] if i + 1 < len(sys.argv) else None
+    if _RAPIDO or _SOLO:
+        _safe_print("\n" + "=" * 62)
+        _safe_print("REBUILD PARCIAL — %s" % ("--rapido: ontologia -> brain_state -> indice"
+                                              if _RAPIDO else "--solo %s" % _SOLO))
+        _safe_print("NO corre las puertas, ni el grafo, ni los casos golden, ni la madurez.")
+        _safe_print("Sirve para que el brain REFLEJE LAS FUENTES tras anadir un claim o una")
+        _safe_print("regla. NO sustituye al completo si se toco codigo, algoritmos o")
+        _safe_print("companions -- en ese caso el resultado seria un brain coherente consigo")
+        _safe_print("mismo y desfasado con el repo, que es peor que uno claramente viejo.")
+        _safe_print("=" * 62 + "\n")
     _force = "--force" in sys.argv
     _lock = _lock_or_die(_force)
     import atexit
