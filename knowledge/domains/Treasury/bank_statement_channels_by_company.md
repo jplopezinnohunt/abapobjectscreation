@@ -102,8 +102,16 @@ nada. El problema es que **nadie lo ha declarado**, así que no se distingue *«
 | UNES/UNDP-UNDP | UNDP NEW YORK |
 
 Las cuatro de Northern Trust son **cuentas de mandato de inversión** (PIMCO, JP Morgan, RAMP,
-IMIP) — es plausible que no lleven extracto diario, pero es una hipótesis, no un hecho
-declarado. **Justo estas cuatro son hermanas de la cuenta del incidente.**
+IMIP) — y son **exactamente** las cuatro que no reciben nada, sin excepción en ninguno de los
+dos sentidos. El control que le da valor: el mismo custodio tiene otras cuatro cuentas que sí
+reciben a diario (PFF Nessim Habif, Cash Pool, ASHI USD y ASHI EUR, la del incidente). **El
+corte no es el banco: es la cuenta.**
+
+Pero **esa naturaleza no está modelada en ninguna parte** — se lee del texto libre. La
+jerarquía YBANK, que parecía el sitio, clasifica por geografía y divisa: los tres mandatos
+están en `YBANK_ACCOUNTS_HQ_USD`, el mismo cajón que las cuentas operativas de la sede. Modelo
+completo y qué habría que declarar:
+[bank_account_nature_model.md](bank_account_nature_model.md).
 
 ---
 

@@ -136,6 +136,11 @@ TREASURY (BFM-TRS)
 > extracto**. Toda la complejidad esta en UNES; los institutos son automaticos. Las 8
 > manuales dependen de 4 personas nombradas, sin responsable ni cadencia declarados.
 > Ver [bank_statement_channels_by_company.md](bank_statement_channels_by_company.md).
+> **Naturaleza de la cuenta (s108):** NO esta modelada. YBANK clasifica por geografia x
+> divisa -- los mandatos PIMCO/JP Morgan/RAMP estan en el mismo cajon que las cuentas
+> operativas de sede. 141 de 167 cuentas vivas sin clasificar. Las 4 de mandato son
+> exactamente las 4 que no reciben extracto.
+> Ver [bank_account_nature_model.md](bank_account_nature_model.md).
 
 | T035D | SM30 V_T035D | Cash Management Account Names: clave corta -> G/L (DISKB -> BNKKO). NO es la asignacion de tipos de operacion |
 | T028B | SM30 V_T028B | Transaction Type of Sender Bank: (clave de banco + NUMERO DE CUENTA) -> formato + cuenta interna. Se rompe al cambiar el numero de cuenta (INC-000013624) |
