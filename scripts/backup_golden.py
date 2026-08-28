@@ -213,8 +213,19 @@ def status(dest):
         if src and Path(src).exists():
             now = fingerprint(src)
         print("\n  %s" % asset.upper())
+        # s108: distinguir COPIA de COPIA VERIFICADA. Hasta hoy `--status` decia que habia
+        # copia y nada mas -- y el 28-ago hubo una escrita, sin verificar, sobre un disco que
+        # ya se habia retirado. Una copia de la que no se sabe nada no tranquiliza: engaña.
+        ver = state.get("verificacion") or {}
         for c in a["copies"]:
-            print("    %-9s %-34s %s" % (c.get("role", "?"), c["file"], c["when"]))
+            v = ver.get(c["file"])
+            if v is None:
+                marca = "  ⛔ SIN VERIFICAR"
+            elif v.get("ok"):
+                marca = "  ✓ verificada %s" % str(v.get("quick_check"))
+            else:
+                marca = "  ⛔ NO PASA (%s)" % (v.get("error") or v.get("quick_check") or "conteos")
+            print("    %-9s %-34s %s%s" % (c.get("role", "?"), c["file"], c["when"], marca))
         cur = a["copies"][0]["source"] if a["copies"] else None
         if now and cur:
             same = now["edges"] == cur.get("edges") and now["bytes"] == cur.get("bytes")
@@ -328,6 +339,15 @@ def snapshot(dest_dir):
     con.close()
     print("escrito: %s · %.2f GB · %.0f min"
           % (out, out.stat().st_size / 1e9, (time.time() - t0) / 60))
+
+    # --- VERIFICAR AHORA, CON EL DISCO PUESTO (s108) ---------------------------------
+    # El unico momento en que se puede verificar una copia es justo despues de escribirla:
+    # es el unico en que el destino esta garantizado accesible. El 28-ago se dejo para
+    # luego, el dueno retiro el disco, y la verificacion quedo pendiente sobre un fichero
+    # que ya no abria. Dejarlo para luego es dejarlo para nunca.
+    veredicto = _verificar_recien_escrita(out, GOLD)
+    state.setdefault("verificacion", {})[out.name] = veredicto
+
     rotate(dest_dir, "golden", out, fp, state)
     if same_volume:
         print("\n  AVISO: el destino esta en el MISMO volumen que el original.")
@@ -336,6 +356,51 @@ def snapshot(dest_dir):
         print("  destino tiene que ser otro dispositivo, y mover datos de produccion de")
         print("  SAP a otro sistema lo decide el dueno del dato.")
     return 0
+
+
+def _verificar_recien_escrita(copia, gold):
+    """quick_check + conteos contra el ORIGEN, en el acto. Devuelve el veredicto.
+
+    quick_check y no integrity_check: sobre 22 GB el segundo tarda de mas, y el primero ya
+    caza lo que importa aqui -- un fichero truncado o con paginas rotas. Los conteos se hacen
+    contra el origen, que sigue abierto: comparar contra una cifra escrita a mano seria
+    comparar contra un recuerdo.
+    """
+    import sqlite3 as _sq                            # noqa: PLC0415
+    t = time.time()
+    print("verificando la copia AHORA (el disco esta puesto; luego puede no estarlo)...")
+    v = {"cuando": time.strftime("%Y-%m-%dT%H:%M:%S"), "quick_check": None,
+         "conteos": {}, "ok": False}
+    try:
+        c = _sq.connect("file:%s?mode=ro" % Path(copia).as_posix(), uri=True)
+        n_t = c.execute("SELECT count(*) FROM sqlite_master WHERE type='table'").fetchone()[0]
+        v["tablas"] = n_t
+        o = _sq.connect("file:%s?mode=ro" % Path(gold).as_posix(), uri=True)
+        iguales = True
+        for tb in ("reguh", "bkpf", "bsak"):
+            try:
+                a = c.execute("SELECT count(*) FROM %s" % tb).fetchone()[0]
+                b = o.execute("SELECT count(*) FROM %s" % tb).fetchone()[0]
+                v["conteos"][tb] = {"copia": a, "origen": b, "igual": a == b}
+                iguales = iguales and a == b
+            except Exception as e:
+                v["conteos"][tb] = {"error": str(e)[:120]}
+                iguales = False
+        o.close()
+        v["quick_check"] = c.execute("PRAGMA quick_check").fetchone()[0]
+        c.close()
+        v["ok"] = (v["quick_check"] == "ok") and iguales
+        print("  quick_check: %s · %d tablas · conteos %s · %.0f s"
+              % (v["quick_check"], n_t, "OK" if iguales else "NO CUADRAN",
+                 time.time() - t))
+        if not v["ok"]:
+            print("  ⛔ LA COPIA NO PASA LA VERIFICACION. No la des por buena: la anterior")
+            print("     sigue en el destino y NO se ha rotado todavia.")
+    except Exception as e:
+        v["error"] = str(e)[:200]
+        print("  ⛔ NO SE PUDO VERIFICAR: %s" % v["error"])
+        print("     Una copia sin verificar no es media copia: es una de la que no se sabe nada.")
+    return v
 
 
 def verify(path):
