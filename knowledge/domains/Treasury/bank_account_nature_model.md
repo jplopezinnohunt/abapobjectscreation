@@ -168,6 +168,19 @@ Tres sitios candidatos, los tres medidos, **ninguno la lleva**:
 
 La naturaleza de la cuenta no está en ninguna parte del sistema. Está en el texto libre.
 
+## El TIPO DE EXTRACTO es el cuarto atributo del modelo
+
+Naturaleza, canal y comportamiento no bastan: falta **con qué modelo se procesa** el extracto
+(`T028B.VGTYP`). No es un detalle de configuración — determina qué se hace con cada línea que
+llega, y es lo que hay que replicar cuando entra un banco nuevo.
+
+En UNES hay **9 modelos y 259 reglas** para 133 cuentas con extracto. Uno solo, `XRT940`,
+cubre 60 bancos y 104 cuentas; **cinco existen para una sola cuenta cada uno** (73 reglas para
+6 cuentas). Detalle y oportunidad de consolidación: [ebs_format_models.md](ebs_format_models.md).
+
+Con esto el modelo de una cuenta queda en cuatro ejes: **naturaleza · canal · comportamiento ·
+modelo de extracto**. Los cuatro son medibles hoy; ninguno está declarado.
+
 ## Lo que esto cambia para el EBS
 
 La naturaleza **decide qué extracto esperar**, y por tanto **cuándo el silencio es una alarma**:
