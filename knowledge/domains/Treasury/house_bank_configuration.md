@@ -66,7 +66,14 @@ YBANK_ACCOUNTS_ALL (HQ & FO Accounts Total)
 
 **Key rules:**
 - Sets use **exact match** (EQ), not ranges — each G/L must be added individually
-- Maintained **manually per system** (D01, V01, P01) — not transportable
+- Se mantienen en **GS01/GS02/GS03** y **SÍ se transportan** — pero como **contenido de tabla**,
+  no como sets con nombre: el objeto es `TDAT GRW_SET`. Medido: el transporte `D01K9B0F5F`
+  (liberado, JP_LOPEZ, 2026-04-07) contiene exactamente una entrada, `TDAT GRW_SET`.
+  ⚠️ **Corregido el 2026-08-28 (s108): aquí ponía «not transportable».** Era falso, y venía de
+  buscar en `E071` por nombre — `YBANK%` y `0000YBANK%` dan **cero filas**, porque el objeto no
+  se llama así. Ese cero significaba *no puedo verlo*, no *no existe*.
+- **El transporte lleva el SET COMPLETO, no un delta**: hay que alinear D01 y P01 ANTES de
+  transportar, o el destino pierde lo que tuviera y el origen no.
 - Only **bank accounts (10xxxxx)** go in sets — not clearing accounts (11xxxxx)
 - Currency determines the set: USD→FO_USD, EUR→FO_EUR, XAF/XOF→FO_XAFXOF, other→FO_OTH
 - Sync script available: `Zagentexecution/mcp-backend-server-python/ybank_setleaf_sync.py`

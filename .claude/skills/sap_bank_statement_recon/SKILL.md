@@ -1,6 +1,6 @@
 ---
 name: sap_bank_statement_recon
-description: Specialized domain agent for SAP Electronic Bank Statement + Reconciliation at UNESCO — MT940 import, FEBEP/FEBRE processing, clearing, UNESCO Y-stack custom recon programs (YTR0-YTR3, YFI_BANK1), 6 anti-pattern rules from INC-000006906.
+description: Domain agent for SAP Electronic Bank Statement + Reconciliation at UNESCO. MT940 import via Coupa (job EBS INTEGRATION / FEB_FILE_HANDLING), FEBKO/FEBEP/FEBRE, clearing algorithms, T028B account wiring, Y-stack recon programs (YTR0-YTR3, YFI_BANK1). Knows the estate is NOT homogeneous: 120 electronic / 8 MANUAL (FF67) / 27 mixed / 12 without statement, split by company code, closed accounts marked CLOSED in the text. Use it when a statement stopped arriving, when a bank account number changes, when asking which accounts are manual or of investment nature, or before measuring anything over the bank account estate. 13 anti-pattern rules (INC-000006906, INC-000013624).
 domains:
   functional: [Treasury]
   module: [FI]
@@ -20,7 +20,7 @@ subtopics: [central_substitution_YRGGBS00, field_office_custom_clearing_y_stack,
 - **Type**: Domain Agent (specialized)
 - **Maturity**: Production
 - **Origin**: Session #029-#030 — Full EBS configuration extraction + clearing analysis + Tag 86 forensics
-- **Triggers**: Questions about bank statements, EBS, FEBEP, FEBKO, FEBRE, FF_5, FEBAN, reconciliation, clearing accounts, 11xxxxx open items, MT940, Tag 86, posting rules, T028G, search strings, bank sub-accounts, BSAS clearing, algorithm 015, ZUONR matching, Y-stack custom programs, YTR3, field office reconciliation
+- **Triggers**: Questions about bank statements, EBS, T028B, V_T028B, ABSND, EFART, manual bank statement, YBANK, GS02 sets, account nature, investment mandate, statement stopped arriving, house bank account number change, FEBEP, FEBKO, FEBRE, FF_5, FEBAN, reconciliation, clearing accounts, 11xxxxx open items, MT940, Tag 86, posting rules, T028G, search strings, bank sub-accounts, BSAS clearing, algorithm 015, ZUONR matching, Y-stack custom programs, YTR3, field office reconciliation
 
 ## Purpose
 
@@ -61,7 +61,12 @@ The **coordinator** should route to this agent when the user asks about:
 6. **Never parse FEBRE.VWEZW for structured data** -- It is free-text MT940 Tag 86 content that varies by bank. SocGen uses `/` delimiters, Citibank uses space-delimited text, field office banks have no standard. Use search strings (T028D) for pattern matching instead.
 7. **Never assume ZUONR=NONREF means "won't clear"** -- NONREF items (12,789) clear at 108% rate (cleared via other BSAS matching mechanisms, not ZUONR). The clearing happens through alternative algorithm paths.
 8. **Never confuse EFART=E (electronic MT940) with EFART=M (manual entry)** -- EFART=M produces MXXD/MXXC posting rules with algorithm 000 (no auto-clearing). EFART=E produces the standard algorithmic rules. Mixing them corrupts clearing rate analysis.
-9. **Never write `CALL TRANSACTION ... MODE 'E'` inside an LDB / GET / recon loop.** MODE 'E' opens SAPGUI on BDC error. On slow WAN paths (field offices) the cumulative GUI handshake exceeds `rdisp/max_wprun_time` and TIME_OUTs the caller's fetch. Use MODE 'N' + `MESSAGES INTO <tab>` + post-loop error reporting. Canonical instance: YTBAE002 (INC-000006906, Claim 54). See "UNESCO Custom Recon Programs" below and the "When implementing custom recon programs" section further down.
+9. **Never demand a `T028B` row from an account whose statement is MANUAL** (`EFART='M'`). Measured: `BTE01-USD01` imported 116 statements and `BTE01-IRR01` another 156, both with no `T028B` row ever. Requiring it publishes a defect that does not exist -- it was this skill's first false positive. Only 131 of the 143 accounts that receive statements are electronic.
+10. **Never measure the account estate without cutting closed accounts** -- they are marked `CLOSED` in `T012T-TEXT1`, not by a field, and they are **237 of 411** in UNES. Skipping the cut made 2 of the first 4 "broken wiring" findings false.
+11. **Never use YBANK to answer a question about the NATURE of an account.** It classifies geography x currency. The Northern Trust investment mandates sit in `YBANK_ACCOUNTS_HQ_USD` alongside HQ general-operations accounts. And it covers UNES only -- 32 live accounts are in no set.
+12. **Never read FF67's header as configuration.** It is `FEBKO-ABSND`, the identity carried by the last imported file. After an account number change it keeps showing the old value, and that is correct behaviour, not a defect.
+13. **Never trust `FEBKO.AZDAT` without an upper bound.** There are statements dated in the years 2201/2203/2207/2208 -- a mistyped 2022. One of them poisoned a max() and made 147 accounts look dead.
+14. **Never write `CALL TRANSACTION ... MODE 'E'` inside an LDB / GET / recon loop.** MODE 'E' opens SAPGUI on BDC error. On slow WAN paths (field offices) the cumulative GUI handshake exceeds `rdisp/max_wprun_time` and TIME_OUTs the caller's fetch. Use MODE 'N' + `MESSAGES INTO <tab>` + post-loop error reporting. Canonical instance: YTBAE002 (INC-000006906, Claim 54). See "UNESCO Custom Recon Programs" below and the "When implementing custom recon programs" section further down.
 
 ## UNESCO Custom Recon Programs (Y-Stack) — full family
 
@@ -115,6 +120,107 @@ UNESCO maintains **three distinct custom bank-reconciliation program families** 
 - **Source**: `extracted_code/CUSTOM/BANK_RECONCILIATION/YTBAI001/YTBAI001.abap` (197 LOC).
 - **Role**: converts SMARTLINK CMI940 bank-statement files to MT940 format. Reads `/usr/sap/D01/conversion/input/TITRBK03/sg2707.txt`, writes `/usr/sap/D01/conversion/output/TITRBK03/sg2707out.txt`. Filter header `C_SOG = ':25:SOGEFRPP/'`.
 - **Status**: DORMANT. Authored A.ELMOUCH 2001-11-05, filesystem paths point to D01 (never promoted to P01 with updated paths). Open KU-2026-057-01 to confirm whether SMARTLINK is still incoming or has been superseded by the EBS MT940 direct-import pipeline.
+
+
+
+---
+
+## The estate is NOT homogeneous — three channels (s108, measured)
+
+Any answer that assumes "the statement arrives as a file" is wrong for 35 of the 167 live
+accounts. Measured live on P01, window 2025-2026, `FEBKO.EFART`:
+
+| Channel | Live accts | Needs `T028B` | What breaks | Who notices today |
+|---|---:|---|---|---|
+| **ELECTRONIC** (`EFART='E'`) | 120 | **YES**, keyed on the CURRENT account number | account number changes -> silent stop | **nobody** |
+| **MANUAL** (`EFART='M'`, typed in FF67) | 8 | **NO** — 116 statements imported with no row | the named person stops typing | **nobody** |
+| **MIXED** | 27 | yes | mostly `JOBBATCH`, manual is 0-7% (the exception) | — |
+| **NO STATEMENT** | 12 | — | can't tell "doesn't apply" from "was dropped" | never declared |
+
+**Split by company code, always.** All the complexity is in UNES (144 live: 99/8/26/11); the
+institutes are clean and automatic. And the same account behaves differently per company:
+`CBE01-ETB02` gets 543 daily statements in ICBA and zero in UNES.
+
+**Closed accounts are marked IN THE TEXT** — `T012T-TEXT1` starts with `CLOSED`, with arbitrary
+dashes (`CLOSED-----UNESCO YAOUNDE`). **237 of 411** UNES accounts. There is no status field.
+Any measurement over the estate that skips this cut is measuring a false denominator.
+
+Instruments (run these, don't re-derive):
+```bash
+python Zagentexecution/quality_checks/bank_statement_channel_census.py      # canal + cadencia
+python Zagentexecution/quality_checks/house_bank_ebs_wiring_check.py        # T028B vs T012K
+python Zagentexecution/quality_checks/bank_account_nature_model.py          # soc -> banco -> cuenta
+```
+
+## `T028B` — the table that breaks when an account number changes
+
+**`T028B` (*Transaction Type of Sender Bank*, SM30 `V_T028B`) is keyed on `BANKL + KTONR` — the
+bank account NUMBER.** `FI12` writes `T012K` and does not carry over. Change the number and the
+row is orphaned: the electronic statement stops arriving, with no error, while the house bank
+record looks perfect and the `EBS INTEGRATION` job keeps finishing green.
+
+Canonical instance: **INC-000013624** (NTB02/EUR01, 2026-08). Of the **41 customizing tables**
+able to hold a bank account number, only **two** hold UNESCO's accounts: `T012K` and `T028B`.
+
+⚠️ `T035D` is **NOT** this table. `T035D` = *Cash Management Account Names* (key `BUKRS+DISKB`,
+unaffected by a number change). The house-bank procedure named the right SPRO node but pointed
+at `V_T035D` for years — that mislabel is what let the incident through.
+
+## `FEBKO-ABSND` — what FF67 actually shows
+
+The "Bank Key | Account" header in FF67 is `FEBKO-ABSND`: **the sender identity carried by the
+last file that was imported**. It is history, not configuration. After an account number change
+FF67 keeps showing the OLD value forever, and that is not a defect. Format:
+
+```
+ABSND = "SP0000000MX7   UNO12EUR"
+         └ bank key ┘   └ account as the bank names it (matches T012K-BNKN2) ┘
+```
+
+## YBANK — what it is, where it lives, what it does NOT classify
+
+`YBANK_ACCOUNTS_*` is the set hierarchy everyone calls "the master list of bank accounts".
+Measured: **Report Painter/Writer sets, `SETCLASS=0000` over `GLT0-RACCT`** (G/L totals,
+account field). Maintained in **GS01/GS02/GS03**, stored in `SETHEADER`/`SETNODE`/`SETLEAF`.
+15 sets, 3 levels, **158 values in 10 leaves**. Present in both P01 and D01.
+
+**It IS transportable — but as whole-table contents, not as named sets.** The transport object
+is `TDAT GRW_SET`: e.g. `D01K9B0F5F` (released, JP_LOPEZ, 2026-04-07) contains exactly one entry,
+`TDAT GRW_SET`. Two consequences: **(1)** no search by object name will ever find it — `E071` has
+zero rows for `YBANK%` or `0000YBANK%`, and that zero means *cannot see*, never *does not exist*;
+**(2)** the transport carries the **FULL set, not a delta**, so **D01 and P01 must be aligned
+before transporting** or the target loses whatever it had that the source lacks.
+
+```
+YBANK_ACCOUNTS_ALL
+├── YBANK_ACCOUNTS_HQ
+│   ├── YBANK_ACCOUNTS_HQ_CA ── HQ_EUR (9) · HQ_USD (9) · HQ_OTH (6)
+│   ├── YBANK_ACCOUNTS_SIGHT ── SIGHT_EUR (5) · SIGHT_USD (2)
+│   └── YBANK_ACCOUNTS_DEPOSIT (4)
+└── YBANK_ACCOUNTS_FO ─────────  FO_USD (51) · FO_OTH (60) · FO_XAFXOF (8) · FO_EUR (4)
+```
+
+**What it classifies: GEOGRAPHY x CURRENCY. Not the nature of the account.** Do not reach for it
+to answer "is this an investment account" — measured, the three Northern Trust mandates
+(`MANDATE PIMCO`, `MANDATE JP MORGAN`, `RAMP`) sit in `YBANK_ACCOUNTS_HQ_USD`, the **same leaf**
+as `SOG01-USDD1` and `CIT04-USD04`, which are HQ general-operations accounts.
+
+Two nodes ARE about nature, and both are partial: `_SIGHT` (6 real house bank accounts —
+reliable) and `_DEPOSIT` (4 G/L accounts in the `404xxxx` range, **none of which is a house bank
+account** — it is a set of term-deposit G/Ls, not of bank accounts).
+
+**And it only covers UNES**: 32 of the 167 live accounts are in no set at all, nearly all of
+them institute accounts (IBE, ICBA, ICTP, IIEP, MGIE, UBO).
+
+**Nature is not modelled anywhere** — it lives in free text. 141 of 167 live accounts have no
+signal at all. What does hold: the **4 investment-mandate accounts are exactly the 4 that
+receive no statement**, while the same custodian's 4 cash accounts (PFF Nessim Habif, Cash Pool,
+ASHI USD, ASHI EUR) get daily files. The cut is the account, not the bank.
+
+⚠️ **`ASHI` and `PFF` are NOT investment markers** though they look like it — they are funds
+whose cash accounts receive daily statements. Treating them as such misclassifies four
+operational accounts, including the one from the incident. Reliable markers are manager or
+programme names: `MANDATE`, `PIMCO`, `MORGAN`, `RAMP`, `IMIP`.
 
 ## E2E Bank Statement Chain
 
@@ -453,7 +559,6 @@ EBS user exit:
 | Open <30 days | 87.8% (current queue) |
 | Avg clearing time | 2.3 days |
 | Same-day clearing (XRT940) | 61% |
-
 
 ## Referencia detallada
 

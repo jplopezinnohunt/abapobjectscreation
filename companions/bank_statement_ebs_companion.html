@@ -177,6 +177,79 @@ tr:hover { background: rgba(88,166,255,0.05); }
   </div>
 </div>
 
+<!-- ═══════════════ s108 — ACCOUNT IDENTIFICATION + CHANNELS ═══════════════ -->
+<div class="panel">
+  <div class="card">
+    <h3 style="color:var(--red)">🔑 Step 0 of the chain — how SAP decides WHICH account a file belongs to (added s108, INC-000013624)</h3>
+    <p style="margin-bottom:14px">The seven steps below all assume the statement has already been matched to a house bank
+    account. That matching is a <strong>separate two-hop lookup</strong>, and it is where a change of account number
+    silently kills the channel.</p>
+    <pre style="background:#0d1117;padding:14px;border-radius:6px;overflow-x:auto;line-height:1.55">MT940 :25:  →  <b>FEBKO-ABSND</b> = "SP0000000MX7   UNO12EUR"
+                               └ bank key ┘   └ account as the BANK names it ┘
+     │
+     ├─ hop 1 · <b>T012K</b>   match on BANKN <b>or BNKN2</b> (alternative acct no.)  →  house bank + account ID
+     │
+     └─ hop 2 · <b>T028B</b>   key = BANKL + <b>the BANKN of that account</b>          →  VGTYP + BNKKO
+                     ⛔ change the account number in FI12 and this row is orphaned</pre>
+    <table style="margin-top:14px">
+      <tr><th>Fact</th><th>Why it matters</th></tr>
+      <tr><td><b>T028B</b> (<i>Transaction Type of Sender Bank</i>, SM30 <code>V_T028B</code>) is keyed on the account NUMBER</td><td>FI12 writes T012K and does not carry over. No error is raised — the statement simply stops arriving while the job stays green.</td></tr>
+      <tr><td>Of <b>41 customizing tables</b> able to hold a bank account number, only <b>two</b> hold UNESCO's accounts: T012K and T028B</td><td>There is no third thing to fix, and no way to skip the second.</td></tr>
+      <tr><td><b>T035D is NOT this table</b> — it is <i>Cash Management Account Names</i> (key BUKRS+DISKB)</td><td>The house-bank procedure named the right SPRO node but pointed at V_T035D for years. That mislabel is what let INC-000013624 through.</td></tr>
+      <tr><td>FF67's header "Bank Key | Account" is <b>FEBKO-ABSND</b> — the identity carried by the LAST imported file</td><td>It is history, not configuration. After a number change it shows the old value forever, and that is correct.</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="color:var(--cyan)">📡 The estate is NOT homogeneous — three channels, split by company code</h3>
+    <p style="margin-bottom:14px">Measured live on P01, window 2025-2026, from <code>FEBKO.EFART</code>.
+    <b>167 live accounts</b> of 404 — the other 237 are marked <code>CLOSED</code> <b>in the text</b>
+    (<code>T012T-TEXT1</code>), because there is no status field.</p>
+    <table>
+      <tr><th>Channel</th><th>Live</th><th>Needs T028B?</th><th>What breaks</th><th>Who notices</th></tr>
+      <tr><td><b>ELECTRONIC</b> (EFART=E)</td><td>120</td><td><b>YES</b>, on the current number</td><td>number changes → silent stop</td><td style="color:var(--red)">nobody</td></tr>
+      <tr><td><b>MANUAL</b> (EFART=M, typed in FF67)</td><td>8</td><td><b>NO</b> — 116 statements imported with no row</td><td>the named person stops typing</td><td style="color:var(--red)">nobody</td></tr>
+      <tr><td>MIXED</td><td>27</td><td>yes</td><td>mostly JOBBATCH; manual is 0–7 %</td><td>—</td></tr>
+      <tr><td>NO STATEMENT</td><td>12</td><td>—</td><td>can't tell "doesn't apply" from "was dropped"</td><td>never declared</td></tr>
+    </table>
+    <p style="margin-top:14px"><b>All the complexity is in UNES</b> (144 live: 99/8/26/11); the institutes are clean and
+    automatic. And the same account behaves differently per company — <code>CBE01-ETB02</code> gets 543 daily statements
+    in ICBA and zero in UNES. <b>Always split by company code.</b></p>
+    <p style="margin-top:10px">The 8 manual accounts are sustained by <b>four named people</b> (Tehran, Harare, Havana,
+    Khartoum) with no declared owner or expected cadence anywhere. <code>BTE01-USD01</code> has been silent for
+    <b>259 days</b> and nobody has asked.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="color:var(--purple)">🗂 YBANK — what it is, and what it does NOT classify</h3>
+    <p style="margin-bottom:14px"><code>YBANK_ACCOUNTS_*</code> is the set hierarchy everyone calls "the master list of
+    bank accounts". Measured: <b>Report Painter/Writer sets, SETCLASS 0000 over GLT0-RACCT</b>, maintained in
+    <b>GS01/GS02/GS03</b> (SETHEADER/SETNODE/SETLEAF). 15 sets, 3 levels, <b>158 values in 10 leaves</b>.</p>
+    <table>
+      <tr><th>Property</th><th>Measured</th></tr>
+      <tr><td>What it classifies</td><td><b>GEOGRAPHY × CURRENCY</b> (HQ/FO × EUR/USD/OTH/XAFXOF) — not the nature of the account</td></tr>
+      <tr><td>Nodes that ARE nature</td><td><code>_SIGHT</code> (6 real house bank accounts — reliable) and <code>_DEPOSIT</code> (4 G/Ls in the 404xxxx range, <b>none of them a house bank account</b>)</td></tr>
+      <tr><td>Transportable?</td><td><b>Yes — as whole-table contents.</b> The object is <code>TDAT GRW_SET</code> (e.g. D01K9B0F5F, released 2026-04-07, one single entry). No search by object name finds it: E071 has zero rows for <code>YBANK%</code>. That zero means <b>cannot see</b>, not <b>does not exist</b>. And it carries the <b>FULL set, not a delta</b> — align D01 and P01 <i>before</i> transporting.</td></tr>
+      <tr><td>Coverage</td><td><b>UNES only</b> — 32 of the 167 live accounts are in no set, nearly all institute accounts</td></tr>
+    </table>
+    <p style="margin-top:14px;color:var(--red)"><b>Do not use YBANK to answer "is this an investment account".</b>
+    The three Northern Trust mandates (MANDATE PIMCO, MANDATE JP MORGAN, RAMP) sit in
+    <code>YBANK_ACCOUNTS_HQ_USD</code> — the same leaf as SOG01-USDD1 and CIT04-USD04, which are HQ general-operations
+    accounts.</p>
+    <p style="margin-top:10px">Nature is <b>not modelled anywhere</b> — 141 of 167 live accounts have no signal at all.
+    What does hold: the <b>4 investment-mandate accounts are exactly the 4 that receive no statement</b>, while the same
+    custodian's 4 cash accounts (PFF Nessim Habif, Cash Pool, ASHI USD, ASHI EUR) get daily files.
+    <b>The cut is the account, not the bank.</b></p>
+    <p style="margin-top:10px;color:var(--orange)">⚠ <b>ASHI and PFF are NOT investment markers</b> though they look
+    like it — they are funds whose cash accounts receive daily statements. Treating them as such misclassifies four
+    operational accounts, including the one from the incident. Reliable markers are manager or programme names:
+    MANDATE, PIMCO, MORGAN, RAMP, IMIP.</p>
+    <p style="margin-top:14px;font-size:0.92em;opacity:0.85">Instruments:
+    <code>bank_statement_channel_census.py</code> · <code>house_bank_ebs_wiring_check.py</code> ·
+    <code>bank_account_nature_model.py</code> — all read-only, all under Zagentexecution/quality_checks/.</p>
+  </div>
+</div>
+
 <!-- ═══════════════════════ E2E CHAIN ═══════════════════════ -->
 <div class="panel" id="e2e-chain">
   <div class="card">
