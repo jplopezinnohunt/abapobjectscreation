@@ -482,7 +482,7 @@ lo deja — solo que nadie lo publicaba.
   - drill: `python brain_v2/graph_queries.py incident INC-000006906`
 - `INC-000011781` - EXECUTED_PARTIAL_OPEN_ITEMS - Add Renata Da Silva Freire RITTER to UBO BCM signatory panel (+ Martin/Ba/De Sousa delimitation,
   - drill: `python brain_v2/graph_queries.py incident INC-000011781`
-- `INC-000013624` - ROOT_CAUSE_CONFIRMED_ACTION_PENDING - El extracto bancario electronico de NTB02/EUR01 (Northern Trust ASHI EUR) dejo de entrar al camb
+- `INC-000013624` - SAP_SIDE_COMPLETE_ESCALATED_UPSTREAM - El extracto bancario electronico de NTB02/EUR01 (Northern Trust ASHI EUR) dejo de entrar al camb
   - drill: `python brain_v2/graph_queries.py incident INC-000013624`
 
 _6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `INC-000016471` (TRIAGED_ROOT_CAUSE_CLASS_IDENTIFIED)  `INC-180995` (ROOT_CAUSE_CONFIRMED)  `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
