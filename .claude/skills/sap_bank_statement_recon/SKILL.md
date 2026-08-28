@@ -233,6 +233,8 @@ by another route, but they do not consume these sets.
 **And it only covers UNES**: 32 of the 167 live accounts are in no set at all, nearly all of
 them institute accounts (IBE, ICBA, ICTP, IIEP, MGIE, UBO).
 
+**Of the three candidates, YBANK is the one that classifies best — by a distance** (135 of 167 accounts discriminated, 3 levels, and the only nature-bearing node, `_SIGHT`). `FDLEV` is binary and the FSV puts everything in one position. YBANK is also the right place to EXTEND: a single consumer means near-zero blast radius, and `_SIGHT` proves a nature node can live beside the geography ones. Caveats before touching it: UNES only (32 accounts outside), `_DEPOSIT` is a BAD precedent (it holds G/Ls, not house bank accounts), and it transports as whole-table contents so D01 and P01 must be aligned first.
+
 **Nature is not modelled anywhere** — it lives in free text. 141 of 167 live accounts have no
 signal at all. What does hold: the **4 investment-mandate accounts are exactly the 4 that
 receive no statement**, while the same custodian's 4 cash accounts (PFF Nessim Habif, Cash Pool,

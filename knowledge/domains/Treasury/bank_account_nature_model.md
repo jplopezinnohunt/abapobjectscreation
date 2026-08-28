@@ -185,6 +185,36 @@ que ya recibían. **No sirve para las 12 que nunca han recibido nada**: ahí no 
 contra el que comparar, y sin naturaleza declarada no se distingue *«no aplica»* de *«nunca se
 configuró»*.
 
+## Cuál de los tres clasifica mejor: YBANK, y con distancia
+
+| | Dimensiones | Cuentas que discrimina | ¿Nodo de naturaleza? |
+|---|---|---|---|
+| **YBANK** | 3 niveles, 10 hojas, 158 valores | **135 de 167** | **Sí — `_SIGHT`** (6 cuentas, fiable) |
+| `SKB1-FDLEV` | 2 valores (B0/B1) | binario; las 8 de NT son B0 | no |
+| FSV / balance | 1 posición para 352 cuentas | ninguna | no, aunque las posiciones existan |
+
+Los otros dos no es que clasifiquen peor: **para esta pregunta no clasifican nada.**
+
+### Por qué YBANK es además el sitio correcto para extender
+
+- **Radio de explosión casi nulo.** Lo consume un solo informe (`ZAVERAGE`) y sólo el nodo raíz.
+  Añadir `YBANK_ACCOUNTS_MANDATE` bajo `_HQ` no rompe nada porque nada más lo lee.
+- **El precedente existe y funciona:** `_SIGHT` es un nodo de naturaleza conviviendo con los de
+  geografía, y es fiable.
+- **El pago es inmediato:** `bank_account_nature_model.py` ya gradúa la pertenencia a un set como
+  evidencia `CONFIG` y el texto libre como `TEXTO`. Declarar el nodo mueve esas 4 cuentas de
+  *«lo deduzco del nombre»* a *«está declarado»* **sin tocar una línea de código**, y la
+  vigilancia del canal deja de marcarlas como hueco.
+
+### Lo que hay que saber antes de tocarlo
+
+- **Sólo cubre UNES** — 32 cuentas vivas fuera, casi todas de institutos. Extenderlo no las
+  alcanza; para ellas hace falta otra decisión.
+- **`_DEPOSIT` es un MAL precedente**: es un nodo de naturaleza que **no contiene cuentas de
+  banco casa**, sino 4 mayores del rango `404xxxx`. Copiar ese patrón repite el error.
+- **Se transporta como contenido completo de tabla** (`TDAT GRW_SET`), no como delta:
+  **alinear D01 y P01 antes**, o el destino pierde lo que tuviera y el origen no se entera.
+
 ## Lo que hay que decidir (no lo decide el agente)
 
 **1 · Declarar la naturaleza donde se pueda consultar.** Hoy se adivina del texto. La forma
