@@ -64,7 +64,13 @@ REGISTRO = {
         "por_que": "FEBEP no trae fecha de alta: su delta va por BUDAT y por tanto NO ve una "
                    "posicion retroactiva. Declarado, no escondido"},
     "REGUH": {
-        "sap": "REGUH", "clave": ["LAUFD", "LAUFI", "ZBUKR", "LIFNR", "VBLNR"],
+        # KUNNR entra en la clave el 2026-08-29: es lo que separa los pagos contra ficha de
+        # CLIENTE (LIFNR vacio). OJO -- solo esta relleno en 2.591.955 de 3.707.737 filas; en
+        # 2025-2026 cubre el 97%, en el historico no. SQLite deja pasar los NULL en un indice
+        # unico, asi que el indice NO prueba unicidad en esas: el delta es seguro porque solo
+        # escribe desde la marca hacia delante.
+        "sap": "REGUH",
+        "clave": ["LAUFD", "LAUFI", "XVORL", "ZBUKR", "LIFNR", "KUNNR", "EMPFG", "VBLNR"],
         "alta": None, "fecha": "LAUFD", "alcance": "ZBUKR = 'UNES'",
         "por_que": "LAUFD es la fecha de la CORRIDA de pago, que en la practica solo avanza; "
                    "y RBETR solo esta rellena para UNES desde 2024 -- fuera de ahi es NULL"},
