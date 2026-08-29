@@ -4,15 +4,15 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**21 hallazgos vivos** de 10 mineros: 🔴 RIESGO 6 · 🟠 DESAFIO 8 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 3
+**21 hallazgos vivos** de 9 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 7 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 5
 
 
-⚠️ **8 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
+⚠️ **7 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
 
 
 ---
 
-## 🔴 RIESGO (6)
+## 🔴 RIESGO (5)
 
 *puede hacer daño si nadie actúa · va a quien responde del control*
 
@@ -62,19 +62,9 @@
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
 
-### El Golden tiene el 28,8% de las cabeceras de extracto de la ventana 2025-2026. Los 7 mineros de banca se escribieron contra P01 EN VIVO, que es un error de categoria -- pero portarlos al Golden hoy les daria un tercio de la poblacion
-
-- **Tamaño:** FEBKO 17.812 de 61.769 (28,8%) · T035D 151 de 178 (84,8%) · T028G 1.025 de 1.043 · T028B 169 de 172 · T012K 402 de 404 · T012T 1.180 de 1.180 completa
-- **Evidencia:** brain_v2/gold_coverage.json, medido P01 vs Golden el 2026-08-29
-- **No se puede ver:** solo se midieron 6 tablas de las ~22 que tocan estos mineros. REGUH, REGUP, BKPF, PAYR, BNK_BATCH_ITEM y GLT0 NO se midieron -- y no se midieron a proposito: contar en P01 con RFC_READ_TABLE arrastra las filas, y saber el numero de FEBKO ya costo 61.769 filas por el cable
-- **Acción:** PASO DE EXTRACCION, no una lectura a P01: refrescar FEBKO/FEBEP de la ventana y T035D. `scripts/extraction/gold_refresh.py`. Hasta entonces _golden.exige() se NIEGA, que es la conducta correcta: mejor no publicar que publicar un tercio
-- **Puede contestarlo:** DBS
-- ***hoy** · lo encuentra `_golden/gold_coverage (s109)` · Golden vs P01 · AZDAT 20250101-20261231*
-- <sub>denominador: las 6 tablas medidas de las ~22 que leen los 7 mineros de banca</sub>
-
 ---
 
-## 🟠 DESAFIO (8)
+## 🟠 DESAFIO (7)
 
 *no cuadra y el minero no puede resolverlo solo · **necesita que alguien conteste***
 
@@ -149,16 +139,6 @@
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
 
-### Curar la spec de FEBKO en el registro de extraccion tiene TRES bloqueos concretos, y uno de ellos puede DESTRUIR dato: `pk-upsert` BORRA las claves que esten en el Golden y no vengan de la lectura de P01
-
-- **Tamaño:** al Golden le faltan ~5 meses: FEBKO_2024_2026 se corta el 2026-03-30 (2024: 13.604 · 2025: 14.399 · 2026: 3.413). El hueco NO es toda la ventana, son abril-agosto 2026
-- **Evidencia:** gold_refresh.py refresh_pk_upsert lineas 136-138 (DELETE de las claves ausentes) · read_p01 linea 77 no trocea campos · FEBKO_2024_2026 tiene 62 columnas · PRAGMA table_info y MIN/MAX(AZDAT) sobre el Golden
-- **No se puede ver:** no he probado que 62 campos revienten el buffer de 512 bytes -- lo deduzco del ancho de FEBKO y de la trampa ya medida DATA_BUFFER_EXCEEDED. Habria que probarlo con UNA fila antes de disenar el troceado
-- **Acción:** (1) BACKUP del Golden primero: son 22,9 GB y D: no esta conectado, asi que no hay copia. (2) `where` que cubra TODO el alcance de la tabla (AZDAT >= '20240101'), NO solo el hueco, o el upsert borra 2024 entero. (3) trocear campos en read_p01, o curar FEBKO con el subconjunto de columnas que los mineros usan de verdad
-- **Puede contestarlo:** DBS
-- ***hoy** · lo encuentra `gold_refresh/FEBKO (s109)` · Golden + P01 · AZDAT 20240101 → hoy*
-- <sub>denominador: las 15 tablas de Payment/transaction sin spec curada, de 318 en el registro (34 curadas)</sub>
-
 ---
 
 ## 🟢 OPORTUNIDAD (4)
@@ -204,7 +184,7 @@
 
 ---
 
-## ⚪ DATO (3)
+## ⚪ DATO (5)
 
 *un hecho relevante que no es ninguna de las tres · va al conocimiento*
 
@@ -237,6 +217,26 @@
 - ***hoy** · lo encuentra `work_triad_check (manual, s109)` · repo · todo el corpus*
 - <sub>denominador: los 16 incidentes de primera clase de brain_v2/incidents/incidents.json</sub>
 
+### RESUELTO: el Golden tenia el 28,8% de las cabeceras de extracto de la ventana. Refrescado por delta puro el 2026-08-29: 31.416 -> 94.082 filas, 2024-01-01 a 2026-08-28, ningun mes flaco, 0 duplicados, ni un DELETE
+
+- **Tamaño:** FEBKO 28,8% -> 100% · T012K +BNKN2 · PAYR +PRIUS/ZALDT · FEBEP +AKBLN · REGUH +RBETR · REGUP +BLART/VBLNR
+- **Evidencia:** brain_v2/gold_coverage.json, medido P01 vs Golden el 2026-08-29
+- **No se puede ver:** solo se midieron 6 tablas de las ~22 que tocan estos mineros. REGUH, REGUP, BKPF, PAYR, BNK_BATCH_ITEM y GLT0 NO se midieron -- y no se midieron a proposito: contar en P01 con RFC_READ_TABLE arrastra las filas, y saber el numero de FEBKO ya costo 61.769 filas por el cable
+- **Acción:** PASO DE EXTRACCION, no una lectura a P01: refrescar FEBKO/FEBEP de la ventana y T035D. `scripts/extraction/gold_refresh.py`. Hasta entonces _golden.exige() se NIEGA, que es la conducta correcta: mejor no publicar que publicar un tercio
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `manual (s109) — NO hay script que lo refresque; se cierra a mano` · Golden vs P01 · AZDAT 20250101-20261231*
+- <sub>denominador: las 6 tablas medidas de las ~22 que leen los 7 mineros de banca</sub>
+
+### RESUELTO: los tres bloqueos para refrescar FEBKO. (1) pk-upsert borra -> no se uso: delta propio sin un solo DELETE. (2) 62 columnas revientan el buffer -> troceado de 8, medido. (3) el backup sigue pendiente y JP lo dio por asumido
+
+- **Tamaño:** 31.416 -> 94.082 filas · 11 meses que faltaban, entrados · 38.764 duplicados que yo mismo cree, quitados
+- **Evidencia:** gold_refresh.py refresh_pk_upsert lineas 136-138 (DELETE de las claves ausentes) · read_p01 linea 77 no trocea campos · FEBKO_2024_2026 tiene 62 columnas · PRAGMA table_info y MIN/MAX(AZDAT) sobre el Golden
+- **No se puede ver:** y la causa real de los 13 meses fallidos NO era ninguna de las que dije: era `AZDAT <= '<mes>31'`, el 31 de febrero, que SAP devuelve como SAPSQL_DATA_LOSS
+- **Acción:** (1) BACKUP del Golden primero: son 22,9 GB y D: no esta conectado, asi que no hay copia. (2) `where` que cubra TODO el alcance de la tabla (AZDAT >= '20240101'), NO solo el hueco, o el upsert borra 2024 entero. (3) trocear campos en read_p01, o curar FEBKO con el subconjunto de columnas que los mineros usan de verdad
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `manual (s109) — NO hay script que lo refresque; se cierra a mano` · Golden + P01 · AZDAT 20240101 → hoy*
+- <sub>denominador: las 15 tablas de Payment/transaction sin spec curada, de 318 en el registro (34 curadas)</sub>
+
 ---
 
 ## De dónde sale cada uno
@@ -249,8 +249,7 @@
 | `bank_account_nature_model` | 2 |
 | `house_bank_ebs_wiring_check` | 2 |
 | `bank_config_profile_by_nature` | 2 |
-| `_golden/gold_coverage (s109)` | 1 |
-| `gold_refresh/FEBKO (s109)` | 1 |
+| `manual (s109) — NO hay script que lo refresque; se cierra a mano` | 2 |
 | `ebs_format_consolidation` | 1 |
 | `work_triad_check (manual, s109)` | 1 |
 
