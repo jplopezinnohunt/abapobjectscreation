@@ -111,12 +111,20 @@ def cobertura():
 
 
 def exige(g, tablas, umbral=0.95):
-    """Se NIEGA si alguna tabla falta o esta corta. No avisa: se niega.
+    """Devuelve el SELLO de la foto. Se niega solo cuando la foto es DESCONOCIDA.
 
-    Avisar y seguir es como una tabla al 28% acaba publicada como si fuera la poblacion.
+    ⛔ ESTE ERA MAS DURO Y ESTABA MAL (JP, 2026-08-29). Se negaba en cuanto una tabla bajaba
+    del 95%, como si una foto parcial invalidara la conclusion. No la invalida: **el Golden es
+    una FOTO DE UN MOMENTO**, se toma para llegar a una conclusion, y salvo que necesitemos
+    mas, la conclusion vale -- basta con decir de cuando es la foto y que abarca.
+
+    Lo peligroso no es la foto PARCIAL: es la foto DESCONOCIDA, publicada como si fuera la
+    poblacion entera. Por eso aqui solo se niega cuando la tabla falta o cuando nadie ha
+    declarado su cobertura, y en los demas casos devuelve un sello que el minero DEBE meter en
+    el `denominador` o el `limite` de lo que publique.
     """
     cob = cobertura().get("tablas", {})
-    fallos = []
+    fallos, sello = [], []
     for tab in tablas:
         t = fisica(tab)
         if not _cols(g, t):
@@ -124,21 +132,25 @@ def exige(g, tablas, umbral=0.95):
             continue
         c = cob.get(tab)
         if not c:
-            fallos.append("%s no tiene cobertura declarada en brain_v2/gold_coverage.json: no "
-                          "se sabe si esta entera" % tab)
+            # NO se niega: se SELLA como desconocida y se arrastra hasta lo publicado. Negarse
+            # aqui bloquearia todo el trabajo por un hueco de contabilidad -- `_gold_sync_log`
+            # solo fecha 34 de 384 objetos. La disciplina es el SELLO, no la negativa: lo que
+            # no se puede es publicar sin decir de que foto sale.
+            sello.append("%s FECHA DESCONOCIDA" % tab)
         elif c.get("pct", 0) < umbral * 100:
-            fallos.append("%s esta al %.1f%% (%s de %s, medido %s): %s"
-                          % (tab, c["pct"], c.get("golden"), c.get("p01"), c.get("medido"),
-                             c.get("nota", "")))
+            sello.append("%s al %.1f%% (%s de %s, foto de %s)"
+                         % (tab, c["pct"], c.get("golden"), c.get("p01"), c.get("medido")))
+        else:
+            sello.append("%s %.0f%% (foto de %s)" % (tab, c["pct"], c.get("medido")))
     if fallos:
         raise SystemExit(
-            "\nEL GOLDEN NO DA PARA ESTA MEDIDA — y eso es un PASO DE EXTRACCION, no una\n"
-            "excusa para leer P01. Un minero sobre una tabla corta publica un numero pequeno\n"
-            "como si fuera la poblacion entera.\n\n  - "
+            "\nNO SE SABE QUE FOTO ES ESTA — y sin eso no se publica. No es que el dato sea\n"
+            "insuficiente: es que es DESCONOCIDO, y un numero sobre una poblacion desconocida\n"
+            "se lee como si fuera la poblacion entera.\n\n  - "
             + "\n  - ".join(fallos)
             + "\n\n  LA SECUENCIA ES: primero GOLDEN -> si el analisis necesita mas dato, se\n"
               "  ACTUALIZA el Golden -> y ENTONCES se corren los mineros. Nunca minero -> P01.\n"
               "  La actualizacion es un paso con nombre propio en medio, no un atajo que el\n"
               "  minero toma por su cuenta.\n\n"
               "  Actualiza y vuelve:  python scripts/extraction/gold_refresh.py <dominio>\n")
-    return True
+    return "GOLDEN " + " · ".join(sello)

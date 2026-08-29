@@ -111,8 +111,11 @@ def main():
     # MINERIA -> GOLDEN, nunca P01. Un minero lee mucho y correlaciona; RFC solo deja
     # leer estrecho. Si falta dato, exige() se NIEGA y manda al paso de EXTRACCION.
     conn = _G.abrir()
-    _G.exige(conn, ['FEBKO', 'T012', 'T012K', 'T012T', 'T028B'])
-    print("fuente: GOLDEN (procedencia P01) — FEBKO, T012, T012K, T012T, T028B")
+    _SELLO = _G.exige(conn, ['FEBKO', 'T012', 'T012K', 'T012T', 'T028B'])
+    # el SELLO dice DE QUE FOTO sale todo lo que este minero publique. Se imprime
+    # y se mete en el limite de sus hallazgos: una conclusion sobre una foto vale,
+    # lo que no vale es no decir de cuando es la foto.
+    print(_SELLO)
 
     # ALCANCE: siempre 2025-2026 y siempre PARTIDO POR SOCIEDAD. Las dos cosas son
     # decisiones de metodo, no comodidad: mezclar sociedades esconde que cada una opera su
