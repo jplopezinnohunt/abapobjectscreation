@@ -2416,6 +2416,28 @@
         "brain_v2/session_start_hook.py oportunidades_headline()"
       ],
       "sesion": 109
+    },
+    "A80_gold_delta": {
+      "que_hace": "delta por MARCA DE AGUA con VENTANA DE SOLAPE para cualquier tabla del Golden: lee solo desde la marca menos el solape, mete por clave con INSERT OR REPLACE, y mueve la marca solo si no fallo ningun trozo",
+      "script": "Zagentexecution/quality_checks/gold_delta.py",
+      "companeros": [
+        "Zagentexecution/quality_checks/_marca_agua.py",
+        "Zagentexecution/quality_checks/gold_delta_census.py"
+      ],
+      "lands_in": [
+        "brain_v2/gold_delta_registry.json",
+        "_gold_marca_agua (tabla del Golden)"
+      ],
+      "por_que_existe": "sin delta cada refresco es un barrido. Medido: FEBKO leyo 60.453 filas para anadir 41.466; con marca, 2.818. El Golden son 368 tablas y 106,1 M filas, y 19 tablas de mas de 1 M son el 85% del total",
+      "trampas": [
+        "la marca va sobre la fecha de ALTA, no la del documento; con la del documento una carga retroactiva no entra NUNCA -- lo resuelve la VENTANA DE SOLAPE (7 dias si es alta, 90 si es documento)",
+        "sin INDICE UNICO por la clave, INSERT OR REPLACE APILA: el solape duplicaria en vez de refrescar. Dejo 38.764 filas duplicadas antes de detectarlo",
+        "nunca construir un dia 31: <= mes+31 es el 31 de febrero -> SAPSQL_DATA_LOSS, que parece anchura de campo",
+        "la marca se mueve DESPUES del commit y solo si no fallo ningun trozo"
+      ],
+      "conclusion_falsa_que_permite": "creer que una tabla no tiene delta porque su columna no esta en una lista de nombres: publico SIN DELTA POSIBLE sobre 29,8 M de filas teniendo SAL_DATE",
+      "fuentes": "Microsoft FastTrack high-watermarking · Databricks watermarks · SAP ODP safety interval · oneuptime incremental extraction",
+      "sesion": 109
     }
   },
   "_portfolio": {

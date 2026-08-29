@@ -6,23 +6,23 @@
   "resumen": {
     "nodos": {
       "SKILL": 63,
-      "MINERO": 74,
-      "STORE": 58,
-      "ALGORITMO": 24,
+      "MINERO": 81,
+      "STORE": 60,
+      "ALGORITMO": 26,
       "CLASE_MINERIA": 12,
       "AGENTE": 14,
-      "GATE": 70,
+      "GATE": 75,
       "HELPER": 19,
       "MEMORIA": 98
     },
     "aristas": {
       "LEE": 84,
       "DEBERIA_LEER": 106,
-      "ATERRIZA_EN": 107,
-      "DESCUBRE": 87,
-      "INVOCA": 42,
+      "ATERRIZA_EN": 116,
+      "DESCUBRE": 99,
+      "INVOCA": 48,
       "DELEGA": 42,
-      "VIGILA": 80,
+      "VIGILA": 83,
       "USA": 116,
       "DEBERIA_USAR": 5,
       "RECUERDA": 98
@@ -72,7 +72,7 @@
       "_que_significa": "metodo curado que nadie alcanza. No siempre es defecto -- puede ser de un tema dormido -- pero hay que saberlo"
     },
     "algoritmos_que_no_leen_ningun_skill": {
-      "cuantos": 21,
+      "cuantos": 23,
       "muestra": [
         "A11_shared_algorithm_memory",
         "A12_set_hierarchy_traversal",
@@ -82,6 +82,8 @@
         "A26_knowledge_connectivity",
         "A28_graph_landing",
         "A44_model_gap_exploration",
+        "A79_opportunity_watch",
+        "A80_gold_delta",
         "C1c_custom_fm_domain",
         "C2_ascent_with_provenance_rung",
         "C4_object_role_derivation",
@@ -91,9 +93,7 @@
         "D5_bounded_probe_with_cap_reporting",
         "E1_crossing",
         "E2_coherence",
-        "E3_trigger_evaluation",
-        "E4_canonicalisation",
-        "F2_satellite_derivation"
+        "E3_trigger_evaluation"
       ]
     },
     "agentes_sin_instrumento_declarado": {
@@ -156,7 +156,7 @@
       "_y_no_delegar_no_es_estar_aislado": "un agente sin salida puede estar perfectamente integrado si OTROS le delegan. El aislamiento real es no tener ninguna arista en NINGUN sentido -- eso es lo que mide H141"
     },
     "exploracion": {
-      "mineros": 74,
+      "mineros": 81,
       "clases_de_mineria_cubiertas": [
         "CANAL_Y_ACTOR",
         "CASO",
@@ -171,7 +171,7 @@
         "RESTO_SIN_EXPLICAR",
         "TECNICA_DE_LECTURA"
       ],
-      "declaran_que_generalizan": 7,
+      "declaran_que_generalizan": 14,
       "_ojo_con_esa_cifra": "`generaliza` es un campo NUEVO (s105): un 1 aqui NO significa que los otros 58 esten atados a su caso, significa que nadie lo ha declarado todavia. Es adopcion del campo, no genericidad medida. Confundirlo seria publicar una alarma inventada.",
       "_que_significa": "un minero atado a su caso muere con el caso. Declarar que generaliza obliga a formular la PREGUNTA sin nombrar el caso, que es donde se ve si hay metodo o solo un script"
     }
@@ -873,7 +873,7 @@
       "nombre": "sap_data_extraction",
       "bytes": 19765,
       "fichero": ".claude/skills/sap_data_extraction/SKILL.md",
-      "descripcion": "> Orchestrates RFC-based extraction of SAP transactional data into SQLite. Covers FI (BKPF + Celonis BSEG replacement), MM (EKKO/EKPO/EKBE/ESSR), PSM (FMIFIIT, funds), and CTS transports. Uses pyrfc with SNC/SSO (P01). Gold DB: ~2.5 GB, 42 tables + 1 view, 24M+ rows.",
+      "descripcion": "> Como se EXTRAE dato de SAP al Golden y, sobre todo, como se REFRESCA por DELTA sin releer la tabla entera: marca de agua (watermark), ventana de solape (lookback), indice unico para que la carga sea idempotente, y por que nunca se construye un dia 31. Leelo ANTES de extraer, refrescar, anadir una columna a una tabla del Golden, o si una lectura devuelve SAPSQL_DATA_LOSS / DATA_BUFFER_EXCEEDED / TABLE_WITHOUT_DATA. Extraccion por RFC (pyrfc, SNC/SSO contra P01) de FI (BKPF, BSEG), MM (EKKO/EKPO/EKBE/ESSR), PSM (FMIFIIT, fondos), Tesoreria (FEBKO/FEBEP/REGUH) y transportes CTS. Golden DB: 22,9 GB, 368 tablas, 106,1 M filas -- y 19 tablas de mas de un millon que son el 85% del total, que es exactamente donde el delta deja de ser opcional.",
       "de_que_habla": [
         "Purpose",
         "NEVER Do This",
@@ -3212,6 +3212,149 @@
       ],
       "generaliza": false
     },
+    "A72_house_bank_ebs_wiring": {
+      "tipo": "MINERO",
+      "nombre": "A72_house_bank_ebs_wiring",
+      "state": "WORKS",
+      "mining_kind": "CONFORMIDAD",
+      "bound_in": [
+        "Zagentexecution/quality_checks/house_bank_ebs_wiring_check.py"
+      ],
+      "lands_in": "process_mining/mining_findings.json",
+      "tiene_defecto_vivo": false,
+      "mina": [
+        "CONFORMIDAD"
+      ],
+      "generaliza": true
+    },
+    "A73_bank_statement_channel_census": {
+      "tipo": "MINERO",
+      "nombre": "A73_bank_statement_channel_census",
+      "state": "WORKS",
+      "mining_kind": "CANAL_Y_ACTOR",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_statement_channel_census.py"
+      ],
+      "lands_in": "process_mining/mining_findings.json",
+      "tiene_defecto_vivo": false,
+      "mina": [
+        "CANAL_Y_ACTOR",
+        "DERIVA"
+      ],
+      "generaliza": true
+    },
+    "A74_bank_account_nature_model": {
+      "tipo": "MINERO",
+      "nombre": "A74_bank_account_nature_model",
+      "state": "WORKS",
+      "mining_kind": "REALIDAD",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_account_nature_model.py"
+      ],
+      "lands_in": "process_mining/mining_findings.json",
+      "tiene_defecto_vivo": false,
+      "mina": [
+        "REALIDAD",
+        "RESTO_SIN_EXPLICAR"
+      ],
+      "generaliza": true
+    },
+    "A75_bank_config_profile_by_nature": {
+      "tipo": "MINERO",
+      "nombre": "A75_bank_config_profile_by_nature",
+      "state": "WORKS",
+      "mining_kind": "CONFORMIDAD",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_config_profile_by_nature.py"
+      ],
+      "lands_in": "process_mining/mining_findings.json",
+      "tiene_defecto_vivo": false,
+      "mina": [
+        "CONFORMIDAD"
+      ],
+      "generaliza": true
+    },
+    "A76_bank_account_behaviour_signature": {
+      "tipo": "MINERO",
+      "nombre": "A76_bank_account_behaviour_signature",
+      "state": "WORKS",
+      "mining_kind": "REALIDAD",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_account_behaviour_signature.py"
+      ],
+      "lands_in": "process_mining/mining_findings.json",
+      "tiene_defecto_vivo": false,
+      "mina": [
+        "REALIDAD",
+        "DERIVA"
+      ],
+      "generaliza": true
+    },
+    "A77_ebs_format_consolidation": {
+      "tipo": "MINERO",
+      "nombre": "A77_ebs_format_consolidation",
+      "state": "WORKS",
+      "mining_kind": "CONFORMIDAD",
+      "bound_in": [
+        "Zagentexecution/quality_checks/ebs_format_consolidation.py"
+      ],
+      "lands_in": "process_mining/mining_findings.json",
+      "tiene_defecto_vivo": false,
+      "mina": [
+        "CONFORMIDAD",
+        "RESTO_SIN_EXPLICAR"
+      ],
+      "generaliza": true
+    },
+    "A78_bank_statement_sod_check": {
+      "tipo": "MINERO",
+      "nombre": "A78_bank_statement_sod_check",
+      "state": "WORKS",
+      "mining_kind": "CANAL_Y_ACTOR",
+      "bound_in": [
+        "Zagentexecution/quality_checks/bank_statement_sod_check.py"
+      ],
+      "lands_in": "process_mining/mining_findings.json + PMO H145",
+      "tiene_defecto_vivo": false,
+      "mina": [
+        "CANAL_Y_ACTOR",
+        "REALIDAD"
+      ],
+      "generaliza": true
+    },
+    "A79_opportunity_watch": {
+      "tipo": "ALGORITMO",
+      "nombre": "A79_opportunity_watch",
+      "state": null,
+      "mining_kind": null,
+      "bound_in": null,
+      "lands_in": [
+        "process_mining/opportunity_watch_state.json",
+        ".agents/intelligence/PMO_OPORTUNIDADES.md",
+        "companions/oportunidades_y_desafios.html"
+      ],
+      "tiene_defecto_vivo": false
+    },
+    "opportunity_watch_state.json": {
+      "tipo": "STORE",
+      "nombre": "opportunity_watch_state.json"
+    },
+    "A80_gold_delta": {
+      "tipo": "ALGORITMO",
+      "nombre": "A80_gold_delta",
+      "state": null,
+      "mining_kind": null,
+      "bound_in": null,
+      "lands_in": [
+        "brain_v2/gold_delta_registry.json",
+        "_gold_marca_agua (tabla del Golden)"
+      ],
+      "tiene_defecto_vivo": false
+    },
+    "gold_delta_registry.json": {
+      "tipo": "STORE",
+      "nombre": "gold_delta_registry.json"
+    },
     "clase:TECNICA_DE_LECTURA": {
       "tipo": "CLASE_MINERIA",
       "nombre": "clase:TECNICA_DE_LECTURA"
@@ -3440,6 +3583,11 @@
       "nombre": "companion_as_skill_sweep",
       "tier": "analysis"
     },
+    "conclusion_saturation_check": {
+      "tipo": "GATE",
+      "nombre": "conclusion_saturation_check",
+      "tier": "repo"
+    },
     "config_transport_prerelease_check": {
       "tipo": "GATE",
       "nombre": "config_transport_prerelease_check",
@@ -3499,6 +3647,21 @@
       "tipo": "GATE",
       "nombre": "fx_revaluation_scope_check",
       "tier": "live"
+    },
+    "gold_delta": {
+      "tipo": "GATE",
+      "nombre": "gold_delta",
+      "tier": "live"
+    },
+    "gold_delta_census": {
+      "tipo": "GATE",
+      "nombre": "gold_delta_census",
+      "tier": "repo"
+    },
+    "golden_write_discipline_check": {
+      "tipo": "GATE",
+      "nombre": "golden_write_discipline_check",
+      "tier": "repo"
     },
     "graph_landing_check": {
       "tipo": "GATE",
@@ -3579,6 +3742,11 @@
       "tipo": "GATE",
       "nombre": "ob09_vs_variant_check",
       "tier": "live"
+    },
+    "opportunity_watch": {
+      "tipo": "GATE",
+      "nombre": "opportunity_watch",
+      "tier": "repo"
     },
     "pain001_address_validator": {
       "tipo": "GATE",
@@ -6581,6 +6749,51 @@
       "a": "mining_findings.json"
     },
     {
+      "de": "A72_house_bank_ebs_wiring",
+      "rel": "ATERRIZA_EN",
+      "a": "mining_findings.json"
+    },
+    {
+      "de": "A73_bank_statement_channel_census",
+      "rel": "ATERRIZA_EN",
+      "a": "mining_findings.json"
+    },
+    {
+      "de": "A74_bank_account_nature_model",
+      "rel": "ATERRIZA_EN",
+      "a": "mining_findings.json"
+    },
+    {
+      "de": "A75_bank_config_profile_by_nature",
+      "rel": "ATERRIZA_EN",
+      "a": "mining_findings.json"
+    },
+    {
+      "de": "A76_bank_account_behaviour_signature",
+      "rel": "ATERRIZA_EN",
+      "a": "mining_findings.json"
+    },
+    {
+      "de": "A77_ebs_format_consolidation",
+      "rel": "ATERRIZA_EN",
+      "a": "mining_findings.json"
+    },
+    {
+      "de": "A78_bank_statement_sod_check",
+      "rel": "ATERRIZA_EN",
+      "a": "mining_findings.json"
+    },
+    {
+      "de": "A79_opportunity_watch",
+      "rel": "ATERRIZA_EN",
+      "a": "opportunity_watch_state.json"
+    },
+    {
+      "de": "A80_gold_delta",
+      "rel": "ATERRIZA_EN",
+      "a": "gold_delta_registry.json"
+    },
+    {
       "de": "A1_chunked_temporal_read",
       "rel": "DESCUBRE",
       "a": "clase:TECNICA_DE_LECTURA"
@@ -7016,10 +7229,100 @@
       "a": "clase:COLABORACION"
     },
     {
+      "de": "A72_house_bank_ebs_wiring",
+      "rel": "DESCUBRE",
+      "a": "clase:CONFORMIDAD"
+    },
+    {
+      "de": "A73_bank_statement_channel_census",
+      "rel": "DESCUBRE",
+      "a": "clase:CANAL_Y_ACTOR"
+    },
+    {
+      "de": "A73_bank_statement_channel_census",
+      "rel": "DESCUBRE",
+      "a": "clase:DERIVA"
+    },
+    {
+      "de": "A74_bank_account_nature_model",
+      "rel": "DESCUBRE",
+      "a": "clase:REALIDAD"
+    },
+    {
+      "de": "A74_bank_account_nature_model",
+      "rel": "DESCUBRE",
+      "a": "clase:RESTO_SIN_EXPLICAR"
+    },
+    {
+      "de": "A75_bank_config_profile_by_nature",
+      "rel": "DESCUBRE",
+      "a": "clase:CONFORMIDAD"
+    },
+    {
+      "de": "A76_bank_account_behaviour_signature",
+      "rel": "DESCUBRE",
+      "a": "clase:REALIDAD"
+    },
+    {
+      "de": "A76_bank_account_behaviour_signature",
+      "rel": "DESCUBRE",
+      "a": "clase:DERIVA"
+    },
+    {
+      "de": "A77_ebs_format_consolidation",
+      "rel": "DESCUBRE",
+      "a": "clase:CONFORMIDAD"
+    },
+    {
+      "de": "A77_ebs_format_consolidation",
+      "rel": "DESCUBRE",
+      "a": "clase:RESTO_SIN_EXPLICAR"
+    },
+    {
+      "de": "A78_bank_statement_sod_check",
+      "rel": "DESCUBRE",
+      "a": "clase:CANAL_Y_ACTOR"
+    },
+    {
+      "de": "A78_bank_statement_sod_check",
+      "rel": "DESCUBRE",
+      "a": "clase:REALIDAD"
+    },
+    {
       "de": "authority-doc-reader",
       "rel": "INVOCA",
       "a": "A64_authority_vs_request_delta",
       "via": "authority_delta.py"
+    },
+    {
+      "de": "bank-process-discovery",
+      "rel": "INVOCA",
+      "a": "A53_skill_binding_gate",
+      "via": "skill_binding_check.py"
+    },
+    {
+      "de": "bank-process-discovery",
+      "rel": "INVOCA",
+      "a": "A74_bank_account_nature_model",
+      "via": "bank_account_nature_model.py"
+    },
+    {
+      "de": "bank-process-discovery",
+      "rel": "INVOCA",
+      "a": "A73_bank_statement_channel_census",
+      "via": "bank_statement_channel_census.py"
+    },
+    {
+      "de": "bank-process-discovery",
+      "rel": "INVOCA",
+      "a": "A77_ebs_format_consolidation",
+      "via": "ebs_format_consolidation.py"
+    },
+    {
+      "de": "bank-process-discovery",
+      "rel": "INVOCA",
+      "a": "A72_house_bank_ebs_wiring",
+      "via": "house_bank_ebs_wiring_check.py"
     },
     {
       "de": "bank-process-discovery",
@@ -7030,8 +7333,14 @@
     {
       "de": "bank-process-discovery",
       "rel": "INVOCA",
-      "a": "A53_skill_binding_gate",
-      "via": "skill_binding_check.py"
+      "a": "A76_bank_account_behaviour_signature",
+      "via": "bank_account_behaviour_signature.py"
+    },
+    {
+      "de": "bank-process-discovery",
+      "rel": "INVOCA",
+      "a": "A75_bank_config_profile_by_nature",
+      "via": "bank_config_profile_by_nature.py"
     },
     {
       "de": "batch-input-explorer",
@@ -7078,12 +7387,6 @@
     {
       "de": "document-output-discovery",
       "rel": "INVOCA",
-      "a": "A60_outbound_channel_availability",
-      "via": "outbound_channel_availability_check.py"
-    },
-    {
-      "de": "document-output-discovery",
-      "rel": "INVOCA",
       "a": "A30_mining_bus",
       "via": "mining_bus.py"
     },
@@ -7096,26 +7399,20 @@
     {
       "de": "document-output-discovery",
       "rel": "INVOCA",
-      "a": "A60_outbound_channel_availability",
-      "via": "ads_availability_check.py"
-    },
-    {
-      "de": "document-output-discovery",
-      "rel": "INVOCA",
       "a": "A52_toolgraph",
       "via": "graph_queries.py"
     },
     {
-      "de": "fx-revaluation-scope",
+      "de": "document-output-discovery",
       "rel": "INVOCA",
-      "a": "A47_ob09_vs_variant_check",
-      "via": "ob09_vs_variant_check.py"
+      "a": "A60_outbound_channel_availability",
+      "via": "outbound_channel_availability_check.py"
     },
     {
-      "de": "fx-revaluation-scope",
+      "de": "document-output-discovery",
       "rel": "INVOCA",
-      "a": "A39_fx_revaluation_scope_by_nature",
-      "via": "fx_revaluation_scope_check.py"
+      "a": "A60_outbound_channel_availability",
+      "via": "ads_availability_check.py"
     },
     {
       "de": "fx-revaluation-scope",
@@ -7130,10 +7427,40 @@
       "via": "fsv_coverage_check.py"
     },
     {
+      "de": "fx-revaluation-scope",
+      "rel": "INVOCA",
+      "a": "A47_ob09_vs_variant_check",
+      "via": "ob09_vs_variant_check.py"
+    },
+    {
+      "de": "fx-revaluation-scope",
+      "rel": "INVOCA",
+      "a": "A39_fx_revaluation_scope_by_nature",
+      "via": "fx_revaluation_scope_check.py"
+    },
+    {
       "de": "incident-analyst",
       "rel": "INVOCA",
       "a": "A65_authorised_panel_reconciliation",
       "via": "bcm_signatory_reconciliation_check.py"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "INVOCA",
+      "a": "A19_log_reality_filter",
+      "via": "log_reality_filter.py"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "INVOCA",
+      "a": "A4_ordered_classifier_ladder",
+      "via": "executed_objects_domain_map.py"
+    },
+    {
+      "de": "log-process-discovery",
+      "rel": "INVOCA",
+      "a": "A6_frontier_with_substrate_tier",
+      "via": "executed_objects_domain_map.py"
     },
     {
       "de": "log-process-discovery",
@@ -7154,30 +7481,6 @@
       "via": "accumulate_logs.py"
     },
     {
-      "de": "log-process-discovery",
-      "rel": "INVOCA",
-      "a": "A4_ordered_classifier_ladder",
-      "via": "executed_objects_domain_map.py"
-    },
-    {
-      "de": "log-process-discovery",
-      "rel": "INVOCA",
-      "a": "A6_frontier_with_substrate_tier",
-      "via": "executed_objects_domain_map.py"
-    },
-    {
-      "de": "log-process-discovery",
-      "rel": "INVOCA",
-      "a": "A19_log_reality_filter",
-      "via": "log_reality_filter.py"
-    },
-    {
-      "de": "master-data-sync",
-      "rel": "INVOCA",
-      "a": "A66_master_data_replication_by_standard_api",
-      "via": "gl_alignment_check.py"
-    },
-    {
       "de": "master-data-sync",
       "rel": "INVOCA",
       "a": "A66_master_data_replication_by_standard_api",
@@ -7190,10 +7493,10 @@
       "via": "gl_master_sync.py"
     },
     {
-      "de": "miner-onboarding",
+      "de": "master-data-sync",
       "rel": "INVOCA",
-      "a": "A28_graph_landing",
-      "via": "graph_landing_check.py"
+      "a": "A66_master_data_replication_by_standard_api",
+      "via": "gl_alignment_check.py"
     },
     {
       "de": "miner-onboarding",
@@ -7216,6 +7519,12 @@
     {
       "de": "miner-onboarding",
       "rel": "INVOCA",
+      "a": "A28_graph_landing",
+      "via": "graph_landing_check.py"
+    },
+    {
+      "de": "miner-onboarding",
+      "rel": "INVOCA",
       "a": "A32_mining_capability_census",
       "via": "mining_capability_census.py"
     },
@@ -7234,20 +7543,20 @@
     {
       "de": "mining-arbiter",
       "rel": "INVOCA",
+      "a": "A30_mining_bus",
+      "via": "mining_bus.py"
+    },
+    {
+      "de": "mining-arbiter",
+      "rel": "INVOCA",
+      "a": "A30_mining_bus",
+      "via": "mining_bus.py"
+    },
+    {
+      "de": "mining-arbiter",
+      "rel": "INVOCA",
       "a": "A36_mining_capability_router",
       "via": "ask.py"
-    },
-    {
-      "de": "mining-arbiter",
-      "rel": "INVOCA",
-      "a": "A30_mining_bus",
-      "via": "mining_bus.py"
-    },
-    {
-      "de": "mining-arbiter",
-      "rel": "INVOCA",
-      "a": "A30_mining_bus",
-      "via": "mining_bus.py"
     },
     {
       "de": "process-guardian",
@@ -7579,22 +7888,7 @@
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "learned_rules.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "comprehension_index.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "companion_graph.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "job_classification.json"
+      "a": "log_reality.json"
     },
     {
       "de": "artifact_reachability_check",
@@ -7604,22 +7898,22 @@
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
+      "a": "incidents.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
       "a": "claims.json"
     },
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "capability_model.json"
+      "a": "job_classification.json"
     },
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
-      "a": "log_reality.json"
-    },
-    {
-      "de": "artifact_reachability_check",
-      "rel": "VIGILA",
-      "a": "domain_composition.json"
+      "a": "learned_rules.json"
     },
     {
       "de": "artifact_reachability_check",
@@ -7629,22 +7923,32 @@
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
+      "a": "companion_graph.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
       "a": "algorithms.json"
     },
     {
       "de": "artifact_reachability_check",
       "rel": "VIGILA",
+      "a": "domain_composition.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
+      "a": "comprehension_index.json"
+    },
+    {
+      "de": "artifact_reachability_check",
+      "rel": "VIGILA",
+      "a": "capability_model.json"
+    },
+    {
+      "de": "artifact_wiring_check",
+      "rel": "VIGILA",
       "a": "incidents.json"
-    },
-    {
-      "de": "artifact_wiring_check",
-      "rel": "VIGILA",
-      "a": "skill_registry.json"
-    },
-    {
-      "de": "artifact_wiring_check",
-      "rel": "VIGILA",
-      "a": "algorithm_memory.json"
     },
     {
       "de": "artifact_wiring_check",
@@ -7659,7 +7963,12 @@
     {
       "de": "artifact_wiring_check",
       "rel": "VIGILA",
-      "a": "incidents.json"
+      "a": "skill_registry.json"
+    },
+    {
+      "de": "artifact_wiring_check",
+      "rel": "VIGILA",
+      "a": "algorithm_memory.json"
     },
     {
       "de": "brain_state_enrichment_check",
@@ -7669,6 +7978,11 @@
     {
       "de": "braintoolbox_check",
       "rel": "VIGILA",
+      "a": "mining_findings.json"
+    },
+    {
+      "de": "braintoolbox_check",
+      "rel": "VIGILA",
       "a": "toolgraph.json"
     },
     {
@@ -7677,14 +7991,9 @@
       "a": "incidents.json"
     },
     {
-      "de": "braintoolbox_check",
-      "rel": "VIGILA",
-      "a": "mining_findings.json"
-    },
-    {
       "de": "companion_as_skill_sweep",
       "rel": "VIGILA",
-      "a": "skill_registry.json"
+      "a": "toolgraph.json"
     },
     {
       "de": "companion_as_skill_sweep",
@@ -7694,12 +8003,12 @@
     {
       "de": "companion_as_skill_sweep",
       "rel": "VIGILA",
-      "a": "toolgraph.json"
+      "a": "companions.json"
     },
     {
       "de": "companion_as_skill_sweep",
       "rel": "VIGILA",
-      "a": "companions.json"
+      "a": "skill_registry.json"
     },
     {
       "de": "config_transport_prerelease_check",
@@ -7709,12 +8018,12 @@
     {
       "de": "finding_promotion_check",
       "rel": "VIGILA",
-      "a": "algorithms.json"
+      "a": "drift_signals.json"
     },
     {
       "de": "finding_promotion_check",
       "rel": "VIGILA",
-      "a": "drift_signals.json"
+      "a": "algorithms.json"
     },
     {
       "de": "finding_promotion_check",
@@ -7747,44 +8056,9 @@
       "a": "algorithm_memory.json"
     },
     {
-      "de": "graph_landing_check",
+      "de": "gold_delta_census",
       "rel": "VIGILA",
-      "a": "trigger_state.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "algorithm_memory.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "discovery_delta.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "claims.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "capability_model.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "quality_checks_state.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "interface_inventory.json"
-    },
-    {
-      "de": "graph_landing_check",
-      "rel": "VIGILA",
-      "a": "algorithms.json"
+      "a": "gold_delta_registry.json"
     },
     {
       "de": "graph_landing_check",
@@ -7794,7 +8068,47 @@
     {
       "de": "graph_landing_check",
       "rel": "VIGILA",
+      "a": "claims.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "trigger_state.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
       "a": "code_inventory.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "algorithms.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "interface_inventory.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "quality_checks_state.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "discovery_delta.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "capability_model.json"
+    },
+    {
+      "de": "graph_landing_check",
+      "rel": "VIGILA",
+      "a": "algorithm_memory.json"
     },
     {
       "de": "incident_domain_knowledge_check",
@@ -7824,12 +8138,12 @@
     {
       "de": "method_memory_applied_check",
       "rel": "VIGILA",
-      "a": "algorithm_memory.json"
+      "a": "algorithms.json"
     },
     {
       "de": "method_memory_applied_check",
       "rel": "VIGILA",
-      "a": "algorithms.json"
+      "a": "algorithm_memory.json"
     },
     {
       "de": "mining_artifact_detector",
@@ -7854,12 +8168,12 @@
     {
       "de": "mining_collaboration_check",
       "rel": "VIGILA",
-      "a": "mining_findings.json"
+      "a": "toolgraph.json"
     },
     {
       "de": "mining_collaboration_check",
       "rel": "VIGILA",
-      "a": "toolgraph.json"
+      "a": "mining_findings.json"
     },
     {
       "de": "mining_collaboration_check",
@@ -7882,6 +8196,16 @@
       "a": "quality_checks_state.json"
     },
     {
+      "de": "opportunity_watch",
+      "rel": "VIGILA",
+      "a": "opportunity_watch_state.json"
+    },
+    {
+      "de": "opportunity_watch",
+      "rel": "VIGILA",
+      "a": "mining_findings.json"
+    },
+    {
       "de": "process_circuit_check",
       "rel": "VIGILA",
       "a": "companion_graph.json"
@@ -7889,7 +8213,7 @@
     {
       "de": "production_discipline_check",
       "rel": "VIGILA",
-      "a": "claims.json"
+      "a": "algorithms.json"
     },
     {
       "de": "production_discipline_check",
@@ -7899,7 +8223,7 @@
     {
       "de": "production_discipline_check",
       "rel": "VIGILA",
-      "a": "algorithms.json"
+      "a": "claims.json"
     },
     {
       "de": "run_all",
@@ -7914,15 +8238,25 @@
     {
       "de": "store_schema_check",
       "rel": "VIGILA",
-      "a": "claims.json"
+      "a": "incidents.json"
     },
     {
       "de": "store_schema_check",
       "rel": "VIGILA",
-      "a": "incidents.json"
+      "a": "claims.json"
     },
     {
       "de": "typed_link_coverage_check",
+      "rel": "VIGILA",
+      "a": "claims.json"
+    },
+    {
+      "de": "work_triad_check",
+      "rel": "VIGILA",
+      "a": "incidents.json"
+    },
+    {
+      "de": "work_triad_check",
       "rel": "VIGILA",
       "a": "claims.json"
     },
@@ -7934,12 +8268,7 @@
     {
       "de": "work_triad_check",
       "rel": "VIGILA",
-      "a": "claims.json"
-    },
-    {
-      "de": "work_triad_check",
-      "rel": "VIGILA",
-      "a": "annotations.json"
+      "a": "algorithms.json"
     },
     {
       "de": "work_triad_check",
@@ -7949,17 +8278,12 @@
     {
       "de": "work_triad_check",
       "rel": "VIGILA",
-      "a": "algorithms.json"
-    },
-    {
-      "de": "work_triad_check",
-      "rel": "VIGILA",
-      "a": "incidents.json"
-    },
-    {
-      "de": "work_triad_check",
-      "rel": "VIGILA",
       "a": "code_inventory.json"
+    },
+    {
+      "de": "work_triad_check",
+      "rel": "VIGILA",
+      "a": "annotations.json"
     },
     {
       "de": "brain_v2/comprehension_index.py",

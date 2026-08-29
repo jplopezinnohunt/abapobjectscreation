@@ -1,10 +1,15 @@
 ---
 name: SAP Data Extraction (Layer 2)
 description: >
-  Orchestrates RFC-based extraction of SAP transactional data into SQLite.
-  Covers FI (BKPF + Celonis BSEG replacement), MM (EKKO/EKPO/EKBE/ESSR),
-  PSM (FMIFIIT, funds), and CTS transports. Uses pyrfc with SNC/SSO (P01).
-  Gold DB: ~2.5 GB, 42 tables + 1 view, 24M+ rows.
+  Como se EXTRAE dato de SAP al Golden y, sobre todo, como se REFRESCA por DELTA sin releer
+  la tabla entera: marca de agua (watermark), ventana de solape (lookback), indice unico para
+  que la carga sea idempotente, y por que nunca se construye un dia 31. Leelo ANTES de
+  extraer, refrescar, anadir una columna a una tabla del Golden, o si una lectura devuelve
+  SAPSQL_DATA_LOSS / DATA_BUFFER_EXCEEDED / TABLE_WITHOUT_DATA.
+  Extraccion por RFC (pyrfc, SNC/SSO contra P01) de FI (BKPF, BSEG), MM (EKKO/EKPO/EKBE/ESSR),
+  PSM (FMIFIIT, fondos), Tesoreria (FEBKO/FEBEP/REGUH) y transportes CTS.
+  Golden DB: 22,9 GB, 368 tablas, 106,1 M filas -- y 19 tablas de mas de un millon que son el
+  85% del total, que es exactamente donde el delta deja de ser opcional.
 domains:
   functional: [*]
   module: [*]
@@ -120,7 +125,33 @@ RFC_READ_TABLE throws `SAPSQL_DATA_LOSS` on certain months. This is NOT a field 
 
 **Symptoms**: Same fields work with ROWCOUNT=5 but fail during paginated extraction. Always the same months fail (Feb, Apr, Jun, Sep, Nov).
 
-**Root cause**: SAP ABAP kernel cursor positioning loses data when ROWSKIPS is used on large tables.
+**Root cause (s013)**: SAP ABAP kernel cursor positioning loses data when ROWSKIPS is used on large tables.
+
+> ### ⛔ ESE DIAGNOSTICO ESTA EN DUDA — hipotesis competidora, con prueba de 5 segundos (s109)
+>
+> Fijate en la lista de meses que fallan: **Feb, Apr, Jun, Sep, Nov**. Son EXACTAMENTE los meses
+> que no tienen 31 dias. Un bug de cursor no tiene ninguna razon para elegir esos.
+>
+> El 2026-08-29 se reprodujo `SAPSQL_DATA_LOSS` en FEBKO con un limite superior `<= '<mes>31'`:
+> **`AZDAT <= '20240231'` es el 31 de FEBRERO**, SAP no puede convertir esa fecha y responde
+> `SAPSQL_DATA_LOSS`, que suena a "el dato no cabe" y no lo es. Fallaron 13 meses: febrero,
+> abril, junio, septiembre y noviembre de 2024-2026. La misma firma.
+>
+> **LA PRUEBA QUE LO ZANJA** — lee UN SOLO campo, sin paginacion, con ese where:
+> ```python
+> conn.call("RFC_READ_TABLE", QUERY_TABLE=t, DELIMITER="|", ROWCOUNT=1,
+>           OPTIONS=[{"TEXT": "BUDAT <= '20240231'"}], FIELDS=[{"FIELDNAME": "MANDT"}])
+> ```
+> Si falla asi -- un campo, una fila, sin ROWSKIPS -- **no es paginacion ni anchura: es la
+> fecha**. Y si falla, el arreglo NO es extraer dia a dia: es un limite superior **ABIERTO**,
+> `< dia 1 del mes siguiente`, que no puede construir una fecha inexistente ni en bisiesto.
+>
+> No se puede AFIRMAR que el diagnostico de s013 fuera falso: los scripts de entonces ya no
+> estan y no se puede reproducir su caso. Pero el workaround dia-a-dia sale caro (31 llamadas
+> donde basta 1) y esconde la causa, asi que **corre la prueba antes de aplicarlo**.
+>
+> Guarda ademas `rfc_helpers.call()`: desde s109 una fecha AAAAMMDD imposible **no llega a
+> SAP**, se levanta antes con el motivo escrito.
 
 **Workaround — Extract by DAY (no pagination needed)**:
 ```python
@@ -146,6 +177,76 @@ n = len(result.get('DATA', []))
 # If month fails with DATA_LOSS — use day-by-day workaround
 # If table >100K rows — stream to SQLite, never accumulate in RAM
 ```
+
+---
+
+## ⛔ EL DELTA — no es un detalle de rendimiento, es la capa (s109)
+
+> JP: «cada tabla de las 230 o mas del Golden deberia tener un delta basado en el TIPO DE
+> EXTRACCION; esto es de vital importancia en tablas con millones de registros» · «a partir de
+> ahora los delta deben ser FACILES, si no es inviable».
+
+Este skill sabia de extractores y **no mencionaba delta ni una vez**. Sin delta, cada refresco
+es un barrido: medido, refrescar FEBKO leyo **60.453 filas de P01 para anadir 41.466**. Con
+marca de agua, la corrida siguiente leyo **2.818**. Y FEBKO es de las PEQUENAS: el Golden son
+**368 tablas y 106,1 M de filas**, y **19 tablas de mas de un millon son el 85% del total**.
+
+### Las tres piezas, y ninguna sirve sin las otras dos
+
+| pieza | fichero | que hace |
+|---|---|---|
+| marca de agua | `Zagentexecution/quality_checks/_marca_agua.py` | hasta donde se extrajo, por (tabla, **ALCANCE**) |
+| motor | `Zagentexecution/quality_checks/gold_delta.py` | lee desde la marca, mete por clave, mueve la marca |
+| censo + registro | `Zagentexecution/quality_checks/gold_delta_census.py --generar` | **genera** `brain_v2/gold_delta_registry.json` |
+
+```bash
+python Zagentexecution/quality_checks/gold_delta_census.py --generar   # que delta le toca a cada tabla
+python Zagentexecution/quality_checks/gold_delta.py --estado           # hasta donde vamos
+python Zagentexecution/quality_checks/gold_delta.py <TABLA>            # solo lo que falta
+```
+
+El registro **se GENERA, no se mantiene**: 63 tablas, 90,9 M de filas, **86% del Golden**.
+Mantener 368 tablas a mano es precisamente lo que hacia el delta inviable.
+
+### LA VENTANA DE SOLAPE es lo que lo hace facil
+
+No se lee «desde la marca»: se relee una **franja ANTERIOR** a la marca. Eso captura las
+escrituras tardias, y la carga idempotente absorbe los duplicados. Es lo que hace el propio
+ODP de SAP con su *safety interval*, y lo que recomiendan Microsoft FastTrack y Databricks.
+
+**Por que importa tanto:** sin solape hay que razonar tabla por tabla si el campo es de ALTA
+(`CPUDT`, `ERDAT`, `UDATE`) o de DOCUMENTO (`BUDAT`, `LAUFD`), porque con el segundo una carga
+retroactiva queda por debajo de la marca y **no entra nunca**. Con solape, no hay que razonar:
+**7 dias si el campo es de alta, 90 si es de documento**, y se acabo.
+
+### Y sin INDICE UNICO el solape no refresca: DUPLICA
+
+`INSERT OR REPLACE` **no reemplaza** si la tabla no tiene restriccion de unicidad por la clave:
+**apila**. El 2026-08-29 eso dejo **38.764 filas duplicadas byte a byte** en `FEBKO_2024_2026`
+(111.646 filas para 72.882 claves) y NO SE NOTO, porque el total subia y eso parecia progreso.
+`gold_delta.py` crea el indice antes de escribir. Si no puede crearlo, para y lo dice.
+
+### Las cuatro trampas, todas pagadas ya
+
+1. **NUNCA construyas un dia 31.** `<= '<mes>31'` es el 31 de febrero -> `SAPSQL_DATA_LOSS`,
+   que parece un problema de anchura. Limite superior **ABIERTO**: `< dia 1 del mes siguiente`.
+2. **La marca se mueve DESPUES del commit, y solo si no fallo ningun trozo.** Marcarla con
+   huecos congela un agujero que ningun delta posterior vuelve a mirar.
+3. **NO escribas fila a fila.** 500.000 `UPDATE ... WHERE clave` sobre una tabla de 3,7 M sin
+   indice por esa clave = 500.000 escaneos completos: 580 s sin terminar. Volcar a una
+   temporal **indexada** y hacer UN update: 190 s para tres tablas.
+4. **Estima las DOS mitades.** Medir solo la lectura (12.223 filas/s) y decir «1 minuto»
+   ignorando la escritura es como se llega a un proceso que no termina.
+
+### Cuando una tabla parece no tener delta, no te creas tu propia lista
+
+El censo clasificaba buscando NOMBRES de columna en una lista fija, y publico
+`rsau_audit_history: SIN DELTA POSIBLE` sobre **29,8 M de filas -- un tercio del Golden** --
+cuando esa tabla tiene `SAL_DATE`, `SAL_TIME` y `_first_seen`. Ahora el campo se **DERIVA
+mirando los VALORES**. Y quedan dos salidas mas antes de rendirse: una **clave numerica
+creciente** vale igual que una fecha (caso `FEBRE`/`KUKEY`), y `CDHDR`/`CDPOS` -- que estan en
+el Golden, 7,8 M y 14,0 M filas -- son una fuente de cambios para lo que no tiene ni una cosa
+ni la otra.
 
 ---
 
