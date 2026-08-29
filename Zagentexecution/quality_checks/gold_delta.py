@@ -102,10 +102,26 @@ REGISTRO = {
     # que una marca sobre ERDAT se saltaria el cambio. Por eso van por COMPARAR_CLAVE: se leen
     # ENTERAS y se mete por clave. Son pequenas y es lo unico correcto.
     "LFA1": {"sap": "LFA1", "clave": ["LIFNR"], "alta": None, "fecha": None, "alcance": "",
-             "por_que": "maestro de proveedores, datos generales: relectura completa por clave"},
+             "sonda": ["NAME1", "ORT01", "SPERR", "LOEVM", "STCD1", "ADRNR"],
+             "por_que": "maestro de proveedores: se sondea nombre, poblacion, bloqueo, marca de "
+                        "borrado, NIF y numero de direccion -- lo que de verdad se toca"},
     "LFB1": {"sap": "LFB1", "clave": ["LIFNR", "BUKRS"], "alta": None, "fecha": None,
              "alcance": "",
-             "por_que": "maestro de proveedores por sociedad: relectura completa por clave"},
+             "sonda": ["AKONT", "ZTERM", "ZWELS", "SPERR", "LOEVM"],
+             "por_que": "maestro por sociedad: se sondea cuenta asociada, condiciones de pago, "
+                        "vias de pago, bloqueo y marca de borrado"},
+    # CLAVE CRECIENTE: un ID que solo sube vale IGUAL que una fecha, y es lo que salva a las
+    # tablas que no tienen ninguna. FEBRE son los textos del extracto y su KUKEY es el mismo
+    # numero de cabecera que FEBKO: va de 00668682 a 00753653 y solo avanza.
+    "FEBRE": {"sap": "FEBRE", "clave": ["KUKEY", "ESNUM", "RSNUM"], "alta": None, "fecha": None,
+              "creciente": "KUKEY", "alcance": "",
+              "por_que": "no tiene NINGUNA fecha, pero KUKEY es monotono: el delta va por ahi"},
+    # POR CDHDR: para lo que no tiene ni fecha ni clave creciente, pero SI documento de cambio.
+    # essr son las hojas de entrada de servicio y su clase es ENTRYSHEET; OBJECTID mapea 1 a 1
+    # con LBLNI, mismo formato con ceros a la izquierda (verificado).
+    "essr": {"sap": "ESSR", "clave": ["LBLNI"], "alta": None, "fecha": None,
+             "cdhdr_clase": "ENTRYSHEET", "cdhdr_campo": "LBLNI", "alcance": "",
+             "por_que": "sin fecha ni clave creciente; los cambios solo constan en CDHDR"},
     "REGUP_SCENARIOS": {
         # ⛔ LA CLAVE SAP NO BASTA, y no es culpa de la extraccion: MEDIDO contra P01, las
         # lineas de NOMINA entran en REGUP con BELNR vacio, BUZEI='000' y GJAHR='0000' -- sin
@@ -153,35 +169,216 @@ def asegura_unicidad(con, gold, clave):
         return False
 
 
-def comparar_clave(gold, spec, con, cols):
-    """Para MAESTRO: se lee la tabla ENTERA y se mete por clave. No hay marca de fecha porque
-    no hay campo fiable -- y decirlo es parte del trabajo: esta relectura cuesta lo que cuesta,
-    no es un delta disfrazado."""
-    from rfc_helpers import get_connection
-    print("  %s · RELECTURA COMPLETA por clave (no hay campo de fecha fiable) · %d columnas"
-          % (gold, len(cols)))
-    print("    %s" % spec["por_que"])
-    if not asegura_unicidad(con, gold, spec["clave"]):
-        return 2
+def _escribir_con_hash(gold, spec, con, cols, filas, etiqueta, marca_campo, marca_valor):
+    """Compara por HASH y escribe SOLO lo que cambio. Comun a las tres estrategias sin fecha.
+
+    Es la pieza del ODP que JP tuvo que reclamar dos veces: sin ella una relectura sobrescribe
+    todo y no sabes cuantas filas cambiaron de verdad."""
+    ix = [cols.index(k) for k in spec["clave"]]
+    hprev = {}
+    try:
+        sel = ", ".join('"%s"' % c for c in cols)
+        for row in con.execute("SELECT %s FROM [%s]" % (sel, gold)):
+            f = tuple("" if v is None else str(v) for v in row)
+            hprev[tuple(f[i] for i in ix)] = hashlib.md5(
+                "\x1f".join(f).encode("utf-8", "replace")).hexdigest()
+    except sqlite3.Error:
+        pass
+    nuevas, cambiadas, iguales = [], [], 0
+    for k, f in filas.items():
+        fila = tuple(f.get(c, "") for c in cols)
+        h = hashlib.md5("\x1f".join(fila).encode("utf-8", "replace")).hexdigest()
+        if k not in hprev:
+            nuevas.append(fila)
+        elif hprev[k] != h:
+            cambiadas.append(fila)
+        else:
+            iguales += 1
+    antes = con.execute("SELECT COUNT(*) FROM [%s]" % gold).fetchone()[0]
+    if nuevas or cambiadas:
+        con.executemany("INSERT OR REPLACE INTO [%s] VALUES (%s)"
+                        % (gold, ",".join("?" * len(cols))), nuevas + cambiadas)
+        con.commit()
+    ahora = con.execute("SELECT COUNT(*) FROM [%s]" % gold).fetchone()[0]
+    print("  %s · leidas %s · NUEVAS %s · CAMBIADAS %s · iguales %s (no se reescriben)"
+          % (etiqueta, "{:,}".format(len(filas)), "{:,}".format(len(nuevas)),
+             "{:,}".format(len(cambiadas)), "{:,}".format(iguales)))
+    print("  Golden: %s -> %s filas · ni un DELETE" % ("{:,}".format(antes), "{:,}".format(ahora)))
+    if marca_valor:
+        M.escribir(con, gold, marca_campo, marca_valor, ahora, alcance=spec["alcance"],
+                   nota=spec["por_que"])
+        print("  marca -> %s <= %s" % (marca_campo, marca_valor))
+    return 0
+
+
+def por_clave_creciente(gold, spec, con, cols):
+    """UN ID QUE SOLO SUBE VALE IGUAL QUE UNA FECHA.
+
+    Estaba en la investigacion desde el primer dia y no se habia construido. Salva a las tablas
+    sin ninguna fecha: se lee `campo > ultima marca` y ya."""
+    from rfc_helpers import get_connection, trocear_where
+    campo = spec["creciente"]
+    m = M.leer(con, gold, spec["alcance"])
+    desde = str(m["hasta"]) if m else con.execute(
+        'SELECT MIN("%s") FROM [%s]' % (campo, gold)).fetchone()[0]
+    print("  %s · CLAVE CRECIENTE %s > %s%s"
+          % (gold, campo, desde, "" if m else "  (sin marca: se arranca del minimo del Golden)"))
     conn = get_connection("P01")
+    w = " AND ".join(x for x in [spec["alcance"], "%s > '%s'" % (campo, desde)] if x)
     resto = [c for c in cols if c not in spec["clave"]]
     filas = {}
-    t0 = time.time()
-    for i in range(0, len(resto), 7):
+    for i in range(0, max(1, len(resto)), 7):
         trozo = spec["clave"] + resto[i:i + 7]
         try:
             r = conn.call("RFC_READ_TABLE", QUERY_TABLE=spec["sap"], DELIMITER="|", ROWCOUNT=0,
-                          OPTIONS=([{"TEXT": spec["alcance"]}] if spec["alcance"] else []),
+                          OPTIONS=trocear_where(w),
                           FIELDS=[{"FIELDNAME": f} for f in trozo])
         except Exception as e:
-            print("    trozo %d: ERROR %s -- NO se escribe con datos incompletos"
-                  % (i // 7, str(e).split("\n")[0][:60]))
+            print("    ERROR %s -- no se escribe con datos incompletos"
+                  % str(e).split("\n")[0][:70])
             return 2
         for d in r["DATA"]:
             v = dict(zip(trozo, [x.strip() for x in d["WA"].split("|")]))
             filas.setdefault(tuple(v[k] for k in spec["clave"]), {}).update(v)
-        print("    %2d/%d  %s filas cosidas  (%.0f s)"
-              % (i // 7 + 1, -(-len(resto) // 7), "{:,}".format(len(filas)), time.time() - t0))
+    if not filas:
+        print("  nada nuevo por encima de la marca")
+        return 0
+    tope = max(f[campo] for f in filas.values())
+    return _escribir_con_hash(gold, spec, con, cols, filas, "clave creciente", campo, tope)
+
+
+def por_cdhdr(gold, spec, con, cols):
+    """CDHDR COMO FUENTE DE CAMBIOS, para lo que no tiene ni fecha ni clave creciente.
+
+    Es lo ultimo que quedaba de la investigacion sin construir. Se pregunta a los DOCUMENTOS DE
+    CAMBIO que objetos se tocaron desde la marca, y solo se traen esos.
+
+    CUANDO GANA Y CUANDO NO -- medido, no supuesto: para LFA1 la relectura completa son 21
+    llamadas (una por trozo de campos, cada una devuelve las 321.360 filas) y por CDHDR serian
+    ~4.700 lotes de claves. CDHDR gana cuando la tabla es GRANDE y los cambios POCOS, que es
+    justo el caso de essr."""
+    from rfc_helpers import get_connection, trocear_where
+    clase, campo = spec["cdhdr_clase"], spec["cdhdr_campo"]
+    m = M.leer(con, gold, spec["alcance"])
+    desde = str(m["hasta"]) if m else "20240101"
+    ids = [r[0] for r in con.execute(
+        "SELECT DISTINCT OBJECTID FROM cdhdr_history WHERE OBJECTCLAS=? AND UDATE>=?",
+        (clase, desde))]
+    tope = con.execute("SELECT MAX(UDATE) FROM cdhdr_history WHERE OBJECTCLAS=?",
+                       (clase,)).fetchone()[0]
+    print("  %s · POR CDHDR (%s) desde %s -> %s objetos cambiados"
+          % (gold, clase, desde, "{:,}".format(len(ids))))
+    if not ids:
+        print("  ningun cambio registrado: nada que traer")
+        return 0
+    conn = get_connection("P01")
+    resto = [c for c in cols if c not in spec["clave"]]
+    filas = {}
+    LOTE = 40                       # el WHERE va a 72 chars por linea; 40 ids cabe holgado
+    for j in range(0, len(ids), LOTE):
+        lote = ids[j:j + LOTE]
+        w = "%s IN (%s)" % (campo, ", ".join("'%s'" % x for x in lote))
+        for i in range(0, max(1, len(resto)), 7):
+            trozo = spec["clave"] + resto[i:i + 7]
+            try:
+                r = conn.call("RFC_READ_TABLE", QUERY_TABLE=spec["sap"], DELIMITER="|",
+                              ROWCOUNT=0, OPTIONS=trocear_where(w),
+                              FIELDS=[{"FIELDNAME": f} for f in trozo])
+            except Exception as e:
+                print("    lote %d: ERROR %s" % (j // LOTE, str(e).split("\n")[0][:60]))
+                return 2
+            for d in r["DATA"]:
+                v = dict(zip(trozo, [x.strip() for x in d["WA"].split("|")]))
+                filas.setdefault(tuple(v[k] for k in spec["clave"]), {}).update(v)
+    return _escribir_con_hash(gold, spec, con, cols, filas, "por CDHDR", "UDATE(cdhdr)", tope)
+
+
+def comparar_clave(gold, spec, con, cols):
+    """DOS FASES: una SONDA barata dice QUE cambio, y solo eso se trae entero.
+
+    ⛔ LA PRIMERA VERSION LEIA LA TABLA ENTERA -- las 147 columnas de las 321.360 filas de
+    LFA1 -- para acabar descubriendo que no habia cambiado ninguna. JP: «no tienes que leer
+    toda la data para hacer diferencias, es un error». Y lo es: 21 llamadas para enterarte de
+    que no hay nada que hacer.
+
+    FASE 1 (una sola llamada): clave + unos pocos campos volatiles. Con eso se detecta que
+    filas son NUEVAS y cuales CAMBIARON en esos campos.
+    FASE 2 (solo si hay diferencias): se traen ENTERAS unicamente esas claves.
+
+    Su limite, y hay que decirlo: la sonda ve los campos que mira. Un cambio en una columna
+    que no este en la sonda NO se detecta. Por eso la sonda lleva los campos que de verdad se
+    tocan -- nombre, poblacion, bloqueos, marca de borrado -- y no una muestra al azar.
+    """
+    from rfc_helpers import get_connection, trocear_where
+    if not asegura_unicidad(con, gold, spec["clave"]):
+        return 2
+    conn = get_connection("P01")
+    resto = [c for c in cols if c not in spec["clave"]]
+    sonda = [c for c in (spec.get("sonda") or []) if c in cols] or resto[:5]
+    campos1 = spec["clave"] + [c for c in sonda if c not in spec["clave"]][:7 - len(spec["clave"])]
+    print("  %s · DOS FASES · sonda: %s" % (gold, ", ".join(campos1)))
+    print("    %s" % spec["por_que"])
+
+    t0 = time.time()
+    try:
+        r = conn.call("RFC_READ_TABLE", QUERY_TABLE=spec["sap"], DELIMITER="|", ROWCOUNT=0,
+                      OPTIONS=(trocear_where(spec["alcance"]) if spec["alcance"] else []),
+                      FIELDS=[{"FIELDNAME": f} for f in campos1])
+    except Exception as e:
+        print("    sonda: ERROR %s" % str(e).split("\n")[0][:70])
+        return 2
+    p01 = {}
+    for d in r["DATA"]:
+        v = dict(zip(campos1, [x.strip() for x in d["WA"].split("|")]))
+        p01[tuple(v[k] for k in spec["clave"])] = v
+    print("    fase 1: %s filas sondeadas en %.0f s (1 llamada)"
+          % ("{:,}".format(len(p01)), time.time() - t0))
+
+    ix = [cols.index(k) for k in spec["clave"]]
+    sel = ", ".join('"%s"' % c for c in cols)
+    gold_sonda = {}
+    for row in con.execute("SELECT %s FROM [%s]" % (sel, gold)):
+        f = tuple("" if v is None else str(v) for v in row)
+        gold_sonda[tuple(f[i] for i in ix)] = tuple(f[cols.index(c)] for c in campos1)
+    sospechosas = [k for k, v in p01.items()
+                   if k not in gold_sonda
+                   or gold_sonda[k] != tuple(v[c] for c in campos1)]
+    print("    fase 1: %s claves NUEVAS o con la sonda distinta, de %s"
+          % ("{:,}".format(len(sospechosas)), "{:,}".format(len(p01))))
+    if not sospechosas:
+        print("  NADA cambio: no se hace la fase 2. Coste total: UNA llamada en vez de %d."
+              % -(-len(resto) // 7))
+        M.escribir(con, gold, "(sonda: sin cambios)",
+                   datetime.date.today().strftime("%Y%m%d"),
+                   con.execute("SELECT COUNT(*) FROM [%s]" % gold).fetchone()[0],
+                   alcance=spec["alcance"], nota=spec["por_que"])
+        return 0
+
+    filas = {}
+    LOTE = 40
+    for j in range(0, len(sospechosas), LOTE):
+        lote = sospechosas[j:j + LOTE]
+        # UN `IN` sobre el primer campo de la clave, no un OR de ANDs: RFC_READ_TABLE rechaza
+        # el segundo con OPTION_NOT_VALID. Se filtra por el campo mas selectivo y las claves
+        # sobrantes se descartan al coser, que es mas barato que pelear con el parser.
+        w = "%s IN (%s)" % (spec["clave"][0],
+                            ", ".join("'%s'" % k[0] for k in lote))
+        if spec["alcance"]:
+            w = "%s AND %s" % (spec["alcance"], w)
+        for i in range(0, len(resto), 7):
+            trozo = spec["clave"] + resto[i:i + 7]
+            try:
+                rr = conn.call("RFC_READ_TABLE", QUERY_TABLE=spec["sap"], DELIMITER="|",
+                               ROWCOUNT=0, OPTIONS=trocear_where(w),
+                               FIELDS=[{"FIELDNAME": f} for f in trozo])
+            except Exception as e:
+                print("    fase 2 lote %d: ERROR %s" % (j // LOTE, str(e).split("\n")[0][:60]))
+                return 2
+            for d in rr["DATA"]:
+                v = dict(zip(trozo, [x.strip() for x in d["WA"].split("|")]))
+                filas.setdefault(tuple(v[k] for k in spec["clave"]), {}).update(v)
+    print("    fase 2: %s filas traidas ENTERAS en %.0f s"
+          % ("{:,}".format(len(filas)), time.time() - t0))
     if not filas:
         print("    P01 devolvio 0 filas: NO se toca el Golden")
         return 2
@@ -241,6 +438,12 @@ def delta(gold, desde_forzado="", hasta=""):
     cols = [r[1] for r in con.execute("PRAGMA table_info([%s])" % gold)]
     campo = spec.get("alta") or spec.get("fecha")
     if campo is None:
+        # el ORDEN importa: clave creciente es la mas barata, CDHDR la siguiente, y releer
+        # entera es el ultimo recurso -- el que cuesta lo mismo cambie o no cambie nada.
+        if spec.get("creciente"):
+            return por_clave_creciente(gold, spec, con, cols)
+        if spec.get("cdhdr_clase"):
+            return por_cdhdr(gold, spec, con, cols)
         return comparar_clave(gold, spec, con, cols)
     if campo not in cols:
         print("  %s no tiene %s: sin delta posible." % (gold, campo))

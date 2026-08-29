@@ -191,6 +191,37 @@ es un barrido: medido, refrescar FEBKO leyo **60.453 filas de P01 para anadir 41
 marca de agua, la corrida siguiente leyo **2.818**. Y FEBKO es de las PEQUENAS: el Golden son
 **368 tablas y 106,1 M de filas**, y **19 tablas de mas de un millon son el 85% del total**.
 
+### LA TAXONOMIA DEL SECTOR, y donde caemos nosotros (investigado, no inventado)
+
+Esto es un problema RESUELTO y documentado. Los mecanismos, de mas a menos fiel, y si podemos
+usarlos:
+
+| # | mecanismo | ¿ve BORRADOS? | ¿podemos? |
+|---|---|---|---|
+| 1 | **Disparadores / tablas de log** (SLT, Qlik Replicate, Fivetran HVR) | **SI** | **NO** — hay que crear triggers en la BD de origen. P01 es de solo lectura y no es nuestro |
+| 2 | **Cola delta ODP** (extractores BW: ABR, AIE, AIED, ADD…) | ABR y AIED, si | en teoria si (`RODPS_REPL_*`), en la practica es un proyecto aparte |
+| 3 | **Vista CDS con CDC** | si | NO — es de S/4, y hay que construir la vista |
+| 4 | **Documentos de cambio** (CDHDR/CDPOS) | solo si el objeto los lleva | **SI**, y los tenemos en el Golden |
+| 5 | **Campo de fecha** (alta o documento) | **NO** | **SI** — es lo que mas usamos |
+| 6 | **Puntero numerico creciente** | **NO** | **SI** — FEBRE por KUKEY |
+| 7 | **Comparacion completa por hash** | si, comparando poblaciones | **SI** — el ultimo recurso |
+
+**Lo que hacen los productos comerciales cuando NO hay campo de fecha es el 1**: Qlik Replicate
+levanta `attrep_cdc_log`, SLT crea tablas de logging con triggers, Fivetran/HVR leen el log de
+la base de datos. Todos coinciden en el motivo: **el delta por fecha NO PUEDE DETECTAR
+BORRADOS**. Y Theobald, que si trabaja por RFC como nosotros, hace exactamente lo del punto 5
+con `WHERE (ERDAT > @ultima AND AEDAT vacio) OR AEDAT > @ultima`.
+
+### ⛔ EL AGUJERO QUE TENEMOS, Y HAY QUE DECIRLO EN CADA CIFRA
+
+**Ninguno de nuestros deltas ve un BORRADO.** Si una fila desaparece de P01, la nuestra se
+queda. Es consecuencia directa de estar en los niveles 4-7 de esa tabla, y no se arregla con
+mas solape ni con mejor sonda: hace falta el nivel 1 o el 2, que no tenemos.
+
+Se compensa donde importa con una **comparacion de poblacion** — contar claves en los dos
+lados — no con un delta. Y mientras no se haga, cualquier medida de "cuantos X hay" sobre el
+Golden puede estar contando filas que en SAP ya no existen.
+
 ### Las tres piezas, y ninguna sirve sin las otras dos
 
 | pieza | fichero | que hace |
