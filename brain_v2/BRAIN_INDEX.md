@@ -143,7 +143,7 @@ inventario del resto; el contenido se abre con su comando.
 | **incidentes** | 16 | `python brain_v2/graph_queries.py incident <id>` |
 | **reglas** | 261 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 172 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 108 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **algoritmos** | 109 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -152,7 +152,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 108 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 109 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -499,6 +499,7 @@ lo deja — solo que nadie lo publicaba.
 | `A71_toolgraph_retrieval_check` | bateria de regresion para la puerta de entrada del toolgraph: cada caso es una PREGUNTA REAL de  | `Zagentexecution/quality_checks/toolgraph_retrieval_check.py` |
 | `A79_opportunity_watch` |  | `-` |
 | `A80_gold_delta` |  | `-` |
+| `A82_field_coverage_sampler` |  | `-` |
 | `C1_component_resolution_chain` | object -> TADIR (package) -> TDEVC (component id) -> DF14L (application component) | `brain_v2/system_profile/probes/extract_component_hierarchy.py` |
 | `C3_static_edge_extraction` | parse ABAP source for reads_tables / writes_tables / calls_fms and merge the edges into the grap | `brain_v2/parse_abap_edges.py` |
 | `C4_object_role_derivation` | derive what each object is FOR — posting engine, report, interface, worklist, master-data mainte | `process_mining/derive_object_roles.py` |
@@ -588,7 +589,7 @@ _6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `I
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4727 objects · 261 rules · 642 claims · 19 incidents · 10 closed researches)
+## Brain at a glance (4732 objects · 261 rules · 642 claims · 19 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.

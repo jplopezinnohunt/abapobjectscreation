@@ -4,10 +4,10 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**27 hallazgos vivos** de 12 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 12 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 6
+**27 hallazgos vivos** de 12 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 10 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 8
 
 
-⚠️ **12 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
+⚠️ **10 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
 
 
 ---
@@ -64,7 +64,7 @@
 
 ---
 
-## 🟠 DESAFIO (12)
+## 🟠 DESAFIO (10)
 
 *no cuadra y el minero no puede resolverlo solo · **necesita que alguien conteste***
 
@@ -138,26 +138,6 @@
 - **Puede contestarlo:** BFM/TRS (Baizid Gazi, Anssi Yli-Hietanen) + DBS
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
-
-### Las filas de REGUH que no tienen clave unica son las de DORIGIN='FI-AR' -- originadas en cuentas a COBRAR, no a pagar. No llevan LIFNR porque la contraparte no es un proveedor, y el Golden no trae la columna que la identifica
-
-- **Tamaño:** 2025-2026, filas sin LIFNR: 78.122. Por origen: FI-AR 73.593 · TR-CM-BT 713 · sin DORIGIN 3.816. De ellas 72.227 son PROPUESTAS (XVORL='X') y 5.895 pagos reales. Para comparar, las que SI tienen LIFNR: FI-AP 312.889 y HR-PY 180.372
-- **Evidencia:** REGUH del Golden partido por DORIGIN y por XVORL; PERNR vacio en las 78.122 (no son pagos a empleado); COUNT(DISTINCT) sobre LAUFD+LAUFI+XVORL+ZBUKR+LIFNR+EMPFG+VBLNR
-- **No se puede ver:** QUE SON en terminos de NEGOCIO no lo se y no lo invento: el campo dice FI-AR. PUBLIQUE TRES COSAS FALSAS antes de llegar aqui, todas por concluir de un EJEMPLO en vez de medir: (1) 'pagos a cliente por KUNNR' -- JP: no existen pagos a cliente; (2) 'es historico' -- JP pidio mirar 2025-2026 y ahi siguen; (3) 'perceptores ocasionales' -- descartado: PERNR vacio y el origen es FI-AR. La memoria del proyecto YA dice que toda medida sobre REGUH se parte por DORIGIN, y no lo hice
-- **Acción:** preguntar a BFM que son las filas FI-AR dentro de una corrida de pago. Mientras tanto NO urge: el 94% son propuestas, y en pagos reales el hueco de clave es de 4.779 sobre 369.241 (1,3%). El minero de SoD ya filtra XVORL<>'X'
-- **Puede contestarlo:** BFM/TRS — que son las filas FI-AR en una corrida de pago
-- ***hoy** · lo encuentra `gold_delta/REGUH (s109)` · Golden · toda la tabla*
-- <sub>denominador: las 3.707.737 filas de REGUH en el Golden</sub>
-
-### ¿Que son las filas FI-AR dentro de una corrida de pago? Son 73.593 de 2025-2026, no llevan LIFNR porque la contraparte no es un proveedor, y el Golden no trae la columna que la identifica
-
-- **Tamaño:** por origen, sin LIFNR: FI-AR 73.593 · TR-CM-BT 713 · sin DORIGIN 3.816. Con LIFNR, para comparar: FI-AP 312.889 y HR-PY 180.372
-- **Evidencia:** REGUH del Golden partido por DORIGIN; PERNR vacio en las 78.122
-- **No se puede ver:** se descarto que fueran pagos a cliente (JP: no existen), pagos a empleado (PERNR vacio) y perceptores ocasionales. Lo que queda es el campo: DORIGIN='FI-AR'. Que significa eso en el negocio no lo se y no lo invento
-- **Acción:** preguntar a BFM. De la respuesta depende si al Golden le falta una columna de clave
-- **Puede contestarlo:** BFM/TRS
-- ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
-- <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>
 
 ### ¿Existe el escenario de ONE-TIME PAYER en UNESCO, y como se identifica? Se busco y NO aparece: las filas sin proveedor no son perceptores ocasionales
 
@@ -234,7 +214,7 @@
 
 ---
 
-## ⚪ DATO (6)
+## ⚪ DATO (8)
 
 *un hecho relevante que no es ninguna de las tres · va al conocimiento*
 
@@ -287,6 +267,26 @@
 - ***hoy** · lo encuentra `manual (s109) — NO hay script que lo refresque; se cierra a mano` · Golden + P01 · AZDAT 20240101 → hoy*
 - <sub>denominador: las 15 tablas de Payment/transaction sin spec curada, de 318 en el registro (34 curadas)</sub>
 
+### RESUELTO: las filas de REGUH sin clave son pagos a PERSONAS registradas como CLIENTES (KUNNR relleno), con perceptor divergente. La muestra las identifica: expertos del IPCC -- ZNME2='IPCC', ZNME3/4='INTERGOVERNMENTAL PANEL ON CLIMATE CHANGE' -- pagados contra su ficha de CLIENTE, no de proveedor
+
+- **Tamaño:** KUNNR CIERRA la clave: en el grupo que el Golden repite 2.075 veces hay 2.075 KUNNR distintos. Es UNA columna, no un problema de diseno
+- **Evidencia:** field_coverage_sampler sobre REGUH XVORL='X' AND LIFNR='': 38 campos con valor de 177, 23 ausentes del Golden. Verificacion directa de KUNNR en P01 sobre la clave duplicada
+- **No se puede ver:** QUE SEAN pagos a personas via ficha de cliente lo digo por los valores de la muestra (10 filas), no por una regla de negocio confirmada. Y JP ya corrigio una vez que 'no existen pagos a clientes': aqui el hecho MEDIDO es que el campo KUNNR esta relleno, no como se llama eso en el negocio
+- **Acción:** anadir KUNNR a REGUH en el Golden. Solo ese: el bloque Z* (ZNME1, ZSTRA, ZORT1...) es la direccion del perceptor y ya esta cubierta por NAME1/STRAS/ORT01. Con KUNNR, REGUH admite indice unico y su delta se desbloquea
+- **Puede contestarlo:** BFM/TRS — que son las filas FI-AR en una corrida de pago
+- ***hoy** · lo encuentra `gold_delta/REGUH (s109)` · Golden · toda la tabla*
+- <sub>denominador: las 3.707.737 filas de REGUH en el Golden</sub>
+
+### RESUELTO: las filas de REGUH sin clave son pagos a PERSONAS registradas como CLIENTES (KUNNR relleno), con perceptor divergente. La muestra las identifica: expertos del IPCC -- ZNME2='IPCC', ZNME3/4='INTERGOVERNMENTAL PANEL ON CLIMATE CHANGE' -- pagados contra su ficha de CLIENTE, no de proveedor
+
+- **Tamaño:** KUNNR CIERRA la clave: en el grupo que el Golden repite 2.075 veces hay 2.075 KUNNR distintos. Es UNA columna, no un problema de diseno
+- **Evidencia:** field_coverage_sampler sobre REGUH XVORL='X' AND LIFNR='': 38 campos con valor de 177, 23 ausentes del Golden. Verificacion directa de KUNNR en P01 sobre la clave duplicada
+- **No se puede ver:** QUE SEAN pagos a personas via ficha de cliente lo digo por los valores de la muestra (10 filas), no por una regla de negocio confirmada. Y JP ya corrigio una vez que 'no existen pagos a clientes': aqui el hecho MEDIDO es que el campo KUNNR esta relleno, no como se llama eso en el negocio
+- **Acción:** anadir KUNNR a REGUH en el Golden. Solo ese: el bloque Z* (ZNME1, ZSTRA, ZORT1...) es la direccion del perceptor y ya esta cubierta por NAME1/STRAS/ORT01. Con KUNNR, REGUH admite indice unico y su delta se desbloquea
+- **Puede contestarlo:** BFM/TRS
+- ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
+- <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>
+
 ### Las propuestas de pago NO son BCM, y BCM no marca nada en REGUH: es una capa aparte que solo recoge pagos YA EJECUTADOS
 
 - **Tamaño:** 0 de 207.862 propuestas (XVORL='X') tienen fila en BNK_BATCH_ITEM. Al reves, los 95.385 items BCM que casan apuntan TODOS a XVORL vacio. Y REGUH tiene 180 campos en P01 sin NI UNO de BCM: los BNKL*/BNKN*/BNKS* son datos bancarios del perceptor y FM_STATUS es de Gestion de Fondos
@@ -311,9 +311,9 @@
 | `bank_config_profile_by_nature` | 2 |
 | `medido a mano (s109)` | 2 |
 | `manual (s109) — NO hay script que lo refresque; se cierra a mano` | 2 |
-| `gold_delta/REGUH (s109)` | 1 |
 | `ebs_format_consolidation` | 1 |
 | `work_triad_check (manual, s109)` | 1 |
+| `gold_delta/REGUH (s109)` | 1 |
 
 > Un minero que no aparece aquí **no está limpio: está mudo**. O no busca, o no publica. Las dos cosas hay que arreglarlas.
 

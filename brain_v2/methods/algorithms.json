@@ -2453,6 +2453,21 @@
       "conclusion_falsa_que_permite": "creer que el Golden esta al dia porque cada tabla por separado lo esta. Dos tablas desalineadas dan un numero PLAUSIBLE: la union pierde filas del lado atrasado, sin error y sin hueco visible",
       "validado": "rojo antes (FEBKO/PAYR 157 dias, FEBKO/BNK_BATCH 156), verde en esas parejas tras alinearlas; y al alinear FEBKO/FEBEP la cifra de SoD paso de 302 a 316 pagos",
       "sesion": 109
+    },
+    "A82_field_coverage_sampler": {
+      "que_hace": "coge una muestra pequena de filas de UN escenario, lee TODOS los campos de la tabla en P01 y dice cuales vienen con valor y cuales de esos NO estan en el Golden",
+      "script": "Zagentexecution/quality_checks/field_coverage_sampler.py",
+      "lands_in": [
+        "salida del minero -> decide que columnas anadir al Golden"
+      ],
+      "por_que_existe": "el Golden guarda 30 de los 180 campos de REGUH. Durante toda la s109 las columnas que faltaban se descubrieron POR ERROR, una a una, cuando un minero reventaba. Esto las da todas de golpe y ANTES. Nacio de una critica de JP: \"tu idea me parece estupida, para algo construimos miners\" -- yo habia hecho a mano un metodo que era generico",
+      "trampas": [
+        "se lee ANCHO y CORTO (todos los campos, 10 filas), al reves de como se extrae. Los .INCLUDE de DD03L no son campos y RFC_READ_TABLE los rechaza",
+        "un campo ANCLA va en todas las lecturas para coser los trozos: sin el, dos lecturas pueden devolver las filas en otro orden y se mezclarian valores de filas distintas, sin ningun aviso"
+      ],
+      "conclusion_falsa_que_permite": "leer \"campo vacio en 10 filas\" como \"campo sin usar\". Dice QUE SE USA, nunca que algo no se use",
+      "validado": "primera corrida sobre REGUH XVORL=X y LIFNR vacio: 38 campos con valor de 177, 23 ausentes del Golden, y entre ellos KUNNR -- la clave que faltaba. Verificado: en la clave que el Golden repite 2.075 veces hay 2.075 KUNNR distintos",
+      "sesion": 109
     }
   },
   "_portfolio": {
