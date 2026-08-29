@@ -55,7 +55,7 @@
 
 ### El que TECLEA el extracto de una cuenta que paga es tambien el que EMITE el dinero por ella: no queda ningun tercero en el circuito SAP
 
-- **Tamaño:** 302 pagos de 1085 (28%) y 866722.40 USD de 3853131.79 (22%), emitidos por alguien que ademas teclea y contabiliza el extracto de ESA cuenta. 13 personas, 12 cuentas.
+- **Tamaño:** 316 pagos de 1085 (29%) y 888672.99 USD de 3853131.79 (23%), emitidos por alguien que ademas teclea y contabiliza el extracto de ESA cuenta. 13 personas, 13 cuentas.
 - **Evidencia:** FEBKO.EUSER × FEBEP.BELNR→BKPF.USNAM × REGUH.VBLNR→BKPF.USNAM × PAYR.PRIUS
 - **No se puede ver:** la firma FISICA del cheque prenumerado (dos firmas) NO esta en SAP: este instrumento mide CONCENTRACION DE CONTROL, no ausencia de control ni fraude
 - **Acción:** declarar por cuenta quien teclea y quien paga, y que no sean la misma persona; o documentar el control fisico compensatorio
