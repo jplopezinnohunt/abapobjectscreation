@@ -4,10 +4,10 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**28 hallazgos vivos** de 13 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 10 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 9
+**28 hallazgos vivos** de 13 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 9 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 10
 
 
-⚠️ **10 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
+⚠️ **9 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
 
 
 ---
@@ -64,7 +64,7 @@
 
 ---
 
-## 🟠 DESAFIO (10)
+## 🟠 DESAFIO (9)
 
 *no cuadra y el minero no puede resolverlo solo · **necesita que alguien conteste***
 
@@ -149,16 +149,6 @@
 - ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
 - <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>
 
-### Las PROPUESTAS de pago sin proveedor se cortan en 2026-03, pero REGUH tiene datos hasta 2026-05. O no hubo propuestas en abril y mayo, o falta dato
-
-- **Tamaño:** 2025-01 a 2026-03, con picos en 2025-11 (16.438), 2025-12 (12.332) y 2026-01 (16.360) -- cierre de ejercicio. Cero en 2026-04 y 2026-05. En total REGUH tiene 358.106 propuestas en 2024-2026, ~10% de la tabla
-- **Evidencia:** REGUH XVORL='X' agrupado por mes de LAUFD; marca de agua de REGUH en LAUFD <= 20260512
-- **No se puede ver:** no se si las propuestas se BORRAN al ejecutarse, en cuyo caso su ausencia reciente seria lo normal y no un hueco
-- **Acción:** preguntar a BFM si una propuesta sobrevive a su ejecucion; si no sobrevive, esto no es un hallazgo
-- **Puede contestarlo:** BFM/TRS
-- ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
-- <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>
-
 ### El Golden guarda 30 de los 180 campos de REGUH -- el 17%. Eso explica por que las columnas se siguen 'cayendo' de una en una cuando un minero las pide
 
 - **Tamaño:** REGUH 30/180. Hoy hubo que anadir RBETR a REGUH, BNKN2 a T012K, PRIUS/ZALDT a PAYR, AKBLN a FEBEP y BLART/VBLNR a REGUP -- 7 columnas en 5 tablas, descubiertas por ERROR una a una hasta que se diffearon todas de golpe
@@ -214,7 +204,7 @@
 
 ---
 
-## ⚪ DATO (9)
+## ⚪ DATO (10)
 
 *un hecho relevante que no es ninguna de las tres · va al conocimiento*
 
@@ -283,6 +273,16 @@
 - **Evidencia:** field_coverage_sampler sobre REGUH XVORL='X' AND LIFNR='': 38 campos con valor de 177, 23 ausentes del Golden. Verificacion directa de KUNNR en P01 sobre la clave duplicada
 - **No se puede ver:** QUE SEAN pagos a personas via ficha de cliente lo digo por los valores de la muestra (10 filas), no por una regla de negocio confirmada. Y JP ya corrigio una vez que 'no existen pagos a clientes': aqui el hecho MEDIDO es que el campo KUNNR esta relleno, no como se llama eso en el negocio
 - **Acción:** anadir KUNNR a REGUH en el Golden. Solo ese: el bloque Z* (ZNME1, ZSTRA, ZORT1...) es la direccion del perceptor y ya esta cubierta por NAME1/STRAS/ORT01. Con KUNNR, REGUH admite indice unico y su delta se desbloquea
+- **Puede contestarlo:** BFM/TRS
+- ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
+- <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>
+
+### Las PROPUESTAS de pago NO se borran al ejecutarse: sobreviven. Probado en tres meses, identicas en el Golden y en P01. Asi que el hueco de 2026-04/05 NO es un borrado
+
+- **Tamaño:** 2025-01: 17.236 · 2025-06: 12.285 · 2026-01: 25.142 — mismas cifras en los dos lados
+- **Evidencia:** COUNT sobre REGUH XVORL='X' por mes, Golden frente a RFC_READ_TABLE en P01
+- **No se puede ver:** queda sin contestar POR QUE no hay propuestas en 2026-04 y 2026-05. Lo unico descartado es que las hayan borrado
+- **Acción:** si vuelve a importar, preguntar a BFM si hubo corridas de propuesta en esos dos meses
 - **Puede contestarlo:** BFM/TRS
 - ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
 - <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>

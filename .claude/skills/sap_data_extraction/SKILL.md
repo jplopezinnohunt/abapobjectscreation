@@ -212,15 +212,31 @@ la base de datos. Todos coinciden en el motivo: **el delta por fecha NO PUEDE DE
 BORRADOS**. Y Theobald, que si trabaja por RFC como nosotros, hace exactamente lo del punto 5
 con `WHERE (ERDAT > @ultima AND AEDAT vacio) OR AEDAT > @ultima`.
 
-### ⛔ EL AGUJERO QUE TENEMOS, Y HAY QUE DECIRLO EN CADA CIFRA
+### El agujero de los BORRADOS: real, pero MUCHO mas pequeno de lo que parece
 
-**Ninguno de nuestros deltas ve un BORRADO.** Si una fila desaparece de P01, la nuestra se
-queda. Es consecuencia directa de estar en los niveles 4-7 de esa tabla, y no se arregla con
-mas solape ni con mejor sonda: hace falta el nivel 1 o el 2, que no tenemos.
+**Tecnicamente ninguno de nuestros deltas ve un borrado.** Si una fila desaparece de P01, la
+nuestra se queda, y eso no se arregla con mas solape ni mejor sonda: hace falta el nivel 1 o
+el 2, que no tenemos.
 
-Se compensa donde importa con una **comparacion de poblacion** — contar claves en los dos
-lados — no con un delta. Y mientras no se haga, cualquier medida de "cuantos X hay" sobre el
-Golden puede estar contando filas que en SAP ya no existen.
+**PERO en SAP borrar fisicamente NO es practica habitual** (JP, y medido despues). Casi todo se
+MARCA -- `LOEVM`, `LOEKZ`, `LVORM` -- y una marca la ve cualquier delta, porque es un cambio de
+valor como otro. Donde si puede haber borrado fisico es en objetos **Z/Y**.
+
+Lo medido el 2026-08-29, que es lo que convierte esto de miedo en riesgo acotado:
+
+- **0 tablas Z/Y** entre las 63 con delta registrado.
+- **7 tablas llevan marca de borrado** (`FMIOI`, `cooi`, `LFA1`, `LFB1`, `ekpo`, `ekko`,
+  `eban`): ahi el borrado logico se ve solo.
+- Las grandes SIN marca son **append-only por naturaleza**: `rsau_audit_history`, `cdhdr`,
+  `cdhdr_history` son logs; `bsis`, `bsas`, `coep` son documentos contables, y SAP los
+  REVIERTE, no los borra.
+- **Probado donde mas lo sospechaba**, las PROPUESTAS de pago: tres meses (2025-01, 2025-06,
+  2026-01) con 17.236 / 12.285 / 25.142 filas -- **identicas en el Golden y en P01**. No se
+  borran. Y la sonda de `LFA1` leyo 321.360 filas de P01, exactamente las que tenemos.
+
+**Como se comprueba cuando importe:** una COMPARACION DE POBLACION -- contar claves en los dos
+lados sobre una ventana -- no un delta. Es barato y es lo que hay que hacer antes de publicar
+un "cuantos X hay" sobre una tabla que si admita borrado.
 
 ### Las tres piezas, y ninguna sirve sin las otras dos
 
