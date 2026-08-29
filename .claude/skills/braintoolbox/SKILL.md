@@ -74,6 +74,17 @@ se le aplica**.
 20 de 50 skills; las sociedades en 10; el inglés genérico de las descripciones, en todas.
 **Antes de publicar un ranking por solape, pesa por IDF y exige al menos un término raro.**
 
+**Variante medida en s109, a caballo entre EL HUÉRFANO PROPIO y MEDIR LA FORMA, NO EL EFECTO:**
+un registro puede estar DECLARADO (no es un huérfano) y aun así ser invisible, si se escribió
+en la clave equivocada del mismo fichero — D1-D7 se registraron en la RAÍZ de
+`brain_v2/methods/algorithms.json`, fuera de la clave `algorithms` que
+`algorithm_landing_check.py` recorre, y el gate daba PASS sin haberlos mirado nunca (un verde
+por no mirar, peor que un rojo). Y como el prefijo D1/D4/D5/D6 ya existía DENTRO con otro
+significado, ni siquiera una lectura completa del JSON lo habría distinguido a simple vista.
+**Defensa: al declarar, comprueba que el CONTEO del gate subió en el número exacto de entradas
+añadidas — un PASS que no movió su denominador no te vio.** Regla:
+`feedback_gate_coverage_is_bounded_by_what_it_walks`.
+
 ## 4. Un instrumento no está terminado hasta que falla a propósito
 
 Correr sin error no es validación. Dar verde no es validación. **Escribir la advertencia en el
@@ -89,6 +100,15 @@ el hallazgo. **El criterio tiene que estar en el `if`, no en la prosa.**
 
 Y tras cualquier parche automático: **asegura el EFECTO, no el parseo.** Un `\1` puede acabar
 en el fichero como el byte `0x01`: parsea perfecto, corre, sale con 0 y no casa nunca.
+
+**Misma familia, medida en s109 sobre un hallazgo ya publicado, no sobre un parche:** un bloque
+de código puede parsear perfecto y no ejecutarse NUNCA si vive después de un `return` — el
+hallazgo más grave de `bank_statement_sod_check.py` (el ciclo de 4 eslabones) se publicó al bus
+como agregado ("60 pagos, 9 pares") sin los pares en sí, porque el bloque que los serializaba
+estaba tras el `return` de `informe()`. Un agregado correcto con el detalle perdido **parece**
+un hallazgo terminado y no lo es: Auditoría no puede revisar "9 pares", solo 9 pares con
+nombre. Corre el instrumento y lee el JSON de salida, no el código. Regla:
+`feedback_an_aggregate_finding_without_named_subjects_is_not_actionable`.
 
 ## 5. Una cita, un import y una mención no son uso
 

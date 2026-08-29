@@ -388,8 +388,35 @@ De 1.249 pagos emitidos por cuentas con extracto tecleado a mano, **420 (34 %) y
 estaba en ninguna lista previa. Le siguen BTE01-IRR02 (Teherán, 355 pagos) y BMN01-USD01 (La
 Habana, 73).
 
-**Ciclo completo:** 60 pagos y 65.409 USD donde la misma persona **crea la factura, emite el pago
-y teclea el extracto que lo confirma**. Pequeño en dinero — se dice igual.
+**Ciclo completo:** 60 pagos y 65.409,13 USD, **9 pares (cuenta, persona)** donde la misma persona
+**crea la factura, emite el pago y teclea el extracto que lo confirma**. Pequeño en dinero — se
+dice igual. Mayor: **BTE01-IRR02 / B_TASHAKORI, 30 pagos, 31.331,80 USD**. Los nueve, con nombre
+(actualizado s109 — antes solo se publicaba el agregado, ver "defecto del instrumento" abajo):
+
+| cuenta | persona | pagos | USD |
+|---|---|---:|---:|
+| BTE01-IRR02 | B_TASHAKORI | 30 | 31.331,80 |
+| BLN01-USD01 | K_ABDULLAH | 4 | 13.108,98 |
+| BTE01-EUR01 | B_TASHAKORI | 2 | 10.596,35 |
+| BLN01-USD01 | R_ABEYE | 1 | 2.969,00 |
+| BLN01-USD01 | H_YAHIA | 1 | 2.392,00 |
+| CBE01-ETB04 | M_TADESSE | 16 | 1.654,15 |
+| SCB16-GHS01 | JN_SACKEY | 1 | 1.449,54 |
+| BTE01-IRR02 | R_KARAM | 3 | 994,82 |
+| ECO04-XOF01 | M_DIAKITE | 2 | 912,49 |
+
+**Asimetría medida (s109), no obvia:** estos 9 pares **NO son subconjunto** del hallazgo de 3
+eslabones de arriba. Allí "teclea" exige teclear Y contabilizar líneas (T&C); aquí basta con
+teclear el extracto. Por eso **CBE01-ETB04/M_TADESSE** (16 pagos, 1.654,15 USD) sale en el ciclo
+de 4 y no en el de 3: su extracto tecleado tiene **CERO líneas FEBEP** — no hay nada que
+contabilizar. Es el eslabón más débil de los nueve.
+
+**Defecto del instrumento, corregido el mismo día (s109, commit `6b6e133`):** el bloque que
+serializaba estos 9 pares vivía DESPUES del `return` de `informe()` — código inalcanzable, nunca
+corrió. El hallazgo se publicó al bus como agregado puro ("60 pagos, 9 pares") sin los pares en
+sí: no accionable, Auditoría no puede revisar "9 pares" sin nombre. Movido antes del return,
+serializado en `sod_bank_statement.json` (clave `ciclo_pares`) y adjuntado al hallazgo 59 del bus
+(campo `pares`). Regla nueva: `feedback_an_aggregate_finding_without_named_subjects_is_not_actionable`.
 
 ### Lo que NO es
 El 99,3 % de «quien teclea también contabiliza» es **mecánico**: FF67 contabiliza bajo el usuario

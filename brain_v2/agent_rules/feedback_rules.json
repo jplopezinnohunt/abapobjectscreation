@@ -5884,5 +5884,57 @@
       "brain_v2/braintoolbox.yaml seccion 1c (mapa rol -> primitiva real)"
     ],
     "source_file": "brain_v2/braintoolbox.yaml"
+  },
+  {
+    "id": "feedback_gate_coverage_is_bounded_by_what_it_walks",
+    "severity": "CRITICAL",
+    "created_session": 109,
+    "derives_from_core_principle": "CP-001",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "rule": "UN VERDE DE UNA PUERTA SOLO VALE SOBRE LA POBLACION QUE LA PUERTA RECORRE -- si algo se registra FUERA del contenedor que la puerta lee, la puerta da PASS sin haberlo mirado nunca, y un verde por no mirar es peor que un rojo. Medido en s108/s109: D1-D6 (y luego D7, heredado por otro agente) se registraron en la RAIZ de brain_v2/methods/algorithms.json, fuera de la clave `algorithms` donde viven las entradas reales que algorithm_landing_check.py recorre (`container = raw.get(\"algorithms\", raw)`). Ademas los prefijos D1/D4/D5/D6 YA EXISTIAN dentro con otro significado (D1_D3_delta_strategies, D4_field_splitting, D5_bounded_probe_with_cap_reporting, D6_aggregate_before_resolve) -- dos taxonomias distintas con el mismo nombre en el mismo store, invisibles la una a la otra. Migrados a A72-A78 DENTRO del registro (Zagentexecution/tasks/2026_08_28_ebs_ntb02_uno18eur/migrate_miner_registry.py); el registro paso de 98 a 105 entradas y las cifras dependientes se movieron al hacerse visibles (mineros del braintoolbox 72->74, gates 62->70).",
+    "why": "Un gate que RECORRE una coleccion (`for k in container`) no comprueba que la coleccion este COMPLETA -- comprueba solo lo que encuentra dentro de ella. Escribir al nivel equivocado del mismo fichero JSON no rompe el parseo (sigue siendo JSON valido) ni hace fallar al gate (que sigue devolviendo PASS, honestamente, sobre lo que SI vio): produce silencio estructural, indistinguible de que todo esta bien. Es un paso mas atras que 'creerse el propio print' (verificar por lo que se emite y no por lo que se guarda): aqui ni siquiera hay una emision equivocada, hay un CONTENEDOR equivocado, y por eso ninguna lectura del propio hallazgo lo habria detectado -- solo mirar el fichero completo y comparar contra lo que el gate declara leer. La colision de prefijo (D1 fuera == D1 dentro con otro significado) agrava el defecto: aunque alguien abriera el JSON entero, el nombre compartido sugiere que es LO MISMO cuando son dos taxonomias independientes.",
+    "how_to_apply": "Al registrar CUALQUIER entrada nueva en un store estructurado: (1) identifica la clave EXACTA que la puerta que lo gatea lee -- grep el nombre de la clave en el SCRIPT del check (`.get(\"algorithms\"`, `.get(\"rules\"`, etc.), no en el JSON: son preguntas distintas; (2) escribe DENTRO de esa clave, nunca en la raiz del fichero ni en una clave hermana marcada con `_`; (3) antes de elegir un prefijo/id, busca si YA EXISTE dentro del registro -- una colision de nombre entre dos taxonomias es tan grave como estar fuera de el; (4) tras registrar, CORRE el gate y confirma que el conteo que reporta subio EXACTAMENTE en el numero de entradas anadidas -- un PASS cuyo denominador no cambio es la senal de este defecto, no una confirmacion de que todo esta bien.",
+    "evidence": [
+      "brain_v2/methods/algorithms.json -- D1-D7 en la raiz, fuera de `algorithms`, migrados a A72-A78 dentro",
+      "Zagentexecution/tasks/2026_08_28_ebs_ntb02_uno18eur/migrate_miner_registry.py",
+      "Zagentexecution/quality_checks/algorithm_landing_check.py -- container = raw.get(\"algorithms\", raw), ya corregido, PASS 105/105"
+    ],
+    "source_file": "brain_v2/methods/algorithms.json"
+  },
+  {
+    "id": "feedback_an_aggregate_finding_without_named_subjects_is_not_actionable",
+    "severity": "CRITICAL",
+    "created_session": 109,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "rule": "UN HALLAZGO PUBLICADO CON UN AGREGADO Y SIN SUJETOS IDENTIFICABLES NO ES ACCIONABLE -- el instrumento tiene que SERIALIZAR los sujetos (cuenta, persona, documento), no solo contarlos. Medido en s109: `bank_statement_sod_check.py` calculaba el ciclo completo de 4 eslabones (crea la factura + emite el pago + teclea el extracto que lo confirma) y publico al bus 'hallazgo 59' como '60 pagos, 65.409,13 USD, 9 pares' -- pero el bloque que imprimia y guardaba esos nueve pares (cuenta, persona) vivia DESPUES del `return` de `informe()`: codigo inalcanzable, nunca corrio. Auditoria/Tesoreria no puede revisar '9 pares'; solo puede revisar 9 pares CON NOMBRE. Corregido moviendo el bloque antes del return, serializandolo en sod_bank_statement.json y adjuntando la lista (campo `pares`) al hallazgo 59 del bus -- ese mismo movimiento saco a la luz una asimetria que nadie habria adivinado del agregado solo (los pares de 4 eslabones no son subconjunto de los de 3).",
+    "why": "Es la version silenciosa de 'creerse el propio print' (feedback_a_silent_replace_is_a_silent_defect, #180): aqui ni siquiera habia un print equivocado, habia un print que NUNCA se ejecutaba, y el agregado que SI se publico (60/65.409/9) parecia completo por si solo -- daba la falsa sensacion de que el hallazgo ya era accionable cuando en realidad trasladaba el trabajo de identificar los sujetos a quien lo leyera despues, sin darle ni los datos ni el contexto para reconstruirlos. Un conteo correcto con contenido perdido es mas peligroso que un conteo que falla ruidosamente: el primero se cierra como 'hecho' sin haber servido para nada.",
+    "how_to_apply": "Antes de publicar cualquier hallazgo con un CONTEO o una SUMA (pagos, cuentas, USD, pares, filas): (1) comprueba que el mismo objeto que agrega TAMBIEN serializa la lista de sujetos que componen el agregado -- si el agregado es N y la lista trae menos de N o esta vacia, hay una fuga; (2) CORRE el instrumento y lee el FICHERO DE SALIDA, no el codigo -- un bloque muerto tras un `return` parsea perfecto y no se detecta leyendo el codigo con calma, solo corriendolo y comprobando el EFECTO (regla #180 `feedback_a_silent_replace_is_a_silent_defect`, ya existente: enlaza esta comprobacion a ella, no la dupliques); (3) adjunta la lista de sujetos al hallazgo DEL BUS, no solo al fichero de tarea de turno -- un JSON de tarea que nadie vuelve a abrir es tan invisible como el bloque muerto que lo alimentaba.",
+    "evidence": [
+      "Zagentexecution/quality_checks/bank_statement_sod_check.py -- bloque ciclo_pares movido antes del return de informe()",
+      "process_mining/mining_findings.json -- hallazgo id 59, campo `pares` con las 9 entradas (cuenta, persona, pagos, importe)",
+      "Zagentexecution/tasks/2026_08_28_ebs_ntb02_uno18eur/sod_bank_statement.json -- clave `ciclo_pares`"
+    ],
+    "source_file": "Zagentexecution/quality_checks/bank_statement_sod_check.py"
   }
 ]
