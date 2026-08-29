@@ -95,7 +95,15 @@ REGISTRO = {
         "alta": None, "fecha": "LAUFD", "alcance": "",
         "por_que": "grupos de fichero de pago"},
     "REGUP_SCENARIOS": {
-        "sap": "REGUP", "clave": ["LAUFD", "LAUFI", "ZBUKR", "LIFNR", "BELNR", "GJAHR", "BUZEI"],
+        # ⛔ LA CLAVE SAP NO BASTA, y no es culpa de la extraccion: MEDIDO contra P01, las
+        # lineas de NOMINA entran en REGUP con BELNR vacio, BUZEI='000' y GJAHR='0000' -- sin
+        # referencia a documento FI. Tres importes del mismo empleado comparten clave EN SAP,
+        # no en nuestra copia. Se anaden WRBTR y SGTXT para identificarlas.
+        # CONSECUENCIA A DECLARAR: si el importe de una fila cambiara, entraria como fila NUEVA
+        # en vez de reemplazar. Para partidas de pago ya ejecutadas, que no cambian, es aceptable.
+        "sap": "REGUP",
+        "clave": ["LAUFD", "LAUFI", "XVORL", "ZBUKR", "LIFNR", "KUNNR", "EMPFG", "VBLNR",
+                  "BELNR", "BUZEI", "GJAHR", "WRBTR", "SGTXT"],
         "alta": None, "fecha": "LAUFD", "alcance": "ZBUKR = 'UNES'",
         "por_que": "OJO: es un SUBCONJUNTO por escenarios, no REGUP entera"},
 }

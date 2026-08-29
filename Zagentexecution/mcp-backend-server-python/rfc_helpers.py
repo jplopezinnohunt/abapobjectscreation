@@ -198,6 +198,13 @@ def _validar_fechas_del_where(func_name, kwargs):
         for lit in _FECHA.findall(texto):
             if lit == "00000000":
                 continue
+            # ⛔ SOLO literales que PUEDAN ser una fecha. La primera version daba por fecha
+            # cualquier cosa de 8 digitos y bloqueo una lectura legitima: LIFNR = '10109087',
+            # un numero de proveedor, "no es una fecha valida". Una guarda con falsos positivos
+            # es peor que el defecto que evita -- impide trabajo correcto y ensena a
+            # desactivarla. Se exige un ano plausible: 1900-2199.
+            if not 1900 <= int(lit[:4]) <= 2199:
+                continue
             try:
                 datetime.date(int(lit[:4]), int(lit[4:6]), int(lit[6:]))
             except ValueError:

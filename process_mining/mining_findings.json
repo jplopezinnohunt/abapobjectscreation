@@ -4544,20 +4544,21 @@
    "quien_puede_contestar": "DBS"
   },
   {
-   "clase": "RIESGO",
+   "clase": "DATO",
    "id": 104,
    "minero": "gold_delta/REGUP_SCENARIOS (s109)",
-   "abierto": true,
-   "que": "REGUP_SCENARIOS NO es una copia de REGUP: es una UNION DE ESCENARIOS, y la columna que dice de que escenario viene cada fila nunca se guardo. Por construccion no puede tener clave unica, asi que su delta es imposible tal como esta",
-   "tamano": "207.779 filas para 205.708 claves SAP COMPLETAS (LAUFD+LAUFI+XVORL+ZBUKR+LIFNR+KUNNR+EMPFG+VBLNR+BELNR+BUZEI+GJAHR). Las que colisionan comparten TODA la clave y difieren solo en el IMPORTE: 1310.60 / 3868.81 / 0.00 para la misma",
-   "evidencia": "tras deduplicar 2.301 copias byte a byte y anadir XVORL, KUNNR y EMPFG desde P01, el indice unico sigue sin poder crearse. Volcado de las filas en colision: solo difiere WRBTR",
-   "limite": "no he confirmado con quien la creo que la union sea intencionada. Lo que esta MEDIDO es que hay filas con la clave SAP completa repetida y distinto importe, y eso no puede pasar en REGUP de verdad",
-   "accion": "decidir que se quiere: (a) dejarla como esta y aceptar que no tiene delta -- se refresca por barrido y se DICE; o (b) extraer REGUP de verdad a una tabla propia con su clave, y dejar REGUP_SCENARIOS como lo que es, un derivado de simulacion. Mientras tanto va 121 dias por detras del resto de la cadena del pago",
+   "abierto": false,
+   "que": "Las lineas de NOMINA entran en REGUP SIN referencia a documento FI -- BELNR vacio, BUZEI='000', GJAHR='0000' -- asi que la clave SAP no las distingue. Pasa EN SAP, no en nuestra copia",
+   "tamano": "verificado contra P01: la misma clave devuelve 3 filas con importes 1310.60 / 3868.81 / 0.00 y el texto 'Wage/salary 10109087/202508'. El Golden era copia fiel. Anadiendo WRBTR y SGTXT a la clave: 207.779 filas / 207.779 claves, 0 colisiones",
+   "evidencia": "RFC_READ_TABLE sobre REGUP en P01 con la misma clave, frente al Golden",
+   "limite": "PUBLIQUE QUE ERA 'UNA UNION DE ESCENARIOS INVENTADA POR NOSOTROS'. FALSO. Lo dije sin haber preguntado a P01, que es donde estaba la respuesta. JP insistio ('puede ser propuesta y pago real, REGUH tiene una marca') y aunque XVORL no era la causa, esa insistencia es lo que me llevo a mirar en P01",
+   "accion": "hecho: clave ampliada con WRBTR+SGTXT, indice unico creado y delta corrido. CONSECUENCIA A DECLARAR: si el importe de una fila cambiara, entraria como fila nueva en vez de reemplazar. Para partidas ya pagadas, que no cambian, es aceptable",
    "denominador": "las 207.779 filas de REGUP_SCENARIOS tras deduplicar",
    "sistema": "Golden",
    "ventana": "LAUFD 2016-2026",
    "quien_puede_contestar": "DBS",
-   "por_que_importa": "es el ULTIMO eslabon desalineado de la cadena del pago: FEBKO, FEBEP, PAYR, BNK_BATCH_HEADER/ITEM, DFPAYG y REGUH quedaron al dia hoy y esta se queda en 2026-04-29. Y el bloqueo no se arregla con una columna, como si paso con REGUH: se arregla decidiendo QUE ES esta tabla"
+   "por_que_importa": "desbloquea el ULTIMO eslabon de la cadena del pago: 207.779 -> 1.793.381 filas, 2024-01-02 a 2026-08-27, 0 duplicados. Y deja un hecho de SAP que no estaba escrito: la nomina no lleva documento FI en REGUP",
+   "estado": "RESUELTO el mismo dia, y mi diagnostico era FALSO"
   }
  ],
  "preguntas": [

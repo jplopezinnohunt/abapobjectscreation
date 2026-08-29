@@ -4,7 +4,7 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**28 hallazgos vivos** de 13 mineros: 🔴 RIESGO 6 · 🟠 DESAFIO 10 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 8
+**28 hallazgos vivos** de 13 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 10 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 9
 
 
 ⚠️ **10 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
@@ -12,7 +12,7 @@
 
 ---
 
-## 🔴 RIESGO (6)
+## 🔴 RIESGO (5)
 
 *puede hacer daño si nadie actúa · va a quien responde del control*
 
@@ -61,16 +61,6 @@
 - **Acción:** declarar por cuenta quien teclea y quien paga, y que no sean la misma persona; o documentar el control fisico compensatorio
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
-
-### REGUP_SCENARIOS NO es una copia de REGUP: es una UNION DE ESCENARIOS, y la columna que dice de que escenario viene cada fila nunca se guardo. Por construccion no puede tener clave unica, asi que su delta es imposible tal como esta
-
-- **Tamaño:** 207.779 filas para 205.708 claves SAP COMPLETAS (LAUFD+LAUFI+XVORL+ZBUKR+LIFNR+KUNNR+EMPFG+VBLNR+BELNR+BUZEI+GJAHR). Las que colisionan comparten TODA la clave y difieren solo en el IMPORTE: 1310.60 / 3868.81 / 0.00 para la misma
-- **Evidencia:** tras deduplicar 2.301 copias byte a byte y anadir XVORL, KUNNR y EMPFG desde P01, el indice unico sigue sin poder crearse. Volcado de las filas en colision: solo difiere WRBTR
-- **No se puede ver:** no he confirmado con quien la creo que la union sea intencionada. Lo que esta MEDIDO es que hay filas con la clave SAP completa repetida y distinto importe, y eso no puede pasar en REGUP de verdad
-- **Acción:** decidir que se quiere: (a) dejarla como esta y aceptar que no tiene delta -- se refresca por barrido y se DICE; o (b) extraer REGUP de verdad a una tabla propia con su clave, y dejar REGUP_SCENARIOS como lo que es, un derivado de simulacion. Mientras tanto va 121 dias por detras del resto de la cadena del pago
-- **Puede contestarlo:** DBS
-- ***hoy** · lo encuentra `gold_delta/REGUP_SCENARIOS (s109)` · Golden · LAUFD 2016-2026*
-- <sub>denominador: las 207.779 filas de REGUP_SCENARIOS tras deduplicar</sub>
 
 ---
 
@@ -224,7 +214,7 @@
 
 ---
 
-## ⚪ DATO (8)
+## ⚪ DATO (9)
 
 *un hecho relevante que no es ninguna de las tres · va al conocimiento*
 
@@ -306,6 +296,16 @@
 - ***hoy** · lo encuentra `medido a mano (s109)` · Golden + P01 (diccionario) · LAUFD 2025-2026*
 - <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101 y los 116.934 items BCM del mismo periodo</sub>
 
+### Las lineas de NOMINA entran en REGUP SIN referencia a documento FI -- BELNR vacio, BUZEI='000', GJAHR='0000' -- asi que la clave SAP no las distingue. Pasa EN SAP, no en nuestra copia
+
+- **Tamaño:** verificado contra P01: la misma clave devuelve 3 filas con importes 1310.60 / 3868.81 / 0.00 y el texto 'Wage/salary 10109087/202508'. El Golden era copia fiel. Anadiendo WRBTR y SGTXT a la clave: 207.779 filas / 207.779 claves, 0 colisiones
+- **Evidencia:** RFC_READ_TABLE sobre REGUP en P01 con la misma clave, frente al Golden
+- **No se puede ver:** PUBLIQUE QUE ERA 'UNA UNION DE ESCENARIOS INVENTADA POR NOSOTROS'. FALSO. Lo dije sin haber preguntado a P01, que es donde estaba la respuesta. JP insistio ('puede ser propuesta y pago real, REGUH tiene una marca') y aunque XVORL no era la causa, esa insistencia es lo que me llevo a mirar en P01
+- **Acción:** hecho: clave ampliada con WRBTR+SGTXT, indice unico creado y delta corrido. CONSECUENCIA A DECLARAR: si el importe de una fila cambiara, entraria como fila nueva en vez de reemplazar. Para partidas ya pagadas, que no cambian, es aceptable
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `gold_delta/REGUP_SCENARIOS (s109)` · Golden · LAUFD 2016-2026*
+- <sub>denominador: las 207.779 filas de REGUP_SCENARIOS tras deduplicar</sub>
+
 ---
 
 ## De dónde sale cada uno
@@ -321,10 +321,10 @@
 | `bank_config_profile_by_nature` | 2 |
 | `medido a mano (s109)` | 2 |
 | `manual (s109) — NO hay script que lo refresque; se cierra a mano` | 2 |
-| `gold_delta/REGUP_SCENARIOS (s109)` | 1 |
 | `ebs_format_consolidation` | 1 |
 | `work_triad_check (manual, s109)` | 1 |
 | `gold_delta/REGUH (s109)` | 1 |
+| `gold_delta/REGUP_SCENARIOS (s109)` | 1 |
 
 > Un minero que no aparece aquí **no está limpio: está mudo**. O no busca, o no publica. Las dos cosas hay que arreglarlas.
 
