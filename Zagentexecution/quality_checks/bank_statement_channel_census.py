@@ -46,6 +46,8 @@ if hasattr(sys.stdout, "reconfigure"):
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(REPO, "Zagentexecution", "mcp-backend-server-python"))
+sys.path.insert(0, HERE)
+import _golden as _G  # noqa: E402
 
 MARCAS_CIERRE = ("CLOSED", "CLOSE", "FERME", "CERRAD", "OBSOLET", "INACTIV",
                  "NOT USED", "DORMANT", "CANCEL")
@@ -56,10 +58,9 @@ def esta_cerrada(t):
 
 
 def rd(conn, tab, fields, where="", n=0):
-    r = conn.call("RFC_READ_TABLE", QUERY_TABLE=tab, DELIMITER="|", ROWCOUNT=n,
-                  OPTIONS=([{"TEXT": where}] if where else []),
-                  FIELDS=[{"FIELDNAME": f} for f in fields])
-    return [dict(zip(fields, [c.strip() for c in x["WA"].split("|")])) for x in r["DATA"]]
+    """Delega en el lector del Golden. La firma NO cambia a proposito: asi el port
+    es cambiar DE DONDE se lee, no COMO se interpreta, y ni una llamada se toca."""
+    return _G.rd(conn, tab, fields, where, n)
 
 
 def _y(*cond):
@@ -107,9 +108,11 @@ def main():
     ap.add_argument("--json", default="")
     a = ap.parse_args()
 
-    from rfc_helpers import get_connection
-    conn = get_connection(a.system)
-    print("SID real: %s" % conn.sid_real)
+    # MINERIA -> GOLDEN, nunca P01. Un minero lee mucho y correlaciona; RFC solo deja
+    # leer estrecho. Si falta dato, exige() se NIEGA y manda al paso de EXTRACCION.
+    conn = _G.abrir()
+    _G.exige(conn, ['FEBKO', 'T012', 'T012K', 'T012T', 'T028B'])
+    print("fuente: GOLDEN (procedencia P01) — FEBKO, T012, T012K, T012T, T028B")
 
     # ALCANCE: siempre 2025-2026 y siempre PARTIDO POR SOCIEDAD. Las dos cosas son
     # decisiones de metodo, no comodidad: mezclar sociedades esconde que cada una opera su

@@ -69,6 +69,8 @@ if hasattr(sys.stdout, "reconfigure"):
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(REPO, "Zagentexecution", "mcp-backend-server-python"))
+sys.path.insert(0, HERE)
+import _golden as _G  # noqa: E402
 
 MARCAS_CIERRE = ("CLOSED", "CLOSE", "FERME", "CERRAD", "OBSOLET", "INACTIV",
                  "NOT USED", "DORMANT", "CANCEL")
@@ -100,18 +102,9 @@ def _opts(where):
 
 
 def rd(conn, tab, fields, where="", n=0):
-    """P01 rechaza ROWSKIPS y ~8 campos es el techo por llamada.
-    TABLE_WITHOUT_DATA es CERO FILAS, no un error: convertirlo en excepcion hace que un
-    conjunto vacio parezca una averia."""
-    try:
-        r = conn.call("RFC_READ_TABLE", QUERY_TABLE=tab, DELIMITER="|", ROWCOUNT=n,
-                      OPTIONS=(_opts(where) if where else []),
-                      FIELDS=[{"FIELDNAME": f} for f in fields])
-    except Exception as e:                                     # noqa: BLE001
-        if "TABLE_WITHOUT_DATA" in str(e):
-            return []
-        raise
-    return [dict(zip(fields, [c.strip() for c in x["WA"].split("|")])) for x in r["DATA"]]
+    """Delega en el lector del Golden. La firma NO cambia a proposito: asi el port
+    es cambiar DE DONDE se lee, no COMO se interpreta, y ni una llamada se toca."""
+    return _G.rd(conn, tab, fields, where, n)
 
 
 def por_lotes(seq, n):
@@ -506,9 +499,11 @@ def main():
     if a.autotest:
         return autotest()
 
-    from rfc_helpers import get_connection
-    conn = get_connection(a.system)
-    print("SID real: %s" % conn.sid_real)
+    # MINERIA -> GOLDEN, nunca P01. Un minero lee mucho y correlaciona; RFC solo deja
+    # leer estrecho. Si falta dato, exige() se NIEGA y manda al paso de EXTRACCION.
+    conn = _G.abrir()
+    _G.exige(conn, ['BKPF', 'BNK_BATCH_ITEM', 'FEBEP', 'FEBKO', 'PAYR', 'REGUH', 'REGUP', 'T001', 'T012T'])
+    print("fuente: GOLDEN (procedencia P01) — BKPF, BNK_BATCH_ITEM, FEBEP, FEBKO, PAYR, REGUH, REGUP, T001, T012T")
     moneda = (rd(conn, "T001", ["BUKRS", "WAERS"], "BUKRS = '%s'" % a.bukrs)
               or [{"WAERS": "?"}])[0]["WAERS"]
 

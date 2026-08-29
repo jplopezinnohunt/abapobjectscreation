@@ -4,7 +4,7 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**20 hallazgos vivos** de 8 mineros: 🔴 RIESGO 6 · 🟠 DESAFIO 7 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 3
+**21 hallazgos vivos** de 9 mineros: 🔴 RIESGO 7 · 🟠 DESAFIO 7 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 3
 
 
 ⚠️ **7 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
@@ -12,7 +12,7 @@
 
 ---
 
-## 🔴 RIESGO (6)
+## 🔴 RIESGO (7)
 
 *puede hacer daño si nadie actúa · va a quien responde del control*
 
@@ -44,15 +44,6 @@
 - ***1 días abierto** · lo encuentra `bank_account_nature_model` · P01 · 2025-2026*
 - <sub>denominador: 144 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
 
-### Cuentas que MUEVEN SALDO sin recibir ni un extracto bancario: nada corrobora el movimiento
-
-- **Tamaño:** 3 cuenta(s), UNES/NTB01-USD04 3 periodos; UNES/NTB01-USD05 5 periodos; UNES/NTB01-USD06 3 periodos
-- **Evidencia:** GLT0 con movimiento y cero cabeceras en FEBKO
-- **No se puede ver:** no se si el banco emite extracto y no llega, o no lo emite
-- **Acción:** reclamar el extracto al banco o declarar por que no aplica
-- ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
-- <sub>denominador: 144 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
-
 ### El que TECLEA el extracto de una cuenta que paga es tambien el que EMITE el dinero por ella: no queda ningun tercero en el circuito SAP
 
 - **Tamaño:** 420 pagos de 1249 (34%) y 2401282.81 USD de 4222714.42 (57%), emitidos por alguien que ademas teclea y contabiliza el extracto de ESA cuenta. 16 personas, 14 cuentas.
@@ -70,6 +61,25 @@
 - **Acción:** revision dirigida de esos pares por Auditoria/Tesoreria
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 39, de las que 34 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
+
+### Cuentas que MUEVEN SALDO sin recibir ni un extracto bancario: nada corrobora el movimiento
+
+- **Tamaño:** 3 cuenta(s), UNES/NTB01-USD04 3 periodos; UNES/NTB01-USD05 5 periodos; UNES/NTB01-USD06 3 periodos
+- **Evidencia:** GLT0 con movimiento y cero cabeceras en FEBKO
+- **No se puede ver:** no se si el banco emite extracto y no llega, o no lo emite
+- **Acción:** reclamar el extracto al banco o declarar por que no aplica
+- ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
+- <sub>denominador: 167 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
+
+### El Golden tiene el 28,8% de las cabeceras de extracto de la ventana 2025-2026. Los 7 mineros de banca se escribieron contra P01 EN VIVO, que es un error de categoria -- pero portarlos al Golden hoy les daria un tercio de la poblacion
+
+- **Tamaño:** FEBKO 17.812 de 61.769 (28,8%) · T035D 151 de 178 (84,8%) · T028G 1.025 de 1.043 · T028B 169 de 172 · T012K 402 de 404 · T012T 1.180 de 1.180 completa
+- **Evidencia:** brain_v2/gold_coverage.json, medido P01 vs Golden el 2026-08-29
+- **No se puede ver:** solo se midieron 6 tablas de las ~22 que tocan estos mineros. REGUH, REGUP, BKPF, PAYR, BNK_BATCH_ITEM y GLT0 NO se midieron -- y no se midieron a proposito: contar en P01 con RFC_READ_TABLE arrastra las filas, y saber el numero de FEBKO ya costo 61.769 filas por el cable
+- **Acción:** PASO DE EXTRACCION, no una lectura a P01: refrescar FEBKO/FEBEP de la ventana y T035D. `scripts/extraction/gold_refresh.py`. Hasta entonces _golden.exige() se NIEGA, que es la conducta correcta: mejor no publicar que publicar un tercio
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `_golden/gold_coverage (s109)` · Golden vs P01 · AZDAT 20250101-20261231*
+- <sub>denominador: las 6 tablas medidas de las ~22 que leen los 7 mineros de banca</sub>
 
 ---
 
@@ -128,16 +138,6 @@
 - ***1 días abierto** · lo encuentra `bank_config_profile_by_nature` · P01 · 2025-2026*
 - <sub>denominador: 144 cuentas VIVAS de UNES</sub>
 
-### Cuentas VIVAS que no pagan, no reciben y no mueven: no se si estan cerradas de hecho y nadie lo declaro
-
-- **Tamaño:** 8 cuentas: UNES/BRA01-BRL01, UNES/BRA01-BRL02, UNES/CBE01-ETB02, UNES/DEU01-EUR01, UNES/DEU02-EUR01, UNES/NTB02-EUR02, UNES/UBS02-CHF01, UNES/UNDP-UNDP
-- **Evidencia:** cero en los tres ejes durante toda la ventana
-- **No se puede ver:** 'CLOSED' en el texto es la unica marca de estado y estas no la llevan
-- **Acción:** preguntar a: Tesoreria: cerrarlas o declarar por que siguen abiertas
-- **Puede contestarlo:** Tesoreria: cerrarlas o declarar por que siguen abiertas
-- ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
-- <sub>denominador: 144 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
-
 ### El censo de canales publica UNA persona por cuenta manual; medido son hasta 5 por cuenta y 41 en total, y 31 de las 39 cuentas afectadas no estan etiquetadas MANUAL. Dos medidas del mismo objeto no coinciden
 
 - **Tamaño:** 39 cuentas vs 8 publicadas · 41 personas vs 4 publicadas · 13.942 lineas tecleadas vs 1.712 publicadas
@@ -147,6 +147,16 @@
 - **Puede contestarlo:** BFM/TRS (Baizid Gazi, Anssi Yli-Hietanen) + DBS
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 39, de las que 34 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
+
+### Cuentas VIVAS que no pagan, no reciben y no mueven: no se si estan cerradas de hecho y nadie lo declaro
+
+- **Tamaño:** 9 cuentas: UIL/DEU01-EUR02, UNES/BRA01-BRL01, UNES/BRA01-BRL02, UNES/CBE01-ETB02, UNES/DEU01-EUR01, UNES/DEU02-EUR01, UNES/NTB02-EUR02, UNES/UBS02-CHF01
+- **Evidencia:** cero en los tres ejes durante toda la ventana
+- **No se puede ver:** 'CLOSED' en el texto es la unica marca de estado y estas no la llevan
+- **Acción:** preguntar a: Tesoreria: cerrarlas o declarar por que siguen abiertas
+- **Puede contestarlo:** Tesoreria: cerrarlas o declarar por que siguen abiertas
+- ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
+- <sub>denominador: 167 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
 
 ---
 
@@ -173,15 +183,6 @@
 - ***1 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
 - <sub>denominador: 368 cuentas de banco casa; 224 excluidas por llevar CLOSED en T012T-TEXT1 (no hay campo de estado: es una convencion humana); quedan 144 vivas</sub>
 
-### Cuentas que reciben extractos y no producen NINGUN movimiento contable: trabajo que se procesa sin efecto
-
-- **Tamaño:** 3 cuentas, 1483 extractos en la ventana
-- **Evidencia:** FEBKO con cabeceras y GLT0 sin periodos con movimiento
-- **No se puede ver:** puede que sean extractos a cero legitimos, o que la contabilizacion vaya a otro mayor: el dato no lo distingue
-- **Acción:** mirar una de ellas en FEBAN antes de generalizar
-- ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
-- <sub>denominador: 144 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
-
 ### Modelos de extracto que existen para UN SOLO banco: cada uno es un modelo entero -- con su prueba y su riesgo -- sosteniendo muy pocas cuentas
 
 - **Tamaño:** 5 modelos, 73 reglas para 6 cuentas, sobre un total de 259 reglas
@@ -190,6 +191,15 @@
 - **Acción:** mirar primero los pares con parecido alto, no los mas pequenos
 - ***1 días abierto** · lo encuentra `ebs_format_consolidation` · P01 · 2025-2026*
 - <sub>denominador: 144 cuentas VIVAS de UNES, 133 con extracto en la ventana</sub>
+
+### Cuentas que reciben extractos y no producen NINGUN movimiento contable: trabajo que se procesa sin efecto
+
+- **Tamaño:** 5 cuentas, 2326 extractos en la ventana
+- **Evidencia:** FEBKO con cabeceras y GLT0 sin periodos con movimiento
+- **No se puede ver:** puede que sean extractos a cero legitimos, o que la contabilizacion vaya a otro mayor: el dato no lo distingue
+- **Acción:** mirar una de ellas en FEBAN antes de generalizar
+- ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
+- <sub>denominador: 167 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
 
 ---
 
@@ -238,6 +248,7 @@
 | `bank_account_nature_model` | 2 |
 | `house_bank_ebs_wiring_check` | 2 |
 | `bank_config_profile_by_nature` | 2 |
+| `_golden/gold_coverage (s109)` | 1 |
 | `ebs_format_consolidation` | 1 |
 | `work_triad_check (manual, s109)` | 1 |
 
