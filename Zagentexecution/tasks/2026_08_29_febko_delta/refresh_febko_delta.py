@@ -145,6 +145,22 @@ def _main():
     conn = get_connection("P01")
     print("P01 conectado (solo lectura). Delta mes a mes desde %s.\n" % DESDE)
     hasta = datetime.date.today().strftime("%Y%m")
+
+    # ⛔ DELTA POR MARCA DE AGUA, no barrido. Antes se leian los 32 meses del rango para anadir
+    # 41.466 filas de 60.453 leidas: dos tercios del trafico contra P01 sobraba. La marca va
+    # sobre EDATE (fecha de ALTA), no sobre AZDAT: con AZDAT, un extracto de fecha vieja cargado
+    # ayer quedaria por debajo de la marca y NO ENTRARIA NUNCA.
+    if not solo:
+        sys.path.insert(0, os.path.join(REPO, "Zagentexecution", "quality_checks"))
+        import _marca_agua as M                                        # noqa: E402
+        m = M.leer(con, GOLD)
+        if m:
+            desde_marca = str(m["hasta"])[:6]
+            print("marca de agua: %s <= %s (%s). Solo desde ahi." % (m["campo_marca"],
+                                                                     m["hasta"], m["cuando"]))
+            solo = set(meses(desde_marca, hasta))
+        else:
+            print("SIN marca de agua: esta corrida es un BARRIDO completo, y se dice.")
     tot_new = tot_upd = tot_leidas = 0
     fallidos = []
     ph = ",".join("?" * len(cols))
@@ -182,6 +198,17 @@ def _main():
     print("leidas de P01: %d · NUEVAS: %d · refrescadas: %d" % (tot_leidas, tot_new, tot_upd))
     print("Golden: %d -> %d filas   (ni un DELETE)" % (len(ya) - tot_new, fin))
     print(con.execute("SELECT MIN(AZDAT),MAX(AZDAT) FROM [%s]" % GOLD).fetchone())
+    # La marca se escribe DESPUES del commit del dato y SOLO si no fallo ningun mes: marcarla
+    # antes, o con huecos, congela un agujero que ningun delta posterior vuelve a mirar.
+    if not fallidos:
+        sys.path.insert(0, os.path.join(REPO, "Zagentexecution", "quality_checks"))
+        import _marca_agua as M                                        # noqa: E402
+        tope = M.desde_el_dato(con, GOLD, "EDATE")
+        if tope:
+            M.escribir(con, GOLD, "EDATE", tope,
+                       con.execute("SELECT COUNT(*) FROM [%s]" % GOLD).fetchone()[0],
+                       nota="delta por EDATE (fecha de alta), no por AZDAT")
+            print("marca de agua actualizada: EDATE <= %s" % tope)
     con.close()
     if MALOS:
         print("\nCOLUMNAS QUE NO SE PUDIERON LEER (quedan VACIAS, y se dice cuales): %s"
