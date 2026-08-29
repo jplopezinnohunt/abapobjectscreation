@@ -41269,14 +41269,14 @@
       ]
     },
     {
-      "_s109_domain_fix": "declaraba domain='Treasury_EBS', que NO existe en la ontologia (25 dominios, ninguno se llama asi). Por eso work_triad_check leia NO en proceso y en metodo: el dominio no apuntaba a nada. El real es Treasury / subtopic bank_statement_ebs.",
+      "_s109_domain_fix": "s109 lo cambie a 'Treasury' creyendo que Treasury_EBS estaba inventado. NO lo esta: es canonical_key de la ontologia con registry_keys=['Treasury']. Editar el dato para contentar a una puerta que no sabe leer registry_keys es al reves. Restaurado; arreglada la puerta (work_triad_check) en su lugar.",
       "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
       "analyzed_session": 108,
       "class_generalization": "Cambiar el numero de cuenta de un banco casa deja HUERFANA toda configuracion cuya clave sea ese numero. FI12 actualiza T012K y no arrastra a T028B. El sistema no avisa: la ficha queda perfecta, el job sigue en verde y el extracto deja de entrar en silencio. El precedente ya existia y no se cerro: el retro NTB01_rename_2026-04-08.md dejo escrito 'comprobar las entradas de T028B para la clave de banco de NTB01' cuatro meses antes.",
       "company_codes_involved": [
         "UNES"
       ],
-      "domain": "Treasury",
+      "domain": "Treasury_EBS",
       "error_messages": [
         "(sin mensaje: el extracto simplemente deja de entrar, en silencio)"
       ],
@@ -43933,7 +43933,6 @@
         "SCB19",
         "SM35_BDC",
         "T030HB",
-        "T035U",
         "T042Y",
         "TBCA_RELPROC_CUS",
         "TBCA_RELPROC_EXP",
@@ -43998,6 +43997,7 @@
         "SOG_EUR4",
         "SOG_FR",
         "SOG_FRB",
+        "T035U",
         "TR_TRNF",
         "V_T028B",
         "XRT940",
@@ -44292,7 +44292,7 @@
       },
       "INC-000013624": {
         "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
-        "domain": "Treasury",
+        "domain": "Treasury_EBS",
         "fix_immediate": "",
         "related_objects": [
           "EBS INTEGRATION",
@@ -58701,19 +58701,20 @@
     "61": {
       "discovery": {
         "mining": {
-          "abierto": true,
-          "accion": "una tabla de alias -> dominio canonico, y que la puerta de ontologia recorra tambien los incidentes. Corregido solo INC-000013624 en s109 (Treasury_EBS -> Treasury)",
-          "clase": "DESAFIO",
+          "abierto": false,
+          "accion": "hecho. Y de paso: work_triad_check ahora resuelve por domains[].registry_keys -- Treasury_EBS es canonico y se registra como 'Treasury', y por no leer eso la sonda daba registro vacio. Casi edito el incidente para contentar a la sonda: el dato estaba bien y la sonda mal",
+          "clase": "DATO",
           "denominador": "los 16 incidentes de primera clase de brain_v2/incidents/incidents.json",
-          "evidencia": "brain_v2/incidents/incidents.json domain/secondary_domains cruzados contra las claves de brain_v2/domains/domains.json MAS cross_cutting_keys de brain_v2/capability_model/ontology.json",
+          "estado": "RESUELTO en s109",
+          "evidencia": "brain_v2/capability_model/ontology.json domains[].aliases + _alias_evidence · validate_ontology.py sources() ahora rinde incidents.json · probado inyectando un dominio falso: exit 1 por la razon correcta, verde al restaurar",
           "id": 61,
-          "limite": "PRIMERA MEDIDA MIA ERA FALSA: publique '11 de 19 dominios inventados' contando como inventadas BASIS, Security, Infrastructure y Brain_Architecture, que SI estan registradas como claves transversales. El validador de ontologia me corrigio en su propia salida. Y no se si cada alias tiene equivalente real: 'MM' podria ser Procurement o podria faltar el dominio",
+          "limite": "PUBLIQUE ESTA CIFRA MAL DOS VECES. Primero '11 de 19 dominios inventados' contando BASIS, Security, Infrastructure y Brain_Architecture, que son claves transversales registradas. Luego '9 de 16' ignorando domains[].aliases y subdomain_aliases, con lo que Payment y BCM -- que YA eran alias de Payment_BCM -- contaban como inventados. La cifra buena, 5, sale de usar el resolvedor del proyecto (load_index) en vez de un conjunto hecho a mano. Tres medidas del mismo objeto, dos falsas, un solo modo de fallo: DENOMINADOR INCOMPLETO",
           "minero": "work_triad_check (manual, s109)",
           "por_que_importa": "un incidente cuyo dominio no resuelve queda desconectado de sus docs, companions e instrumentos: work_triad_check leia NO en proceso Y en metodo para INC-000013624 teniendo los tres. Es feedback_gate_coverage_is_bounded_by_what_it_walks aplicandose a si misma el dia que se escribio -- y luego el mismo modo de fallo en MI medida",
-          "que": "Los incidentes nombran su dominio con ALIAS que ningun registro resuelve: BCM, Payment, HR, MM, CTS, MasterDataConfig. Existen Payment_BCM, HCM, Transport_Intelligence, Master_Data_Governance -- pero nada mapea uno a otro, asi que el incidente queda desconectado de sus docs e instrumentos",
+          "que": "RESUELTO: 5 de 16 incidentes nombraban su dominio con un alias que la ontologia no conocia (HR, MM, CTS, MasterDataConfig). Anadidos los 4 alias con la evidencia del incidente que los justifica; la puerta de ontologia ahora RECORRE los incidentes y falla si un nombre no resuelve",
           "quien_puede_contestar": "DBS (dueño de la ontologia)",
           "sistema": "repo",
-          "tamano": "9 de 16 incidentes de primera clase. La ontologia admite 40 nombres (25 dominios + 15 claves transversales registradas) y estos 6 no estan entre ellos",
+          "tamano": "5 de 16 incidentes · 4 alias · resolvedor de 64 a 68 nombres · sin resolver: 0",
           "ventana": "todo el corpus"
         }
       },
@@ -189953,17 +189954,13 @@
     },
     "T035U": {
       "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
-      "domain": "Treasury",
+      "domain": "Treasury_EBS",
       "domain_axes": {
-        "functional": [
-          "Treasury"
-        ],
+        "functional": [],
         "module": [
-          "FI"
+          "Treasury_EBS"
         ],
-        "process": [
-          "T2R"
-        ]
+        "process": []
       },
       "incident_fix_path": "Anadir en D01 y transportar: T028B BANKL=SP0000000MX7, KTONR=18747647, VGTYP=TR_TRNF, BNKKO=NTB02-EUR1, BUKRS=UNES (resto de campos vacios, como en las 6 filas de NTB01). Borrar despues la fila 11939389 tras verificar la entrada del primer extracto. Antes de liberar: python Zagentexecution/quality_c",
       "incident_root_cause": "El cambio pedido (numero de cuenta, IBAN y cuenta alternativa) se hizo COMPLETO y esta verificado en vivo en P01: T012K UNES/NTB02/EUR01 lleva BANKN=18747647 y BNKN2=UNO18EUR, y TIBAN lleva GB42CNOR23286318747647 con VALID_FROM=20260817. Lo que NO se actualizo es T028B (SPRO: asignar cuentas bancari",

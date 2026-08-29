@@ -4472,20 +4472,21 @@
    "visto_ultima": "2026-08-28"
   },
   {
-   "clase": "DESAFIO",
+   "clase": "DATO",
    "id": 61,
    "minero": "work_triad_check (manual, s109)",
-   "que": "Los incidentes nombran su dominio con ALIAS que ningun registro resuelve: BCM, Payment, HR, MM, CTS, MasterDataConfig. Existen Payment_BCM, HCM, Transport_Intelligence, Master_Data_Governance -- pero nada mapea uno a otro, asi que el incidente queda desconectado de sus docs e instrumentos",
-   "tamano": "9 de 16 incidentes de primera clase. La ontologia admite 40 nombres (25 dominios + 15 claves transversales registradas) y estos 6 no estan entre ellos",
-   "evidencia": "brain_v2/incidents/incidents.json domain/secondary_domains cruzados contra las claves de brain_v2/domains/domains.json MAS cross_cutting_keys de brain_v2/capability_model/ontology.json",
-   "limite": "PRIMERA MEDIDA MIA ERA FALSA: publique '11 de 19 dominios inventados' contando como inventadas BASIS, Security, Infrastructure y Brain_Architecture, que SI estan registradas como claves transversales. El validador de ontologia me corrigio en su propia salida. Y no se si cada alias tiene equivalente real: 'MM' podria ser Procurement o podria faltar el dominio",
-   "accion": "una tabla de alias -> dominio canonico, y que la puerta de ontologia recorra tambien los incidentes. Corregido solo INC-000013624 en s109 (Treasury_EBS -> Treasury)",
+   "que": "RESUELTO: 5 de 16 incidentes nombraban su dominio con un alias que la ontologia no conocia (HR, MM, CTS, MasterDataConfig). Anadidos los 4 alias con la evidencia del incidente que los justifica; la puerta de ontologia ahora RECORRE los incidentes y falla si un nombre no resuelve",
+   "tamano": "5 de 16 incidentes · 4 alias · resolvedor de 64 a 68 nombres · sin resolver: 0",
+   "evidencia": "brain_v2/capability_model/ontology.json domains[].aliases + _alias_evidence · validate_ontology.py sources() ahora rinde incidents.json · probado inyectando un dominio falso: exit 1 por la razon correcta, verde al restaurar",
+   "limite": "PUBLIQUE ESTA CIFRA MAL DOS VECES. Primero '11 de 19 dominios inventados' contando BASIS, Security, Infrastructure y Brain_Architecture, que son claves transversales registradas. Luego '9 de 16' ignorando domains[].aliases y subdomain_aliases, con lo que Payment y BCM -- que YA eran alias de Payment_BCM -- contaban como inventados. La cifra buena, 5, sale de usar el resolvedor del proyecto (load_index) en vez de un conjunto hecho a mano. Tres medidas del mismo objeto, dos falsas, un solo modo de fallo: DENOMINADOR INCOMPLETO",
+   "accion": "hecho. Y de paso: work_triad_check ahora resuelve por domains[].registry_keys -- Treasury_EBS es canonico y se registra como 'Treasury', y por no leer eso la sonda daba registro vacio. Casi edito el incidente para contentar a la sonda: el dato estaba bien y la sonda mal",
    "denominador": "los 16 incidentes de primera clase de brain_v2/incidents/incidents.json",
    "sistema": "repo",
    "ventana": "todo el corpus",
-   "abierto": true,
+   "abierto": false,
    "por_que_importa": "un incidente cuyo dominio no resuelve queda desconectado de sus docs, companions e instrumentos: work_triad_check leia NO en proceso Y en metodo para INC-000013624 teniendo los tres. Es feedback_gate_coverage_is_bounded_by_what_it_walks aplicandose a si misma el dia que se escribio -- y luego el mismo modo de fallo en MI medida",
-   "quien_puede_contestar": "DBS (dueño de la ontologia)"
+   "quien_puede_contestar": "DBS (dueño de la ontologia)",
+   "estado": "RESUELTO en s109"
   }
  ],
  "preguntas": [

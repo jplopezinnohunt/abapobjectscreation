@@ -4,10 +4,10 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**20 hallazgos vivos** de 8 mineros: 🔴 RIESGO 6 · 🟠 DESAFIO 8 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 2
+**20 hallazgos vivos** de 8 mineros: 🔴 RIESGO 6 · 🟠 DESAFIO 7 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 3
 
 
-⚠️ **8 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
+⚠️ **7 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
 
 
 ---
@@ -73,7 +73,7 @@
 
 ---
 
-## 🟠 DESAFIO (8)
+## 🟠 DESAFIO (7)
 
 *no cuadra y el minero no puede resolverlo solo · **necesita que alguien conteste***
 
@@ -148,16 +148,6 @@
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 39, de las que 34 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
 
-### Los incidentes nombran su dominio con ALIAS que ningun registro resuelve: BCM, Payment, HR, MM, CTS, MasterDataConfig. Existen Payment_BCM, HCM, Transport_Intelligence, Master_Data_Governance -- pero nada mapea uno a otro, asi que el incidente queda desconectado de sus docs e instrumentos
-
-- **Tamaño:** 9 de 16 incidentes de primera clase. La ontologia admite 40 nombres (25 dominios + 15 claves transversales registradas) y estos 6 no estan entre ellos
-- **Evidencia:** brain_v2/incidents/incidents.json domain/secondary_domains cruzados contra las claves de brain_v2/domains/domains.json MAS cross_cutting_keys de brain_v2/capability_model/ontology.json
-- **No se puede ver:** PRIMERA MEDIDA MIA ERA FALSA: publique '11 de 19 dominios inventados' contando como inventadas BASIS, Security, Infrastructure y Brain_Architecture, que SI estan registradas como claves transversales. El validador de ontologia me corrigio en su propia salida. Y no se si cada alias tiene equivalente real: 'MM' podria ser Procurement o podria faltar el dominio
-- **Acción:** una tabla de alias -> dominio canonico, y que la puerta de ontologia recorra tambien los incidentes. Corregido solo INC-000013624 en s109 (Treasury_EBS -> Treasury)
-- **Puede contestarlo:** DBS (dueño de la ontologia)
-- ***hoy** · lo encuentra `work_triad_check (manual, s109)` · repo · todo el corpus*
-- <sub>denominador: los 16 incidentes de primera clase de brain_v2/incidents/incidents.json</sub>
-
 ---
 
 ## 🟢 OPORTUNIDAD (4)
@@ -203,7 +193,7 @@
 
 ---
 
-## ⚪ DATO (2)
+## ⚪ DATO (3)
 
 *un hecho relevante que no es ninguna de las tres · va al conocimiento*
 
@@ -226,6 +216,16 @@
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 39, de las que 34 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
 
+### RESUELTO: 5 de 16 incidentes nombraban su dominio con un alias que la ontologia no conocia (HR, MM, CTS, MasterDataConfig). Anadidos los 4 alias con la evidencia del incidente que los justifica; la puerta de ontologia ahora RECORRE los incidentes y falla si un nombre no resuelve
+
+- **Tamaño:** 5 de 16 incidentes · 4 alias · resolvedor de 64 a 68 nombres · sin resolver: 0
+- **Evidencia:** brain_v2/capability_model/ontology.json domains[].aliases + _alias_evidence · validate_ontology.py sources() ahora rinde incidents.json · probado inyectando un dominio falso: exit 1 por la razon correcta, verde al restaurar
+- **No se puede ver:** PUBLIQUE ESTA CIFRA MAL DOS VECES. Primero '11 de 19 dominios inventados' contando BASIS, Security, Infrastructure y Brain_Architecture, que son claves transversales registradas. Luego '9 de 16' ignorando domains[].aliases y subdomain_aliases, con lo que Payment y BCM -- que YA eran alias de Payment_BCM -- contaban como inventados. La cifra buena, 5, sale de usar el resolvedor del proyecto (load_index) en vez de un conjunto hecho a mano. Tres medidas del mismo objeto, dos falsas, un solo modo de fallo: DENOMINADOR INCOMPLETO
+- **Acción:** hecho. Y de paso: work_triad_check ahora resuelve por domains[].registry_keys -- Treasury_EBS es canonico y se registra como 'Treasury', y por no leer eso la sonda daba registro vacio. Casi edito el incidente para contentar a la sonda: el dato estaba bien y la sonda mal
+- **Puede contestarlo:** DBS (dueño de la ontologia)
+- ***hoy** · lo encuentra `work_triad_check (manual, s109)` · repo · todo el corpus*
+- <sub>denominador: los 16 incidentes de primera clase de brain_v2/incidents/incidents.json</sub>
+
 ---
 
 ## De dónde sale cada uno
@@ -238,8 +238,8 @@
 | `bank_account_nature_model` | 2 |
 | `house_bank_ebs_wiring_check` | 2 |
 | `bank_config_profile_by_nature` | 2 |
-| `work_triad_check (manual, s109)` | 1 |
 | `ebs_format_consolidation` | 1 |
+| `work_triad_check (manual, s109)` | 1 |
 
 > Un minero que no aparece aquí **no está limpio: está mudo**. O no busca, o no publica. Las dos cosas hay que arreglarlas.
 

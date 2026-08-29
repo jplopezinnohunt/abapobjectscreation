@@ -50,6 +50,20 @@ def sources():
     yield "domains/domains.json (keys)", list(reg.get("domains", {}))
     cm = json.load(open(BRAIN_V2 / "capability_model" / "capability_model.json", encoding="utf-8"))
     yield "capability_model/capability_model.json (domains keys)", list(cm.get("domains", {}))
+    # Los INCIDENTES tambien llevan `domain`, y hasta s109 esta puerta no los miraba: 5 de 16
+    # nombraban HR / MM / CTS / MasterDataConfig, que no resolvian a nada. Un incidente cuyo
+    # dominio no resuelve queda desconectado de sus docs, companions e instrumentos -- y la
+    # puerta daba PASS porque no recorria ese store. Es
+    # feedback_gate_coverage_is_bounded_by_what_it_walks.
+    incs = json.load(open(BRAIN_V2 / "incidents" / "incidents.json", encoding="utf-8"))
+    incs = incs.get("incidents", incs) if isinstance(incs, dict) else incs
+    incs = list(incs.values()) if isinstance(incs, dict) else incs
+    vals = []
+    for x in incs:
+        d = x.get("domain")
+        vals.extend(d if isinstance(d, list) else [d] if d else [])
+        vals.extend(x.get("secondary_domains") or [])
+    yield "incidents/incidents.json (domain + secondary_domains)", vals
 
 
 def orphan_domains(ont):

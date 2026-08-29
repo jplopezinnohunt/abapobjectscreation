@@ -2394,6 +2394,28 @@
       "_hallazgo_2026_08_28": "420 pagos (34%) y 2.401.283 USD (57%) de los emitidos por cuentas con extracto manual los emite quien tambien teclea y contabiliza esa misma cuenta -- 16 personas, 14 cuentas. Mayor: AIB01-USD01 (Kabul), 262 pagos, 2.118.599 USD. Ciclo completo (4 eslabones): 60 pagos, 65.409 USD. Los 1.253 pagos son 100% metodo 3 (cheque prenumerado, T042Z-XSCHK) con CERO filas en BNK_BATCH_ITEM para esos 39 bancos casa -- BCM libera FICHEROS y un cheque no tiene fichero, asi que ningun control automatico lo ve.",
       "_renombrado_de": "D7_bank_statement_sod_check",
       "_por_que": "s108: estaba en la RAIZ de algorithms.json, fuera del registro, y su prefijo D chocaba con una entrada distinta que ya existia dentro (D4=troceado de campos, D5=sonda acotada). Fuera del registro ninguna puerta lo veia: algorithm_landing_check daba PASS sin mirarlo."
+    },
+    "A79_opportunity_watch": {
+      "que_hace": "el registro de oportunidades y riesgos NOTA SU PROPIA AUSENCIA. Modo puerta (sin SAP): ¿el registro va por detras del bus? ¿cuanto lleva mudo cada minero? ¿hay mineros cableados que nunca publicaron? ¿hallazgos de un minero que ya no existe? ¿cumple cada hallazgo el contrato (tamano/evidencia/limite/denominador)? Modo --correr (lee SAP): vuelve a correr los mineros y publica el DELTA -- nuevo, desaparecido, cambio de tamano",
+      "script": "Zagentexecution/quality_checks/opportunity_watch.py",
+      "lands_in": [
+        "process_mining/opportunity_watch_state.json",
+        ".agents/intelligence/PMO_OPORTUNIDADES.md",
+        "companions/oportunidades_y_desafios.html"
+      ],
+      "por_que_existe": "en s109 se construyo el registro y quedo MUERTO: nada lo regeneraba, nada volvia a correr los mineros, ningun hook mencionaba mineria. Un registro que nadie refresca no envejece a la vista -- envejece en silencio, afirmando cifras de un dia concreto como si fueran de hoy. Regla #179: lo programado debe notar su propia ausencia",
+      "trampas": [
+        "la lista de mineros se DERIVA de quien importa `_hallazgos`, NO se mantiene a mano: mantenerla a mano garantiza que el minero numero 8 no entre nunca",
+        "un minero que no pudo correr se REPORTA, nunca se salta: lo que un minero roto no encuentra se ve IGUAL que lo que ya no existe",
+        "el DELTA es el producto, no la lista: cada corrida REEMPLAZA lo del minero en el bus, asi que lo que desaparece dejo de encontrarse -- o el minero se rompio"
+      ],
+      "conclusion_falsa_que_permite": "leer el registro como una foto de HOY cuando puede ser de hace meses. Por eso la puerta sale con 1 en vez de solo avisar",
+      "validado": "3 casos que DEBEN fallar, probados: bus mas nuevo que el registro (exit 1), minero a 424 dias (exit 1, por esa razon), hallazgo sin limite (exit 1, nombrando el campo). Verde al restaurar los tres",
+      "cableado_en": [
+        "brain_v2/rebuild_all.py Step 0j + 0j2 (tambien en --rapido)",
+        "brain_v2/session_start_hook.py oportunidades_headline()"
+      ],
+      "sesion": 109
     }
   },
   "_portfolio": {

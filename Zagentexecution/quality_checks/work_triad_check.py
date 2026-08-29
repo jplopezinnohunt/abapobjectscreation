@@ -106,6 +106,22 @@ def objetos_del_incidente(inc):
     return out
 
 
+def _registry_keys(canonico):
+    """Las claves con las que ese dominio canonico esta registrado en domains.json."""
+    try:
+        import sys as _s, os as _o
+        _s.path.insert(0, _o.path.join(REPO, "brain_v2"))
+        from validate_ontology import ONTOLOGY
+        import json as _j
+        ont = _j.load(open(str(ONTOLOGY), encoding="utf-8"))
+    except Exception:
+        return []
+    for d in ont.get("domains", []):
+        if d.get("canonical_key") == canonico:
+            return list(d.get("registry_keys") or [])
+    return []
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--incident", default="")
@@ -153,7 +169,17 @@ def main():
         # medido: los dos incidentes de BCM salian "falta doc de proceso" teniendo el runbook,
         # el solution design y 8 companions declarados. Un alias mal resuelto no da error: da
         # un cero, que es peor.
+        # La clave CANONICA no es la clave del REGISTRO, y la ontologia YA dice cual es:
+        # domains[].registry_keys. Hasta s109 esta sonda no lo leia, asi que Treasury_EBS
+        # (canonico, registry_keys=['Treasury']) daba registro VACIO y el incidente salia sin
+        # proceso y sin metodo teniendo los tres. Casi edito el incidente para contentar a la
+        # sonda; el dato estaba bien y la sonda mal.
         rec = dom.get(canon) or dom.get(crudo) or {}
+        if not rec:
+            for k in _registry_keys(canon) + _registry_keys(crudo):
+                if dom.get(k):
+                    rec = dom[k]
+                    break
 
         # 2 · PROCESO: doc de proceso en el dominio + companion
         docs = rec.get("knowledge_docs", []) or []

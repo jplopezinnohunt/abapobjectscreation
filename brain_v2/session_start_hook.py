@@ -282,6 +282,62 @@ def roster_request():
         return ""
 
 
+def oportunidades_headline():
+    """Lo que los MINEROS encontraron y sigue abierto — el unico registro que dice DESDE CUANDO.
+
+    Existe porque en s109 se construyo ese registro y nada volvia a tocarlo: ni se regeneraba
+    ni se volvian a correr los mineros. Un registro que nadie refresca no envejece a la vista,
+    envejece EN SILENCIO. Aqui se cuenta AHORA, no se declara, y se dice cuantos dias lleva
+    abierto lo mas viejo: sin eso una lista viva y un cementerio se leen igual.
+    """
+    try:
+        import json as _j                            # noqa: PLC0415
+        import datetime as _dt                       # noqa: PLC0415
+        raiz = HERE.parent
+        d = _j.loads((raiz / "process_mining" / "mining_findings.json").read_text(
+            encoding="utf-8", errors="replace"))
+        vivos = [h for h in (d.get("hallazgos") or [])
+                 if h.get("clase") in ("OPORTUNIDAD", "RIESGO", "DESAFIO", "DATO")
+                 and h.get("abierto") is not False]
+        if not vivos:
+            return ""
+        por = {}
+        for h in vivos:
+            por[h["clase"]] = por.get(h["clase"], 0) + 1
+        hoy = _dt.date.today()
+        edades, mudos = [], {}
+        for h in vivos:
+            f = h.get("visto_primero") or h.get("visto_ultima")
+            u = h.get("visto_ultima") or h.get("visto_primero")
+            try:
+                if f:
+                    edades.append((hoy - _dt.date.fromisoformat(str(f)[:10])).days)
+                if u:
+                    n = (hoy - _dt.date.fromisoformat(str(u)[:10])).days
+                    m = h.get("minero")
+                    if m and (m not in mudos or n > mudos[m]):
+                        mudos[m] = n
+            except ValueError:
+                pass
+        rancios = sorted(m for m, n in mudos.items() if n > 30)
+        txt = (" LOS MINEROS TIENEN %d HALLAZGOS ABIERTOS (%s)"
+               % (len(vivos), " · ".join("%s %d" % (k, v) for k, v in sorted(por.items()))))
+        if edades:
+            txt += ", el mas viejo lleva %d dias" % max(edades)
+        txt += (". Viven en .agents/intelligence/PMO_OPORTUNIDADES.md + "
+                "companions/oportunidades_y_desafios.html, GENERADOS del bus "
+                "(process_mining/mining_findings.json) — no se editan a mano. ")
+        if rancios:
+            txt += ("⛔ %d minero(s) llevan mas de 30 dias sin correr (%s): sus cifras se "
+                    "estan leyendo como si fueran de hoy. " % (len(rancios), ", ".join(rancios)))
+        txt += ("Para volver a BUSCAR y ver el DELTA (que es nuevo, que dejo de encontrarse): "
+                "python Zagentexecution/quality_checks/opportunity_watch.py --correr ; sin "
+                "SAP, la puerta sola: el mismo script sin --correr.")
+        return txt
+    except Exception:
+        return ""
+
+
 def main():
     # Implementa, inyectandolas en cada arranque:
     #   feedback_load_the_domain_before_you_reason
@@ -299,6 +355,7 @@ def main():
     roster = roster_request()
     pend = pendiente_al_abrir()
     regs = registros_pendientes()
+    opor = oportunidades_headline()
     titulo = pedir_titulo_de_sesion()
     ctx = (
         "MANDATORY FIRST ACTION (TIERED LOADING): read brain_v2/BRAIN_INDEX.md FIRST (~800 tokens, lean L1 "
@@ -327,10 +384,10 @@ def main():
         "invent exotic channels (ADT-HTTP, SPNEGO/password, deploy-to-P01) — that re-litigates settled constraints (rule #156). "
         "(2) CLOSE — commit SOURCE changes FOCUSED (never 'git add -A'; brain_state.json is GENERATED, don't commit it entangled) "
         "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (" + _golden_size() + ", gitignored) + ~/.claude memory "
-        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop + roster + pend + regs + titulo
+        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop + roster + pend + regs + opor + titulo
     )
     print(json.dumps({
-        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta + loop + roster + pend,
+        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta + loop + roster + pend + opor,
         "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": ctx},
     }))
 

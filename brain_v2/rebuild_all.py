@@ -123,7 +123,11 @@ _RAPIDO = False
 # El camino minimo para que el brain refleje las fuentes. La ontologia va PRIMERO y no es
 # opcional: es la puerta que impide materializar un dominio inventado, y el 28-ago fue lo
 # que paro un rebuild entero por un claim con `Basis_Security`.
-_PASOS_RAPIDO = ("Validate canonical ontology", "Rebuild brain_state", "LEAN bootstrap index")
+_PASOS_RAPIDO = ("Validate canonical ontology", "Rebuild brain_state", "LEAN bootstrap index",
+                 # publicar un hallazgo al bus ES un cambio de store, que es justo el criterio
+                 # de --rapido. Y son segundos: dejarlos fuera es como el registro se queda
+                 # atras del bus sin que nadie lo note.
+                 "opportunity/risk registry", "opportunity registry still reflect")
 
 
 def _step_selected(description):
@@ -344,6 +348,16 @@ def main():
     run(["python", "brain_v2/methods/unlanded_discoveries.py"],
         "Step 0i: Unlanded discoveries — what the code touches and the brain cannot "
         "explain", fatal=False)
+    # Step 0j — el registro de oportunidades y riesgos se REGENERA del bus y luego se
+    # AUDITA. Va aqui, en el rebuild, porque en s109 se construyo el registro y nada volvia a
+    # tocarlo: un registro que nadie refresca no envejece a la vista, envejece en silencio.
+    # NO corre los mineros (eso lee SAP y es `opportunity_watch.py --correr`): solo garantiza
+    # que lo publicado esta volcado y que ningun minero lleva un mes mudo.
+    run(["python", "scripts/build_oportunidades.py"],
+        "Step 0j: Regenerate the opportunity/risk registry from the mining bus", fatal=False)
+    run(["python", "Zagentexecution/quality_checks/opportunity_watch.py"],
+        "Step 0j2: Does the opportunity registry still reflect reality? (stale miners, "
+        "orphan findings, broken contract)", fatal=False)
     run(["python", "-m", "brain_v2", "build"], "Step 1: Rebuild NetworkX graph")
     run(["python", "brain_v2/build_active_db.py"], "Step 2: Rebuild SQLite active DB")
     run(["python", "brain_v2/verify_claims.py"], "Step 2b: Verify claims vs Gold DB (Layer 3 trust)")
