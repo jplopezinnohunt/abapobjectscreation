@@ -38,9 +38,11 @@ QUALITY_CHECK = {
 
 import argparse
 import datetime
+import hashlib
 import os
 import sqlite3
 import sys
+import time
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -94,6 +96,16 @@ REGISTRO = {
         "sap": "DFPAYG", "clave": ["LAUFD", "LAUFI", "XVORL", "GRPNO"],
         "alta": None, "fecha": "LAUFD", "alcance": "",
         "por_que": "grupos de fichero de pago"},
+    # MAESTRO: sin delta por fecha posible. UPDAT existe en LFA1/LFB1 y esta VACIO en el
+    # 100% de las filas -- SAP no lo rellena aqui, los cambios viven en CDHDR. Y ERDAT es la
+    # fecha de ALTA: un proveedor creado en 2019 y modificado ayer sigue con ERDAT=2019, asi
+    # que una marca sobre ERDAT se saltaria el cambio. Por eso van por COMPARAR_CLAVE: se leen
+    # ENTERAS y se mete por clave. Son pequenas y es lo unico correcto.
+    "LFA1": {"sap": "LFA1", "clave": ["LIFNR"], "alta": None, "fecha": None, "alcance": "",
+             "por_que": "maestro de proveedores, datos generales: relectura completa por clave"},
+    "LFB1": {"sap": "LFB1", "clave": ["LIFNR", "BUKRS"], "alta": None, "fecha": None,
+             "alcance": "",
+             "por_que": "maestro de proveedores por sociedad: relectura completa por clave"},
     "REGUP_SCENARIOS": {
         # ⛔ LA CLAVE SAP NO BASTA, y no es culpa de la extraccion: MEDIDO contra P01, las
         # lineas de NOMINA entran en REGUP con BELNR vacio, BUZEI='000' y GJAHR='0000' -- sin
@@ -141,11 +153,95 @@ def asegura_unicidad(con, gold, clave):
         return False
 
 
+def comparar_clave(gold, spec, con, cols):
+    """Para MAESTRO: se lee la tabla ENTERA y se mete por clave. No hay marca de fecha porque
+    no hay campo fiable -- y decirlo es parte del trabajo: esta relectura cuesta lo que cuesta,
+    no es un delta disfrazado."""
+    from rfc_helpers import get_connection
+    print("  %s · RELECTURA COMPLETA por clave (no hay campo de fecha fiable) · %d columnas"
+          % (gold, len(cols)))
+    print("    %s" % spec["por_que"])
+    if not asegura_unicidad(con, gold, spec["clave"]):
+        return 2
+    conn = get_connection("P01")
+    resto = [c for c in cols if c not in spec["clave"]]
+    filas = {}
+    t0 = time.time()
+    for i in range(0, len(resto), 7):
+        trozo = spec["clave"] + resto[i:i + 7]
+        try:
+            r = conn.call("RFC_READ_TABLE", QUERY_TABLE=spec["sap"], DELIMITER="|", ROWCOUNT=0,
+                          OPTIONS=([{"TEXT": spec["alcance"]}] if spec["alcance"] else []),
+                          FIELDS=[{"FIELDNAME": f} for f in trozo])
+        except Exception as e:
+            print("    trozo %d: ERROR %s -- NO se escribe con datos incompletos"
+                  % (i // 7, str(e).split("\n")[0][:60]))
+            return 2
+        for d in r["DATA"]:
+            v = dict(zip(trozo, [x.strip() for x in d["WA"].split("|")]))
+            filas.setdefault(tuple(v[k] for k in spec["clave"]), {}).update(v)
+        print("    %2d/%d  %s filas cosidas  (%.0f s)"
+              % (i // 7 + 1, -(-len(resto) // 7), "{:,}".format(len(filas)), time.time() - t0))
+    if not filas:
+        print("    P01 devolvio 0 filas: NO se toca el Golden")
+        return 2
+    antes = con.execute("SELECT COUNT(*) FROM [%s]" % gold).fetchone()[0]
+
+    # ⛔ COMPARACION POR HASH — esto lo investigue, lo escribi en el skill y NO lo construi.
+    # JP: «no lo construiste entonces». Sin esto, una relectura completa SOBRESCRIBE todo y no
+    # sabes cuantas filas cambiaron DE VERDAD: 321.360 escrituras para, quiza, 12 cambios. Es
+    # lo que hace el ODP de SAP -- comparar el hash de las filas de la franja -- y lo que
+    # convierte un volcado ciego en un delta MEDIDO.
+    hprev = {}
+    ix = [cols.index(k) for k in spec["clave"]]
+    try:
+        sel = ", ".join('"%s"' % c for c in cols)
+        for row in con.execute("SELECT %s FROM [%s]" % (sel, gold)):
+            fila = tuple("" if v is None else str(v) for v in row)
+            hprev[tuple(fila[i] for i in ix)] = hashlib.md5(
+                "\x1f".join(fila).encode("utf-8", "replace")).hexdigest()
+    except sqlite3.Error:
+        hprev = {}
+
+    nuevas, cambiadas, iguales = [], [], 0
+    for k, f in filas.items():
+        fila = tuple(f.get(c, "") for c in cols)
+        h = hashlib.md5("\x1f".join(fila).encode("utf-8", "replace")).hexdigest()
+        if k not in hprev:
+            nuevas.append(fila)
+        elif hprev[k] != h:
+            cambiadas.append(fila)
+        else:
+            iguales += 1
+
+    ph = ",".join("?" * len(cols))
+    if nuevas or cambiadas:
+        con.executemany("INSERT OR REPLACE INTO [%s] VALUES (%s)" % (gold, ph),
+                        nuevas + cambiadas)
+        con.commit()
+    ahora = con.execute("SELECT COUNT(*) FROM [%s]" % gold).fetchone()[0]
+    print("  leidas de P01: %s · NUEVAS %s · CAMBIADAS %s · iguales %s (no se reescriben)"
+          % ("{:,}".format(len(filas)), "{:,}".format(len(nuevas)),
+             "{:,}".format(len(cambiadas)), "{:,}".format(iguales)))
+    print("  Golden: %s -> %s filas · ni un DELETE"
+          % ("{:,}".format(antes), "{:,}".format(ahora)))
+    if not nuevas and not cambiadas:
+        print("  NADA cambio en P01 desde la ultima vez. La relectura costo lo mismo: por eso")
+        print("  una tabla grande sin campo de fecha merece CDHDR como fuente de cambios.")
+    M.escribir(con, gold, "(relectura completa)",
+               datetime.date.today().strftime("%Y%m%d"), ahora,
+               alcance=spec["alcance"], nota=spec["por_que"])
+    con.close()
+    return 0
+
+
 def delta(gold, desde_forzado="", hasta=""):
     spec = REGISTRO[gold]
     con = sqlite3.connect(M.DB)
     cols = [r[1] for r in con.execute("PRAGMA table_info([%s])" % gold)]
     campo = spec.get("alta") or spec.get("fecha")
+    if campo is None:
+        return comparar_clave(gold, spec, con, cols)
     if campo not in cols:
         print("  %s no tiene %s: sin delta posible." % (gold, campo))
         return 2
