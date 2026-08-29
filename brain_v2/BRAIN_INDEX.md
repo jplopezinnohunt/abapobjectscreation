@@ -143,7 +143,7 @@ inventario del resto; el contenido se abre con su comando.
 | **incidentes** | 16 | `python brain_v2/graph_queries.py incident <id>` |
 | **reglas** | 261 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 172 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 107 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **algoritmos** | 108 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -152,7 +152,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 107 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 108 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -218,6 +218,13 @@ lo deja — solo que nadie lo publicaba.
 |---|---|---|---|
 | `A45_actor_attribution_per_account` | Dice, cuenta por cuenta, SI UNA ACCION SE PUEDE ATAR A UNA PERSONA. PARAMX | Integration | `brain_v2/security_posture.json` |
 | `A49_tier2_sod` | Descubre QUE PERSONAS CONCRETAS ejecutaron de verdad las dos mitades de un | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
+
+**otros**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A78_bank_statement_sod_check` | buscar y publicar la SEGREGACION DE FUNCIONES en el extracto bancario tecl | Payment_BCM, Treasury | `process_mining/mining_findings.json` |
+| `A81_gold_family_coherence` |  | -- | `brain_v2/gold_delta_registry.json` |
 
 **master data + fact tab...**
 
@@ -459,12 +466,6 @@ lo deja — solo que nadie lo publicaba.
 |---|---|---|---|
 | `A77_ebs_format_consolidation` | contar cuantos MODELOS de extracto se sostienen, cuantos bancos y cuentas  | Payment_BCM, Treasury | `process_mining/mining_findings.json` |
 
-**otros**
-
-| algoritmo | qué contesta | dominios que cubre | aterriza en |
-|---|---|---|---|
-| `A78_bank_statement_sod_check` | buscar y publicar la SEGREGACION DE FUNCIONES en el extracto bancario tecl | Payment_BCM, Treasury | `process_mining/mining_findings.json` |
-
 **INSTRUMENTOS — contestan en PANTALLA, no dejan fichero**
 
 | instrumento | qué contesta | se corre con |
@@ -587,7 +588,7 @@ _6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `I
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4726 objects · 261 rules · 642 claims · 19 incidents · 10 closed researches)
+## Brain at a glance (4727 objects · 261 rules · 642 claims · 19 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.

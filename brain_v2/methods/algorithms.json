@@ -2438,6 +2438,21 @@
       "conclusion_falsa_que_permite": "creer que una tabla no tiene delta porque su columna no esta en una lista de nombres: publico SIN DELTA POSIBLE sobre 29,8 M de filas teniendo SAL_DATE",
       "fuentes": "Microsoft FastTrack high-watermarking · Databricks watermarks · SAP ODP safety interval · oneuptime incremental extraction",
       "sesion": 109
+    },
+    "A81_gold_family_coherence": {
+      "que_hace": "caza tablas que se UNEN y estan en fechas distintas. Las familias se DERIVAN de las columnas de clave que comparten, no de una lista mantenida a mano",
+      "script": "Zagentexecution/quality_checks/gold_family_coherence_check.py",
+      "lands_in": [
+        "salida de la puerta (exit 1) + brain_v2/gold_delta_registry.json como entrada"
+      ],
+      "por_que_existe": "el defecto no fue una tabla vieja: fue FEBKO al 2026-08-28 y FEBEP al 2026-03-30, cabecera e items del MISMO extracto. Ningun control lo veia porque cada tabla POR SEPARADO estaba bien. Lo encontre a mano",
+      "trampas": [
+        "un MAX() a pelo devuelve BASURA: FEBEP trae fechas de 2205 y HRFPM_FM_POS de 2029, y la primera corrida publico parejas con 65.222 dias tapando las de 157 que buscaba. Una fecha futura es dato sucio, no retraso, y va en su propia lista",
+        "columnas ubicuas (MANDT, BUKRS, BELNR...) emparentan tablas que no tienen nada que ver: se excluyen"
+      ],
+      "conclusion_falsa_que_permite": "creer que el Golden esta al dia porque cada tabla por separado lo esta. Dos tablas desalineadas dan un numero PLAUSIBLE: la union pierde filas del lado atrasado, sin error y sin hueco visible",
+      "validado": "rojo antes (FEBKO/PAYR 157 dias, FEBKO/BNK_BATCH 156), verde en esas parejas tras alinearlas; y al alinear FEBKO/FEBEP la cifra de SoD paso de 302 a 316 pagos",
+      "sesion": 109
     }
   },
   "_portfolio": {

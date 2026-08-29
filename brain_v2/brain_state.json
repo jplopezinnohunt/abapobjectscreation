@@ -5,7 +5,7 @@
     "blind_spots_total": 0,
     "names_classified": 2180,
     "names_referenced": 2180,
-    "objects_in_brain": 4726,
+    "objects_in_brain": 4727,
     "pct_classified": 100.0
   },
   "_design": "Object-centric knowledge graph with 15 layers (0-14). 1 Read = full self-aware intelligence. Layer 0 (core_principles) added Session #054 — constitutional tier above rules. Layer 11 (incidents) added Session #050 to fix 'context loaded but not used' failure mode. Layer 13 (interactions) added Session #059 — turn-level reasoning path as source of truth, zero-compression preserved_full_text; retros are DERIVED from this layer. Layer 14 (domains) added Session #059 — 3-axis taxonomy {functional, module, process} with reverse indexes (objects, claims, rules, KUs, incidents, skills, companions). Every node must carry a domain (feedback_every_node_has_domain).",
@@ -51,7 +51,7 @@
     "incidents": 19,
     "interactions": 8,
     "known_unknowns": 1,
-    "objects": 4726,
+    "objects": 4727,
     "rules": 261,
     "session": 109,
     "superseded": 19,
@@ -58552,19 +58552,20 @@
     "65": {
       "discovery": {
         "mining": {
-          "abierto": true,
+          "abierto": false,
           "accion": "PASO DE EXTRACCION, no una lectura a P01: refrescar FEBKO/FEBEP de la ventana y T035D. `scripts/extraction/gold_refresh.py`. Hasta entonces _golden.exige() se NIEGA, que es la conducta correcta: mejor no publicar que publicar un tercio",
-          "clase": "RIESGO",
+          "clase": "DATO",
           "denominador": "las 6 tablas medidas de las ~22 que leen los 7 mineros de banca",
+          "estado": "RESUELTO el mismo dia",
           "evidencia": "brain_v2/gold_coverage.json, medido P01 vs Golden el 2026-08-29",
           "id": 65,
           "limite": "solo se midieron 6 tablas de las ~22 que tocan estos mineros. REGUH, REGUP, BKPF, PAYR, BNK_BATCH_ITEM y GLT0 NO se midieron -- y no se midieron a proposito: contar en P01 con RFC_READ_TABLE arrastra las filas, y saber el numero de FEBKO ya costo 61.769 filas por el cable",
-          "minero": "_golden/gold_coverage (s109)",
+          "minero": "manual (s109) — NO hay script que lo refresque; se cierra a mano",
           "por_que_importa": "T028B es la tabla de INC-000013624 y al Golden le faltan 3 filas: la fila nueva de NTB02 podria ser una de ellas. Y el check D de house_bank_ebs_wiring (T035D ausente) daria FALSOS POSITIVOS con 27 filas de menos",
-          "que": "El Golden tiene el 28,8% de las cabeceras de extracto de la ventana 2025-2026. Los 7 mineros de banca se escribieron contra P01 EN VIVO, que es un error de categoria -- pero portarlos al Golden hoy les daria un tercio de la poblacion",
+          "que": "RESUELTO: el Golden tenia el 28,8% de las cabeceras de extracto de la ventana. Refrescado por delta puro el 2026-08-29: 31.416 -> 94.082 filas, 2024-01-01 a 2026-08-28, ningun mes flaco, 0 duplicados, ni un DELETE",
           "quien_puede_contestar": "DBS",
           "sistema": "Golden vs P01",
-          "tamano": "FEBKO 17.812 de 61.769 (28,8%) · T035D 151 de 178 (84,8%) · T028G 1.025 de 1.043 · T028B 169 de 172 · T012K 402 de 404 · T012T 1.180 de 1.180 completa",
+          "tamano": "FEBKO 28,8% -> 100% · T012K +BNKN2 · PAYR +PRIUS/ZALDT · FEBEP +AKBLN · REGUH +RBETR · REGUP +BLART/VBLNR",
           "ventana": "AZDAT 20250101-20261231"
         }
       },
@@ -58659,19 +58660,20 @@
     "66": {
       "discovery": {
         "mining": {
-          "abierto": true,
+          "abierto": false,
           "accion": "(1) BACKUP del Golden primero: son 22,9 GB y D: no esta conectado, asi que no hay copia. (2) `where` que cubra TODO el alcance de la tabla (AZDAT >= '20240101'), NO solo el hueco, o el upsert borra 2024 entero. (3) trocear campos en read_p01, o curar FEBKO con el subconjunto de columnas que los mineros usan de verdad",
-          "clase": "DESAFIO",
+          "clase": "DATO",
           "denominador": "las 15 tablas de Payment/transaction sin spec curada, de 318 en el registro (34 curadas)",
+          "estado": "RESUELTO el mismo dia",
           "evidencia": "gold_refresh.py refresh_pk_upsert lineas 136-138 (DELETE de las claves ausentes) · read_p01 linea 77 no trocea campos · FEBKO_2024_2026 tiene 62 columnas · PRAGMA table_info y MIN/MAX(AZDAT) sobre el Golden",
           "id": 66,
-          "limite": "no he probado que 62 campos revienten el buffer de 512 bytes -- lo deduzco del ancho de FEBKO y de la trampa ya medida DATA_BUFFER_EXCEEDED. Habria que probarlo con UNA fila antes de disenar el troceado",
-          "minero": "gold_refresh/FEBKO (s109)",
+          "limite": "y la causa real de los 13 meses fallidos NO era ninguna de las que dije: era `AZDAT <= '<mes>31'`, el 31 de febrero, que SAP devuelve como SAPSQL_DATA_LOSS",
+          "minero": "manual (s109) — NO hay script que lo refresque; se cierra a mano",
           "por_que_importa": "es lo unico que separa a los 7 mineros de volver a publicar: hoy se NIEGAN porque FEBKO esta al 28,8%. Y el orden importa -- hacerlo mal no da error, da un Golden con 13.604 filas menos y nadie lo nota",
-          "que": "Curar la spec de FEBKO en el registro de extraccion tiene TRES bloqueos concretos, y uno de ellos puede DESTRUIR dato: `pk-upsert` BORRA las claves que esten en el Golden y no vengan de la lectura de P01",
+          "que": "RESUELTO: los tres bloqueos para refrescar FEBKO. (1) pk-upsert borra -> no se uso: delta propio sin un solo DELETE. (2) 62 columnas revientan el buffer -> troceado de 8, medido. (3) el backup sigue pendiente y JP lo dio por asumido",
           "quien_puede_contestar": "DBS",
           "sistema": "Golden + P01",
-          "tamano": "al Golden le faltan ~5 meses: FEBKO_2024_2026 se corta el 2026-03-30 (2024: 13.604 · 2025: 14.399 · 2026: 3.413). El hueco NO es toda la ventana, son abril-agosto 2026",
+          "tamano": "31.416 -> 94.082 filas · 11 meses que faltaban, entrados · 38.764 duplicados que yo mismo cree, quitados",
           "ventana": "AZDAT 20240101 → hoy"
         }
       },
@@ -59750,34 +59752,6 @@
       "synthesized": true,
       "type": "CONCEPT"
     },
-    "92": {
-      "discovery": {
-        "mining": {
-          "accion": "declarar por cuenta quien teclea y quien paga, y que no sean la misma persona; o documentar el control fisico compensatorio",
-          "clase": "RIESGO",
-          "denominador": "cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.",
-          "evidencia": "FEBKO.EUSER × FEBEP.BELNR→BKPF.USNAM × REGUH.VBLNR→BKPF.USNAM × PAYR.PRIUS",
-          "id": 92,
-          "limite": "la firma FISICA del cheque prenumerado (dos firmas) NO esta en SAP: este instrumento mide CONCENTRACION DE CONTROL, no ausencia de control ni fraude",
-          "minero": "bank_statement_sod_check",
-          "que": "El que TECLEA el extracto de una cuenta que paga es tambien el que EMITE el dinero por ella: no queda ningun tercero en el circuito SAP",
-          "sistema": "P01",
-          "tamano": "302 pagos de 1085 (28%) y 866722.40 USD de 3853131.79 (22%), emitidos por alguien que ademas teclea y contabiliza el extracto de ESA cuenta. 13 personas, 12 cuentas.",
-          "ventana": "20250101 → hoy",
-          "visto_primero": "2026-08-28",
-          "visto_ultima": "2026-08-29"
-        }
-      },
-      "domain": "",
-      "domain_axes": {
-        "functional": [],
-        "module": [],
-        "process": []
-      },
-      "source": "structured_record",
-      "synthesized": true,
-      "type": "CONCEPT"
-    },
     "9270": {
       "claims": [
         {
@@ -59829,64 +59803,6 @@
       "synthesized": true,
       "type": "CONCEPT"
     },
-    "93": {
-      "discovery": {
-        "mining": {
-          "accion": "el control de estos pagos vive fuera de SAP — nombrar donde",
-          "clase": "DATO",
-          "denominador": "cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.",
-          "evidencia": "BNK_BATCH_ITEM por ZBUKR+HBKID · REGUH.RZAWE",
-          "id": 93,
-          "limite": "BCM no puede cubrirlas: no hay fichero que liberar",
-          "minero": "bank_statement_sod_check",
-          "que": "Ninguna cuenta cuyo extracto se teclea a mano pasa por BCM, y no es un defecto: sus pagos son 100% metodo cheque prenumerado (REGUH.RZAWE='3'), y BCM libera FICHEROS",
-          "sistema": "P01",
-          "tamano": "17 de 17 cuentas pagadoras con CERO lotes BCM",
-          "ventana": "20250101 → hoy",
-          "visto_primero": "2026-08-28",
-          "visto_ultima": "2026-08-29"
-        }
-      },
-      "domain": "",
-      "domain_axes": {
-        "functional": [],
-        "module": [],
-        "process": []
-      },
-      "source": "structured_record",
-      "synthesized": true,
-      "type": "CONCEPT"
-    },
-    "94": {
-      "discovery": {
-        "mining": {
-          "abierto": true,
-          "accion": "corregir el denominador del censo: la poblacion es 'recibe algun extracto tecleado', no 'esta etiquetada MANUAL'",
-          "clase": "DESAFIO",
-          "denominador": "cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.",
-          "evidencia": "FEBKO.EFART='M' agrupado por cuenta y EUSER, frente a channel_census.json campo 'quien' (solo el usuario mas frecuente)",
-          "id": 94,
-          "limite": "el log dice quien lo hizo, nunca quien DEBIA hacerlo",
-          "minero": "bank_statement_sod_check",
-          "que": "El censo de canales publica UNA persona por cuenta manual; medido son hasta 5 por cuenta y 41 en total, y 31 de las 39 cuentas afectadas no estan etiquetadas MANUAL. Dos medidas del mismo objeto no coinciden",
-          "quien_puede_contestar": "BFM/TRS (Baizid Gazi, Anssi Yli-Hietanen) + DBS",
-          "sistema": "P01",
-          "tamano": "39 cuentas vs 8 publicadas · 41 personas vs 4 publicadas · 13.942 lineas tecleadas vs 1.712 publicadas",
-          "ventana": "20250101 → hoy",
-          "visto_primero": "2026-08-28",
-          "visto_ultima": "2026-08-29"
-        }
-      },
-      "domain": "",
-      "domain_axes": {
-        "functional": [],
-        "module": [],
-        "process": []
-      },
-      "source": "structured_record",
-      "synthesized": true,
-      "type": "CONCEPT"
-    },
     "9400": {
       "claims": [
         {
@@ -59909,6 +59825,92 @@
       "synthesized": true,
       "type": "CONCEPT"
     },
+    "95": {
+      "discovery": {
+        "mining": {
+          "accion": "declarar por cuenta quien teclea y quien paga, y que no sean la misma persona; o documentar el control fisico compensatorio",
+          "clase": "RIESGO",
+          "denominador": "cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.",
+          "evidencia": "FEBKO.EUSER × FEBEP.BELNR→BKPF.USNAM × REGUH.VBLNR→BKPF.USNAM × PAYR.PRIUS",
+          "id": 95,
+          "limite": "la firma FISICA del cheque prenumerado (dos firmas) NO esta en SAP: este instrumento mide CONCENTRACION DE CONTROL, no ausencia de control ni fraude",
+          "minero": "bank_statement_sod_check",
+          "que": "El que TECLEA el extracto de una cuenta que paga es tambien el que EMITE el dinero por ella: no queda ningun tercero en el circuito SAP",
+          "sistema": "P01",
+          "tamano": "316 pagos de 1085 (29%) y 888672.99 USD de 3853131.79 (23%), emitidos por alguien que ademas teclea y contabiliza el extracto de ESA cuenta. 13 personas, 13 cuentas.",
+          "ventana": "20250101 → hoy",
+          "visto_primero": "2026-08-28",
+          "visto_ultima": "2026-08-29"
+        }
+      },
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "96": {
+      "discovery": {
+        "mining": {
+          "accion": "el control de estos pagos vive fuera de SAP — nombrar donde",
+          "clase": "DATO",
+          "denominador": "cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.",
+          "evidencia": "BNK_BATCH_ITEM por ZBUKR+HBKID · REGUH.RZAWE",
+          "id": 96,
+          "limite": "BCM no puede cubrirlas: no hay fichero que liberar",
+          "minero": "bank_statement_sod_check",
+          "que": "Ninguna cuenta cuyo extracto se teclea a mano pasa por BCM, y no es un defecto: sus pagos son 100% metodo cheque prenumerado (REGUH.RZAWE='3'), y BCM libera FICHEROS",
+          "sistema": "P01",
+          "tamano": "17 de 17 cuentas pagadoras con CERO lotes BCM",
+          "ventana": "20250101 → hoy",
+          "visto_primero": "2026-08-28",
+          "visto_ultima": "2026-08-29"
+        }
+      },
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "97": {
+      "discovery": {
+        "mining": {
+          "abierto": true,
+          "accion": "corregir el denominador del censo: la poblacion es 'recibe algun extracto tecleado', no 'esta etiquetada MANUAL'",
+          "clase": "DESAFIO",
+          "denominador": "cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.",
+          "evidencia": "FEBKO.EFART='M' agrupado por cuenta y EUSER, frente a channel_census.json campo 'quien' (solo el usuario mas frecuente)",
+          "id": 97,
+          "limite": "el log dice quien lo hizo, nunca quien DEBIA hacerlo",
+          "minero": "bank_statement_sod_check",
+          "que": "El censo de canales publica UNA persona por cuenta manual; medido son hasta 5 por cuenta y 41 en total, y 31 de las 39 cuentas afectadas no estan etiquetadas MANUAL. Dos medidas del mismo objeto no coinciden",
+          "quien_puede_contestar": "BFM/TRS (Baizid Gazi, Anssi Yli-Hietanen) + DBS",
+          "sistema": "P01",
+          "tamano": "39 cuentas vs 8 publicadas · 41 personas vs 4 publicadas · 13.942 lineas tecleadas vs 1.712 publicadas",
+          "ventana": "20250101 → hoy",
+          "visto_primero": "2026-08-28",
+          "visto_ultima": "2026-08-29"
+        }
+      },
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
     "9710": {
       "claims": [
         {
@@ -59925,6 +59927,35 @@
         "module": [
           "PSM_FM"
         ],
+        "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "98": {
+      "discovery": {
+        "mining": {
+          "abierto": true,
+          "accion": "(1) anadir KUNNR a REGUH y a REGUP_SCENARIOS, como se hizo con RBETR. (2) en REGUP_SCENARIOS, ademas, deduplicar las 2.301 copias identicas. Hasta entonces gold_delta se NIEGA a escribir en las dos: sin indice unico, INSERT OR REPLACE apilaria en vez de refrescar",
+          "clase": "RIESGO",
+          "denominador": "las 3.707.737 filas de REGUH en el Golden",
+          "evidencia": "COUNT(*) vs COUNT(DISTINCT clave) y vs COUNT(DISTINCT fila entera) sobre REGUH del Golden; PRAGMA table_info muestra que KUNNR no esta",
+          "id": 98,
+          "limite": "no he comprobado en P01 que KUNNR este relleno en esas filas -- lo deduzco de que la clave SAP de REGUH lo lleva y de que LIFNR viene vacio. Comprobarlo cuesta una lectura acotada",
+          "minero": "gold_delta/REGUH (s109)",
+          "por_que_importa": "son las dos tablas de PAGO. El resto de esa cadena ya quedo alineado hoy -- PAYR, BNK_BATCH_HEADER/ITEM y DFPAYG pasaron de 157/156/113 dias de retraso a 0 -- y estas dos se quedan a 109 y 121 dias. Cualquier cifra que las una a FEBKO mide sobre una foto vieja del lado del pago",
+          "que": "A DOS tablas de pago del Golden les falta KUNNR, que es parte de la CLAVE SAP. Sin el no se pueden identificar las filas de pagos a CLIENTE, y su delta queda BLOQUEADO",
+          "quien_puede_contestar": "DBS",
+          "sistema": "Golden",
+          "tamano": "REGUH: 3.707.737 filas para 3.096.017 claves (611.720 sin separar) y CERO copias byte a byte -- son filas distintas que la clave incompleta no separa. REGUP_SCENARIOS: 210.080 para 205.639 claves, y ahi si hay 2.301 copias byte a byte, que es un problema DISTINTO y ademas real",
+          "ventana": "toda la tabla"
+        }
+      },
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
         "process": []
       },
       "source": "structured_record",

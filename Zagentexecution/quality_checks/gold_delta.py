@@ -68,6 +68,26 @@ REGISTRO = {
         "alta": None, "fecha": "LAUFD", "alcance": "ZBUKR = 'UNES'",
         "por_que": "LAUFD es la fecha de la CORRIDA de pago, que en la practica solo avanza; "
                    "y RBETR solo esta rellena para UNES desde 2024 -- fuera de ahi es NULL"},
+    # LA CADENA DEL PAGO. Iban 157/156/113 dias por detras de FEBKO, y las cuatro alimentan
+    # el hallazgo de segregacion de funciones: PAYR dice quien IMPRIME el cheque, BNK_BATCH si
+    # paso por BCM, DFPAYG que fichero se genero. La CLAVE es lo unico que no se puede derivar
+    # sin riesgo: una clave mal puesta no da error, apila duplicados.
+    "PAYR": {
+        "sap": "PAYR", "clave": ["ZBUKR", "HBKID", "HKTID", "RZAWE", "CHECT"],
+        "alta": None, "fecha": "LAUFD", "alcance": "",
+        "por_que": "cheques emitidos; LAUFD es la corrida de pago"},
+    "BNK_BATCH_HEADER": {
+        "sap": "BNK_BATCH_HEADER", "clave": ["BATCH_NO"],
+        "alta": "CRDATE", "alcance": "",
+        "por_que": "CRDATE es la fecha de ALTA del lote BCM: delta seguro"},
+    "BNK_BATCH_ITEM": {
+        "sap": "BNK_BATCH_ITEM", "clave": ["BATCH_NO", "ITEM_NO"],
+        "alta": None, "fecha": "LAUFD", "alcance": "",
+        "por_que": "posiciones del lote BCM; sin fecha de alta propia"},
+    "DFPAYG": {
+        "sap": "DFPAYG", "clave": ["LAUFD", "LAUFI", "XVORL", "GRPNO"],
+        "alta": None, "fecha": "LAUFD", "alcance": "",
+        "por_que": "grupos de fichero de pago"},
     "REGUP_SCENARIOS": {
         "sap": "REGUP", "clave": ["LAUFD", "LAUFI", "ZBUKR", "LIFNR", "BELNR", "GJAHR", "BUZEI"],
         "alta": None, "fecha": "LAUFD", "alcance": "ZBUKR = 'UNES'",

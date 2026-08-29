@@ -4,7 +4,7 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**21 hallazgos vivos** de 9 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 7 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 5
+**22 hallazgos vivos** de 10 mineros: 🔴 RIESGO 6 · 🟠 DESAFIO 7 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 5
 
 
 ⚠️ **7 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
@@ -12,7 +12,7 @@
 
 ---
 
-## 🔴 RIESGO (5)
+## 🔴 RIESGO (6)
 
 *puede hacer daño si nadie actúa · va a quien responde del control*
 
@@ -61,6 +61,16 @@
 - **Acción:** declarar por cuenta quien teclea y quien paga, y que no sean la misma persona; o documentar el control fisico compensatorio
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
+
+### A DOS tablas de pago del Golden les falta KUNNR, que es parte de la CLAVE SAP. Sin el no se pueden identificar las filas de pagos a CLIENTE, y su delta queda BLOQUEADO
+
+- **Tamaño:** REGUH: 3.707.737 filas para 3.096.017 claves (611.720 sin separar) y CERO copias byte a byte -- son filas distintas que la clave incompleta no separa. REGUP_SCENARIOS: 210.080 para 205.639 claves, y ahi si hay 2.301 copias byte a byte, que es un problema DISTINTO y ademas real
+- **Evidencia:** COUNT(*) vs COUNT(DISTINCT clave) y vs COUNT(DISTINCT fila entera) sobre REGUH del Golden; PRAGMA table_info muestra que KUNNR no esta
+- **No se puede ver:** no he comprobado en P01 que KUNNR este relleno en esas filas -- lo deduzco de que la clave SAP de REGUH lo lleva y de que LIFNR viene vacio. Comprobarlo cuesta una lectura acotada
+- **Acción:** (1) anadir KUNNR a REGUH y a REGUP_SCENARIOS, como se hizo con RBETR. (2) en REGUP_SCENARIOS, ademas, deduplicar las 2.301 copias identicas. Hasta entonces gold_delta se NIEGA a escribir en las dos: sin indice unico, INSERT OR REPLACE apilaria en vez de refrescar
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `gold_delta/REGUH (s109)` · Golden · toda la tabla*
+- <sub>denominador: las 3.707.737 filas de REGUH en el Golden</sub>
 
 ---
 
@@ -250,6 +260,7 @@
 | `house_bank_ebs_wiring_check` | 2 |
 | `bank_config_profile_by_nature` | 2 |
 | `manual (s109) — NO hay script que lo refresque; se cierra a mano` | 2 |
+| `gold_delta/REGUH (s109)` | 1 |
 | `ebs_format_consolidation` | 1 |
 | `work_triad_check (manual, s109)` | 1 |
 
