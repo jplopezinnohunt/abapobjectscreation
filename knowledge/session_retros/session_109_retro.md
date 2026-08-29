@@ -96,26 +96,38 @@ Regenerar: `python scripts/build_oportunidades.py`.
 ## El cierre encontró más de lo que venía a cerrar
 
 La puerta de la tríada (*objeto · proceso · método*) dio **NO en proceso y NO en método** para
-`INC-000013624`, teniendo los tres. La causa: el incidente declaraba `domain: "Treasury_EBS"`, que
-**no existe** — el dominio real es `Treasury`, subtopic `bank_statement_ebs`. Un incidente cuyo
-dominio no resuelve queda desconectado de sus docs, companions e instrumentos.
+`INC-000013624`, teniendo los tres. La causa que creí entonces: el incidente declaraba
+`domain: "Treasury_EBS"`, que **no existe** — el dominio real sería `Treasury`, subtopic
+`bank_statement_ebs`. **CORRECCIÓN POSTERIOR (mismo día, commit `62b9f4f`): esto era falso.**
+`Treasury_EBS` SÍ existe — es `canonical_key` de la ontología con `registry_keys: ["Treasury"]`.
+La sonda `work_triad_check.py` resolvía por `canonical_key` crudo sin leer `registry_keys`, así
+que daba registro VACÍO. Edité el DATO (`domain: "Treasury"`) para que la puerta se pusiera en
+verde — al revés de lo correcto. Restaurado a `Treasury_EBS` y arreglada la sonda (lee
+`domains[].registry_keys` como fallback). Ver `feedback_fix_the_gate_not_the_data_when_they_disagree`.
 
 Corregido, y de paso wireado lo que s108/s109 escribieron y nadie había enganchado: **Treasury
 pasa de 9 a 14 docs y de 2 a 9 instrumentos**. Los dos parámetros de variante que deciden de
 dónde sale el fichero (`FEB_IMP_SOURCE`, `FEB_FILEPATH`) no estaban en ningún registro — el job
 se conocía y sus parámetros no. Aterrizados en el claim 536. **La tríada de este incidente ahora
-es OK · OK · OK.**
+es OK · OK · OK** (con `domain: Treasury_EBS`, sin tocar el dato).
 
 Y **es la regla de hoy aplicándose a sí misma el día que se escribió**: la puerta de ontología
-que impide materializar un dominio inventado **solo recorre los claims, no los incidentes**.
+que impide materializar un dominio inventado **solo recorre los claims, no los incidentes**
+(arreglado también en `62b9f4f`: `validate_ontology.py` ahora recorre `incidents.json`).
 
-**Luego cometí el mismo modo de fallo al medirlo.** Publiqué «11 de 19 incidentes declaran un
-dominio inexistente» contando como inventadas `BASIS`, `Security`, `Infrastructure` y
-`Brain_Architecture` — que **sí están registradas** como claves transversales. Me corrigió el
-propio validador en su salida. Medido bien: **9 de 16**, y no son invenciones sino **alias sin
-resolver** (`BCM`→Payment_BCM, `HR`→HCM, `CTS`→Transport_Intelligence, `MasterDataConfig`→
-Master_Data_Governance). Es un **DESAFÍO**, no un riesgo. Está en el registro con la corrección
-escrita dentro del propio límite, no borrada.
+**Luego cometí el mismo modo de fallo al medirlo, TRES veces, no dos.** Publiqué «11 de 19
+incidentes declaran un dominio inexistente» contando como inventadas `BASIS`, `Security`,
+`Infrastructure` y `Brain_Architecture` — que **sí están registradas** como claves transversales.
+Me corrigió el propio validador en su salida. Medí de nuevo: «9 de 16», **también falso** —
+ignoraba `domains[].aliases` y `subdomain_aliases`, con lo que `Payment` y `BCM` — YA alias de
+`Payment_BCM` — contaban como inventados. **La cifra correcta, medida llamando al resolvedor
+canónico del proyecto (`validate_ontology.load_index()`) en vez de a un conjunto hecho a mano,
+es 5 de 16** — y solo 4 nombres sin resolver: `HR`→HCM, `MM`→Procurement_P2P,
+`CTS`→Transport_Intelligence, `MasterDataConfig`→Master_Data_Governance. Los 4 añadidos como
+alias en `ontology.json` con la evidencia del incidente que los justifica (commit `62b9f4f`).
+Es un **DATO resuelto**, no un desafío abierto — el hallazgo 61 del bus quedó marcado
+`abierto: false` con las tres medidas y el modo de fallo (denominador incompleto, repetido)
+escritos dentro de su propio `limite`.
 
 ## Lo que corregí de mí mismo
 

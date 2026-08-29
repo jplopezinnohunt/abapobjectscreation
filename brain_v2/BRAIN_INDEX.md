@@ -141,7 +141,7 @@ inventario del resto; el contenido se abre con su comando.
 | **docs de dominio** | 149 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 16 | `python brain_v2/graph_queries.py incident <id>` |
-| **reglas** | 260 | `brain_v2/agent_rules/feedback_rules.json` |
+| **reglas** | 261 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 172 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
 | **algoritmos** | 106 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
@@ -586,7 +586,7 @@ _6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `I
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4725 objects · 260 rules · 642 claims · 19 incidents · 10 closed researches)
+## Brain at a glance (4725 objects · 261 rules · 642 claims · 19 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -621,7 +621,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 260 total)
+## Rules to load first (behavioral DNA — 261 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).

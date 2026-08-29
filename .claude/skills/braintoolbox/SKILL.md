@@ -85,6 +85,15 @@ significado, ni siquiera una lectura completa del JSON lo habría distinguido a 
 añadidas — un PASS que no movió su denominador no te vio.** Regla:
 `feedback_gate_coverage_is_bounded_by_what_it_walks`.
 
+**Variante de REINVENTAR LO QUE EXISTE, medida en s109: reconstruí a mano una resolución que
+el sistema ya hacía.** Medir "cuántos incidentes nombran un dominio inventado" a mano dio
+"11 de 19" y luego "9 de 16" — ambas falsas por denominador incompleto (ignoraban
+`cross_cutting_keys` y `domains[].aliases`/`subdomain_aliases`). La cifra buena, **5 de 16**,
+salió de llamar a `validate_ontology.load_index()`, el resolvedor canónico (64 nombres, no 40).
+No basta con recordar que `canonical.py` existe: hay que preguntar, para ESE vocabulario
+concreto, si ya hay una función que lo resuelve, antes de reconstruirlo a mano. Regla:
+`feedback_declare_the_denominator_before_publishing_a_number` (caso 8).
+
 ## 4. Un instrumento no está terminado hasta que falla a propósito
 
 Correr sin error no es validación. Dar verde no es validación. **Escribir la advertencia en el
