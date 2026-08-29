@@ -4503,6 +4503,22 @@
    "abierto": true,
    "quien_puede_contestar": "DBS",
    "por_que_importa": "T028B es la tabla de INC-000013624 y al Golden le faltan 3 filas: la fila nueva de NTB02 podria ser una de ellas. Y el check D de house_bank_ebs_wiring (T035D ausente) daria FALSOS POSITIVOS con 27 filas de menos"
+  },
+  {
+   "clase": "DESAFIO",
+   "id": 66,
+   "minero": "gold_refresh/FEBKO (s109)",
+   "que": "Curar la spec de FEBKO en el registro de extraccion tiene TRES bloqueos concretos, y uno de ellos puede DESTRUIR dato: `pk-upsert` BORRA las claves que esten en el Golden y no vengan de la lectura de P01",
+   "tamano": "al Golden le faltan ~5 meses: FEBKO_2024_2026 se corta el 2026-03-30 (2024: 13.604 · 2025: 14.399 · 2026: 3.413). El hueco NO es toda la ventana, son abril-agosto 2026",
+   "evidencia": "gold_refresh.py refresh_pk_upsert lineas 136-138 (DELETE de las claves ausentes) · read_p01 linea 77 no trocea campos · FEBKO_2024_2026 tiene 62 columnas · PRAGMA table_info y MIN/MAX(AZDAT) sobre el Golden",
+   "limite": "no he probado que 62 campos revienten el buffer de 512 bytes -- lo deduzco del ancho de FEBKO y de la trampa ya medida DATA_BUFFER_EXCEEDED. Habria que probarlo con UNA fila antes de disenar el troceado",
+   "accion": "(1) BACKUP del Golden primero: son 22,9 GB y D: no esta conectado, asi que no hay copia. (2) `where` que cubra TODO el alcance de la tabla (AZDAT >= '20240101'), NO solo el hueco, o el upsert borra 2024 entero. (3) trocear campos en read_p01, o curar FEBKO con el subconjunto de columnas que los mineros usan de verdad",
+   "denominador": "las 15 tablas de Payment/transaction sin spec curada, de 318 en el registro (34 curadas)",
+   "sistema": "Golden + P01",
+   "ventana": "AZDAT 20240101 → hoy",
+   "abierto": true,
+   "quien_puede_contestar": "DBS",
+   "por_que_importa": "es lo unico que separa a los 7 mineros de volver a publicar: hoy se NIEGAN porque FEBKO esta al 28,8%. Y el orden importa -- hacerlo mal no da error, da un Golden con 13.604 filas menos y nadie lo nota"
   }
  ],
  "preguntas": [

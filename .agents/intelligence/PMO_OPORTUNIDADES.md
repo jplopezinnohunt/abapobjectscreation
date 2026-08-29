@@ -4,10 +4,10 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**21 hallazgos vivos** de 9 mineros: 🔴 RIESGO 7 · 🟠 DESAFIO 7 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 3
+**22 hallazgos vivos** de 10 mineros: 🔴 RIESGO 7 · 🟠 DESAFIO 8 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 3
 
 
-⚠️ **7 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
+⚠️ **8 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
 
 
 ---
@@ -83,7 +83,7 @@
 
 ---
 
-## 🟠 DESAFIO (7)
+## 🟠 DESAFIO (8)
 
 *no cuadra y el minero no puede resolverlo solo · **necesita que alguien conteste***
 
@@ -157,6 +157,16 @@
 - **Puede contestarlo:** Tesoreria: cerrarlas o declarar por que siguen abiertas
 - ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
 - <sub>denominador: 167 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
+
+### Curar la spec de FEBKO en el registro de extraccion tiene TRES bloqueos concretos, y uno de ellos puede DESTRUIR dato: `pk-upsert` BORRA las claves que esten en el Golden y no vengan de la lectura de P01
+
+- **Tamaño:** al Golden le faltan ~5 meses: FEBKO_2024_2026 se corta el 2026-03-30 (2024: 13.604 · 2025: 14.399 · 2026: 3.413). El hueco NO es toda la ventana, son abril-agosto 2026
+- **Evidencia:** gold_refresh.py refresh_pk_upsert lineas 136-138 (DELETE de las claves ausentes) · read_p01 linea 77 no trocea campos · FEBKO_2024_2026 tiene 62 columnas · PRAGMA table_info y MIN/MAX(AZDAT) sobre el Golden
+- **No se puede ver:** no he probado que 62 campos revienten el buffer de 512 bytes -- lo deduzco del ancho de FEBKO y de la trampa ya medida DATA_BUFFER_EXCEEDED. Habria que probarlo con UNA fila antes de disenar el troceado
+- **Acción:** (1) BACKUP del Golden primero: son 22,9 GB y D: no esta conectado, asi que no hay copia. (2) `where` que cubra TODO el alcance de la tabla (AZDAT >= '20240101'), NO solo el hueco, o el upsert borra 2024 entero. (3) trocear campos en read_p01, o curar FEBKO con el subconjunto de columnas que los mineros usan de verdad
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `gold_refresh/FEBKO (s109)` · Golden + P01 · AZDAT 20240101 → hoy*
+- <sub>denominador: las 15 tablas de Payment/transaction sin spec curada, de 318 en el registro (34 curadas)</sub>
 
 ---
 
@@ -249,6 +259,7 @@
 | `house_bank_ebs_wiring_check` | 2 |
 | `bank_config_profile_by_nature` | 2 |
 | `_golden/gold_coverage (s109)` | 1 |
+| `gold_refresh/FEBKO (s109)` | 1 |
 | `ebs_format_consolidation` | 1 |
 | `work_triad_check (manual, s109)` | 1 |
 
