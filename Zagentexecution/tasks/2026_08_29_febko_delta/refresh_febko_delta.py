@@ -7,10 +7,22 @@ POR QUE NO USA gold_refresh
     las 13.604 filas de 2024, y NO daria error: dejaria un Golden mas pequeno y nadie lo notaria.
     Aqui no hay ni un DELETE. Solo `INSERT OR REPLACE` por KUKEY.
 
-EL TROCEADO DE CAMPOS NO ES UNA SUPOSICION, ESTA MEDIDO
-    FEBKO_2024_2026 tiene 62 columnas. Probado contra P01 el 2026-08-29: 62 campos dan
-    DATA_BUFFER_EXCEEDED; 20 campos entran (fila de 193 bytes). Se leen en trozos con KUKEY
-    SIEMPRE en cada trozo, y se cosen por KUKEY. Si un trozo revienta el buffer, se parte solo.
+EL TROCEADO DE CAMPOS
+    FEBKO_2024_2026 tiene 62 columnas y 62 campos dan DATA_BUFFER_EXCEEDED, asi que se lee en
+    trozos de 8 con KUKEY en cada uno y se cosen por KUKEY. ANCHO FIJO, medido una vez.
+
+LOS DOS ERRORES DE ESTE FICHERO, ESCRITOS PARA QUE NADIE LOS REPITA
+    1. `AZDAT <= '<ym>31'` construye el 31 de FEBRERO. SAP no puede convertir esa fecha y
+       devuelve **SAPSQL_DATA_LOSS**, que suena a "dato demasiado ancho" y no lo es. Fallaron
+       exactamente febrero, abril, junio, septiembre y noviembre -- los meses sin 31 dias. Yo
+       lo diagnostique como un problema de ANCHO y monte un reintento adaptativo carisimo
+       (releer el mes entero a anchos 19/9/4/2/1) para un defecto que estaba en mi literal.
+       Un limite superior ABIERTO por el mes siguiente no puede construir una fecha invalida.
+    2. `INSERT OR REPLACE` NO REEMPLAZA si la tabla no tiene restriccion de unicidad: APILA.
+       Dejo 38.764 filas duplicadas byte a byte antes de que nadie lo notara, porque el total
+       subia y eso parecia progreso. Ahora hay `ux_febko_kukey` UNIQUE sobre KUKEY.
+    La leccion comun: los dos se veian como PROGRESO -- filas que suben, reintentos que
+    "aguantan" -- y ninguno daba error.
 
 POR QUE MES A MES
     El wrapper de P01 RECHAZA ROWSKIPS, asi que no hay paginacion: se acota por AZDAT. Un mes
@@ -50,6 +62,11 @@ def meses(desde, hasta):
     return out
 
 
+def siguiente(ym):
+    y, m = int(ym[:4]), int(ym[4:]) + 1
+    return "%04d%02d" % (y + 1, 1) if m == 13 else "%04d%02d" % (y, m)
+
+
 def leer(conn, campos, where):
     r = conn.call("RFC_READ_TABLE", QUERY_TABLE=SAP, DELIMITER="|", ROWCOUNT=0,
                   OPTIONS=[{"TEXT": where}],
@@ -60,9 +77,15 @@ def leer(conn, campos, where):
 MALOS = set()
 
 
-def leer_troceado(conn, cols, where, ancho=20):
-    """KUKEY en CADA trozo; se cosen por KUKEY. Si un trozo revienta, se parte solo -- no se
-    asume un ancho: se mide contra el error que devuelve SAP."""
+def leer_troceado(conn, cols, where, ancho=8):
+    """ANCHO FIJO 8, MEDIDO -- no adaptativo.
+
+    ⛔ La version adaptativa (empezar en 20 y partir al fallar) releia el MES ENTERO a anchos
+    19, 9, 4, 2 y 1 y se comio decenas de minutos sin escribir una fila -- persiguiendo un
+    error que ni siquiera era de anchura. Con ancho 8 fijo, un mes son 5 SEGUNDOS y 8 lecturas.
+
+    La leccion: mide el limite UNA VEZ y usa un parametro fijo. Un reintento adaptativo
+    esconde su propio coste Y disfraza la causa real de bucle de rendimiento."""
     resto = [c for c in cols if c != "KUKEY"]
     filas = {}
     i = 0
@@ -75,10 +98,9 @@ def leer_troceado(conn, cols, where, ancho=20):
                     filas.setdefault(r["KUKEY"], {}).update(r)
                 break
             except Exception as e:
-                # DOS errores distintos piden lo mismo -- leer MENOS -- y la primera version
-                # solo trataba uno. SAPSQL_DATA_LOSS es un campo mas ancho de lo que cabe;
-                # partir el trozo lo AISLA. Por no contemplarlo se perdieron 13 MESES enteros
-                # y el script REPORTO EXITO.
+                # Red de seguridad, no la via normal. OJO: SAPSQL_DATA_LOSS casi NUNCA es
+                # anchura -- aqui era una FECHA INVALIDA en el where. Si aparece, sospecha
+                # primero del filtro, no de los campos.
                 if not any(k in str(e) for k in ("DATA_BUFFER_EXCEEDED", "SAPSQL_DATA_LOSS")):
                     raise
                 if n == 1:
@@ -90,7 +112,29 @@ def leer_troceado(conn, cols, where, ancho=20):
     return filas
 
 
+LOCK = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".escritor.lock")
+
+
 def main():
+    # UN SOLO ESCRITOR. Hoy corrieron DOS a la vez sobre esta tabla porque pregunte a la lista
+    # de procesos si el primero seguia vivo y me dijo que no. Preguntar por el proxy en vez de
+    # por el efecto. El fichero de bloqueo no opina: existe o no existe.
+    if os.path.exists(LOCK):
+        print("YA HAY UN ESCRITOR: %s\nSi sabes que murio, borra ese fichero." % LOCK)
+        return 3
+    open(LOCK, "w").write(str(os.getpid()))
+    try:
+        return _main()
+    finally:
+        os.remove(LOCK)
+
+
+def _main():
+    # --meses AAAAMM,AAAAMM  -> solo esos. Existe porque tras una corrida quedan REZAGADOS y
+    # volver a leer los 32 meses para arreglar 11 es tirar lecturas contra P01 sin motivo.
+    solo = set()
+    if "--meses" in sys.argv:
+        solo = set(sys.argv[sys.argv.index("--meses") + 1].split(","))
     from rfc_helpers import get_connection
     con = sqlite3.connect(DB)
     cols = [r[1] for r in con.execute("PRAGMA table_info([%s])" % GOLD)]
@@ -105,7 +149,15 @@ def main():
     fallidos = []
     ph = ",".join("?" * len(cols))
     for ym in meses(DESDE, hasta):
-        w = "AZDAT >= '%s01' AND AZDAT <= '%s31'" % (ym, ym)
+        if solo and ym not in solo:
+            continue
+        # ⛔ EL '31' ERA EL BUG, y costo horas. `AZDAT <= '20240231'` es el 31 de FEBRERO:
+        # SAP no puede convertir esa fecha y devuelve SAPSQL_DATA_LOSS. Los 13 meses que
+        # "fallaron" fueron febrero, abril, junio, septiembre y noviembre -- los que no tienen
+        # 31 dias. Yo lo lei como un problema de ANCHO DE FILA y monte un reintento adaptativo
+        # carisimo para un defecto que estaba en mi propio literal. Limite ABIERTO por el mes
+        # siguiente: nunca se construye una fecha que pueda no existir.
+        w = "AZDAT >= '%s01' AND AZDAT < '%s01'" % (ym, siguiente(ym))
         try:
             filas = leer_troceado(conn, cols, w)
         except Exception as e:

@@ -173,6 +173,43 @@ def verificar_sistema(conn, sid_pedido, estricto=True):
     return real
 
 
+_FECHA = re.compile(r"'(\d{8})'")
+
+
+def _validar_fechas_del_where(func_name, kwargs):
+    """VALIDA LAS FECHAS ANTES DE LLAMAR. Una fecha imposible no se detecta: se disfraza.
+
+    El 2026-08-29 un `AZDAT <= '20240231'` -- el 31 de FEBRERO -- hizo que SAP devolviera
+    **SAPSQL_DATA_LOSS**, que suena a "el dato no cabe" y no tiene nada que ver. Trece meses de
+    extraccion se dieron por fallidos, se diagnostico como un problema de ANCHURA de campo, y
+    se monto un reintento adaptativo carisimo persiguiendo un fantasma. Horas.
+
+    El error estaba en el literal, y era comprobable en microsegundos SIN salir de Python. Por
+    eso la comprobacion vive aqui, en el unico sitio por el que pasan todas las lecturas, y no
+    en cada script: `AAAAMMDD` que no sea una fecha real no llega a SAP.
+
+    Es deliberadamente CONSERVADORA: solo mira literales de 8 digitos entre comillas dentro de
+    OPTIONS. '00000000' se acepta -- es el nulo de SAP, no un error."""
+    if func_name != "RFC_READ_TABLE":
+        return
+    import datetime
+    for fila in (kwargs.get("OPTIONS") or []):
+        texto = fila.get("TEXT", "") if isinstance(fila, dict) else str(fila)
+        for lit in _FECHA.findall(texto):
+            if lit == "00000000":
+                continue
+            try:
+                datetime.date(int(lit[:4]), int(lit[4:6]), int(lit[6:]))
+            except ValueError:
+                raise ValueError(
+                    "FECHA IMPOSIBLE en el WHERE, y no se llama a SAP: %r en %r.\n"
+                    "  SAP no diria 'fecha invalida': devuelve SAPSQL_DATA_LOSS, que parece un\n"
+                    "  problema de anchura de campo. Ese disfraz costo horas el 2026-08-29.\n"
+                    "  Si cortas por mes, usa un limite superior ABIERTO (< dia 1 del mes\n"
+                    "  siguiente) y no tendras que saber cuantos dias tiene cada mes."
+                    % (lit, texto))
+
+
 class ConnectionGuard:
     """Wrapper around pyrfc.Connection with auto-reconnect on VPN drops.
 
@@ -238,8 +275,10 @@ class ConnectionGuard:
         err_lower = str(error).lower()
         return any(tag.lower() in err_lower for tag in self.RECONNECTABLE_ERRORS)
 
+
     def call(self, func_name, **kwargs):
         """Call an RFC function with auto-reconnect on connection drops."""
+        _validar_fechas_del_where(func_name, kwargs)
         from pyrfc import RFCError
         last_err = None
         for attempt in range(MAX_RECONNECT_ATTEMPTS + 1):
