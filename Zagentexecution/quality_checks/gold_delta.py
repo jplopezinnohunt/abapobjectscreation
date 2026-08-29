@@ -343,6 +343,21 @@ def comparar_clave(gold, spec, con, cols):
     sospechosas = [k for k, v in p01.items()
                    if k not in gold_sonda
                    or gold_sonda[k] != tuple(v[c] for c in campos1)]
+
+    # ⛔ BORRADOS: esta es la UNICA estrategia de las siete que puede verlos, porque compara
+    # POBLACIONES enteras. Las demas -- fecha, clave creciente, CDHDR -- solo miran hacia
+    # delante. Y es justo donde hacen falta: JP senalo que el borrado fisico se da sobre
+    # objetos Z/Y, y esas tablas son pequenas, asi que caen aqui.
+    # SE REPORTAN, NO SE BORRAN. Quitar filas del Golden es una decision de la persona.
+    faltan_en_p01 = [k for k in gold_sonda if k not in p01]
+    if faltan_en_p01:
+        print("    ⛔ %s clave(s) estan en el Golden y NO en P01 -- candidatas a BORRADO:"
+              % "{:,}".format(len(faltan_en_p01)))
+        for k in faltan_en_p01[:5]:
+            print("         %s" % ("|".join(k)))
+        if len(faltan_en_p01) > 5:
+            print("         ... y %d mas" % (len(faltan_en_p01) - 5))
+        print("       NO se borran: eso lo decide una persona. Pero ya no pasan desapercibidas.")
     print("    fase 1: %s claves NUEVAS o con la sonda distinta, de %s"
           % ("{:,}".format(len(sospechosas)), "{:,}".format(len(p01))))
     if not sospechosas:

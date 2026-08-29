@@ -208,17 +208,23 @@ def main():
     # exactamente lo que hace inviable el delta.
     if a.generar:
         reg = {}
+        # ⛔ SE ESCRIBEN LAS 368, NO SOLO LAS QUE TIENEN FECHA. La primera version descartaba
+        # en SILENCIO las de COMPARAR_CLAVE y SIN_DELTA_POSIBLE, asi que el registro parecia
+        # "el plan de delta" y era el subconjunto de las que ya sabian hacerlo: 63 de 368. Una
+        # tabla sin modelo declarado es una tabla sobre la que NADIE DECIDIO -- y ahi es donde
+        # estaban las 19 tablas Z/Y de proceso, que son justo las que admiten borrado fisico.
         for n, nombre, tipo, est, campo, marcada, por in filas:
-            if est in ("COMPARAR_CLAVE", "SIN_DELTA_POSIBLE") or campo in ("", "-"):
-                continue
             # VENTANA DE SOLAPE (lookback). Es LA pieza que hace el delta facil: releer una
             # franja ANTERIOR a la marca captura las escrituras tardias, y como la carga es
             # idempotente (indice UNICO por clave) los duplicados no danan. Con solape, un
             # campo de fecha de DOCUMENTO deja de tener agujero: ya no hay que razonar tabla
             # por tabla si el campo es de alta o de documento, se le pone mas solape.
-            solape = 7 if est == "MARCA_AGUA" else 90
-            reg[nombre] = {"campo": campo, "solape_dias": solape, "tipo": tipo,
-                           "filas_hoy": n, "estrategia": est, "por_que": por}
+            solape = 7 if est == "MARCA_AGUA" else (90 if campo not in ("", "-") else 0)
+            reg[nombre] = {"campo": campo if campo not in ("", "-") else None,
+                           "solape_dias": solape, "tipo": tipo,
+                           "filas_hoy": n, "estrategia": est, "por_que": por,
+                           # la unica estrategia que ve BORRADOS es la que compara poblaciones
+                           "ve_borrados": est == "COMPARAR_CLAVE"}
         ruta = os.path.join(REPO, "brain_v2", "gold_delta_registry.json")
         with open(ruta, "w", encoding="utf-8") as fh:
             json.dump({"_que_es": "delta por tabla, GENERADO por gold_delta_census.py --generar. "
