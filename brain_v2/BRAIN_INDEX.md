@@ -301,7 +301,7 @@ lo deja — solo que nadie lo publicaba.
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A30_mining_bus` | dar a los mineros un sitio comun donde publicar lo que concluyen y consult | Treasury | `process_mining/mining_findings.json` |
+| `A30_mining_bus` | dar a los mineros un sitio comun donde publicar lo que concluyen y consult | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **apqi -- la cola de bat...**
 
@@ -373,7 +373,7 @@ lo deja — solo que nadie lo publicaba.
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A54_collaboration_mechanism` | hacer que los mineros COLABOREN, no que se mida si colaboran. Tres piezas: | Treasury | `process_mining/mining_findings.json` |
+| `A54_collaboration_mechanism` | hacer que los mineros COLABOREN, no que se mida si colaboran. Tres piezas: | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **rsau_audit_history (15...**
 
@@ -409,61 +409,61 @@ lo deja — solo que nadie lo publicaba.
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A63_discovery_raises_questions` | CONVERTIR UN HALLAZGO EN PREGUNTAS PARA QUIEN NO SABIA QUE LE AFECTABA. Un | Treasury | `['process_mining/mining_findings.json` |
+| `A63_discovery_raises_questions` | CONVERTIR UN HALLAZGO EN PREGUNTAS PARA QUIEN NO SABIA QUE LE AFECTABA. Un | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `['process_mining/mining_findings.json` |
 
 **el Gold DB p01_gold_ma...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A68_payment_lifecycle_e2e` | construir el log de eventos del ciclo de vida del PAGO -- factura contabil | Treasury | `process_mining/mining_findings.json` |
+| `A68_payment_lifecycle_e2e` | construir el log de eventos del ciclo de vida del PAGO -- factura contabil | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **lo que un minero ya ca...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A70_mining_output_contract` | EL CONTRATO DE SALIDA de un minero: datos NO bastan. Da tres clases -- OPO | Treasury | `process_mining/mining_findings.json` |
+| `A70_mining_output_contract` | EL CONTRATO DE SALIDA de un minero: datos NO bastan. Da tres clases -- OPO | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **T012K + T028B + T035D ...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A72_house_bank_ebs_wiring` | comprobar que cada cuenta de banco casa sigue CABLEADA al extracto electro | Treasury | `process_mining/mining_findings.json` |
+| `A72_house_bank_ebs_wiring` | comprobar que cada cuenta de banco casa sigue CABLEADA al extracto electro | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **FEBKO.EFART + T012K + ...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A73_bank_statement_channel_census` | censar POR QUE CANAL entra el extracto de cada cuenta -- electronico, manu | Treasury | `process_mining/mining_findings.json` |
+| `A73_bank_statement_channel_census` | censar POR QUE CANAL entra el extracto de cada cuenta -- electronico, manu | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **T012T (texto) + SETLEA...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A74_bank_account_nature_model` | derivar la NATURALEZA de cada cuenta (operativa / transferencia / a la vis | Treasury | `process_mining/mining_findings.json` |
+| `A74_bank_account_nature_model` | derivar la NATURALEZA de cada cuenta (operativa / transferencia / a la vis | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **T028B + T035D + TIBAN ...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A75_bank_config_profile_by_nature` | medir que configuracion lleva DE HECHO cada naturaleza de cuenta, para pod | Treasury | `process_mining/mining_findings.json` |
+| `A75_bank_config_profile_by_nature` | medir que configuracion lleva DE HECHO cada naturaleza de cuenta, para pod | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **REGUH + FEBKO + GLT0 (...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A76_bank_account_behaviour_signature` | clasificar cada cuenta por lo que HACE y no por como se llama: paga (REGUH | Treasury | `process_mining/mining_findings.json` |
+| `A76_bank_account_behaviour_signature` | clasificar cada cuenta por lo que HACE y no por como se llama: paga (REGUH | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **T028B.VGTYP + T028G (j...**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A77_ebs_format_consolidation` | contar cuantos MODELOS de extracto se sostienen, cuantos bancos y cuentas  | Treasury | `process_mining/mining_findings.json` |
+| `A77_ebs_format_consolidation` | contar cuantos MODELOS de extracto se sostienen, cuantos bancos y cuentas  | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **otros**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
-| `A78_bank_statement_sod_check` | buscar y publicar la SEGREGACION DE FUNCIONES en el extracto bancario tecl | Treasury | `process_mining/mining_findings.json` |
+| `A78_bank_statement_sod_check` | buscar y publicar la SEGREGACION DE FUNCIONES en el extracto bancario tecl | Master_Data_Governance, Payment_BCM, Procurement, Transport_Intelligence +1 | `process_mining/mining_findings.json` |
 
 **INSTRUMENTOS — contestan en PANTALLA, no dejan fichero**
 
@@ -585,7 +585,7 @@ _6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `I
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4724 objects · 260 rules · 642 claims · 19 incidents · 10 closed researches)
+## Brain at a glance (4725 objects · 260 rules · 642 claims · 19 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.

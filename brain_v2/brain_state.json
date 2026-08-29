@@ -5,7 +5,7 @@
     "blind_spots_total": 0,
     "names_classified": 2180,
     "names_referenced": 2180,
-    "objects_in_brain": 4724,
+    "objects_in_brain": 4725,
     "pct_classified": 100.0
   },
   "_design": "Object-centric knowledge graph with 15 layers (0-14). 1 Read = full self-aware intelligence. Layer 0 (core_principles) added Session #054 — constitutional tier above rules. Layer 11 (incidents) added Session #050 to fix 'context loaded but not used' failure mode. Layer 13 (interactions) added Session #059 — turn-level reasoning path as source of truth, zero-compression preserved_full_text; retros are DERIVED from this layer. Layer 14 (domains) added Session #059 — 3-axis taxonomy {functional, module, process} with reverse indexes (objects, claims, rules, KUs, incidents, skills, companions). Every node must carry a domain (feedback_every_node_has_domain).",
@@ -51,9 +51,9 @@
     "incidents": 19,
     "interactions": 8,
     "known_unknowns": 1,
-    "objects": 4724,
+    "objects": 4725,
     "rules": 260,
-    "session": 108,
+    "session": 109,
     "superseded": 19,
     "user_questions_open": 0
   },
@@ -29235,6 +29235,7 @@
       "status": "active"
     },
     {
+      "_s109_added_objects": "los dos PARAMETROS DE VARIANTE que deciden de donde sale el fichero (FEB_IMP_SOURCE = Y_/Z_EBS_PRO, FEB_FILEPATH = el share de Coupa) no estaban en ningun registro: el job se conocia y sus parametros no. Salian 'sin sitio' en work_triad_check para INC-000013624.",
       "claim": "EL CICLO COMPLETO DE COMUNICACION BANCARIA ES DE FICHEROS Y LO MUEVEN TRES JOBS, TODOS MEDIDOS EN TBTCO/TBTCP. SALIDA: F110 -> SAPFPAYM -> arbol DMEE -> fichero al directorio de la interfaz. VUELTA, y esta es la parte que no estaba conectada en el modelo: (1) ACUSE -- job 'PAYMENT STATUS REPORTS', paso ZFI_SWIFT_UPLOAD_BCM, variantes SWIFT_ACK_UNES y SWIFT_ACK_IIEP: el banco acusa recibo del fichero enviado. Las variantes son POR SOCIEDAD. (2) ESTADO DE PAGO -- mismo job, paso RBNK_IMPORT_PAYM_STATUS_REPORT, variantes Z_PSR_SOCGEN, Z_PSR_CITI y Z_PSR_CITI_V3: el banco devuelve que paso con cada pago. Las variantes son POR BANCO. (3) EXTRACTO -- job 'EBS INTEGRATION', programa FEB_FILE_HANDLING, variante 'EBS JOB_COUPA': el programa estandar sondea la carpeta y, cuando hay fichero, dispara la carga que acaba en FEBKO/FEBEP. FRECUENCIA MEDIDA sobre 2026-03-04..2026-03-18: 'PAYMENT STATUS REPORTS' 1.389 ejecuciones en 15 dias con sus 5 pasos = aprox. cada 15 minutos, 1.388 terminadas OK y 0 abortadas; 'EBS INTEGRATION' 348 ejecuciones = aprox. cada hora, 347 OK y 0 abortadas. EL CANAL, documentado desde antes en knowledge/domains/Treasury/bank_statement_ebs_architecture.md seccion 2: MT940 -> SWIFT Alliance Lite2 via SIL -> transferencia de fichero a \\hq-sapitf\\SWIFTS\\output\\* -> FF_5 -> documento Z1; patron de nombre OSOGEFRPPXXX_<CCODE>_<BANK_ID>_<ACCOUNT_ID>_<STMT_DATE>. LO QUE ESTO CAMBIA EN EL MODELO: 'recibe extracto electronico' NO es un atributo del banco casa. Es un atributo de la INTERFAZ -- de si el fichero de ese banco llega a esa carpeta y el job lo recoge. Un banco sin extracto en FEBKO puede significar tres cosas distintas que no se distinguen desde la tabla: que el banco no envia, que el fichero no llega, o que no lo hemos extraido. Hoy es lo tercero (claim 535). Y EL JOB ES PARTE DEL MODELO, no infraestructura de fondo: si 'EBS INTEGRATION' para, el modelo de banca sigue calculando tan tranquilo sobre un rio que ya no corre. Por eso el explorador (brain_v2/bank_model_explorer.py) lleva una sonda que comprueba que los tres programas siguen ejecutando, y declara BLIND cuando no encuentra rastro -- porque 'no corre' y 'no esta extraido' importan las dos y no se distinguen desde aqui.",
       "claim_type": "verified_fact",
       "confidence": "TIER_1",
@@ -29289,7 +29290,11 @@
         "TBTCO",
         "TBTCP",
         "F110",
-        "MT940"
+        "MT940",
+        "FEB_FILEPATH",
+        "FEB_IMP_SOURCE",
+        "EBS INTEGRATION",
+        "EBS JOB_COUPA"
       ],
       "resolution_notes": "Conecta el modelo de bancos con la operacion end-to-end: salida, acuse, estado y extracto. Responde a JP: el canal es de ficheros y lo mueven jobs que ya teniamos medidos y sin conectar.",
       "resolved_session": 102,
@@ -37106,7 +37111,12 @@
           "knowledge/domains/Treasury/payment_full_landscape.md",
           "knowledge/domains/Treasury/xref_office_tagging_model.md",
           "knowledge/domains/Treasury/bcm_signatory_change_procedure.md",
-          "knowledge/domains/Treasury/bcm_signatory_change_solution_design.md"
+          "knowledge/domains/Treasury/bcm_signatory_change_solution_design.md",
+          "knowledge/domains/Treasury/ebs_file_pipeline_and_jobs.md",
+          "knowledge/domains/Treasury/ebs_format_models.md",
+          "knowledge/domains/Treasury/bank_statement_channels_by_company.md",
+          "knowledge/domains/Treasury/bank_account_nature_model.md",
+          "knowledge/domains/Treasury/house_bank_operating_roles.md"
         ],
         "known_unknowns": [
           "KU-030",
@@ -37123,7 +37133,7 @@
           "KU-2026-058-02",
           "KU-2026-058-03"
         ],
-        "last_session_touched": 102,
+        "last_session_touched": 109,
         "objects": [
           "T012",
           "T012K",
@@ -37178,7 +37188,14 @@
         ],
         "recurring_checks": [
           "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py",
-          "Zagentexecution/quality_checks/bcm_role_gap_check.py"
+          "Zagentexecution/quality_checks/bcm_role_gap_check.py",
+          "Zagentexecution/quality_checks/house_bank_ebs_wiring_check.py",
+          "Zagentexecution/quality_checks/bank_statement_channel_census.py",
+          "Zagentexecution/quality_checks/bank_statement_sod_check.py",
+          "Zagentexecution/quality_checks/ebs_format_consolidation.py",
+          "Zagentexecution/quality_checks/bank_account_nature_model.py",
+          "Zagentexecution/quality_checks/bank_config_profile_by_nature.py",
+          "Zagentexecution/quality_checks/bank_account_behaviour_signature.py"
         ],
         "rules_ids": [
           "feedback_never_write_production_without_explicit_request",
@@ -41252,13 +41269,14 @@
       ]
     },
     {
+      "_s109_domain_fix": "declaraba domain='Treasury_EBS', que NO existe en la ontologia (25 dominios, ninguno se llama asi). Por eso work_triad_check leia NO en proceso y en metodo: el dominio no apuntaba a nada. El real es Treasury / subtopic bank_statement_ebs.",
       "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
       "analyzed_session": 108,
       "class_generalization": "Cambiar el numero de cuenta de un banco casa deja HUERFANA toda configuracion cuya clave sea ese numero. FI12 actualiza T012K y no arrastra a T028B. El sistema no avisa: la ficha queda perfecta, el job sigue en verde y el extracto deja de entrar en silencio. El precedente ya existia y no se cerro: el retro NTB01_rename_2026-04-08.md dejo escrito 'comprobar las entradas de T028B para la clave de banco de NTB01' cuatro meses antes.",
       "company_codes_involved": [
         "UNES"
       ],
-      "domain": "Treasury_EBS",
+      "domain": "Treasury",
       "error_messages": [
         "(sin mensaje: el extracto simplemente deja de entrar, en silencio)"
       ],
@@ -41267,12 +41285,18 @@
       "fix_path": "Anadir en D01 y transportar: T028B BANKL=SP0000000MX7, KTONR=18747647, VGTYP=TR_TRNF, BNKKO=NTB02-EUR1, BUKRS=UNES (resto de campos vacios, como en las 6 filas de NTB01). Borrar despues la fila 11939389 tras verificar la entrada del primer extracto. Antes de liberar: python Zagentexecution/quality_checks/config_transport_prerelease_check.py <TRKORR> -- T028B es tabla de customizing y un transporte de tabla exporta el VALOR al liberar, con lo que puede arrastrar claves ajenas. NO hay que tocar T035D (su clave es DISKB, no el numero de cuenta; UNES/NTB02-EUR1 -> 0001095012 existe), ni FEB_IMP_* (todo generico, claves en blanco), ni TIBAN.",
       "id": "INC-000013624",
       "incident_type": "CONFIGURATION",
+      "instruments": [
+        "Zagentexecution/quality_checks/house_bank_ebs_wiring_check.py"
+      ],
       "open_question": "Falta saber si el fichero LLEGA y SAP lo rechaza, o si Northern Trust / Coupa todavia no emiten el extracto de UNO18. No hay ningun log de aplicacion FEB* desde el 01.08 y el listado del share por RFC se colgo. Se cierra en 2 minutos: AL11 sobre \\\\hq-sapitf\\coupa$\\P01\\Out\\Data\\EBS\\ y \\Out\\Errors\\EBS, buscando ficheros posteriores al 14.08 para esta cuenta.",
       "population_sweep": "Barrido de las 368 cuentas T012K de UNES: UNA sola cuenta con el cable roto, la del ticket. La primera version del instrumento acuso a CUATRO y TRES eran falsas, por dos denominadores que no declaraba: (1) cuentas CERRADAS, que UNESCO marca en el TEXTO (T012T-TEXT1 empieza por CLOSED: 237 de 411 en UNES) -- asi cayeron SCB01-USD01 y BPO01-USD01; (2) extracto MANUAL, que no necesita fila en T028B -- BTE01-USD01 (Teheran) importo 116 extractos con EFART='M' sin haber tenido nunca esa fila, igual que BTE01-IRR01 con 156. Solo 131 de las 143 cuentas con extractos son electronicas. Los dos cortes estan clavados como casos de autotest. Quedan informativos: 25 filas huerfanas en T028B y 9 canales mudos de cuentas vivas entre 13 y 180 dias.",
       "primary_object_id": "T028B",
       "primary_subject": "Banco casa UNES/NTB02-EUR01, cuenta 11939389 -> 18747647, cuenta alternativa UNO12EUR -> UNO18EUR, IBAN GB54... -> GB42...",
       "received_date": "2026-08-28",
       "recurring_check": "Zagentexecution/quality_checks/house_bank_ebs_wiring_check.py",
+      "recurring_checks": [
+        "A72_house_bank_ebs_wiring"
+      ],
       "related_objects": [
         "T028B",
         "T012K",
@@ -41302,6 +41326,7 @@
         "Support"
       ],
       "status": "SAP_SIDE_COMPLETE_ESCALATED_UPSTREAM",
+      "subtopic": "bank_statement_ebs",
       "title": "El extracto bancario electronico de NTB02/EUR01 (Northern Trust ASHI EUR) dejo de entrar al cambiar el numero de cuenta: T028B se quedo apuntando a la cuenta vieja",
       "transactions": [
         "FI12",
@@ -43870,10 +43895,14 @@
         "CRA01",
         "DNB01",
         "DQ-012",
+        "EBS INTEGRATION",
+        "EBS JOB_COUPA",
         "ECO09",
         "EXIT_RFEBBU10_001",
         "FALS-070-04",
         "FEB00001",
+        "FEB_FILEPATH",
+        "FEB_IMP_SOURCE",
         "HRP1218",
         "HRP1222",
         "HRT1218",
@@ -43904,6 +43933,7 @@
         "SCB19",
         "SM35_BDC",
         "T030HB",
+        "T035U",
         "T042Y",
         "TBCA_RELPROC_CUS",
         "TBCA_RELPROC_EXP",
@@ -43954,11 +43984,7 @@
         "CIT16",
         "CIT24_GA",
         "D01K9B0F5F",
-        "EBS INTEGRATION",
-        "EBS JOB_COUPA",
-        "FEB_FILEPATH",
         "FEB_FILE_HANDLING",
-        "FEB_IMP_SOURCE",
         "FF67",
         "FI12",
         "GS02",
@@ -43972,7 +43998,6 @@
         "SOG_EUR4",
         "SOG_FR",
         "SOG_FRB",
-        "T035U",
         "TR_TRNF",
         "V_T028B",
         "XRT940",
@@ -44267,7 +44292,7 @@
       },
       "INC-000013624": {
         "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
-        "domain": "Treasury_EBS",
+        "domain": "Treasury",
         "fix_immediate": "",
         "related_objects": [
           "EBS INTEGRATION",
@@ -58661,6 +58686,35 @@
           "ventana": "20250101 → hoy",
           "visto_primero": "2026-08-28",
           "visto_ultima": "2026-08-28"
+        }
+      },
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "61": {
+      "discovery": {
+        "mining": {
+          "abierto": true,
+          "accion": "una tabla de alias -> dominio canonico, y que la puerta de ontologia recorra tambien los incidentes. Corregido solo INC-000013624 en s109 (Treasury_EBS -> Treasury)",
+          "clase": "DESAFIO",
+          "denominador": "los 16 incidentes de primera clase de brain_v2/incidents/incidents.json",
+          "evidencia": "brain_v2/incidents/incidents.json domain/secondary_domains cruzados contra las claves de brain_v2/domains/domains.json MAS cross_cutting_keys de brain_v2/capability_model/ontology.json",
+          "id": 61,
+          "limite": "PRIMERA MEDIDA MIA ERA FALSA: publique '11 de 19 dominios inventados' contando como inventadas BASIS, Security, Infrastructure y Brain_Architecture, que SI estan registradas como claves transversales. El validador de ontologia me corrigio en su propia salida. Y no se si cada alias tiene equivalente real: 'MM' podria ser Procurement o podria faltar el dominio",
+          "minero": "work_triad_check (manual, s109)",
+          "por_que_importa": "un incidente cuyo dominio no resuelve queda desconectado de sus docs, companions e instrumentos: work_triad_check leia NO en proceso Y en metodo para INC-000013624 teniendo los tres. Es feedback_gate_coverage_is_bounded_by_what_it_walks aplicandose a si misma el dia que se escribio -- y luego el mismo modo de fallo en MI medida",
+          "que": "Los incidentes nombran su dominio con ALIAS que ningun registro resuelve: BCM, Payment, HR, MM, CTS, MasterDataConfig. Existen Payment_BCM, HCM, Transport_Intelligence, Master_Data_Governance -- pero nada mapea uno a otro, asi que el incidente queda desconectado de sus docs e instrumentos",
+          "quien_puede_contestar": "DBS (dueño de la ontologia)",
+          "sistema": "repo",
+          "tamano": "9 de 16 incidentes de primera clase. La ontologia admite 40 nombres (25 dominios + 15 claves transversales registradas) y estos 6 no estan entre ellos",
+          "ventana": "todo el corpus"
         }
       },
       "domain": "",
@@ -93777,6 +93831,15 @@
     },
     "EBS INTEGRATION": {
       "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
+      "claims": [
+        {
+          "claim": "EL CICLO COMPLETO DE COMUNICACION BANCARIA ES DE FICHEROS Y LO MUEVEN TRES JOBS, TODOS MEDIDOS EN TBTCO/TBTCP. SALIDA: F110 -> SAPFPAYM -> arbol DMEE ",
+          "id": 536,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
       "discovery": {
         "boundary_jobs": {
           "job": "EBS INTEGRATION",
@@ -93786,13 +93849,17 @@
           "runs": 348
         }
       },
-      "domain": "Treasury_EBS",
+      "domain": "Treasury",
       "domain_axes": {
-        "functional": [],
-        "module": [
-          "Treasury_EBS"
+        "functional": [
+          "Treasury"
         ],
-        "process": []
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "T2R"
+        ]
       },
       "incident_fix_path": "Anadir en D01 y transportar: T028B BANKL=SP0000000MX7, KTONR=18747647, VGTYP=TR_TRNF, BNKKO=NTB02-EUR1, BUKRS=UNES (resto de campos vacios, como en las 6 filas de NTB01). Borrar despues la fila 11939389 tras verificar la entrada del primer extracto. Antes de liberar: python Zagentexecution/quality_c",
       "incident_root_cause": "El cambio pedido (numero de cuenta, IBAN y cuenta alternativa) se hizo COMPLETO y esta verificado en vivo en P01: T012K UNES/NTB02/EUR01 lleva BANKN=18747647 y BNKN2=UNO18EUR, y TIBAN lleva GB42CNOR23286318747647 con VALID_FROM=20260817. Lo que NO se actualizo es T028B (SPRO: asignar cuentas bancari",
@@ -93805,13 +93872,26 @@
     },
     "EBS JOB_COUPA": {
       "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
-      "domain": "Treasury_EBS",
+      "claims": [
+        {
+          "claim": "EL CICLO COMPLETO DE COMUNICACION BANCARIA ES DE FICHEROS Y LO MUEVEN TRES JOBS, TODOS MEDIDOS EN TBTCO/TBTCP. SALIDA: F110 -> SAPFPAYM -> arbol DMEE ",
+          "id": 536,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Treasury",
       "domain_axes": {
-        "functional": [],
-        "module": [
-          "Treasury_EBS"
+        "functional": [
+          "Treasury"
         ],
-        "process": []
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "T2R"
+        ]
       },
       "incident_fix_path": "Anadir en D01 y transportar: T028B BANKL=SP0000000MX7, KTONR=18747647, VGTYP=TR_TRNF, BNKKO=NTB02-EUR1, BUKRS=UNES (resto de campos vacios, como en las 6 filas de NTB01). Borrar despues la fila 11939389 tras verificar la entrada del primer extracto. Antes de liberar: python Zagentexecution/quality_c",
       "incident_root_cause": "El cambio pedido (numero de cuenta, IBAN y cuenta alternativa) se hizo COMPLETO y esta verificado en vivo en P01: T012K UNES/NTB02/EUR01 lleva BANKN=18747647 y BNKN2=UNO18EUR, y TIBAN lleva GB42CNOR23286318747647 con VALID_FROM=20260817. Lo que NO se actualizo es T028B (SPRO: asignar cuentas bancari",
@@ -100213,13 +100293,26 @@
     },
     "FEB_FILEPATH": {
       "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
-      "domain": "Treasury_EBS",
+      "claims": [
+        {
+          "claim": "EL CICLO COMPLETO DE COMUNICACION BANCARIA ES DE FICHEROS Y LO MUEVEN TRES JOBS, TODOS MEDIDOS EN TBTCO/TBTCP. SALIDA: F110 -> SAPFPAYM -> arbol DMEE ",
+          "id": 536,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Treasury",
       "domain_axes": {
-        "functional": [],
-        "module": [
-          "Treasury_EBS"
+        "functional": [
+          "Treasury"
         ],
-        "process": []
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "T2R"
+        ]
       },
       "incident_fix_path": "Anadir en D01 y transportar: T028B BANKL=SP0000000MX7, KTONR=18747647, VGTYP=TR_TRNF, BNKKO=NTB02-EUR1, BUKRS=UNES (resto de campos vacios, como en las 6 filas de NTB01). Borrar despues la fila 11939389 tras verificar la entrada del primer extracto. Antes de liberar: python Zagentexecution/quality_c",
       "incident_root_cause": "El cambio pedido (numero de cuenta, IBAN y cuenta alternativa) se hizo COMPLETO y esta verificado en vivo en P01: T012K UNES/NTB02/EUR01 lleva BANKN=18747647 y BNKN2=UNO18EUR, y TIBAN lleva GB42CNOR23286318747647 con VALID_FROM=20260817. Lo que NO se actualizo es T028B (SPRO: asignar cuentas bancari",
@@ -100337,13 +100430,26 @@
     },
     "FEB_IMP_SOURCE": {
       "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
-      "domain": "Treasury_EBS",
+      "claims": [
+        {
+          "claim": "EL CICLO COMPLETO DE COMUNICACION BANCARIA ES DE FICHEROS Y LO MUEVEN TRES JOBS, TODOS MEDIDOS EN TBTCO/TBTCP. SALIDA: F110 -> SAPFPAYM -> arbol DMEE ",
+          "id": 536,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Treasury",
       "domain_axes": {
-        "functional": [],
-        "module": [
-          "Treasury_EBS"
+        "functional": [
+          "Treasury"
         ],
-        "process": []
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "T2R"
+        ]
       },
       "incident_fix_path": "Anadir en D01 y transportar: T028B BANKL=SP0000000MX7, KTONR=18747647, VGTYP=TR_TRNF, BNKKO=NTB02-EUR1, BUKRS=UNES (resto de campos vacios, como en las 6 filas de NTB01). Borrar despues la fila 11939389 tras verificar la entrada del primer extracto. Antes de liberar: python Zagentexecution/quality_c",
       "incident_root_cause": "El cambio pedido (numero de cuenta, IBAN y cuenta alternativa) se hizo COMPLETO y esta verificado en vivo en P01: T012K UNES/NTB02/EUR01 lleva BANKN=18747647 y BNKN2=UNO18EUR, y TIBAN lleva GB42CNOR23286318747647 con VALID_FROM=20260817. Lo que NO se actualizo es T028B (SPRO: asignar cuentas bancari",
@@ -189847,13 +189953,17 @@
     },
     "T035U": {
       "analysis_doc": "knowledge/incidents/INC-000013624_ebs_ntb02_account_change_orphans_t028b.md",
-      "domain": "Treasury_EBS",
+      "domain": "Treasury",
       "domain_axes": {
-        "functional": [],
-        "module": [
-          "Treasury_EBS"
+        "functional": [
+          "Treasury"
         ],
-        "process": []
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "T2R"
+        ]
       },
       "incident_fix_path": "Anadir en D01 y transportar: T028B BANKL=SP0000000MX7, KTONR=18747647, VGTYP=TR_TRNF, BNKKO=NTB02-EUR1, BUKRS=UNES (resto de campos vacios, como en las 6 filas de NTB01). Borrar despues la fila 11939389 tras verificar la entrada del primer extracto. Antes de liberar: python Zagentexecution/quality_c",
       "incident_root_cause": "El cambio pedido (numero de cuenta, IBAN y cuenta alternativa) se hizo COMPLETO y esta verificado en vivo en P01: T012K UNES/NTB02/EUR01 lleva BANKN=18747647 y BNKN2=UNO18EUR, y TIBAN lleva GB42CNOR23286318747647 con VALID_FROM=20260817. Lo que NO se actualizo es T028B (SPRO: asignar cuentas bancari",
