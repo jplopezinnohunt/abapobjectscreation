@@ -4,15 +4,15 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**22 hallazgos vivos** de 10 mineros: 🔴 RIESGO 6 · 🟠 DESAFIO 7 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 5
+**22 hallazgos vivos** de 10 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 8 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 5
 
 
-⚠️ **7 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
+⚠️ **8 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
 
 
 ---
 
-## 🔴 RIESGO (6)
+## 🔴 RIESGO (5)
 
 *puede hacer daño si nadie actúa · va a quien responde del control*
 
@@ -62,19 +62,9 @@
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
 
-### A DOS tablas de pago del Golden les falta KUNNR, que es parte de la CLAVE SAP. Sin el no se pueden identificar las filas de pagos a CLIENTE, y su delta queda BLOQUEADO
-
-- **Tamaño:** REGUH: 3.707.737 filas para 3.096.017 claves (611.720 sin separar) y CERO copias byte a byte -- son filas distintas que la clave incompleta no separa. REGUP_SCENARIOS: 210.080 para 205.639 claves, y ahi si hay 2.301 copias byte a byte, que es un problema DISTINTO y ademas real
-- **Evidencia:** COUNT(*) vs COUNT(DISTINCT clave) y vs COUNT(DISTINCT fila entera) sobre REGUH del Golden; PRAGMA table_info muestra que KUNNR no esta
-- **No se puede ver:** no he comprobado en P01 que KUNNR este relleno en esas filas -- lo deduzco de que la clave SAP de REGUH lo lleva y de que LIFNR viene vacio. Comprobarlo cuesta una lectura acotada
-- **Acción:** (1) anadir KUNNR a REGUH y a REGUP_SCENARIOS, como se hizo con RBETR. (2) en REGUP_SCENARIOS, ademas, deduplicar las 2.301 copias identicas. Hasta entonces gold_delta se NIEGA a escribir en las dos: sin indice unico, INSERT OR REPLACE apilaria en vez de refrescar
-- **Puede contestarlo:** DBS
-- ***hoy** · lo encuentra `gold_delta/REGUH (s109)` · Golden · toda la tabla*
-- <sub>denominador: las 3.707.737 filas de REGUH en el Golden</sub>
-
 ---
 
-## 🟠 DESAFIO (7)
+## 🟠 DESAFIO (8)
 
 *no cuadra y el minero no puede resolverlo solo · **necesita que alguien conteste***
 
@@ -148,6 +138,16 @@
 - **Puede contestarlo:** BFM/TRS (Baizid Gazi, Anssi Yli-Hietanen) + DBS
 - ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
+
+### REGUH no puede llevar indice unico porque los PERCEPTORES OCASIONALES no tienen clave: sin LIFNR, sin EMPFG y sin VBLNR, varias filas comparten la misma. Pero medido por donde duele, el 94% del hueco esta en PROPUESTAS, que nadie analiza
+
+- **Tamaño:** 2025-2026: 76.744 filas sin separar de 577.103. De esas, 71.965 son PROPUESTAS (XVORL='X') y solo 4.779 son PAGOS REALES -- el 1,3% de 369.241. El 100% de las afectadas tienen LIFNR vacio. REGUP_SCENARIOS aparte: 2.301 copias byte a byte, que es un problema DISTINTO y si es real
+- **Evidencia:** COUNT(*) vs COUNT(DISTINCT LAUFD+LAUFI+XVORL+ZBUKR+LIFNR+EMPFG+VBLNR) partido por XVORL. Las filas repetidas llevan la direccion en linea (NAME1/STRAS/ORT01): OMM, ONU Universidad, Falck, Roger Rich -- perceptores sin ficha de proveedor
+- **No se puede ver:** PUBLIQUE DOS COSAS FALSAS antes de medir esto. (1) Dije que eran PAGOS A CLIENTE por KUNNR: JP lo corrigio -- no existen pagos a cliente, y el discriminante real es EMPFG, el codigo de perceptor. (2) Di por hecho que era historico: JP pidio mirar 2025-2026 y ahi siguen los 76.744. Las dos veces conclui de un ejemplo en vez de medir la poblacion
+- **Acción:** no urge. Para pagos reales el hueco es del 1,3%, asi que las cifras del minero de SoD -- que ya filtra XVORL<>'X' -- no dependen de esto. Si algun dia se quiere el indice: la clave de un perceptor ocasional necesita un campo que el Golden no trae
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `gold_delta/REGUH (s109)` · Golden · toda la tabla*
+- <sub>denominador: las 3.707.737 filas de REGUH en el Golden</sub>
 
 ---
 

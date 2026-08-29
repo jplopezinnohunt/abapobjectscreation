@@ -4452,20 +4452,20 @@
    "visto_ultima": "2026-08-29"
   },
   {
-   "clase": "RIESGO",
+   "clase": "DESAFIO",
    "id": 98,
    "minero": "gold_delta/REGUH (s109)",
-   "que": "A DOS tablas de pago del Golden les falta KUNNR, que es parte de la CLAVE SAP. Sin el no se pueden identificar las filas de pagos a CLIENTE, y su delta queda BLOQUEADO",
-   "tamano": "REGUH: 3.707.737 filas para 3.096.017 claves (611.720 sin separar) y CERO copias byte a byte -- son filas distintas que la clave incompleta no separa. REGUP_SCENARIOS: 210.080 para 205.639 claves, y ahi si hay 2.301 copias byte a byte, que es un problema DISTINTO y ademas real",
-   "evidencia": "COUNT(*) vs COUNT(DISTINCT clave) y vs COUNT(DISTINCT fila entera) sobre REGUH del Golden; PRAGMA table_info muestra que KUNNR no esta",
-   "limite": "no he comprobado en P01 que KUNNR este relleno en esas filas -- lo deduzco de que la clave SAP de REGUH lo lleva y de que LIFNR viene vacio. Comprobarlo cuesta una lectura acotada",
-   "accion": "(1) anadir KUNNR a REGUH y a REGUP_SCENARIOS, como se hizo con RBETR. (2) en REGUP_SCENARIOS, ademas, deduplicar las 2.301 copias identicas. Hasta entonces gold_delta se NIEGA a escribir en las dos: sin indice unico, INSERT OR REPLACE apilaria en vez de refrescar",
+   "que": "REGUH no puede llevar indice unico porque los PERCEPTORES OCASIONALES no tienen clave: sin LIFNR, sin EMPFG y sin VBLNR, varias filas comparten la misma. Pero medido por donde duele, el 94% del hueco esta en PROPUESTAS, que nadie analiza",
+   "tamano": "2025-2026: 76.744 filas sin separar de 577.103. De esas, 71.965 son PROPUESTAS (XVORL='X') y solo 4.779 son PAGOS REALES -- el 1,3% de 369.241. El 100% de las afectadas tienen LIFNR vacio. REGUP_SCENARIOS aparte: 2.301 copias byte a byte, que es un problema DISTINTO y si es real",
+   "evidencia": "COUNT(*) vs COUNT(DISTINCT LAUFD+LAUFI+XVORL+ZBUKR+LIFNR+EMPFG+VBLNR) partido por XVORL. Las filas repetidas llevan la direccion en linea (NAME1/STRAS/ORT01): OMM, ONU Universidad, Falck, Roger Rich -- perceptores sin ficha de proveedor",
+   "limite": "PUBLIQUE DOS COSAS FALSAS antes de medir esto. (1) Dije que eran PAGOS A CLIENTE por KUNNR: JP lo corrigio -- no existen pagos a cliente, y el discriminante real es EMPFG, el codigo de perceptor. (2) Di por hecho que era historico: JP pidio mirar 2025-2026 y ahi siguen los 76.744. Las dos veces conclui de un ejemplo en vez de medir la poblacion",
+   "accion": "no urge. Para pagos reales el hueco es del 1,3%, asi que las cifras del minero de SoD -- que ya filtra XVORL<>'X' -- no dependen de esto. Si algun dia se quiere el indice: la clave de un perceptor ocasional necesita un campo que el Golden no trae",
    "denominador": "las 3.707.737 filas de REGUH en el Golden",
    "sistema": "Golden",
    "ventana": "toda la tabla",
    "abierto": true,
    "quien_puede_contestar": "DBS",
-   "por_que_importa": "son las dos tablas de PAGO. El resto de esa cadena ya quedo alineado hoy -- PAYR, BNK_BATCH_HEADER/ITEM y DFPAYG pasaron de 157/156/113 dias de retraso a 0 -- y estas dos se quedan a 109 y 121 dias. Cualquier cifra que las una a FEBKO mide sobre una foto vieja del lado del pago"
+   "por_que_importa": "REGUH va 109 dias por detras de FEBKO y su delta sigue bloqueado, pero el bloqueo NO invalida lo publicado: afecta al 1,3% de los pagos reales"
   }
  ],
  "preguntas": [
