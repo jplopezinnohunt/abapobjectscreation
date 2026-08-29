@@ -4511,6 +4511,35 @@
    "evidencia": "REGUH XVORL='X' agrupado por mes de LAUFD; marca de agua de REGUH en LAUFD <= 20260512",
    "limite": "no se si las propuestas se BORRAN al ejecutarse, en cuyo caso su ausencia reciente seria lo normal y no un hueco",
    "accion": "preguntar a BFM si una propuesta sobrevive a su ejecucion; si no sobrevive, esto no es un hallazgo"
+  },
+  {
+   "clase": "DATO",
+   "id": 102,
+   "minero": "medido a mano (s109)",
+   "abierto": false,
+   "que": "Las propuestas de pago NO son BCM, y BCM no marca nada en REGUH: es una capa aparte que solo recoge pagos YA EJECUTADOS",
+   "tamano": "0 de 207.862 propuestas (XVORL='X') tienen fila en BNK_BATCH_ITEM. Al reves, los 95.385 items BCM que casan apuntan TODOS a XVORL vacio. Y REGUH tiene 180 campos en P01 sin NI UNO de BCM: los BNKL*/BNKN*/BNKS* son datos bancarios del perceptor y FM_STATUS es de Gestion de Fondos",
+   "evidencia": "REGUH LEFT JOIN BNK_BATCH_ITEM por LAUFD+LAUFI+ZBUKR+VBLNR sobre 2025-2026; DD03L de P01 para el diccionario de REGUH",
+   "limite": "el cruce usa LAUFD+LAUFI+ZBUKR+VBLNR. Una propuesta no tiene VBLNR asignado todavia, asi que el cero es CONSISTENTE con el mecanismo pero no lo prueba por si solo -- lo que lo cierra es que no exista ningun campo BCM en los 180 de REGUH",
+   "accion": "para saber si un pago paso por BCM se va a BNK_BATCH_ITEM, nunca a un flag de REGUH",
+   "denominador": "las 577.103 filas de REGUH con LAUFD >= 20250101 y los 116.934 items BCM del mismo periodo",
+   "sistema": "Golden + P01 (diccionario)",
+   "ventana": "LAUFD 2025-2026"
+  },
+  {
+   "clase": "DESAFIO",
+   "id": 103,
+   "minero": "medido a mano (s109)",
+   "abierto": true,
+   "que": "El Golden guarda 30 de los 180 campos de REGUH -- el 17%. Eso explica por que las columnas se siguen 'cayendo' de una en una cuando un minero las pide",
+   "tamano": "REGUH 30/180. Hoy hubo que anadir RBETR a REGUH, BNKN2 a T012K, PRIUS/ZALDT a PAYR, AKBLN a FEBEP y BLART/VBLNR a REGUP -- 7 columnas en 5 tablas, descubiertas por ERROR una a una hasta que se diffearon todas de golpe",
+   "evidencia": "DD03L de P01 frente a PRAGMA table_info del Golden",
+   "limite": "guardar los 180 no es gratis ni necesariamente correcto: la pregunta no es 'por que faltan 150' sino 'que 150 no vamos a echar de menos'. No lo se",
+   "accion": "un diff sistematico campo a campo entre P01 y el Golden para las tablas que mas se usan, y decidir el corte a proposito en vez de por acumulacion",
+   "denominador": "los 180 campos de REGUH en P01",
+   "sistema": "Golden + P01",
+   "ventana": "n/a",
+   "quien_puede_contestar": "DBS"
   }
  ],
  "preguntas": [

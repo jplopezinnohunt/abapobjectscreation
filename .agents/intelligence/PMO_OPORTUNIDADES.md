@@ -4,10 +4,10 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**25 hallazgos vivos** de 11 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 11 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 5
+**27 hallazgos vivos** de 12 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 12 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 6
 
 
-⚠️ **11 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
+⚠️ **12 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
 
 
 ---
@@ -64,7 +64,7 @@
 
 ---
 
-## 🟠 DESAFIO (11)
+## 🟠 DESAFIO (12)
 
 *no cuadra y el minero no puede resolverlo solo · **necesita que alguien conteste***
 
@@ -179,6 +179,16 @@
 - ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
 - <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>
 
+### El Golden guarda 30 de los 180 campos de REGUH -- el 17%. Eso explica por que las columnas se siguen 'cayendo' de una en una cuando un minero las pide
+
+- **Tamaño:** REGUH 30/180. Hoy hubo que anadir RBETR a REGUH, BNKN2 a T012K, PRIUS/ZALDT a PAYR, AKBLN a FEBEP y BLART/VBLNR a REGUP -- 7 columnas en 5 tablas, descubiertas por ERROR una a una hasta que se diffearon todas de golpe
+- **Evidencia:** DD03L de P01 frente a PRAGMA table_info del Golden
+- **No se puede ver:** guardar los 180 no es gratis ni necesariamente correcto: la pregunta no es 'por que faltan 150' sino 'que 150 no vamos a echar de menos'. No lo se
+- **Acción:** un diff sistematico campo a campo entre P01 y el Golden para las tablas que mas se usan, y decidir el corte a proposito en vez de por acumulacion
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `medido a mano (s109)` · Golden + P01 · n/a*
+- <sub>denominador: los 180 campos de REGUH en P01</sub>
+
 ---
 
 ## 🟢 OPORTUNIDAD (4)
@@ -224,7 +234,7 @@
 
 ---
 
-## ⚪ DATO (5)
+## ⚪ DATO (6)
 
 *un hecho relevante que no es ninguna de las tres · va al conocimiento*
 
@@ -277,6 +287,15 @@
 - ***hoy** · lo encuentra `manual (s109) — NO hay script que lo refresque; se cierra a mano` · Golden + P01 · AZDAT 20240101 → hoy*
 - <sub>denominador: las 15 tablas de Payment/transaction sin spec curada, de 318 en el registro (34 curadas)</sub>
 
+### Las propuestas de pago NO son BCM, y BCM no marca nada en REGUH: es una capa aparte que solo recoge pagos YA EJECUTADOS
+
+- **Tamaño:** 0 de 207.862 propuestas (XVORL='X') tienen fila en BNK_BATCH_ITEM. Al reves, los 95.385 items BCM que casan apuntan TODOS a XVORL vacio. Y REGUH tiene 180 campos en P01 sin NI UNO de BCM: los BNKL*/BNKN*/BNKS* son datos bancarios del perceptor y FM_STATUS es de Gestion de Fondos
+- **Evidencia:** REGUH LEFT JOIN BNK_BATCH_ITEM por LAUFD+LAUFI+ZBUKR+VBLNR sobre 2025-2026; DD03L de P01 para el diccionario de REGUH
+- **No se puede ver:** el cruce usa LAUFD+LAUFI+ZBUKR+VBLNR. Una propuesta no tiene VBLNR asignado todavia, asi que el cero es CONSISTENTE con el mecanismo pero no lo prueba por si solo -- lo que lo cierra es que no exista ningun campo BCM en los 180 de REGUH
+- **Acción:** para saber si un pago paso por BCM se va a BNK_BATCH_ITEM, nunca a un flag de REGUH
+- ***hoy** · lo encuentra `medido a mano (s109)` · Golden + P01 (diccionario) · LAUFD 2025-2026*
+- <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101 y los 116.934 items BCM del mismo periodo</sub>
+
 ---
 
 ## De dónde sale cada uno
@@ -290,6 +309,7 @@
 | `bank_account_nature_model` | 2 |
 | `house_bank_ebs_wiring_check` | 2 |
 | `bank_config_profile_by_nature` | 2 |
+| `medido a mano (s109)` | 2 |
 | `manual (s109) — NO hay script que lo refresque; se cierra a mano` | 2 |
 | `gold_delta/REGUH (s109)` | 1 |
 | `ebs_format_consolidation` | 1 |
