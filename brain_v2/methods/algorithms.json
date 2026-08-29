@@ -2473,6 +2473,22 @@
       "conclusion_falsa_que_permite": "leer \"campo vacio en 10 filas\" como \"campo sin usar\". Dice QUE SE USA, nunca que algo no se use",
       "validado": "primera corrida sobre REGUH XVORL=X y LIFNR vacio: 38 campos con valor de 177, 23 ausentes del Golden, y entre ellos KUNNR -- la clave que faltaba. Verificado: en la clave que el Golden repite 2.075 veces hay 2.075 KUNNR distintos",
       "sesion": 109
+    },
+    "A83_derive_keys_from_dd03l": {
+      "que_hace": "deriva de DD03L (KEYFLAG=X) la clave de cada tabla del Golden y la escribe en el registro, para que su delta pase de DECLARADO a EJECUTABLE",
+      "script": "Zagentexecution/quality_checks/derive_keys_from_dd03l.py",
+      "lands_in": [
+        "brain_v2/gold_delta_registry.json"
+      ],
+      "por_que_existe": "las 368 tablas tenian MODELO de delta y solo 12 se podian CORRER, porque la clave estaba escrita a mano. JP: «mas que el no detectar el borrado es detectar el DELTA tambien». Un modelo sin clave no es un modelo: es una intencion",
+      "trampas": [
+        "MANDT/CLIENT es clave en SAP y NO esta en nuestras copias: se quita",
+        "si al Golden le falta un campo de la clave, la tabla se marca NO ejecutable y se dice cual falta -- una clave incompleta no da error, APILA duplicados",
+        "una tabla del Golden puede no existir en P01 (derivadas, simulaciones, historicos nuestros): tambien se declara"
+      ],
+      "conclusion_falsa_que_permite": "creer que 368 tablas con modelo son 368 tablas con delta",
+      "validado": "12 -> 239 ejecutables · 35 con clave incompleta · 94 sin clave en P01. Probado con YTFI_PPC_STRUC, que nunca se escribio a mano: corre en 1 llamada",
+      "sesion": 109
     }
   },
   "_portfolio": {

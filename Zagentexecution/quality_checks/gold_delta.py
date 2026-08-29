@@ -447,8 +447,40 @@ def comparar_clave(gold, spec, con, cols):
     return 0
 
 
+def _del_registro(gold):
+    """La spec de una tabla que NO esta escrita a mano: se arma del registro generado.
+
+    ⛔ ESTO ES LO QUE FALTABA. Las 368 tablas tenian MODELO declarado y solo 12 eran
+    EJECUTABLES, porque la clave estaba a mano en el diccionario de aqui abajo. JP: «mas que el
+    no detectar el borrado es detectar el DELTA tambien». La clave la da DD03L, y con ella 239
+    tablas pasan a ser corribles sin escribir una linea mas por tabla."""
+    import json as _j
+    ruta = os.path.join(REPO, "brain_v2", "gold_delta_registry.json")
+    try:
+        with open(ruta, encoding="utf-8") as fh:
+            r = _j.load(fh)["tablas"].get(gold)
+    except (OSError, ValueError, KeyError):
+        return None
+    if not r or not r.get("ejecutable") or not r.get("clave"):
+        if r:
+            print("  %s tiene MODELO (%s) pero NO es ejecutable: %s"
+                  % (gold, r.get("estrategia"), r.get("clave_nota", "sin clave")))
+        return None
+    est = r.get("estrategia")
+    spec = {"sap": r.get("sap") or gold, "clave": r["clave"], "alcance": "",
+            "alta": None, "fecha": None,
+            "por_que": "%s · %s" % (est, r.get("por_que", ""))}
+    if est == "MARCA_AGUA":
+        spec["alta"] = r["campo"]
+    elif est in ("MARCA_AGUA_CON_HUECO", "POR_PERIODO"):
+        spec["fecha"] = r["campo"]
+    return spec
+
+
 def delta(gold, desde_forzado="", hasta=""):
-    spec = REGISTRO[gold]
+    spec = REGISTRO.get(gold) or _del_registro(gold)
+    if spec is None:
+        return 2
     con = sqlite3.connect(M.DB)
     cols = [r[1] for r in con.execute("PRAGMA table_info([%s])" % gold)]
     campo = spec.get("alta") or spec.get("fecha")
@@ -544,10 +576,10 @@ def main():
         return M.resumen()
     objetivos = sorted(REGISTRO) if a.todas else [a.tabla]
     for t in objetivos:
-        if t not in REGISTRO:
-            print("  %s no esta en el registro de gold_delta. Anadir una FILA en REGISTRO, "
-                  "no un script." % t)
-            continue
+        # ya no hace falta estar en REGISTRO: si el registro GENERADO la declara ejecutable,
+        # se corre igual. REGISTRO queda para las que necesitan matices a mano (alcance,
+        # sonda, una clave que DD03L no basta para dar).
+        pass
         delta(t, a.desde)
     return 0
 
