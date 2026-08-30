@@ -121,9 +121,26 @@ def main():
     # ---- ALGORITMOS ------------------------------------------------------------------
     A = (cargar(ALGOS).get("algorithms") or {})
     for k, v in A.items():
+        # ⛔ UN ALGORITMO SE INDEXABA POR SU NOMBRE Y POCO MAS. Medido el 2026-08-30 tras un
+        # rebuild COMPLETO: `A85_complete_key_columns` salia al preguntar "refrescar una tabla
+        # por delta" -- porque "delta" esta en su ficha -- y NO salia al preguntar "completar
+        # los campos de clave que faltan", que es LITERALMENTE lo que hace. Igual A84 y A82.
+        #
+        # La causa: aqui solo entraban state/mining_kind/bound_in/lands_in. Todo lo que
+        # describe PARA QUE SIRVE -- que_hace, por_que_existe, y el `preguntas_que_contesta`
+        # que se anadio pensando en esto -- no lo leia nadie. Registrar no es encontrar: un
+        # catalogo que no responde a la pregunta de quien no sabe que existe no evita ni un
+        # duplicado, que es justo para lo que existe.
+        texto = " ".join(str(v.get(c) or "") for c in
+                         ("que_hace", "por_que_existe", "conclusion_falsa_que_permite"))
+        preg = v.get("preguntas_que_contesta") or []
+        if isinstance(preg, str):
+            preg = [preg]
         nodo("ALGORITMO", k, state=v.get("state"), mining_kind=v.get("mining_kind"),
              bound_in=v.get("bound_in"), lands_in=v.get("lands_in"),
-             tiene_defecto_vivo=bool(v.get("_defecto_vivo")))
+             tiene_defecto_vivo=bool(v.get("_defecto_vivo")),
+             descripcion=(texto + " " + " · ".join(preg)).strip(),
+             preguntas=preg)
         for m in re.findall(r"[\w/\\.-]+\.json", str(v.get("lands_in") or "")):
             store = os.path.basename(m)
             nodos.setdefault(store, {"tipo": "STORE", "nombre": store})
