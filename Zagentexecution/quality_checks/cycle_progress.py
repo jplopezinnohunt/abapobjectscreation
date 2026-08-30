@@ -68,6 +68,55 @@ def vivo():
         return -1
 
 
+TIEMPOS = os.path.join(REPO, "brain_v2", "methods", "cycle_timings.json")
+
+
+def informe_tiempos():
+    """CUANTO DURA NUESTRO PROCESO, PASO A PASO, Y QUE SE TIRA.
+
+    JP: «tenemos que medir todo, para saber cuanto dura nuestro proceso, saber que tiramos y
+    los tiempos». Hasta s110 el ciclo no dejaba NI UNA cifra: el tiempo se infería del hueco
+    entre fechas de fichero -- y asi le atribui 68 minutos a un paso que tarda 1,8.
+
+    Aqui no se infiere nada: se lee lo que el propio ciclo escribio de si mismo."""
+    try:
+        with open(TIEMPOS, encoding="utf-8") as fh:
+            t = json.load(fh)
+    except (OSError, ValueError):
+        print("\n  (aun no hay cycle_timings.json: lo escribe el ciclo a partir de s110)")
+        return
+    if not t:
+        return
+    ult = t[-1]["utc"][:10]
+    corrida = [x for x in t if x["utc"][:10] == ult]
+    tot = sum(x["seg"] for x in corrida)
+    ok = [x for x in corrida if x.get("rc") == 0]
+    mal = [x for x in corrida if x.get("rc") != 0]
+    print("\n" + "=" * 92)
+    print("CUANTO DURA NUESTRO PROCESO — ultima corrida (%s)" % ult)
+    print("=" * 92)
+    print("  %d pasos cronometrados · %.1f min en total · %d OK · %d con fallo"
+          % (len(corrida), tot / 60.0, len(ok), len(mal)))
+    print("\n  %6s  %5s  %-7s %s" % ("seg", "%", "pesado", "paso"))
+    print("  " + "-" * 88)
+    acum = 0
+    for x in sorted(corrida, key=lambda z: -z["seg"]):
+        pct = 100.0 * x["seg"] / max(1, tot)
+        acum += pct
+        marca = "  <- aqui esta el tiempo" if acum <= 80 and pct >= 10 else ""
+        print("  %6d  %4.0f%%  %-7s %s%s" % (x["seg"], pct, "SI" if x.get("pesado") else "",
+                                             x["paso"][:52], marca))
+    if mal:
+        print("\n  PASOS QUE FALLARON — el resultado esta INCOMPLETO por ellos:")
+        for x in mal:
+            print("    rc=%s  %s (%s)" % (x.get("rc"), x["paso"][:60], x["script"]))
+    cinco = sorted(corrida, key=lambda z: -z["seg"])[:5]
+    print("\n  los 5 mas caros son el %.0f%% del tiempo. Ahi, y solo ahi, compensa mirar."
+          % (100.0 * sum(x["seg"] for x in cinco) / max(1, tot)))
+    print("  Y antes de optimizar cualquiera: comprobar que el trabajo es REAL y no REPETIDO.")
+    print("  El unico que lo era, log_reality, paso de 22 min a 7 s con delta por _first_seen.")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--minutos", type=int, default=15,
@@ -129,6 +178,7 @@ def main():
     print("\n" + "-" * 92)
     if status != "RUNNING":
         print("VEREDICTO: el ciclo NO esta corriendo (status=%s). Se puede escribir." % status)
+        informe_tiempos()
         return 0
     if n == 0:
         print("VEREDICTO: la marca dice RUNNING y NO HAY PROCESO. El ciclo murio sin cerrar su")
