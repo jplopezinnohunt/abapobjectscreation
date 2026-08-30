@@ -56,7 +56,23 @@ REPO = Path(__file__).resolve().parents[2]
 STATE = Path(__file__).parent / "cycle_state.json"
 TIEMPOS = REPO / "brain_v2" / "methods" / "cycle_timings.json"
 
-# (script, label, needs_full_log_scan) — ORDER IS THE DEPENDENCY ORDER.
+def script_rel_de(s):
+    """El fichero de un paso, sin sus argumentos ('ruta.py --desde 1' -> 'ruta.py')."""
+    return s.split()[0]
+
+
+# QUE SE PUEDE OMITIR EN --quick, Y POR QUE. La clave es el motivo: si no se sabe escribir por
+# que es seguro saltarlo, NO ES SEGURO SALTARLO. Vacio a proposito hasta poder justificar cada
+# entrada — antes se saltaban los 9 marcados "pesados", que es decidir por coste lo que hay que
+# decidir por necesidad. Un paso barato puede ser imprescindible (log_reality: 7 s, y sin el se
+# indexan 576 fantasmas) y uno caro puede ser prescindible para una pregunta concreta.
+OMITIBLE_EN_QUICK = {
+    # "ruta/al/paso.py": "por que su respuesta NO hace falta para lo que --quick contesta",
+}
+
+# (script, label, cuesta_una_lectura_completa_del_log) — ORDER IS THE DEPENDENCY ORDER.
+# La tercera columna es COSTE, no permiso para saltar. Se mantiene porque decir "este paso lee
+# el log entero" es informacion util; lo que ya NO hace es decidir nada.
 CYCLE = [
     ("process_mining/executed_objects_domain_map.py",
      "L1 classify every executed object", True),
@@ -181,8 +197,21 @@ def main():
         pass
 
     for idx, (script, label, heavy) in enumerate(CYCLE, 1):
-        if quick and heavy:
-            say(f"  SKIP  {label}")
+        # ⛔ COSTE Y PRESCINDIBILIDAD SON DOS COSAS DISTINTAS, y este `if` las confundia.
+        # La tercera columna se llamaba `needs_full_log_scan` -- un dato de COSTE -- y se usaba
+        # para decidir si SALTAR. Eso es decidir por el reloj lo que hay que decidir por lo que
+        # el paso CONTESTA. JP, 2026-08-30: «el saltar o no, no debe ser por tiempo, no pierdas
+        # la perspectiva de lo que hacen. Si son necesarios hay que hacerlos».
+        #
+        # El caso que lo prueba: `log_reality_filter` estaba marcado pesado porque barria 29,8 M
+        # de filas. Con el delta por _first_seen tarda 7 SEGUNDOS -- y saltarlo seguiria siendo
+        # un error, porque es el paso que separa objeto real de instancia generada. Sin el se
+        # indexan 576 fantasmas como si fueran objetos. Barato y OBLIGATORIO.
+        #
+        # Por eso --quick ahora solo salta lo que esta declarado OMITIBLE en OMITIBLE_EN_QUICK,
+        # con su motivo escrito. Lo que no este ahi se corre SIEMPRE, cueste lo que cueste.
+        if quick and script_rel_de(script) in OMITIBLE_EN_QUICK:
+            say(f"  SKIP  {label}  ({OMITIBLE_EN_QUICK[script_rel_de(script)]})")
             skipped += 1
             continue
         if script.split()[0] in RFC_REQUERIDO and not con_rfc:
