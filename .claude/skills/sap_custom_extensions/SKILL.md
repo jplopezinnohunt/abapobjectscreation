@@ -12,6 +12,11 @@ domains:
 > **The heavy analysis is DONE** — a master registry, 12 technical autopsies, and three Gold DB
 > inventories. This skill is the map, the discovery method, and the open frontier. Sibling skill:
 > `sap_validation_substitution` (the GGB0/GGB1/YRGGBS00 perimeter — its own entry point).
+>
+> **Why this matters to process mining (JP, s111):** extensions are hidden actors IN THE MIDDLE
+> of every process — the event log records outcomes, never the exit that derived, blocked, or
+> rewrote a value mid-transaction. Without this inventory, process discovery attributes to users
+> and standard SAP what custom code actually did.
 
 ## 1. The four extension classes and where each is discovered
 

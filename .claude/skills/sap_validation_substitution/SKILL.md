@@ -12,6 +12,11 @@ domains:
 > **This analysis is DONE.** Everything below was measured live on P01 or read from extracted
 > source. Do not re-derive; extend. Detail lives in the four source artifacts (§6); this skill
 > is the map and the method.
+>
+> **Why this matters to process mining (JP, s111):** these routines are the hidden actors IN THE
+> MIDDLE of the process. The event log (CDHDR, doc-flow) records the OUTCOME of a posting — never
+> the substitution that changed a field or the validation that blocked a document on the way.
+> Without this map, a process miner attributes to the user what an exit did.
 
 ## 1. Architecture — one form pool serves both mechanisms
 
