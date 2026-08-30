@@ -48,7 +48,10 @@ sys.path.insert(0, os.path.join(REPO, "Zagentexecution", "mcp-backend-server-pyt
 DB = os.path.join(REPO, "Zagentexecution", "sap_data_extraction", "sqlite",
                   "p01_gold_master_data.db")
 REG = os.path.join(REPO, "brain_v2", "gold_delta_registry.json")
-CLIENTE = {"MANDT", "CLIENT", "RCLNT"}
+# El campo de mandante tiene VARIOS nombres segun la tabla. Faltaban MANDANT (cdhdr, apqi) y
+# los de tablas de totales. No es cosmetico: si se queda en la clave, la tabla sale NO
+# ejecutable y parece que le falta un dato que en realidad NUNCA extraemos a proposito.
+CLIENTE = {"MANDT", "CLIENT", "RCLNT", "MANDANT", "RCLNT_", "KOKRS_CLNT"}
 
 
 def sap_name(gold):
@@ -91,7 +94,38 @@ def main():
             continue
         pares = sorted((x["WA"].split("|")[1].strip(), x["WA"].split("|")[0].strip())
                        for x in r["DATA"])
-        clave = [f for _, f in pares if f not in CLIENTE]
+        # ⛔ `.INCLUDE` NO ES UN CAMPO: es una estructura embebida que DD03L devuelve como
+        # pseudo-fila. Meterlo en la clave marcaba 8 tablas como "le falta un campo" cuando lo
+        # que faltaba era resolver el include. Se resuelve preguntando por la estructura
+        # (PRECFIELD) y quedandose con SUS campos clave.
+        clave = []
+        for _, f in pares:
+            if f in CLIENTE:
+                continue
+            if f.startswith("."):
+                continue                      # se expande abajo
+            clave.append(f)
+        if any(f.startswith(".") for _, f in pares):
+            try:
+                ri = conn.call("RFC_READ_TABLE", QUERY_TABLE="DD03L", DELIMITER="|", ROWCOUNT=0,
+                               OPTIONS=trocear_where("TABNAME = '%s'" % sap),
+                               FIELDS=[{"FIELDNAME": "FIELDNAME"}, {"FIELDNAME": "PRECFIELD"},
+                                       {"FIELDNAME": "KEYFLAG"}])
+                estructuras = {x["WA"].split("|")[1].strip() for x in ri["DATA"]
+                               if x["WA"].split("|")[0].strip().startswith(".")
+                               and x["WA"].split("|")[2].strip() == "X"
+                               and x["WA"].split("|")[1].strip()}
+                for est in estructuras:
+                    re_ = conn.call("RFC_READ_TABLE", QUERY_TABLE="DD03L", DELIMITER="|",
+                                    ROWCOUNT=0,
+                                    OPTIONS=trocear_where("TABNAME = '%s' AND KEYFLAG = 'X'" % est),
+                                    FIELDS=[{"FIELDNAME": "FIELDNAME"}])
+                    for x in re_["DATA"]:
+                        f = x["WA"].split("|")[0].strip()
+                        if f and not f.startswith(".") and f not in CLIENTE and f not in clave:
+                            clave.append(f)
+            except Exception:
+                pass
         if not clave:
             reg[gold]["clave"] = None
             reg[gold]["clave_nota"] = ("%s no existe en P01 o no tiene clave: es una tabla "
