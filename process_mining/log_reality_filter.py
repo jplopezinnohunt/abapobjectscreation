@@ -60,6 +60,9 @@ GOLD = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
                     "p01_gold_master_data.db")
 OUT = os.path.join(ROOT, "brain_v2", "log_reality.json")
 BRAIN = os.path.join(ROOT, "brain_v2", "brain_state.json")
+# El ESTADO del delta: hasta donde se leyo y que conjuntos se llevan acumulados. Sin esto
+# no hay delta posible, porque lo que se acumula son CONJUNTOS, no cifras.
+ESTADO = os.path.join(ROOT, "brain_v2", "log_reality_state.json")
 
 # --- the generated-name grammars, each with what it REALLY is and what it carries ----------
 # ORDER MATTERS: most specific first. Anything unmatched stays UNKNOWN on purpose.
@@ -155,14 +158,44 @@ def main():
                             .isoformat(timespec="seconds"),
            "_source": "rsau_audit_history"}
 
+    # ⛔ DELTA POR `_first_seen`. Medido el 2026-08-30: la tabla tiene 29.788.445 filas y solo
+    # 356.186 (el 1,2%) llegaron desde la corrida anterior. Barrerla entera cada vez es recorrer
+    # el 99% de mas para encontrar el 1,2% que cambio -- y por eso este paso producia LA MISMA
+    # conclusion una y otra vez.
+    #
+    # Es EXACTO, no una aproximacion: lo que se calcula son CONJUNTOS DISTINTOS (que nombres de
+    # programa y que usuarios aparecen), y la union de conjuntos se puede acumular sin perder
+    # nada. Lo que NO se podria acumular asi es un COUNT(DISTINCT) guardado como numero -- por
+    # eso se guarda el conjunto, no la cifra.
+    #
+    # Y la primera vez, o si el estado no existe, hace el barrido completo y lo dice.
+    prev = {}
+    if os.path.exists(ESTADO):
+        try:
+            prev = json.load(open(ESTADO, encoding="utf-8"))
+        except (OSError, ValueError):
+            prev = {}
+    marca = prev.get("hasta_first_seen")
     total = q("SELECT COUNT(*) FROM rsau_audit_history").fetchone()[0]
     rep["rows"] = total
-    print(f"rsau_audit_history: {total:,} filas")
+    if marca:
+        nuevas = q("SELECT COUNT(*) FROM rsau_audit_history WHERE _first_seen > ?",
+                   (marca,)).fetchone()[0]
+        print(f"rsau_audit_history: {total:,} filas · DELTA desde {marca}: {nuevas:,} nuevas "
+              f"({100.0*nuevas/max(1,total):.1f}%)")
+        rep["_delta"] = {"desde": marca, "filas_nuevas": nuevas,
+                         "_nota": "conjuntos acumulados; la union es exacta"}
+    else:
+        print(f"rsau_audit_history: {total:,} filas · BARRIDO COMPLETO (no hay marca previa)")
+        rep["_delta"] = {"desde": None, "filas_nuevas": total, "_nota": "primera corrida"}
+    _w = "" if not marca else " AND _first_seen > '%s'" % marca
 
     # ---- PROGRAMAS ------------------------------------------------------------------------
     print("clasificando programas ...")
-    progs = [r[0] for r in
-             q("SELECT DISTINCT SLGREPNA FROM rsau_audit_history WHERE SLGREPNA != ''")]
+    progs = sorted(set(prev.get("programas", [])) |
+                   {r[0] for r in
+                    q("SELECT DISTINCT SLGREPNA FROM rsau_audit_history "
+                      "WHERE SLGREPNA != ''" + _w)})
     kl, sub = collections.Counter(), collections.Counter()
     carried = collections.defaultdict(set)
     objects, unknown = [], []
@@ -192,8 +225,10 @@ def main():
 
     # ---- ACTORES --------------------------------------------------------------------------
     print("normalizando actores ...")
-    users = [r[0] for r in
-             q("SELECT DISTINCT SLGUSER FROM rsau_audit_history WHERE SLGUSER != ''")]
+    users = sorted(set(prev.get("actores", [])) |
+                   {r[0] for r in
+                    q("SELECT DISTINCT SLGUSER FROM rsau_audit_history "
+                      "WHERE SLGUSER != ''" + _w)})
     groups = collections.defaultdict(set)
     notes = collections.Counter()
     for u in users:
@@ -238,6 +273,23 @@ def main():
         rep["delta_vs_model"] = {"error": "brain_state.json ausente - corre rebuild_all.py"}
 
     json.dump(rep, open(OUT, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
+
+    # ⛔ EL ESTADO SE GUARDA AL FINAL, Y SOLO SI SE LLEGO AQUI. Moverlo antes -- o guardarlo con
+    # un fallo a medias -- congelaria un agujero que ningun delta posterior vuelve a mirar: las
+    # filas entre la marca vieja y la nueva no se leerian NUNCA MAS.
+    try:
+        tope = q("SELECT MAX(_first_seen) FROM rsau_audit_history").fetchone()[0]
+        json.dump({"hasta_first_seen": tope,
+                   "programas": progs, "actores": users,
+                   "filas_al_guardar": total,
+                   "_que_es": ("hasta donde leyo este paso y los CONJUNTOS acumulados. Se guardan "
+                               "los conjuntos, no sus cifras: un COUNT(DISTINCT) no se puede "
+                               "sumar entre corridas, un conjunto si se puede unir")},
+                  open(ESTADO, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+        print(f"  marca -> _first_seen <= {tope}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"  AVISO: no se pudo guardar la marca ({type(e).__name__}): la proxima corrida "
+              f"hara barrido completo, que es lo correcto si no se sabe hasta donde se leyo")
     print(f"\n-> {OUT}")
     return 0
 
