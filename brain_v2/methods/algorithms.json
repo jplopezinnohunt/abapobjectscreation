@@ -1323,7 +1323,8 @@
       "tipo_mineria": [
         "CONFORMIDAD",
         "CODIGO_COMO_FUENTE"
-      ]
+      ],
+      "lee_skill": "LEE PRIMERO el skill `sap_data_extraction` si vas a ampliar sus lecturas: extrae de P01 por RFC y le aplican las tres trampas ya pagadas -- max ~8 campos por RFC_READ_TABLE, P01 rechaza ROWSKIPS, y no se parte por delimitador porque un campo de texto puede contenerlo."
     },
     "A43_fsv_alignment_check": {
       "operates_on": "T011, T011T, FAGL_011QT, FAGL_011PC, FAGL_011ZC, FAGL_011SC, FAGL_011VC, FAGL_011FC — leidas EN VIVO por RFC_READ_TABLE en P01 (referencia) y en D01/V01 (destinos). Inventario del Gold DB respecto de FAGL_011*/T011: EN CONFLICTO Y SIN RESOLVER. Esta ficha afirma cero tablas (comprobado 2026-08-25, 381 objetos), pero process_mining/account_classes.py:152-160 lee `fagl_011zc` y `fagl_011qt` del Gold y existe el extractor scripts/extraction/extract_fsv_structure.py que las poblaria. Se DESCONOCE cual es cierto hasta re-inventariar el Gold (bloqueado 2026-08-26 por reparacion con WAL de 21 GB). Hasta entonces NO afirmar que esta capacidad no se puede correr offline. [ENMENDADO 2026-08-26; texto original en `_superseded_text.operates_on`.]",
@@ -1402,9 +1403,7 @@
         "como": "DOS arreglos. (1) LA ORDEN YA NO APRUEBA SIN MIRAR: si E071K viene vacio se resuelven las TAREAS HIJAS por E070.STRKORR y se analiza la UNION; si no hay hijas ni claves se sale 2 (NO ANALIZABLE), nunca 0. Probado con la orden de Egipto D01K9B0FXE: antes exit 0 sin analizar nada, ahora resuelve su hija D01K9B0FXF y sale 1. (2) EL EJE DE ENTIDAD SE BUSCA: se recorren los campos clave EN ORDEN y gana EL PRIMERO QUE DISCRIMINA (mas de un valor y mayoria estricta), en vez de fijar a ciegas el 1o tras MANDT -- que para T030H es KTOPL y en D01 solo vale UNES, o sea que la prueba INTRUSA no podia disparar NUNCA. Si ningun campo discrimina se DICE, y el resumen marca el INTRUSA como PARCIAL: un 0 que significa 'no comprobado' no puede leerse como 'limpio'."
       },
       "_ojo_al_arreglar": "La PRIMERA version de este arreglo elegia el campo con MAS valores distintos y salio peor que el defecto: sobre YTFI_PPC_STRUC eligio CODE_ORD -- un numero de secuencia 01..06 -- marco OCHO claves de EGIPTO como intrusas y DEJO PASAR la de Indonesia. Cambiar una heuristica por otra no es arreglar. En una clave de SAP los campos delanteros son la entidad y los traseros el detalle: el PRIMERO que separa, no el que mas separa.",
-      "lee_skill": {
-        "sap_transport_intelligence": "OBJFUNC (una 'M' borra la TABLA ENTERA en destino antes de insertar) y que E071K vacio TAMBIEN significa 'rol', no solo 'orden padre'. Las dos cosas cambian el veredicto de este check, que se escribio y se arreglo DOS VECES sin abrir el skill"
-      }
+      "lee_skill": "LEE PRIMERO el skill `sap_data_extraction` si vas a ampliar sus lecturas: extrae E070/E071 de P01 y el WHERE se trocea a 72 caracteres con trocear_where -- uno largo se TRUNCA en silencio y puede quedar en una condicion mas ancha que devuelve filas de mas."
     },
     "A41_extract_fund_center_hierarchy": {
       "operates_on": "P01 vía RFC_READ_TABLE: SETLEAF, SETNODE, SETHEADER, SETHEADERT (las 4 tablas SET que codifican un grupo/jerarquía SAP). Golden DB `p01_gold_master_data.db`: `fund_centers` (787 filas, clave FICTR/FIKRS) como fuente de los valores-sonda y como denominador de cobertura. Aterrizaje previsto: setleaf/setnode/setheader/setheadert + `_fund_center_hierarchy_manifest` + `fund_center_hierarchy_summary.json`.",
@@ -2442,7 +2441,8 @@
       "cuando_CDHDR_gana_y_cuando_no": "MEDIDO, no supuesto: para LFA1 la relectura completa son 21 llamadas (una por trozo de campos, cada una devuelve las 321.360 filas). Por CDHDR serian 21 x 224 lotes de claves = ~4.700 llamadas para 11.217 proveedores cambiados. CDHDR gana cuando la tabla es de MILLONES y releerla es imposible, no cuando son 300K.",
       "siete_mecanismos_del_sector": "INVESTIGADO en varias fuentes (SAP Community/ODP, Theobald, Qlik Replicate, BryteFlow/SLT, Microsoft FastTrack, Databricks), no inventado. De mas a menos fiel: 1) disparadores y tablas de log (SLT, Qlik attrep_cdc_log, Fivetran HVR) -- unico que ve BORRADOS, y NO podemos: hay que crear triggers en la BD origen. 2) cola delta ODP (ABR/AIE/AIED/ADD). 3) vista CDS con CDC (S/4). 4) documentos de cambio CDHDR/CDPOS. 5) campo de fecha. 6) puntero numerico creciente. 7) comparacion completa por hash. Nosotros vivimos en el 4-7.",
       "el_agujero_de_los_borrados": "NINGUNO de nuestros deltas ve un BORRADO. Las fuentes coinciden en que el delta por fecha no puede detectarlos, y es por eso que los productos comerciales montan triggers. No se arregla con mas solape ni mejor sonda: hace falta el nivel 1 o 2, que no tenemos. Se compensa con una COMPARACION DE POBLACION, no con un delta.",
-      "dos_fases": "anadido tras «no tienes que leer toda la data para hacer diferencias, es un error». La v1 de comparar_clave leia las 147 columnas de las 321.360 filas de LFA1 para descubrir que no habia cambiado ninguna. Ahora: FASE 1 una sonda de 7 campos en UNA llamada (15 s) que dice que claves difieren, FASE 2 solo esas enteras. Medido en LFA1: 6 filas traidas en vez de 321.360, de 21 llamadas a 2 fases. LIMITE: la sonda ve los campos que mira; un cambio fuera de ella no se detecta, por eso lleva los campos que de verdad se tocan."
+      "dos_fases": "anadido tras «no tienes que leer toda la data para hacer diferencias, es un error». La v1 de comparar_clave leia las 147 columnas de las 321.360 filas de LFA1 para descubrir que no habia cambiado ninguna. Ahora: FASE 1 una sonda de 7 campos en UNA llamada (15 s) que dice que claves difieren, FASE 2 solo esas enteras. Medido en LFA1: 6 filas traidas en vez de 321.360, de 21 llamadas a 2 fases. LIMITE: la sonda ve los campos que mira; un cambio fuera de ella no se detecta, por eso lleva los campos que de verdad se tocan.",
+      "lee_skill": "LEE PRIMERO el skill `sap_data_extraction`: este algoritmo ES el mecanismo que ese skill describe -- los 7 mecanismos de delta del sector, cual podemos usar y cual no, y el agujero de los BORRADOS que ninguno de los nuestros ve. Si aqui se anade una estrategia, alli hay que decir por que."
     },
     "A81_gold_family_coherence": {
       "que_hace": "caza tablas que se UNEN y estan en fechas distintas. Las familias se DERIVAN de las columnas de clave que comparten, no de una lista mantenida a mano",
@@ -2457,7 +2457,8 @@
       ],
       "conclusion_falsa_que_permite": "creer que el Golden esta al dia porque cada tabla por separado lo esta. Dos tablas desalineadas dan un numero PLAUSIBLE: la union pierde filas del lado atrasado, sin error y sin hueco visible",
       "validado": "rojo antes (FEBKO/PAYR 157 dias, FEBKO/BNK_BATCH 156), verde en esas parejas tras alinearlas; y al alinear FEBKO/FEBEP la cifra de SoD paso de 302 a 316 pagos",
-      "sesion": 109
+      "sesion": 109,
+      "lee_skill": "LEE PRIMERO el skill `sap_data_extraction`: mide la coherencia de fechas entre tablas que se unen, y el criterio de que es 'estar al dia' lo fija ese skill."
     },
     "A82_field_coverage_sampler": {
       "que_hace": "coge una muestra pequena de filas de UN escenario, lee TODOS los campos de la tabla en P01 y dice cuales vienen con valor y cuales de esos NO estan en el Golden",

@@ -4,7 +4,7 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**28 hallazgos vivos** de 13 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 9 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 10
+**29 hallazgos vivos** de 14 mineros: 🔴 RIESGO 6 · 🟠 DESAFIO 9 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 10
 
 
 ⚠️ **9 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
@@ -12,7 +12,7 @@
 
 ---
 
-## 🔴 RIESGO (5)
+## 🔴 RIESGO (6)
 
 *puede hacer daño si nadie actúa · va a quien responde del control*
 
@@ -61,6 +61,16 @@
 - **Acción:** declarar por cuenta quien teclea y quien paga, y que no sean la misma persona; o documentar el control fisico compensatorio
 - ***2 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
+
+### Cuatro algoritmos estan REGISTRADOS en algorithms.json y su fichero NO EXISTE en disco
+
+- **Tamaño:** F1_interface_boundary_analysis · D6_aggregate_before_resolve · A39_fx_revaluation_scope_by_nature · A50_transport_content_extraction
+- **Evidencia:** salieron al resolver los 17 que deberian leer sap_data_extraction: de los 17, 4 no tienen fichero que abrir
+- **No se puede ver:** no he mirado si el fichero se renombro, se fusiono en otro o nunca existio. Las tres cosas se arreglan distinto
+- **Acción:** para cada uno: o apuntar la ficha al fichero real, o retirarlo con su motivo. Un algoritmo registrado sin codigo aparece en los rankings y en las busquedas como si existiera
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `manual (s110) — medido con el toolgraph; se cierra a mano` · repo · n/a*
+- <sub>denominador: los 17 que el toolgraph marca como DEBERIA_LEER sap_data_extraction</sub>
 
 ---
 
@@ -321,6 +331,7 @@
 | `bank_config_profile_by_nature` | 2 |
 | `manual (s109) — medido a mano contra P01; se cierra a mano` | 2 |
 | `manual (s109) — NO hay script que lo refresque; se cierra a mano` | 2 |
+| `manual (s110) — medido con el toolgraph; se cierra a mano` | 1 |
 | `ebs_format_consolidation` | 1 |
 | `work_triad_check (manual, s109)` | 1 |
 | `manual (s109) — medido con gold_delta.py sobre REGUH; se cierra a mano` | 1 |
