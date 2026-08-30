@@ -54,6 +54,7 @@ def say(text):
 
 REPO = Path(__file__).resolve().parents[2]
 STATE = Path(__file__).parent / "cycle_state.json"
+TIEMPOS = REPO / "brain_v2" / "methods" / "cycle_timings.json"
 
 # (script, label, needs_full_log_scan) — ORDER IS THE DEPENDENCY ORDER.
 CYCLE = [
@@ -223,6 +224,24 @@ def main():
                            capture_output=True, text=True, encoding="utf-8",
                            errors="replace")
         dt = time.monotonic() - t0
+        # ⛔ GUARDAR CUANTO TARDO CADA PASO. Sin esto, "¿se puede mejorar el ciclo?" solo se
+        # puede contestar INFIRIENDO los huecos entre mtimes de ficheros -- que es lo que hubo
+        # que hacer el 2026-08-30 para descubrir que UN SOLO paso se llevaba 68 de 177 minutos,
+        # el 38% del total. El dato existia (se imprime en el OK) y se tiraba a un stdout que
+        # cuando lanza un disparador no lee nadie.
+        try:
+            _hist = []
+            if TIEMPOS.exists():          # es un Path: `os` no esta importado aqui
+                with open(TIEMPOS, encoding="utf-8") as _fh:
+                    _hist = json.load(_fh)
+            _hist.append({"utc": datetime.datetime.now(datetime.timezone.utc)
+                                 .isoformat(timespec="seconds"),
+                          "paso": label, "script": script_rel, "seg": round(dt),
+                          "rc": r.returncode, "pesado": bool(heavy)})
+            with open(TIEMPOS, "w", encoding="utf-8") as _fh:
+                json.dump(_hist[-400:], _fh, ensure_ascii=False, indent=1)
+        except OSError:
+            pass
         if r.returncode == 0:
             ok += 1
             tail = [x for x in (r.stdout or "").strip().split("\n") if x.strip()]

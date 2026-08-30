@@ -1,6 +1,6 @@
 # Oportunidades, riesgos y desafíos — lo que los mineros encuentran
 
-> **GENERADO.** No editar a mano: `python scripts/build_oportunidades.py` lo reescribe del bus `process_mining/mining_findings.json`. Última generación: **2026-08-29**.
+> **GENERADO.** No editar a mano: `python scripts/build_oportunidades.py` lo reescribe del bus `process_mining/mining_findings.json`. Última generación: **2026-08-30**.
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
@@ -23,7 +23,7 @@
 - **Evidencia:** cero cabeceras en FEBKO en toda la ventana
 - **No se puede ver:** no se si MUEVEN dinero: eso lo mide bank_account_behaviour_signature. Sin cruzarlo, esto es una lista, no un riesgo dimensionado
 - **Acción:** cruzar con behaviour_signature antes de escalar
-- ***1 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
+- ***2 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
 - <sub>denominador: 402 cuentas de banco casa; 237 excluidas por llevar CLOSED en T012T-TEXT1 (no hay campo de estado: es una convencion humana); quedan 165 vivas</sub>
 
 ### El extracto TECLEADO mete una persona en el eslabon de ENTRADA, donde el canal automatico no tiene ninguna (JOBBATCH)
@@ -32,7 +32,7 @@
 - **Evidencia:** FEBKO.EUSER de esas cuentas
 - **No se puede ver:** solo veo QUIEN teclea. Si esa misma persona ademas contabiliza o compensa el documento resultante (BKPF.USNAM) o emite pagos (REGUH), eso NO lo mide este minero
 - **Acción:** cruzar EUSER contra BKPF.USNAM y REGUH de la misma cuenta
-- ***1 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
+- ***2 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
 - <sub>denominador: 402 cuentas de banco casa; 237 excluidas por llevar CLOSED en T012T-TEXT1 (no hay campo de estado: es una convencion humana); quedan 165 vivas</sub>
 
 ### TODAS las cuentas de mandato de inversion carecen de extracto bancario, y aun asi se presentan en el balance como Cash and Cash Equivalents
@@ -41,7 +41,7 @@
 - **Evidencia:** cero FEBKO y posicion FS10 = 1.1.1.1 Cash with Banks
 - **No se puede ver:** la pata de EFECTIVO de un mandato de custodia es legitimamente efectivo: NO se afirma error contable
 - **Acción:** preguntar a Finanzas: si el saldo es efectivo, por que no llega extracto
-- ***1 días abierto** · lo encuentra `bank_account_nature_model` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `bank_account_nature_model` · P01 · 2025-2026*
 - <sub>denominador: 165 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
 
 ### Cuentas que MUEVEN SALDO sin recibir ni un extracto bancario: nada corrobora el movimiento
@@ -50,7 +50,7 @@
 - **Evidencia:** GLT0 con movimiento y cero cabeceras en FEBKO
 - **No se puede ver:** no se si el banco emite extracto y no llega, o no lo emite
 - **Acción:** reclamar el extracto al banco o declarar por que no aplica
-- ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
 - <sub>denominador: 165 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
 
 ### El que TECLEA el extracto de una cuenta que paga es tambien el que EMITE el dinero por ella: no queda ningun tercero en el circuito SAP
@@ -59,7 +59,7 @@
 - **Evidencia:** FEBKO.EUSER × FEBEP.BELNR→BKPF.USNAM × REGUH.VBLNR→BKPF.USNAM × PAYR.PRIUS
 - **No se puede ver:** la firma FISICA del cheque prenumerado (dos firmas) NO esta en SAP: este instrumento mide CONCENTRACION DE CONTROL, no ausencia de control ni fraude
 - **Acción:** declarar por cuenta quien teclea y quien paga, y que no sean la misma persona; o documentar el control fisico compensatorio
-- ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
+- ***2 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
 
 ---
@@ -76,7 +76,7 @@
 - **No se puede ver:** NO existe en ninguna parte del sistema un responsable declarado ni una cadencia esperada por cuenta. Se deduce del log, a posteriori
 - **Acción:** preguntar a: Tesoreria (BFM/MO) y la oficina de terreno de cada cuenta
 - **Puede contestarlo:** Tesoreria (BFM/MO) y la oficina de terreno de cada cuenta
-- ***1 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
+- ***2 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
 - <sub>denominador: 402 cuentas de banco casa; 237 excluidas por llevar CLOSED en T012T-TEXT1 (no hay campo de estado: es una convencion humana); quedan 165 vivas</sub>
 
 ### No se puede distinguir 'este banco no manda extracto' de 'se dejo de hacer'
@@ -86,7 +86,7 @@
 - **No se puede ver:** el formulario de alta YA pregunta '¿extracto electronico? si/no' y esa respuesta no se guarda en ninguna parte del sistema
 - **Acción:** preguntar a: Tesoreria: declarar por cuenta si se espera extracto y por que canal
 - **Puede contestarlo:** Tesoreria: declarar por cuenta si se espera extracto y por que canal
-- ***1 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
+- ***2 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
 - <sub>denominador: 402 cuentas de banco casa; 237 excluidas por llevar CLOSED en T012T-TEXT1 (no hay campo de estado: es una convencion humana); quedan 165 vivas</sub>
 
 ### Cuentas que recibian con regularidad y llevan dias mudas mientras su sociedad sigue recibiendo: no se si el banco dejo de mandar o si nadie lo procesa
@@ -96,7 +96,7 @@
 - **No se puede ver:** no puedo ver el directorio del banco desde aqui
 - **Acción:** preguntar a: Tesoreria (BFM/MO) y el equipo de interfaces
 - **Puede contestarlo:** Tesoreria (BFM/MO) y el equipo de interfaces
-- ***1 días abierto** · lo encuentra `house_bank_ebs_wiring_check` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `house_bank_ebs_wiring_check` · P01 · 2025-2026*
 - <sub>denominador: 402 cuentas T012K; se excluyen las CERRADAS (marca CLOSED en T012T-TEXT1: 237 de 411 con texto) y las de extracto MANUAL, que no necesitan T028B</sub>
 
 ### La NATURALEZA de la cuenta no esta declarada en ninguna parte del sistema: se deduce del texto libre, y en la mayoria no hay ni texto reconocible
@@ -106,7 +106,7 @@
 - **No se puede ver:** YBANK clasifica geografia x divisa, no naturaleza; SKB1-FDLEV es binario; y el balance mete todas las cuentas en Cash with Banks
 - **Acción:** preguntar a: Tesoreria: declarar el vocabulario y extender YBANK
 - **Puede contestarlo:** Tesoreria: declarar el vocabulario y extender YBANK
-- ***1 días abierto** · lo encuentra `bank_account_nature_model` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `bank_account_nature_model` · P01 · 2025-2026*
 - <sub>denominador: 165 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
 
 ### Cuentas de la MISMA naturaleza no coinciden en su configuracion: o es una regla que nadie escribio, o es deriva
@@ -116,7 +116,7 @@
 - **No se puede ver:** no se cual de las dos es sin preguntar: el dato no lo distingue
 - **Acción:** preguntar a: Tesoreria / DBS: decidir si es regla o deriva
 - **Puede contestarlo:** Tesoreria / DBS: decidir si es regla o deriva
-- ***1 días abierto** · lo encuentra `bank_config_profile_by_nature` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `bank_config_profile_by_nature` · P01 · 2025-2026*
 - <sub>denominador: 165 cuentas VIVAS de todas las sociedades</sub>
 
 ### Cuentas VIVAS que no pagan, no reciben y no mueven: no se si estan cerradas de hecho y nadie lo declaro
@@ -126,7 +126,7 @@
 - **No se puede ver:** 'CLOSED' en el texto es la unica marca de estado y estas no la llevan
 - **Acción:** preguntar a: Tesoreria: cerrarlas o declarar por que siguen abiertas
 - **Puede contestarlo:** Tesoreria: cerrarlas o declarar por que siguen abiertas
-- ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
 - <sub>denominador: 165 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
 
 ### El censo de canales publica UNA persona por cuenta manual; medido son hasta 5 por cuenta y 41 en total, y 31 de las 39 cuentas afectadas no estan etiquetadas MANUAL. Dos medidas del mismo objeto no coinciden
@@ -136,7 +136,7 @@
 - **No se puede ver:** el log dice quien lo hizo, nunca quien DEBIA hacerlo
 - **Acción:** corregir el denominador del censo: la poblacion es 'recibe algun extracto tecleado', no 'esta etiquetada MANUAL'
 - **Puede contestarlo:** BFM/TRS (Baizid Gazi, Anssi Yli-Hietanen) + DBS
-- ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
+- ***2 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
 
 ### ¿Existe el escenario de ONE-TIME PAYER en UNESCO, y como se identifica? Se busco y NO aparece: las filas sin proveedor no son perceptores ocasionales
@@ -146,7 +146,7 @@
 - **No se puede ver:** pregunta de JP, marcada por el como escenario IMPORTANTE. Buscado, no encontrado -- lo que no prueba que no exista
 - **Acción:** confirmar con BFM si UNESCO paga alguna vez a un perceptor sin ficha, y por que via
 - **Puede contestarlo:** BFM/TRS
-- ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
+- ***hoy** · lo encuentra `manual (s109) — pregunta para una persona; se cierra a mano` · Golden (procedencia P01) · LAUFD 2025-2026*
 - <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>
 
 ### El Golden guarda 30 de los 180 campos de REGUH -- el 17%. Eso explica por que las columnas se siguen 'cayendo' de una en una cuando un minero las pide
@@ -156,7 +156,7 @@
 - **No se puede ver:** guardar los 180 no es gratis ni necesariamente correcto: la pregunta no es 'por que faltan 150' sino 'que 150 no vamos a echar de menos'. No lo se
 - **Acción:** un diff sistematico campo a campo entre P01 y el Golden para las tablas que mas se usan, y decidir el corte a proposito en vez de por acumulacion
 - **Puede contestarlo:** DBS
-- ***hoy** · lo encuentra `medido a mano (s109)` · Golden + P01 · n/a*
+- ***hoy** · lo encuentra `manual (s109) — medido a mano contra P01; se cierra a mano` · Golden + P01 · n/a*
 - <sub>denominador: los 180 campos de REGUH en P01</sub>
 
 ---
@@ -172,7 +172,7 @@
 - **Evidencia:** T028B tiene fila para su BANKN actual y FEBKO.EFART no es 'E'
 - **No se puede ver:** tener el modelo asignado NO prueba que el fichero pueda llegar: la restriccion puede estar aguas arriba, en que el banco emita MT940
 - **Acción:** preguntar a esos bancos si emiten MT940 -- el coste en SAP es cero
-- ***1 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
+- ***2 días abierto** · lo encuentra `bank_statement_channel_census` · P01 · 20250101 -> hoy*
 - <sub>denominador: 402 cuentas de banco casa; 237 excluidas por llevar CLOSED en T012T-TEXT1 (no hay campo de estado: es una convencion humana); quedan 165 vivas</sub>
 
 ### Filas de T028B con numeros de cuenta que ya no son de ninguna cuenta viva: el rastro acumulado de cambios que nadie barrio
@@ -181,7 +181,7 @@
 - **Evidencia:** T028B.KTONR sin correspondencia en T012K.BANKN
 - **No se puede ver:** no se si alguna se dejo a proposito como historico
 - **Acción:** borrar tras confirmar que su cuenta ya no recibe
-- ***1 días abierto** · lo encuentra `house_bank_ebs_wiring_check` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `house_bank_ebs_wiring_check` · P01 · 2025-2026*
 - <sub>denominador: 402 cuentas T012K; se excluyen las CERRADAS (marca CLOSED en T012T-TEXT1: 237 de 411 con texto) y las de extracto MANUAL, que no necesitan T028B</sub>
 
 ### Modelos de extracto que existen para UN SOLO banco: cada uno es un modelo entero -- con su prueba y su riesgo -- sosteniendo muy pocas cuentas
@@ -190,7 +190,7 @@
 - **Evidencia:** T028B agrupado por VGTYP y T028G contado por modelo
 - **No se puede ver:** parecido alto NO significa consolidable: absorber uno dentro de otro puede CAMBIAR su algoritmo y con el la contabilizacion
 - **Acción:** mirar primero los pares con parecido alto, no los mas pequenos
-- ***1 días abierto** · lo encuentra `ebs_format_consolidation` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `ebs_format_consolidation` · P01 · 2025-2026*
 - <sub>denominador: 142 cuentas VIVAS de UNES, 131 con extracto en la ventana</sub>
 
 ### Cuentas que reciben extractos y no producen NINGUN movimiento contable: trabajo que se procesa sin efecto
@@ -199,7 +199,7 @@
 - **Evidencia:** FEBKO con cabeceras y GLT0 sin periodos con movimiento
 - **No se puede ver:** puede que sean extractos a cero legitimos, o que la contabilizacion vaya a otro mayor: el dato no lo distingue
 - **Acción:** mirar una de ellas en FEBAN antes de generalizar
-- ***1 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
 - <sub>denominador: 165 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
 
 ---
@@ -215,7 +215,7 @@
 - **Evidencia:** T042I frente a la naturaleza derivada
 - **No se puede ver:** correlacion medida, no regla declarada en el sistema
 - **Acción:** es el argumento para declarar la naturaleza (PMO H144)
-- ***1 días abierto** · lo encuentra `bank_config_profile_by_nature` · P01 · 2025-2026*
+- ***2 días abierto** · lo encuentra `bank_config_profile_by_nature` · P01 · 2025-2026*
 - <sub>denominador: 165 cuentas VIVAS de todas las sociedades</sub>
 
 ### Ninguna cuenta cuyo extracto se teclea a mano pasa por BCM, y no es un defecto: sus pagos son 100% metodo cheque prenumerado (REGUH.RZAWE='3'), y BCM libera FICHEROS
@@ -224,7 +224,7 @@
 - **Evidencia:** BNK_BATCH_ITEM por ZBUKR+HBKID · REGUH.RZAWE
 - **No se puede ver:** BCM no puede cubrirlas: no hay fichero que liberar
 - **Acción:** el control de estos pagos vive fuera de SAP — nombrar donde
-- ***1 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
+- ***2 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
 
 ### RESUELTO: 5 de 16 incidentes nombraban su dominio con un alias que la ontologia no conocia (HR, MM, CTS, MasterDataConfig). Anadidos los 4 alias con la evidencia del incidente que los justifica; la puerta de ontologia ahora RECORRE los incidentes y falla si un nombre no resuelve
@@ -264,7 +264,7 @@
 - **No se puede ver:** QUE SEAN pagos a personas via ficha de cliente lo digo por los valores de la muestra (10 filas), no por una regla de negocio confirmada. Y JP ya corrigio una vez que 'no existen pagos a clientes': aqui el hecho MEDIDO es que el campo KUNNR esta relleno, no como se llama eso en el negocio
 - **Acción:** anadir KUNNR a REGUH en el Golden. Solo ese: el bloque Z* (ZNME1, ZSTRA, ZORT1...) es la direccion del perceptor y ya esta cubierta por NAME1/STRAS/ORT01. Con KUNNR, REGUH admite indice unico y su delta se desbloquea
 - **Puede contestarlo:** BFM/TRS — que son las filas FI-AR en una corrida de pago
-- ***hoy** · lo encuentra `gold_delta/REGUH (s109)` · Golden · toda la tabla*
+- ***hoy** · lo encuentra `manual (s109) — medido con gold_delta.py sobre REGUH; se cierra a mano` · Golden · toda la tabla*
 - <sub>denominador: las 3.707.737 filas de REGUH en el Golden</sub>
 
 ### RESUELTO: las filas de REGUH sin clave son pagos a PERSONAS registradas como CLIENTES (KUNNR relleno), con perceptor divergente. La muestra las identifica: expertos del IPCC -- ZNME2='IPCC', ZNME3/4='INTERGOVERNMENTAL PANEL ON CLIMATE CHANGE' -- pagados contra su ficha de CLIENTE, no de proveedor
@@ -274,7 +274,7 @@
 - **No se puede ver:** QUE SEAN pagos a personas via ficha de cliente lo digo por los valores de la muestra (10 filas), no por una regla de negocio confirmada. Y JP ya corrigio una vez que 'no existen pagos a clientes': aqui el hecho MEDIDO es que el campo KUNNR esta relleno, no como se llama eso en el negocio
 - **Acción:** anadir KUNNR a REGUH en el Golden. Solo ese: el bloque Z* (ZNME1, ZSTRA, ZORT1...) es la direccion del perceptor y ya esta cubierta por NAME1/STRAS/ORT01. Con KUNNR, REGUH admite indice unico y su delta se desbloquea
 - **Puede contestarlo:** BFM/TRS
-- ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
+- ***hoy** · lo encuentra `manual (s109) — pregunta para una persona; se cierra a mano` · Golden (procedencia P01) · LAUFD 2025-2026*
 - <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>
 
 ### Las PROPUESTAS de pago NO se borran al ejecutarse: sobreviven. Probado en tres meses, identicas en el Golden y en P01. Asi que el hueco de 2026-04/05 NO es un borrado
@@ -284,7 +284,7 @@
 - **No se puede ver:** queda sin contestar POR QUE no hay propuestas en 2026-04 y 2026-05. Lo unico descartado es que las hayan borrado
 - **Acción:** si vuelve a importar, preguntar a BFM si hubo corridas de propuesta en esos dos meses
 - **Puede contestarlo:** BFM/TRS
-- ***hoy** · lo encuentra `pregunta abierta (s109)` · Golden (procedencia P01) · LAUFD 2025-2026*
+- ***hoy** · lo encuentra `manual (s109) — pregunta para una persona; se cierra a mano` · Golden (procedencia P01) · LAUFD 2025-2026*
 - <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101</sub>
 
 ### Las propuestas de pago NO son BCM, y BCM no marca nada en REGUH: es una capa aparte que solo recoge pagos YA EJECUTADOS
@@ -293,7 +293,7 @@
 - **Evidencia:** REGUH LEFT JOIN BNK_BATCH_ITEM por LAUFD+LAUFI+ZBUKR+VBLNR sobre 2025-2026; DD03L de P01 para el diccionario de REGUH
 - **No se puede ver:** el cruce usa LAUFD+LAUFI+ZBUKR+VBLNR. Una propuesta no tiene VBLNR asignado todavia, asi que el cero es CONSISTENTE con el mecanismo pero no lo prueba por si solo -- lo que lo cierra es que no exista ningun campo BCM en los 180 de REGUH
 - **Acción:** para saber si un pago paso por BCM se va a BNK_BATCH_ITEM, nunca a un flag de REGUH
-- ***hoy** · lo encuentra `medido a mano (s109)` · Golden + P01 (diccionario) · LAUFD 2025-2026*
+- ***hoy** · lo encuentra `manual (s109) — medido a mano contra P01; se cierra a mano` · Golden + P01 (diccionario) · LAUFD 2025-2026*
 - <sub>denominador: las 577.103 filas de REGUH con LAUFD >= 20250101 y los 116.934 items BCM del mismo periodo</sub>
 
 ### Las lineas de NOMINA entran en REGUP SIN referencia a documento FI -- BELNR vacio, BUZEI='000', GJAHR='0000' -- asi que la clave SAP no las distingue. Pasa EN SAP, no en nuestra copia
@@ -303,7 +303,7 @@
 - **No se puede ver:** PUBLIQUE QUE ERA 'UNA UNION DE ESCENARIOS INVENTADA POR NOSOTROS'. FALSO. Lo dije sin haber preguntado a P01, que es donde estaba la respuesta. JP insistio ('puede ser propuesta y pago real, REGUH tiene una marca') y aunque XVORL no era la causa, esa insistencia es lo que me llevo a mirar en P01
 - **Acción:** hecho: clave ampliada con WRBTR+SGTXT, indice unico creado y delta corrido. CONSECUENCIA A DECLARAR: si el importe de una fila cambiara, entraria como fila nueva en vez de reemplazar. Para partidas ya pagadas, que no cambian, es aceptable
 - **Puede contestarlo:** DBS
-- ***hoy** · lo encuentra `gold_delta/REGUP_SCENARIOS (s109)` · Golden · LAUFD 2016-2026*
+- ***hoy** · lo encuentra `manual (s109) — medido con gold_delta.py sobre REGUP; se cierra a mano` · Golden · LAUFD 2016-2026*
 - <sub>denominador: las 207.779 filas de REGUP_SCENARIOS tras deduplicar</sub>
 
 ---
@@ -315,16 +315,16 @@
 | `bank_statement_channel_census` | 5 |
 | `bank_account_behaviour_signature` | 3 |
 | `bank_statement_sod_check` | 3 |
-| `pregunta abierta (s109)` | 3 |
+| `manual (s109) — pregunta para una persona; se cierra a mano` | 3 |
 | `bank_account_nature_model` | 2 |
 | `house_bank_ebs_wiring_check` | 2 |
 | `bank_config_profile_by_nature` | 2 |
-| `medido a mano (s109)` | 2 |
+| `manual (s109) — medido a mano contra P01; se cierra a mano` | 2 |
 | `manual (s109) — NO hay script que lo refresque; se cierra a mano` | 2 |
 | `ebs_format_consolidation` | 1 |
 | `work_triad_check (manual, s109)` | 1 |
-| `gold_delta/REGUH (s109)` | 1 |
-| `gold_delta/REGUP_SCENARIOS (s109)` | 1 |
+| `manual (s109) — medido con gold_delta.py sobre REGUH; se cierra a mano` | 1 |
+| `manual (s109) — medido con gold_delta.py sobre REGUP; se cierra a mano` | 1 |
 
 > Un minero que no aparece aquí **no está limpio: está mudo**. O no busca, o no publica. Las dos cosas hay que arreglarlas.
 

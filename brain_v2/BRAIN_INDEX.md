@@ -103,7 +103,7 @@ It is ONE missing model capability, not 21 separate gaps — closing it once lif
 - **Posture store** `brain_v2/security_posture.json` — 3 ready · 2 missing input · 2 findings already stored as RECORDS.
 - **Cannot see yet:** role_content, auth_defaults — MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'.
 
-## 📈 MATURITY OF THE METHOD — 65.3%, measured from artifacts
+## 📈 MATURITY OF THE METHOD — 65.2%, measured from artifacts
 Not a self-assessment: each dimension is derived from what is on disk.
 - **Weakest:** **DURABILITY** 0.10 · **VERIFY** 0.40 · **ANALYZE** 0.48
 - **Strongest:** MODEL_FIDELITY 0.98 · CONSOLIDATE 0.95 · ESCALATE 0.93
@@ -111,19 +111,19 @@ Not a self-assessment: each dimension is derived from what is on disk.
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
 
-## 🔍 ¿ENTENDEMOS LO QUE EL SISTEMA EJECUTA? — 0.72% sin clasificar
+## 🔍 ¿ENTENDEMOS LO QUE EL SISTEMA EJECUTA? — 0.71% sin clasificar
 Cuatro superficies, porque ejecutar no es solo un programa: lo que corre, lo que CAMBIA, lo que
 corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta en SLGREPNA.
-- **objects** — 29,348,937 ejec · tecnico 86.9% · negocio 7.4% · sin clasificar **0.0%**
-- **changes** — 2,881,752 ejec · tecnico 13.2% · negocio 84.5% · sin clasificar **0.0%**
-- **jobs** — 235,523 ejec · tecnico 54.7% · negocio 18.2% · sin clasificar **0.2%**
-- **rfc** — 12,974,845 ejec · tecnico 52.5% · negocio 34.7% · sin clasificar **2.5%**
+- **objects** — 29,704,259 ejec · tecnico 86.9% · negocio 7.4% · sin clasificar **0.0%**
+- **changes** — 2,887,284 ejec · tecnico 13.1% · negocio 84.5% · sin clasificar **0.0%**
+- **jobs** — 247,746 ejec · tecnico 55.2% · negocio 18.0% · sin clasificar **0.2%**
+- **rfc** — 13,136,984 ejec · tecnico 52.5% · negocio 34.6% · sin clasificar **2.5%**
 - **TECNICO es una respuesta, no un hueco** (el despachador y el planificador son fontaneria).
-  El hueco real es SIN CLASIFICAR: 324,909 de 45,441,057.
-- **Situar no es explicar:** solo el **75.6%** de las ejecuciones de negocio llega a grado 3
+  El hueco real es SIN CLASIFICAR: 328,385 de 45,976,273.
+- **Situar no es explicar:** solo el **72.1%** de las ejecuciones de negocio llega a grado 3
   (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
 - Movimiento: **no se movio** desde la ultima corrida — eso ES el hallazgo · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
-- **354 objetos por explorar** (36 custom) —
+- **355 objetos por explorar** (37 custom) —
   la lista es `brain_v2/comprehension_index.json` → `keep_exploring`, ordenada por ejecuciones,
   y es el trabajo del agente `log-process-discovery`.
 - Lo aprendido sobre COMO explorar (no sobre el dato) vive aparte, en
@@ -137,13 +137,13 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 642 | `python brain_v2/graph_queries.py search <termino>` |
+| **claims** | 646 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 149 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 44 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 16 | `python brain_v2/graph_queries.py incident <id>` |
 | **reglas** | 261 | `brain_v2/agent_rules/feedback_rules.json` |
 | **memorias de MÉTODO** | 172 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 109 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **algoritmos** | 112 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -152,7 +152,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 109 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 112 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -205,6 +205,14 @@ lo deja — solo que nadie lo publicaba.
 | `E3_trigger_evaluation` | compare state against thresholds across accumulation / maturity / interpre | -- | `brain_v2/methods/trigger_state.json` |
 | `P1_profile_composition` | compose the installation profile from 18 COMPONENTS, each bound to the alg | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +7 | `brain_v2/capability_model/capability_model.json` |
 
+**otros**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A78_bank_statement_sod_check` | buscar y publicar la SEGREGACION DE FUNCIONES en el extracto bancario tecl | Payment_BCM, Treasury | `process_mining/mining_findings.json` |
+| `A81_gold_family_coherence` |  | -- | `brain_v2/gold_delta_registry.json` |
+| `A85_complete_key_columns` |  | -- | `'brain_v2/gold_delta_registry.json` |
+
 **interfaces**
 
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
@@ -218,13 +226,6 @@ lo deja — solo que nadie lo publicaba.
 |---|---|---|---|
 | `A45_actor_attribution_per_account` | Dice, cuenta por cuenta, SI UNA ACCION SE PUEDE ATAR A UNA PERSONA. PARAMX | Integration | `brain_v2/security_posture.json` |
 | `A49_tier2_sod` | Descubre QUE PERSONAS CONCRETAS ejecutaron de verdad las dos mitades de un | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
-
-**otros**
-
-| algoritmo | qué contesta | dominios que cubre | aterriza en |
-|---|---|---|---|
-| `A78_bank_statement_sod_check` | buscar y publicar la SEGREGACION DE FUNCIONES en el extracto bancario tecl | Payment_BCM, Treasury | `process_mining/mining_findings.json` |
-| `A81_gold_family_coherence` |  | -- | `brain_v2/gold_delta_registry.json` |
 
 **master data + fact tab...**
 
@@ -500,6 +501,8 @@ lo deja — solo que nadie lo publicaba.
 | `A79_opportunity_watch` |  | `-` |
 | `A80_gold_delta` |  | `-` |
 | `A82_field_coverage_sampler` |  | `-` |
+| `A83_derive_keys_from_dd03l` |  | `-` |
+| `A84_cycle_progress` |  | `-` |
 | `C1_component_resolution_chain` | object -> TADIR (package) -> TDEVC (component id) -> DF14L (application component) | `brain_v2/system_profile/probes/extract_component_hierarchy.py` |
 | `C3_static_edge_extraction` | parse ABAP source for reads_tables / writes_tables / calls_fms and merge the edges into the grap | `brain_v2/parse_abap_edges.py` |
 | `C4_object_role_derivation` | derive what each object is FOR — posting engine, report, interface, worklist, master-data mainte | `process_mining/derive_object_roles.py` |
@@ -559,13 +562,12 @@ _6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `I
 
 **Modelo de ejecutores de alineamiento P01 -> D01/V01**: `knowledge/alignment_executors_model.md` - la escalera de canales (API estandar / BC-Set / escritura directa bajo excepcion), los medidores, los actuadores por objeto y el metodo comun. Excepciones autorizadas, lista cerrada: `.claude/skills/sap_master_data_sync/SKILL.md`.
 
-## BANCA - el explorador del modelo encontro 6 cosa(s) que pedir accion
+## BANCA - el explorador del modelo encontro 5 cosa(s) que pedir accion
 > `python brain_v2/bank_model_explorer.py` (paso 2i del rebuild). El CRITERIO lo pone el
 > agente `bank-process-discovery`; el modelo vive en
 > `knowledge/domains/Treasury/house_bank_operating_roles.md`.
 - `NEW` - El 43% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
-- `NEW` - 16 cuenta(s) con extracto y CERO pagos: no pagan, COBRAN
-- `BLIND` - El extracto de FEBKO es PARCIAL: faltan 5 sociedad(es)
+- `NEW` - 30 cuenta(s) con extracto y CERO pagos: no pagan, COBRAN
 - `RISK` - 10 banco(s) casa sin actividad desde 2024 o antes
 - `NEW` - 35 banco(s) ejecutan UN SOLO metodo de pago
 - `RISK` - 4 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
@@ -587,9 +589,9 @@ _6 more open, drill by id:_ `INC-000016338` (EXECUTED_VERIFIED_ROLE_PENDING)  `I
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × 11
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
-**30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
+**30.7%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (4732 objects · 261 rules · 642 claims · 19 incidents · 10 closed researches)
+## Brain at a glance (4738 objects · 261 rules · 646 claims · 19 incidents · 10 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
