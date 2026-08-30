@@ -146,7 +146,9 @@ Layer 3: YCL_FI_ACCOUNT_SUBST_BL (UNESCO class)
 
 ### ⛔ The big validation/substitution analysis ALREADY EXISTS — load it, don't re-derive (s111)
 
-Before analyzing ANY validation or substitution question, these four artifacts hold the completed work:
+**Unified entry point: the `sap_validation_substitution` skill** — architecture, the 12-step live
+map, the XCHECK multiplexer, the bypass model and the diagnosis method in one place. Load that
+skill first for any validation/substitution question; the artifacts below are its sources:
 
 1. **The live rule map** — `knowledge/incidents/INC-000005240_xref_office_substitution.md` §3.4:
    all 12 GB931 validation steps (VALID='UNES', BOOLCLASS 009) with prerequisites, checks, severity

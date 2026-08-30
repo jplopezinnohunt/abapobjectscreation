@@ -196,6 +196,9 @@ Records with these WRTTP values are accumulated into the **Commitment** bucket (
 
 ---
 
+> Posting-perimeter context for the three entries below (validation architecture, live rule map,
+> diagnosis method): see the unified `sap_validation_substitution` skill.
+
 ### YFMXCHK_XCHECK — Per-Fund Control Multiplexer (6 rules in one letter)
 - **Fields**: `FIKRS` + `GEBER` + `XCHECK` (Table: `YFMXCHK`, 3,115 rows P01 — Gold DB `yfmxchk`)
 - **Type**: Config-Table-Driven
