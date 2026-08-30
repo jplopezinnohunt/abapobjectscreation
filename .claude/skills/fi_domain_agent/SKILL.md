@@ -144,6 +144,27 @@ Layer 3: YCL_FI_ACCOUNT_SUBST_BL (UNESCO class)
 **Expert seed available**: `YRGGBS00_SOURCE.txt` (105 KB) + `YCL_FI_ACCOUNT_SUBST_BL_METHODS.txt`
 → Load these via brain: `python sap_brain.py --node SEED_YRGGBS00_SOURCE`
 
+### ⛔ The big validation/substitution analysis ALREADY EXISTS — load it, don't re-derive (s111)
+
+Before analyzing ANY validation or substitution question, these four artifacts hold the completed work:
+
+1. **The live rule map** — `knowledge/incidents/INC-000005240_xref_office_substitution.md` §3.4:
+   all 12 GB931 validation steps (VALID='UNES', BOOLCLASS 009) with prerequisites, checks, severity
+   and messages, PLUS the substitution side (SUBSTID='UNESCO', GB922 steps, the unconditional-fire
+   finding). Extracted LIVE from P01 on 2026-04-09.
+2. **The exit-code autopsy** — `knowledge/domains/PSM/EXTENSIONS/validation_substitution_autopsy.md`
+   + `knowledge/code_analysis_control_matrix.md`: business rules inside ZXFM* includes (derivations,
+   10-digit glue, tolerance caps, BI bridge).
+3. **The filter registry** — `.claude/skills/unesco_filter_registry/SKILL.md`: per-table control
+   semantics incl. `YFMXCHK_XCHECK` (6 rules multiplexed in one letter, 3,115 rows),
+   `YFMXCHKP_GATE` (fiscal gate — currently OFF), `YXUSER_BYPASS` (1 live row: FM/HIPER).
+4. **The claims** — 486 (YXUSER gates 5 posting-perimeter routines), 648 (YFMXCHK semantics),
+   649 (U913 path dead, bypass list empty), 650 (YFMXCHKP state). Gold DB now holds `yfmxchk`,
+   `yfmxchkp`, `yxuser` (P01, 2026-08-30, `_config_frontier_manifest` grp=`posting_gate_controls`).
+
+The posting-perimeter form pool is `YRGGBS00` registered via `T80D` for BOTH GBLR (validation) and
+GBLS (substitution) — 69 FORMs U100–U913 + UXR1/UXR2/UZLS/…, 8 of which can block a posting.
+
 ---
 
 ## Key ABAP Objects (Code Layer)

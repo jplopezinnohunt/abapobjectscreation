@@ -189,9 +189,35 @@ Records with these WRTTP values are accumulated into the **Commitment** bucket (
 ### YXUSER_BYPASS — Global Validation Safety Valve
 - **Field**: `UNAME` (Table: `YXUSER`)
 - **Type**: Config-Table-Driven
-- **XTYPE Value**: `FM` (Validation Bypass) | `FRTL` (Hardware Tolerance Bypass)
-- **Discovered In**: `ZXFMYU22`, `ZXFMCU17`
-- **Logic**: If `SELECT SINGLE * FROM YXUSER WHERE XTYPE = 'FM' AND UNAME = SY-UNAME` finds a match, **ALL** validations in the include are skipped.
+- **XTYPE Value**: `FM` (Validation Bypass) | `FRTL` (FR Tolerance Bypass) | `BC` (U913 special-budget-code bypass)
+- **Discovered In**: `ZXFMYU22`, `ZXFMCU17`; `BC` in `YRGGBS00::U913` (s111)
+- **Logic**: If `SELECT SINGLE * FROM YXUSER WHERE XTYPE = '<type>' AND UNAME = SY-UNAME` finds a match, the gated validations are skipped.
+- **Live content (P01, 2026-08-30, Gold DB `yxuser`)**: **1 row — `FM`/`HIPER`.** Nobody holds `FRTL` or `BC` today. [claim 649]
+
+---
+
+### YFMXCHK_XCHECK — Per-Fund Control Multiplexer (6 rules in one letter)
+- **Fields**: `FIKRS` + `GEBER` + `XCHECK` (Table: `YFMXCHK`, 3,115 rows P01 — Gold DB `yfmxchk`)
+- **Type**: Config-Table-Driven
+- **Discovered In**: `ZXFMDTU02`, `ZXFMYU22`, `YFM_ACCTCHK`, `YRGGBS00::U913`
+- **Full semantics**: [claim 648] · autopsy: `knowledge/domains/PSM/EXTENSIONS/validation_substitution_autopsy.md`
+
+| XCHECK | Rows | Effect | Where |
+| :---: | ---: | :--- | :--- |
+| `Y` | 3,003 | **LIVE mass rule (11/2025, DBM/CF-simulation)**: fund blocked from FUTURE-year postings (`GJAHR > current` → hard E `ZFI 009`) | `ZXFMDTU02:320`, `YFM_ACCTCHK:112` |
+| `T` | 38 | "Special budget codes" for FI validation `U913` — **path effectively dead** (GB931 step 002: `BUDAT≤31.12.2011` + check FALSE) [claim 649] | `YRGGBS00:961-987` |
+| `F` | 35 | Fund EXEMPT from the rest of ZXFMDTU02 checks (D.Tal 02/2010) | `ZXFMDTU02:512` |
+| `H` | 28 | Fund exempt from TBP1C/BPJA budget-structure check | `ZXFMYU22:184` |
+| `D` | 9 | **Not funds**: `GEBER` holds an FR/PO NUMBER THRESHOLD (`FIKRS`='FR'/'PO' tags the doc type); blocks past-year commitments | `ZXFMDTU02:424-455` |
+| `Z` | 2 | Tech fund fully blocked (BFM 03/2024) | `ZXFMDTU02:306` |
+
+---
+
+### YFMXCHKP_GATE — The UNESCO FM Fiscal Gate (currently OFF)
+- **Fields**: `BUKRS` + `CHTYP` + `ACTIV` + `GJAHR` + `MONAT` (Table: `YFMXCHKP`, 11 rows P01 — Gold DB `yfmxchkp`)
+- **Type**: Config-Table-Driven
+- **Readers**: only `ZXFMDTU02` (CHTYP `FY`/`BB`/`BE`) and `YFM_ACCTCHK` (`FY`/`BB`) — bypass is auth object `Y_FMUECLO` field `YFLAG`, NOT YXUSER.
+- **Live state (2026-08-30)**: all reader-backed variants INACTIVE (FY: UNES 2025/12 ACTIV blank; BE: UNES 2023/12 blank; BB: no row). The only 9 ACTIVE rows are `CHTYP='CM'` — **no reader in the extracted corpus**, and `MONAT=00` would block nothing anyway. [claim 650]
 
 #### ASR Conditional Logic (Pattern: Age Restriction)
 Discovered in `ZCL_HRFIORI_BIRTH_OF_A_CHILD`:

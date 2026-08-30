@@ -36,19 +36,20 @@
 
 > ## PENDIENTE AL ABRIR - S110 (2026-08-30). LEE ESTO ANTES QUE EL INDICE.
 >
-> ### LO PRIMERO, Y ES UNA LECTURA DE CODIGO, NO UNA EXTRACCION
-> 1. **YFMXCHK — una tabla que puede BLOQUEAR una contabilizacion y que el brain no explica.**
->    Se consulta desde `YFI_YRGGBS00_EXIT::U913`, el exit de sustituciones de FI. Un exit de
->    sustitucion corre DENTRO de la contabilizacion: lo que decida con esa tabla puede parar un
->    documento. No sabemos que contiene ni quien la mantiene.
->    **Los tres pasos, en orden:** (a) leer `U913` en `extracted_code/` y ver QUE decide con ella;
->    (b) sacar su contenido de P01 — es lectura, cabe en `RFC_READ_TABLE`; (c) aterrizarlo como
->    claim con la regla de negocio que implementa.
->    **Por que importa mas de lo que parece:** es el patron de `MV_EXTENSION_YEARS` — la regla que
->    DECIDE vive en el codigo, y ningun analisis de configuracion la ve. Detectado por
->    `unlanded_discovery_detector`, que marco 27 identificaciones sin aterrizar; esta y
->    `ZTHRFIORI_ATT_TY` (en `CREATE_ATTACHMENT`) son las dos con `gates a BLOCKING routine`.
->    **No esta hecho y no caduca solo:** seguira aqui hasta que haya claim.
+> ### ✅ CERRADO EN s111 — YFMXCHK y ZTHRFIORI_ATT_TY aterrizados (claims 648-651)
+> 1. **YFMXCHK — HECHO (s111).** Los tres pasos ejecutados: (a) U913 leido (`YRGGBS00:961-987`);
+>    (b) las tablas extraidas de P01 al Gold DB (`yfmxchk` 3.115 · `yfmxchkp` 11 · `yxuser` 1 ·
+>    `zthrfiori_att_ty` 24 · `zthrfiori_att_cf` 19; refresher
+>    `Zagentexecution/sap_data_extraction/scripts/extract_yfmxchk_control_tables.py`);
+>    (c) claims **648** (XCHECK multiplexa 6 reglas; la viva y masiva es `Y`=3.003 fondos con
+>    bloqueo de ejercicios futuros, 11/2025 DBM), **649** (la ruta U913 esta muerta: paso GB931
+>    002 con BUDAT<=2011 + check FALSE; bypass 'BC' sin titulares — YXUSER tiene 1 fila FM/HIPER),
+>    **650** (YFMXCHKP apagada en toda variante con lector; las 9 filas activas son CHTYP='CM'
+>    sin lector en el corpus), **651** (ZTHRFIORI_ATT_TY: catalogo de adjuntos HR Fiori, mapeo
+>    ArchiveLink completo, sin hueco operativo).
+>    Skills actualizados: `unesco_filter_registry` (entradas YFMXCHK_XCHECK, YFMXCHKP_GATE,
+>    YXUSER_BYPASS con contenido vivo) y `fi_domain_agent` (bloque "el analisis ya existe" con
+>    los 4 artefactos). Autopsia corregida (la frase "2025 active in the gate" estaba obsoleta).
 >
 > ### 2. LO DEMAS QUE QUEDO ABIERTO EN S110
 > - **`DEBERIA_LEER`: 138.** Bajo de 152 cerrando `sap_data_extraction` (17->9) y

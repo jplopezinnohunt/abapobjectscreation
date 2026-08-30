@@ -28,8 +28,8 @@ The **"10-Digit Glue"** ensures that donor funds follow project structures mathe
 Standard SAP FI closing is *not* the final authority at UNESCO. 
 
 *   **Table**: [`YFMXCHKP`](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/code_analysis_control_matrix.md)
-*   **Logic**: If `ACTIV = 'X'` in this custom table for a given `BUKRS` and `GJAHR`, the FM system blocks all postings regardless of Open/Closed status in `OB52`.
-*   **Current State (2025)**: All major institutes (`IBE`, `UNES`, `UIS`, `UIL`) have 2025 active in the gate, enforcing tight fiscal control for the new year.
+*   **Logic**: If `ACTIV = 'X'` for a given `BUKRS`/`CHTYP`/`GJAHR`, postings dated in months `≤ MONAT` of that year are blocked (hard `ZFI 009`) unless the user holds auth object `Y_FMUECLO` field `YFLAG`. Readers: `ZXFMDTU02` (CHTYP `FY`/`BB`/`BE`) and `YFM_ACCTCHK` (`FY`/`BB`).
+*   **Current State (measured P01 2026-08-30, claim 650)**: **the gate is OFF in every reader-backed variant** — `FY` (UNES 2025/12) and `BE` (UNES 2023/12) have `ACTIV` blank, `BB` has no row. The only 9 ACTIVE rows are `CHTYP='CM'` (9 company codes, 2025, `MONAT=00`), a variant **no code in the extracted corpus reads** — and `MONAT=00` would block nothing even if read. *(Supersedes the earlier statement here that "all major institutes have 2025 active in the gate".)*
 
 ---
 
