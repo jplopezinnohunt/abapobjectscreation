@@ -4,10 +4,10 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**34 hallazgos vivos** de 16 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 10 · 🟢 OPORTUNIDAD 5 · ⚪ DATO 14
+**35 hallazgos vivos** de 16 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 9 · 🟢 OPORTUNIDAD 6 · ⚪ DATO 15
 
 
-⚠️ **10 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
+⚠️ **9 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
 
 
 ---
@@ -64,7 +64,7 @@
 
 ---
 
-## 🟠 DESAFIO (10)
+## 🟠 DESAFIO (9)
 
 *no cuadra y el minero no puede resolverlo solo · **necesita que alguien conteste***
 
@@ -159,18 +159,9 @@
 - ***hoy** · lo encuentra `manual (s109) — medido a mano contra P01; se cierra a mano` · Golden + P01 · n/a*
 - <sub>denominador: los 180 campos de REGUH en P01</sub>
 
-### el censo de proyectos CMOD no existe en el Gold DB: MODACT/MODSAP sin extraer — el inventario clásico de user-exits se conoce sólo por el código que extrajimos, no por el registro del propio sistema
-
-- **Tamaño:** 2 tablas ausentes (MODACT, MODSAP); población desconocida
-- **Evidencia:** sqlite_master del Gold DB
-- **No se puede ver:** este minero no lee P01; la extracción es un paso previo
-- **Acción:** paso de extracción: RFC_READ_TABLE sobre MODACT/MODSAP (tablas pequeñas), aterrizar en Gold DB y re-correr este censo
-- ***hoy** · lo encuentra `custom_extension_census_check` · P01 (via Gold DB) · foto ENHOBJ/smodilog en Gold DB*
-- <sub>denominador: 234 enhancements Z*/Y* distintos en ENHOBJ (P01) · 4221 objetos distintos en smodilog</sub>
-
 ---
 
-## 🟢 OPORTUNIDAD (5)
+## 🟢 OPORTUNIDAD (6)
 
 *se puede mejorar · va a quien decide dónde invertir esfuerzo*
 
@@ -220,9 +211,18 @@
 - ***hoy** · lo encuentra `custom_extension_census_check` · P01 (via Gold DB) · foto ENHOBJ/smodilog en Gold DB*
 - <sub>denominador: 234 enhancements Z*/Y* distintos en ENHOBJ (P01) · 4221 objetos distintos en smodilog</sub>
 
+### proyectos CMOD activos (user-exits clásicos cableados a puntos estándar) sin mención en el registro maestro ni en las autopsias
+
+- **Tamaño:** 19 de 21 proyectos sin registrar; son: FI_TV->FITR0003; HR_INFTY->PBAS0001; YBWENHAN->RSAP0001; YEBUSR01->CNEX0001; YENHAN01->CNEX0007; YENHAN02->FITR0001; YFMFIELD->SAPLFMOI; YFUNDMD->FMMD0012, FMMD0013, FMMD0014; YRHALE01->RHALE001; YRHALE0F->RHALE001; YSDFMUI1->SAPLFMFA; YTFBE001->FEB00001; ZDCFIPJ1->FMRESERV, MM06E005; ZINACTIV->M06B0005; ZMM00001->MEREQ001; ZMM00002->MBCF0002; ZPUINFO->SUSR0001; ZSD00001->SDVFX001; ZSICOF->M06E0004, SAPL2012, SAPLMEWP, SAPLMEWQ
+- **Evidencia:** MODACT (Gold DB, cableado real) vs grep del registro + autopsias
+- **No se puede ver:** MODACT dice qué está cableado, no cuánto se ejecuta; y la mención por grep no mide calidad del análisis
+- **Acción:** autopsia priorizando los que cuelgan de puntos financieros (SAPLFMDT/FMRESERV/FEB00001/ACBAPI01)
+- ***hoy** · lo encuentra `custom_extension_census_check` · P01 (via Gold DB) · foto ENHOBJ/smodilog en Gold DB*
+- <sub>denominador: 234 enhancements Z*/Y* distintos en ENHOBJ (P01) · 4221 objetos distintos en smodilog</sub>
+
 ---
 
-## ⚪ DATO (14)
+## ⚪ DATO (15)
 
 *un hecho relevante que no es ninguna de las tres · va al conocimiento*
 
@@ -361,6 +361,15 @@
 - ***hoy** · lo encuentra `custom_extension_census_check` · P01 (via Gold DB) · foto ENHOBJ/smodilog en Gold DB*
 - <sub>denominador: 234 enhancements Z*/Y* distintos en ENHOBJ (P01) · 4221 objetos distintos en smodilog</sub>
 
+### proyectos CMOD con atributos (MODATTR) pero SIN enhancement cableado en MODACT: cáscaras vacías o proyectos a medio montar
+
+- **Tamaño:** 1: ZMM00003
+- **Evidencia:** MODATTR vs MODACT (Gold DB)
+- **No se puede ver:** un proyecto sin members puede haberse vaciado deliberadamente
+- **Acción:** candidatos a limpieza; verificar antes de tocar
+- ***hoy** · lo encuentra `custom_extension_census_check` · P01 (via Gold DB) · foto ENHOBJ/smodilog en Gold DB*
+- <sub>denominador: 234 enhancements Z*/Y* distintos en ENHOBJ (P01) · 4221 objetos distintos en smodilog</sub>
+
 ---
 
 ## De dónde sale cada uno
@@ -368,7 +377,7 @@
 | Minero | Hallazgos |
 |---|---:|
 | `bank_statement_channel_census` | 5 |
-| `custom_extension_census_check` | 4 |
+| `custom_extension_census_check` | 5 |
 | `bank_account_behaviour_signature` | 3 |
 | `bank_statement_sod_check` | 3 |
 | `manual (s109) — pregunta para una persona; se cierra a mano` | 3 |

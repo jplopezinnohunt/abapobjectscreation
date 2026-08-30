@@ -112,7 +112,7 @@ def main():
                   "el split por prefijo es aproximado",
            accion="la regla hacia delante es no modificar estándar; esto es inventario, no precedente")
 
-    # --- 3. El hueco CMOD ---
+    # --- 3. Censo CMOD (hueco cerrado s111: MODACT/MODSAP/MODATTR extraídas) ---
     tiene_modact = db.execute(
         "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('modact','MODACT')"
     ).fetchone()[0]
@@ -123,8 +123,43 @@ def main():
                   tamano="2 tablas ausentes (MODACT, MODSAP); población desconocida",
                   evidencia="sqlite_master del Gold DB",
                   limite="este minero no lee P01; la extracción es un paso previo",
-                  accion="paso de extracción: RFC_READ_TABLE sobre MODACT/MODSAP (tablas pequeñas), "
-                         "aterrizar en Gold DB y re-correr este censo")
+                  accion="python Zagentexecution/sap_data_extraction/scripts/extract_cmod_inventory.py")
+    else:
+        # MODACT = el cableado real proyecto->enhancement SMOD; MODSAP es el CATÁLOGO
+        # SAP de definiciones (10K+ filas, casi todo sin usar) — censar sobre MODSAP
+        # inflaría la población, el clásico defecto de denominador.
+        proys = {r[0].strip(): (r[1] or "").strip() for r in db.execute(
+            "SELECT NAME, GROUP_CONCAT(MEMBER, ', ') FROM modact "
+            "WHERE MEMBER<>'' GROUP BY NAME")}
+        attrs = {r[0].strip() for r in db.execute("SELECT NAME FROM modattr")}
+        sin_wiring = sorted(attrs - set(proys))
+        cmod_sin_registro = sorted(p for p in proys if p.upper() not in corpus)
+        if cmod_sin_registro:
+            h.oportunidad(
+                "proyectos CMOD activos (user-exits clásicos cableados a puntos estándar) "
+                "sin mención en el registro maestro ni en las autopsias",
+                tamano="%d de %d proyectos sin registrar; son: %s"
+                       % (len(cmod_sin_registro), len(proys),
+                          "; ".join("%s->%s" % (p, proys[p]) for p in cmod_sin_registro)),
+                evidencia="MODACT (Gold DB, cableado real) vs grep del registro + autopsias",
+                limite="MODACT dice qué está cableado, no cuánto se ejecuta; y la mención "
+                       "por grep no mide calidad del análisis",
+                accion="autopsia priorizando los que cuelgan de puntos financieros "
+                       "(SAPLFMDT/FMRESERV/FEB00001/ACBAPI01)")
+        else:
+            h.dato("los %d proyectos CMOD con cableado están todos mencionados en el registro"
+                   % len(proys),
+                   tamano="%d de %d" % (len(proys), len(proys)),
+                   evidencia="MODACT vs registro + autopsias",
+                   limite="mención no es análisis",
+                   accion="nada")
+        if sin_wiring:
+            h.dato("proyectos CMOD con atributos (MODATTR) pero SIN enhancement cableado en "
+                   "MODACT: cáscaras vacías o proyectos a medio montar",
+                   tamano="%d: %s" % (len(sin_wiring), ", ".join(sin_wiring)),
+                   evidencia="MODATTR vs MODACT (Gold DB)",
+                   limite="un proyecto sin members puede haberse vaciado deliberadamente",
+                   accion="candidatos a limpieza; verificar antes de tocar")
 
     h.emitir()
     return 0

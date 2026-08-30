@@ -22,7 +22,7 @@ domains:
 
 | Class | Discovery TCODEs | Storage tables | Gold DB today |
 |---|---|---|---|
-| **User-exits (classic)** | `CMOD` (projects), `SMOD` (definitions) | `MODACT`, `MODSAP`, TADIR | ❌ **not extracted — open gap** |
+| **User-exits (classic)** | `CMOD` (projects), `SMOD` (definitions) | `MODACT`, `MODSAP`, TADIR | ✅ `modact`/`modsap`/`modattr` — **21 projects → 27 SMOD enhancements** [claim 652] |
 | **BAdIs (classic)** | `SE18`/`SE19` | `SXS_ATTR`/`SXC_*` (SXS_ATTR **blocked via RFC** — TABLE_WITHOUT_DATA) | via TADIR + ENHOBJ |
 | **Enhancement Framework** | `SE20` (spots, implementations) | `ENHOBJ`, `ENHLOG`, TADIR (`ENHO`/`ENHC`) | ✅ `ENHOBJ` 78,807 rows — 25,887 enhancements, **234 Z*/Y* custom** |
 | **Standard-code MODIFICATIONS** | `SPAU`/`SPDD`, `SE95` | `SMODILOG` | ✅ `smodilog` 9,852 rows (4,221 objects) + `spau_2024_objects` |
@@ -78,12 +78,16 @@ matrix…). Analysis status per object: `knowledge/code_analysis_control_matrix.
 
 ## 5. Open frontier (measured s111 — "por ahí hay que seguir")
 
-- **CMOD project census missing**: `MODACT`/`MODSAP` not in Gold DB → the classic user-exit
-  inventory is known only through the code we extracted, not from the system's own registry.
-  Extraction step pending (tiny tables, `RFC_READ_TABLE`).
-- **234 Z*/Y* enhancements in ENHOBJ** vs ~30 objects with an autopsy: coverage of the Enhancement
-  Framework population is partial — the census miner (`custom_extension_census_check.py`)
-  measures the gap and publishes it to the bus.
+- ~~CMOD project census missing~~ **CLOSED s111**: `modact`/`modsap`/`modattr` extracted
+  (refresher `extract_cmod_inventory.py`). **The census: 21 projects → 27 SMOD enhancements**,
+  authors 2001–2015, 20/22 active; latest activation N_MENARD on YFUNDMD 2023-09-21. Financial
+  hot points: `ZFMACCHK`→`SAPLFMDT` (=FMDERIVE, the YFMXCHK gates), `YTFBE001`→`FEB00001` (bank
+  statement exit), `STEPS`→`ACBAPI01` (accounting BAPI). [claim 652]
+  **Caveat**: `MODSAP` is SAP's full definition catalog (10,273 rows) — census on `MODACT` only.
+- **19 of 21 CMOD projects unregistered** (only ZFMACCHK and STEPS were in the registry) and
+  **209 of 234 Z*/Y* ENHOBJ enhancements unregistered**: the census miner
+  (`custom_extension_census_check.py`) measures both and publishes to the bus. Triage priority:
+  the ones hanging off posting/payment points.
 - `SXS_ATTR` unreadable via RFC → classic-BAdI inventory needs the TADIR route.
 
 ## 6. Watchers (miners on the bus — run in `opportunity_watch --correr`)
