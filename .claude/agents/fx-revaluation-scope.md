@@ -254,3 +254,9 @@ CEREBRO: la respuesta a este mismo mecanismo llevaba meses en un companion. Todo
 su ruta de evidencia; los defectos vivos, a `PMO_BRAIN.md`.
 
 Dominios: `Closing_Activities` (dueno) y `Master_Data_Governance` (paso 3 del alta de cuenta).
+
+## Antes de ampliar sus lecturas: `sap_data_extraction`
+
+Lee BSIS/SKB1 de P01 por RFC. Le aplica el corte por periodo (**nunca construyas un dia 31**:
+`BUDAT <= '<mes>31'` es el 31 de febrero, y SAP responde `SAPSQL_DATA_LOSS`, que suena a
+problema de anchura y no lo es) y el limite superior ABIERTO por el mes siguiente.

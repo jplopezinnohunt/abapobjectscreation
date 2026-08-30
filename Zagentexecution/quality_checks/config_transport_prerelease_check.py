@@ -38,6 +38,10 @@ USO
 Regla: feedback_diff_the_whole_table_before_releasing_a_config_transport (CRITICAL).
 Claim 526.
 """
+# LEE PRIMERO `.claude/skills/sap_data_extraction` si vas a ampliar sus lecturas: extrae de
+# P01 por RFC (E070/E071), y el WHERE se trocea a 72 caracteres con `trocear_where` -- un
+# WHERE largo se TRUNCA en silencio y puede quedar en una condicion mas ancha que devuelve
+# filas de mas.
 # --- self-declaration, read by quality_checks/run_all.py -------------------
 # Un script sin declarar sale como UNCLASSIFIED y hace fallar al runner: un registro
 # central es una lista que alguien se olvida de actualizar.

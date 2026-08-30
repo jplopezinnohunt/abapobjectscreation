@@ -18,6 +18,10 @@ Uso:
     python ob09_vs_variant_check.py --accounts 40410      # limita a un prefijo
 Salida: exit 0 limpio · exit 1 si hay cuentas ACTIVAS con OB09 fuera de toda variante.
 """
+# LEE PRIMERO `.claude/skills/sap_data_extraction` si vas a ampliar sus lecturas: extrae de
+# P01 por RFC, y de alli salen las trampas ya pagadas -- max ~8 campos por RFC_READ_TABLE,
+# P01 rechaza ROWSKIPS, y no se parte por delimitador porque un campo de texto puede
+# contenerlo.
 
 QUALITY_CHECK = {
     "tier": "live",

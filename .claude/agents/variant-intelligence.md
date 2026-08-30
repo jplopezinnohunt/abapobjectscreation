@@ -179,3 +179,10 @@ variante y extraer las rutas, para cerrar el modelo de por dónde entran y salen
   ejecuta nunca, y un job sin variante no dice qué cubre. Conectado s106 (claim 622).
 - Metodología: `knowledge/domains/Closing_Activities/sap_variant_forensic_methodology.md`
 - Regla: `feedback_read_the_variant_the_variant_is_the_process` (CRITICAL)
+
+## Antes de ampliar sus lecturas: `sap_data_extraction`
+
+Lee VARI/VARID y TBTCO/TBTCP de P01. Le aplican el troceado de campos (**max ~8 por lectura**)
+y el **troceado del WHERE a 72 caracteres** con `trocear_where`: `RFC_DB_OPT-TEXT` es CHAR(72)
+y un WHERE largo se TRUNCA sin avisar, pudiendo quedar en una condicion mas ancha que
+devuelve filas de mas.

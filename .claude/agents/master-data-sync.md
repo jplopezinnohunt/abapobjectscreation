@@ -154,3 +154,11 @@ afirmación del skill que resultara falsa** — es lo que más caro sale a la si
 
 **Y barre la población.** El ticket es la OCASIÓN, no el alcance: si faltaban 2 cuentas en D01,
 mide cuántas faltan en total antes de cerrar. Medido una vez: eran 33 en V01.
+
+## Antes de extraer o refrescar: `sap_data_extraction`
+
+Este agente EXTRAE de P01 y escribe en D01/V01, asi que le aplica entera la doctrina de ese
+skill — y en particular dos cosas que ya costaron caro: **la marca de agua va sobre la fecha
+de ALTA, no la del documento** (con la del documento, una carga retroactiva queda por debajo
+de la marca y NO ENTRA NUNCA), y **`INSERT OR REPLACE` no reemplaza sin indice unico: apila**,
+y el total sube, que parece progreso.

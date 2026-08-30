@@ -27,6 +27,10 @@ LAS CUATRO TRAMPAS QUE YA SE PAGARON HOY, Y QUE ESTE MODULO EVITA POR CONSTRUCCI
 Y LA MARCA SE MUEVE AL FINAL, SOLO SI NO FALLO NINGUN TROZO
     Moverla antes, o con huecos, congela un agujero que ningun delta posterior vuelve a mirar.
 """
+# LEE PRIMERO `.claude/skills/sap_data_extraction` — este fichero ES el mecanismo que ese
+# skill describe: los 7 mecanismos de delta del sector, cual podemos usar y cual no, y el
+# agujero de los BORRADOS que ninguno de los nuestros ve. Si aqui se anade una estrategia,
+# alli hay que decir por que.
 
 QUALITY_CHECK = {
     "tier": "live",

@@ -318,3 +318,10 @@ un año.
 4. **Qué transacciones se ejecutan** — con la advertencia de que es correlación temporal.
 5. **A qué dominios pertenece** y si estaba declarado en el mapa de integración.
 6. **Qué NO se puede saber con este instrumento**, dicho con su motivo.
+
+## Antes de ampliar sus lecturas: `sap_data_extraction`
+
+Lee TBTCO/TBTCP y LFA1 de P01 por RFC. De ese skill le aplican las trampas ya pagadas:
+**max ~8 campos por `RFC_READ_TABLE`** (buffer de 512 bytes), **P01 rechaza `ROWSKIPS`** —
+hay que trocear por periodo, no paginar — y **no se parte por delimitador**, porque un campo
+de texto puede contener el `|` y desplaza las columnas EN SILENCIO.
