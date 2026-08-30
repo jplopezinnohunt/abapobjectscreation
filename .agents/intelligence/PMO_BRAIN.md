@@ -34,6 +34,47 @@
 > proyecto que dice DESDE CUÁNDO** lleva abierto cada item — los otros cinco dicen QUÉ falta.
 > Hoy: 19 hallazgos vivos de 7 mineros · **7 desafíos esperando que alguien conteste**.
 
+> ## PENDIENTE AL ABRIR - S111 (2026-08-30). LEE ESTO ANTES QUE EL INDICE.
+>
+> **Modo de trabajo acordado con JP: DE A POCO, UNA TAREA POR SESIÓN.** La cola está ordenada;
+> cada sesión hace la primera no tachada, la aterriza completa (claim + registro + skill +
+> minero si aplica) y NO abre la siguiente. Contexto: s111 creó los dos puntos de entrada
+> (`sap_validation_substitution`, `sap_custom_extensions`) y los dos mineros del bus
+> (`validation_substitution_drift_check`, `custom_extension_census_check`) — regla #262: un
+> mapa documentado se aparea con un minero que lo vigila. El censo CMOD está cerrado (claim
+> 652: 21 proyectos → 27 enhancements, 19 sin registrar).
+>
+> ### LA COLA (hacer en este orden, una por sesión)
+> 1. **YTFBE001 → FEB00001 — el user-exit del EXTRACTO BANCARIO, sin registrar.** Es el de
+>    mayor riesgo de los 19: corre dentro de la importación de extractos (FF_5/FEBAN) y el
+>    dominio recon no sabe que existe. Pasos: localizar el fuente (EXIT_* de FEB00001 y su
+>    include ZX*) en `extracted_code/`/`extracted_sap_p01/` o extraerlo de P01 (RPY, lectura);
+>    autopsia (¿qué decide? ¿puede cambiar el matching?); registrar en
+>    `sap_custom_enhancement_registry.md`; cruzar en el skill `sap_bank_statement_recon`;
+>    claim con la regla de negocio.
+> 2. **STEPS → ACBAPI01 + ZDCFIPJ1 → FMRESERV/MM06E005.** ACBAPI01 corre en CADA
+>    contabilización por BAPI (los 334 FMs RFC de los satélites entran por ahí — cruza con
+>    H71/write-channel). FMRESERV toca las reservas de fondos (FMX1, tolerancias ZXFMCU17).
+>    Mismo método que el punto 1.
+> 3. **Triaje de los 209 enhancements Z*/Y* de ENHOBJ sin registrar** (89%). No autopsia
+>    masiva: tabla de triaje por MAIN_TYPE/MAIN_NAME (qué objeto estándar tocan), autopsia
+>    SOLO del top-5 financiero. Los YENH_BAPI_ENTRYSHEET_* (release/reset de entry sheets =
+>    pagos a contratistas) pintan primeros.
+> 4. **DEBERIA_LEER (138):** siguientes por volumen `sap_house_bank_configuration` (14) y
+>    `sap_company_code_copy` (12). El puntero dice QUÉ del skill aplica, nunca el nombre suelto.
+> 5. **Los 25 identificadores sin aterrizar** del detector (YHR_PAFTXT, YTFM_HIER,
+>    ZTHRFIORI_ACTOR, YTFI_JCU, YTHR_PEVST, YTFM_INT_PROJS…) — ninguno bloquea; aterrizar de a
+>    2-3 por sesión con el método de s111 (leer rutina → extraer tabla → claim).
+> ### MENUDO (cabe de acompañamiento en cualquier sesión, no consume el turno)
+> - Sonda del lector de `CHTYP='CM'` (YFMXCHKP): buscar en D01/variantes/jobs; si no aparece,
+>   es config muerta → supersede parcial del claim 650.
+> - `ZMM00003`: cáscara CMOD sin cablear — verificar y proponer limpieza.
+> - Incoherencia `FEBRE`/`essr` entre censo delta y `gold_delta` (data_quality de s110).
+> - Censo BAdI clásico vía TADIR (SXS_ATTR no se deja leer por RFC).
+> - `MEMORY.md` sigue ~4 bytes sobre su límite de carga: compensar cualquier línea nueva.
+> - **Backup**: `D:\claude_backups` estaba sin montar todo s111; Golden DB y ~/.claude
+>   cambiaron. En cuanto se monte: `python scripts/backup_golden.py --dest D:\claude_backups`.
+>
 > ## PENDIENTE AL ABRIR - S110 (2026-08-30). LEE ESTO ANTES QUE EL INDICE.
 >
 > ### ✅ CERRADO EN s111 — YFMXCHK y ZTHRFIORI_ATT_TY aterrizados (claims 648-651)
