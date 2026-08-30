@@ -2472,7 +2472,12 @@
       ],
       "conclusion_falsa_que_permite": "leer \"campo vacio en 10 filas\" como \"campo sin usar\". Dice QUE SE USA, nunca que algo no se use",
       "validado": "primera corrida sobre REGUH XVORL=X y LIFNR vacio: 38 campos con valor de 177, 23 ausentes del Golden, y entre ellos KUNNR -- la clave que faltaba. Verificado: en la clave que el Golden repite 2.075 veces hay 2.075 KUNNR distintos",
-      "sesion": 109
+      "sesion": 109,
+      "preguntas_que_contesta": [
+        "saber que campos usa de verdad una tabla",
+        "que columnas me faltan en el Golden",
+        "que campos vienen rellenos en este escenario"
+      ]
     },
     "A83_derive_keys_from_dd03l": {
       "que_hace": "deriva de DD03L (KEYFLAG=X) la clave de cada tabla del Golden y la escribe en el registro, para que su delta pase de DECLARADO a EJECUTABLE",
@@ -2489,6 +2494,51 @@
       "conclusion_falsa_que_permite": "creer que 368 tablas con modelo son 368 tablas con delta",
       "validado": "12 -> 239 ejecutables · 35 con clave incompleta · 94 sin clave en P01. Probado con YTFI_PPC_STRUC, que nunca se escribio a mano: corre en 1 llamada",
       "sesion": 109
+    },
+    "A84_cycle_progress": {
+      "que_hace": "dice por que paso va el ciclo de analisis y si avanza o esta parado, sin tocarlo",
+      "script": "Zagentexecution/quality_checks/cycle_progress.py",
+      "lands_in": [
+        "salida en consola -> decide si esperar o investigar"
+      ],
+      "por_que_existe": "run_analysis_cycle escribia cycle_state.json UNA sola vez, al arrancar, y el progreso salia por stdout -- que cuando lo lanza un disparador no lo lee nadie. Durante 151 minutos lo unico observable fue la palabra RUNNING, y eso hace que \"esta trabajando\" y \"se colgo hace dos horas\" sean el MISMO sintoma. Con un ciclo que bloquea a todo lo demas por ser el unico escritor, no poder distinguirlos es caro. JP: «mide lo que hace el ciclo para saber que no se pierde»",
+      "trampas": [
+        "la lista de pasos se LEE del propio run_analysis_cycle.py; copiarla aqui seria garantizar que envejece",
+        "la huella de ficheros es una INFERENCIA: un paso que lee mucho y escribe al final parece parado sin estarlo. Por eso el veredicto mira TAMBIEN si el proceso vive",
+        "RUNNING sin proceso = murio sin cerrar, y esa marca bloquea a todo escritor. NO se fuerza automaticamente: un falso positivo ahi rompe el unico mecanismo que protege los stores"
+      ],
+      "conclusion_falsa_que_permite": "leer un hueco de escritura como \"colgado\" cuando es un paso lento",
+      "validado": "medido sobre la corrida del 2026-08-30: 30 pasos, 43 ficheros escritos, veredicto VIVO Y AVANZANDO con el ultimo fichero a segundos. Y destapo que el ciclo escribe en el Golden DB, no solo en brain_v2",
+      "sesion": 110,
+      "preguntas_que_contesta": [
+        "saber si el ciclo de analisis sigue corriendo",
+        "por que paso va el ciclo",
+        "esta colgado o avanzando",
+        "cuanto falta para poder escribir en los stores"
+      ]
+    },
+    "A85_complete_key_columns": {
+      "que_hace": "trae de P01 los campos de CLAVE que le faltan a una tabla del Golden, para que su delta pase de bloqueado a ejecutable",
+      "script": "Zagentexecution/quality_checks/complete_key_columns.py",
+      "lands_in": [
+        "el Golden (ALTER TABLE + UPDATE por firma)",
+        "brain_v2/gold_delta_registry.json (al volver a derivar)"
+      ],
+      "preguntas_que_contesta": [
+        "completar los campos de clave que faltan",
+        "por que esta tabla no puede tener indice unico",
+        "como escribo un campo de clave sin poder identificar la fila",
+        "desbloquear el delta de una tabla del Golden"
+      ],
+      "por_que_existe": "tras derivar las claves de DD03L quedaron 23 tablas NO EJECUTABLES: al Golden le falta algun campo de su clave. Sin clave completa no hay indice unico, y sin indice INSERT OR REPLACE no reemplaza: APILA",
+      "trampas": [
+        "el campo que falta es PARTE de lo que identifica la fila: hay que comprobar ANTES que la parte PRESENTE de la clave ya separa, o el UPDATE escribe en la fila que no es",
+        "que la columna EXISTA no es que TENGA DATOS: una corrida que reviente tras el ALTER deja la columna creada y vacia, y mirar solo el esquema da un falso verde",
+        "no se parte por delimitador: un ZUONR puede contener el propio | y desplaza columnas en silencio. Se corta por OFFSET/LENGTH"
+      ],
+      "conclusion_falsa_que_permite": "creer que una tabla con la clave completa tiene el campo RELLENO en todas sus filas: fuera de la ventana 2024-2026 no se toca",
+      "validado": "la familia bs* completa: bsid/bsik/bsad/bsak/bsas/bsis, las 6 con clave UNICA. bsis al 100%, bsas al 25% porque 663.539 de sus filas son de 2023, fuera de la ventana",
+      "sesion": 110
     }
   },
   "_portfolio": {
