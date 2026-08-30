@@ -4,10 +4,10 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**29 hallazgos vivos** de 14 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 9 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 11
+**34 hallazgos vivos** de 16 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 10 · 🟢 OPORTUNIDAD 5 · ⚪ DATO 14
 
 
-⚠️ **9 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
+⚠️ **10 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
 
 
 ---
@@ -64,7 +64,7 @@
 
 ---
 
-## 🟠 DESAFIO (9)
+## 🟠 DESAFIO (10)
 
 *no cuadra y el minero no puede resolverlo solo · **necesita que alguien conteste***
 
@@ -159,9 +159,18 @@
 - ***hoy** · lo encuentra `manual (s109) — medido a mano contra P01; se cierra a mano` · Golden + P01 · n/a*
 - <sub>denominador: los 180 campos de REGUH en P01</sub>
 
+### el censo de proyectos CMOD no existe en el Gold DB: MODACT/MODSAP sin extraer — el inventario clásico de user-exits se conoce sólo por el código que extrajimos, no por el registro del propio sistema
+
+- **Tamaño:** 2 tablas ausentes (MODACT, MODSAP); población desconocida
+- **Evidencia:** sqlite_master del Gold DB
+- **No se puede ver:** este minero no lee P01; la extracción es un paso previo
+- **Acción:** paso de extracción: RFC_READ_TABLE sobre MODACT/MODSAP (tablas pequeñas), aterrizar en Gold DB y re-correr este censo
+- ***hoy** · lo encuentra `custom_extension_census_check` · P01 (via Gold DB) · foto ENHOBJ/smodilog en Gold DB*
+- <sub>denominador: 234 enhancements Z*/Y* distintos en ENHOBJ (P01) · 4221 objetos distintos en smodilog</sub>
+
 ---
 
-## 🟢 OPORTUNIDAD (4)
+## 🟢 OPORTUNIDAD (5)
 
 *se puede mejorar · va a quien decide dónde invertir esfuerzo*
 
@@ -202,9 +211,18 @@
 - ***2 días abierto** · lo encuentra `bank_account_behaviour_signature` · P01 · 2025-2026*
 - <sub>denominador: 165 cuentas VIVAS (excluidas las marcadas CLOSED en el texto)</sub>
 
+### enhancements custom del Enhancement Framework SIN mención en el registro maestro ni en las autopsias: son código que decide y que ningún análisis de customizing ve
+
+- **Tamaño:** 209 de 234 Z*/Y* sin registrar (89%); ejemplos: YBADI_RE_EX_FI, YCF_PARAM_CONTROLS, YENH_BAPI_ENTRYSHEET_RELEASE, YENH_BAPI_ENTRYSHEET_RESET, YENH_BSPROC_PREPARE, YENH_DOC_TO_STAFF_FILE_1, YENH_DOC_TO_STAFF_FILE_2, YENH_DOC_TO_STAFF_FILE_3
+- **Evidencia:** ENHOBJ (Gold DB) vs grep de sap_custom_enhancement_registry.md + knowledge/domains/PSM/EXTENSIONS/*.md
+- **No se puede ver:** mencion por grep: mide presencia del nombre, no calidad del análisis; y ENHOBJ dice qué existe, no qué se ejecuta
+- **Acción:** triaje por MAIN_TYPE/MAIN_NAME (qué objeto estándar tocan) y autopsia de los que cuelguen de puntos de contabilización o pago
+- ***hoy** · lo encuentra `custom_extension_census_check` · P01 (via Gold DB) · foto ENHOBJ/smodilog en Gold DB*
+- <sub>denominador: 234 enhancements Z*/Y* distintos en ENHOBJ (P01) · 4221 objetos distintos en smodilog</sub>
+
 ---
 
-## ⚪ DATO (11)
+## ⚪ DATO (14)
 
 *un hecho relevante que no es ninguna de las tres · va al conocimiento*
 
@@ -316,6 +334,33 @@
 - ***hoy** · lo encuentra `manual (s110) — medido con el toolgraph; se cierra a mano` · repo · n/a*
 - <sub>denominador: los 17 que el toolgraph marca como DEBERIA_LEER sap_data_extraction</sub>
 
+### el perímetro de contabilización sigue exactamente como lo documentó s111
+
+- **Tamaño:** yxuser=1 · yfmxchkp activas CM=9 (sin lector) · XCHECK Y=3003 T=38 F=35 H=28 D=9 Z=2
+- **Evidencia:** Gold DB vs claims 648-650, foto de hace 0 días
+- **No se puede ver:** vigencia = edad de la extracción
+- **Acción:** nada
+- ***hoy** · lo encuentra `validation_substitution_drift_check` · P01 (via Gold DB) · foto s111 -> última extracción*
+- <sub>denominador: 3 tablas de control del perímetro (yfmxchk/yfmxchkp/yxuser) vs su mapa documentado en claims 648-650 (s111)</sub>
+
+### enhancements Z*/Y* sin fuente en extracted_code/ENHO/
+
+- **Tamaño:** 234 de 234 sin carpeta de extracción
+- **Evidencia:** ENHOBJ vs listado de extracted_code/ENHO/
+- **No se puede ver:** el fuente puede estar en otro corpus (UNESCO_CUSTOM_LOGIC) bajo otro nombre
+- **Acción:** skill sap_enhancement_extraction para los que pesen
+- ***hoy** · lo encuentra `custom_extension_census_check` · P01 (via Gold DB) · foto ENHOBJ/smodilog en Gold DB*
+- <sub>denominador: 234 enhancements Z*/Y* distintos en ENHOBJ (P01) · 4221 objetos distintos en smodilog</sub>
+
+### objetos ESTÁNDAR con entrada en el log de modificaciones (smodilog), quitado el ruido conocido (queries generadas, CLS4SIC del SP stack — claim 211)
+
+- **Tamaño:** 3776 objetos estándar tocados
+- **Evidencia:** Gold DB smodilog; split UNESCO-vs-SAP-delivered por patrón de nombre
+- **No se puede ver:** smodilog registra el AJUSTE (SPAU/SPDD), no distingue mod viva de revertida; el split por prefijo es aproximado
+- **Acción:** la regla hacia delante es no modificar estándar; esto es inventario, no precedente
+- ***hoy** · lo encuentra `custom_extension_census_check` · P01 (via Gold DB) · foto ENHOBJ/smodilog en Gold DB*
+- <sub>denominador: 234 enhancements Z*/Y* distintos en ENHOBJ (P01) · 4221 objetos distintos en smodilog</sub>
+
 ---
 
 ## De dónde sale cada uno
@@ -323,6 +368,7 @@
 | Minero | Hallazgos |
 |---|---:|
 | `bank_statement_channel_census` | 5 |
+| `custom_extension_census_check` | 4 |
 | `bank_account_behaviour_signature` | 3 |
 | `bank_statement_sod_check` | 3 |
 | `manual (s109) — pregunta para una persona; se cierra a mano` | 3 |
@@ -336,6 +382,7 @@
 | `manual (s109) — medido con gold_delta.py sobre REGUH; se cierra a mano` | 1 |
 | `manual (s109) — medido con gold_delta.py sobre REGUP; se cierra a mano` | 1 |
 | `manual (s110) — medido con el toolgraph; se cierra a mano` | 1 |
+| `validation_substitution_drift_check` | 1 |
 
 > Un minero que no aparece aquí **no está limpio: está mudo**. O no busca, o no publica. Las dos cosas hay que arreglarlas.
 
