@@ -34,6 +34,31 @@
 > proyecto que dice DESDE CUÁNDO** lleva abierto cada item — los otros cinco dicen QUÉ falta.
 > Hoy: 19 hallazgos vivos de 7 mineros · **7 desafíos esperando que alguien conteste**.
 
+> ## PENDIENTE AL ABRIR - S110 (2026-08-30). LEE ESTO ANTES QUE EL INDICE.
+>
+> ### LO PRIMERO, Y ES UNA LECTURA DE CODIGO, NO UNA EXTRACCION
+> 1. **YFMXCHK — una tabla que puede BLOQUEAR una contabilizacion y que el brain no explica.**
+>    Se consulta desde `YFI_YRGGBS00_EXIT::U913`, el exit de sustituciones de FI. Un exit de
+>    sustitucion corre DENTRO de la contabilizacion: lo que decida con esa tabla puede parar un
+>    documento. No sabemos que contiene ni quien la mantiene.
+>    **Los tres pasos, en orden:** (a) leer `U913` en `extracted_code/` y ver QUE decide con ella;
+>    (b) sacar su contenido de P01 — es lectura, cabe en `RFC_READ_TABLE`; (c) aterrizarlo como
+>    claim con la regla de negocio que implementa.
+>    **Por que importa mas de lo que parece:** es el patron de `MV_EXTENSION_YEARS` — la regla que
+>    DECIDE vive en el codigo, y ningun analisis de configuracion la ve. Detectado por
+>    `unlanded_discovery_detector`, que marco 27 identificaciones sin aterrizar; esta y
+>    `ZTHRFIORI_ATT_TY` (en `CREATE_ATTACHMENT`) son las dos con `gates a BLOCKING routine`.
+>    **No esta hecho y no caduca solo:** seguira aqui hasta que haya claim.
+>
+> ### 2. LO DEMAS QUE QUEDO ABIERTO EN S110
+> - **`DEBERIA_LEER`: 138.** Bajo de 152 cerrando `sap_data_extraction` (17->9) y
+>   `sap_bank_statement_recon` (14->7). Las siguientes por volumen: `sap_house_bank_configuration`
+>   (14) y `sap_company_code_copy` (12). El puntero dice QUE del skill aplica, nunca el nombre suelto.
+> - **Incoherencia entre dos registros de delta:** `FEBRE` y `essr` salen `SIN_DELTA_POSIBLE` en el
+>   censo y con mecanismo real en `gold_delta`. Registrado como data_quality; una de las dos miente.
+> - **`MEMORY.md` esta ~4 bytes por encima de su limite de carga** (24.400). Cualquier linea que se
+>   anada hay que compensarla.
+>
 > ## PENDIENTE AL ABRIR - S107 (2026-08-28). LEE ESTO ANTES QUE EL INDICE.
 >
 > ### 1. EL INDICE ESTA AL DIA -- se corrio el rebuild al cerrar s107
