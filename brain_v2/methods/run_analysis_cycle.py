@@ -179,7 +179,7 @@ def main():
     except OSError:
         pass
 
-    for script, label, heavy in CYCLE:
+    for idx, (script, label, heavy) in enumerate(CYCLE, 1):
         if quick and heavy:
             say(f"  SKIP  {label}")
             skipped += 1
@@ -201,6 +201,23 @@ def main():
             say(f"  MISS  {label}  ({script_rel} not found)")
             failed.append(script)
             continue
+        # ⛔ DECIR POR QUE PASO VA, no solo que arranco. Hasta s110 este fichero se escribia
+        # UNA vez y el progreso salia por stdout -- que cuando lanza un disparador no lo lee
+        # nadie. Durante 151 minutos lo unico observable fue la palabra RUNNING, y eso hace que
+        # "esta trabajando" y "se colgo hace dos horas" sean el MISMO sintoma. Con un ciclo que
+        # bloquea a todo lo demas por ser el unico escritor, no poder distinguirlos es caro.
+        try:
+            json.dump({"status": "RUNNING", "started_utc": _started,
+                       "paso": label, "script": script_rel,
+                       "indice": idx, "de": len(CYCLE),
+                       "desde_utc": datetime.datetime.now(datetime.timezone.utc)
+                                    .isoformat(timespec="seconds"),
+                       "ok_hasta_ahora": ok, "fallidos_hasta_ahora": len(failed),
+                       "_why": "a run that starts and dies must not look like a run that never "
+                               "began -- y uno que corre debe decir POR DONDE VA"},
+                      open(STATE, "w", encoding="utf-8"), indent=1)
+        except OSError:
+            pass
         t0 = time.monotonic()
         r = subprocess.run([sys.executable, str(p)] + extra, cwd=str(REPO),
                            capture_output=True, text=True, encoding="utf-8",
