@@ -4,7 +4,7 @@
 
 > Cada corrida de un minero **reemplaza lo suyo**, así que lo que desaparece de aquí es lo que dejó de encontrarse — y eso también es información.
 
-**29 hallazgos vivos** de 14 mineros: 🔴 RIESGO 6 · 🟠 DESAFIO 9 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 10
+**29 hallazgos vivos** de 14 mineros: 🔴 RIESGO 5 · 🟠 DESAFIO 9 · 🟢 OPORTUNIDAD 4 · ⚪ DATO 11
 
 
 ⚠️ **9 desafíos esperan que alguien conteste.** Un desafío no es un fallo ni una mejora: es una pregunta que el minero no puede resolver solo, y el minero es quien mejor puede formularla porque tiene los datos delante.
@@ -12,7 +12,7 @@
 
 ---
 
-## 🔴 RIESGO (6)
+## 🔴 RIESGO (5)
 
 *puede hacer daño si nadie actúa · va a quien responde del control*
 
@@ -61,16 +61,6 @@
 - **Acción:** declarar por cuenta quien teclea y quien paga, y que no sean la misma persona; o documentar el control fisico compensatorio
 - ***2 días abierto** · lo encuentra `bank_statement_sod_check` · P01 · 20250101 → hoy*
 - <sub>denominador: cuentas de UNES que reciben AL MENOS un extracto tecleado a mano: 38, de las que 33 estan vivas (el resto llevan CLOSED en T012T-TEXT1). NO es la etiqueta de canal MANUAL, que solo cubre 8.</sub>
-
-### Cuatro algoritmos estan REGISTRADOS en algorithms.json y su fichero NO EXISTE en disco
-
-- **Tamaño:** F1_interface_boundary_analysis · D6_aggregate_before_resolve · A39_fx_revaluation_scope_by_nature · A50_transport_content_extraction
-- **Evidencia:** salieron al resolver los 17 que deberian leer sap_data_extraction: de los 17, 4 no tienen fichero que abrir
-- **No se puede ver:** no he mirado si el fichero se renombro, se fusiono en otro o nunca existio. Las tres cosas se arreglan distinto
-- **Acción:** para cada uno: o apuntar la ficha al fichero real, o retirarlo con su motivo. Un algoritmo registrado sin codigo aparece en los rankings y en las busquedas como si existiera
-- **Puede contestarlo:** DBS
-- ***hoy** · lo encuentra `manual (s110) — medido con el toolgraph; se cierra a mano` · repo · n/a*
-- <sub>denominador: los 17 que el toolgraph marca como DEBERIA_LEER sap_data_extraction</sub>
 
 ---
 
@@ -214,7 +204,7 @@
 
 ---
 
-## ⚪ DATO (10)
+## ⚪ DATO (11)
 
 *un hecho relevante que no es ninguna de las tres · va al conocimiento*
 
@@ -316,6 +306,16 @@
 - ***hoy** · lo encuentra `manual (s109) — medido con gold_delta.py sobre REGUP; se cierra a mano` · Golden · LAUFD 2016-2026*
 - <sub>denominador: las 207.779 filas de REGUP_SCENARIOS tras deduplicar</sub>
 
+### RETIRADO. No hay algoritmos sin implementacion. Los 112 declaran donde viven, con DOS campos distintos y ambos legitimos: `script` cuando el algoritmo ES ese fichero, y `bound_in` cuando esta EMBEBIDO en otros -- que es justo lo que significa una TECNICA. Verificado: los 70 que yo llamaba huecos tienen bound_in, y los 70 apuntan a ficheros que EXISTEN en disco. Cero huecos.
+
+- **Tamaño:** 112 algoritmos · 0 sin implementacion declarada · 0 bound_in roto
+- **Evidencia:** os.path.exists sobre el bound_in de los 70; 70 de 70 existen
+- **No se puede ver:** ESTE HALLAZGO NACIO DE TRES MEDIDAS MIAS MALAS SEGUIDAS: (1) dije que 4 algoritmos no tenian fichero -- era que mi busqueda no contemplaba el sufijo _check; (2) dije que solo 7 de 112 declaraban su codigo -- miraba solo `script` e ignoraba `bound_in`; (3) propuse construir la distincion tecnica/script, QUE YA EXISTIA. Afirmar sobre un campo antes de mirar que campos hay.
+- **Acción:** nada que arreglar. Lo unico que queda util es que los 35 que SI son un fichero ahora lo declaran en `script`, que antes no lo hacian
+- **Puede contestarlo:** DBS
+- ***hoy** · lo encuentra `manual (s110) — medido con el toolgraph; se cierra a mano` · repo · n/a*
+- <sub>denominador: los 17 que el toolgraph marca como DEBERIA_LEER sap_data_extraction</sub>
+
 ---
 
 ## De dónde sale cada uno
@@ -331,11 +331,11 @@
 | `bank_config_profile_by_nature` | 2 |
 | `manual (s109) — medido a mano contra P01; se cierra a mano` | 2 |
 | `manual (s109) — NO hay script que lo refresque; se cierra a mano` | 2 |
-| `manual (s110) — medido con el toolgraph; se cierra a mano` | 1 |
 | `ebs_format_consolidation` | 1 |
 | `work_triad_check (manual, s109)` | 1 |
 | `manual (s109) — medido con gold_delta.py sobre REGUH; se cierra a mano` | 1 |
 | `manual (s109) — medido con gold_delta.py sobre REGUP; se cierra a mano` | 1 |
+| `manual (s110) — medido con el toolgraph; se cierra a mano` | 1 |
 
 > Un minero que no aparece aquí **no está limpio: está mudo**. O no busca, o no publica. Las dos cosas hay que arreglarlas.
 
