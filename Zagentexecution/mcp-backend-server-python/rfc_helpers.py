@@ -342,11 +342,37 @@ def _rfc_read_single_page(conn, table, rfc_fields, rfc_options, batch_size, offs
             return [], []   # Caller will retry with fewer fields
         raise
     raw  = result.get("DATA", [])
-    hdrs = [f["FIELDNAME"] for f in result.get("FIELDS", [])]
+    meta = result.get("FIELDS", [])
+    hdrs = [f["FIELDNAME"] for f in meta]
+
+    # ⛔ NO SE PARTE POR EL DELIMITADOR. Un campo de texto puede CONTENER el caracter que
+    # usamos para separar. Medido el 2026-08-30: 2 filas de 670.715 en BSAS 2024 traen
+    # `tr|_m. Hmedat` en ZUONR -- alguien escribio una barra en el campo de asignacion.
+    #
+    # Y el modo de fallo es SILENCIOSO, que es lo grave: la version anterior hacia
+    # `split("|")` y rellenaba los huecos que faltaran con "", asi que una fila con una barra
+    # de mas DESPLAZABA TODAS SUS COLUMNAS y seguia adelante sin error. El unico sitio donde
+    # dio la cara fue un script que contaba los valores antes de escribirlos.
+    #
+    # RFC_READ_TABLE devuelve OFFSET y LENGTH de cada campo en su metadato FIELDS: se corta por
+    # POSICION, que no puede colisionar con el contenido. Se cae al split solo si el kernel no
+    # diera las posiciones, y entonces se DICE.
+    try:
+        pos = [(int(f["OFFSET"]), int(f["LENGTH"]), f["FIELDNAME"]) for f in meta]
+    except (KeyError, TypeError, ValueError):
+        pos = None
+        if raw:
+            print("    [AVISO] el kernel no da OFFSET/LENGTH: se corta por delimitador y una "
+                  "barra dentro de un campo desplazaria columnas en silencio")
     rows = []
     for row in raw:
-        parts = row["WA"].split("|")
-        rows.append({h: (parts[i].strip() if i < len(parts) else "") for i, h in enumerate(hdrs)})
+        wa = row["WA"]
+        if pos:
+            rows.append({h: wa[o:o + ln].strip() for o, ln, h in pos})
+        else:
+            parts = wa.split("|")
+            rows.append({h: (parts[i].strip() if i < len(parts) else "")
+                         for i, h in enumerate(hdrs)})
     return rows, hdrs
 
 
