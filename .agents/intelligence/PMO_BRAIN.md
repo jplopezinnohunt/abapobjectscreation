@@ -65,15 +65,38 @@
 > 5. **Los 25 identificadores sin aterrizar** del detector (YHR_PAFTXT, YTFM_HIER,
 >    ZTHRFIORI_ACTOR, YTFI_JCU, YTHR_PEVST, YTFM_INT_PROJS…) — ninguno bloquea; aterrizar de a
 >    2-3 por sesión con el método de s111 (leer rutina → extraer tabla → claim).
-> ### PARA JP — DECISIÓN DE UN FLAG, NO ES DEL AGENTE (re-verificado 2026-08-31)
-> **La telemetría que mediría si el workflow de facturas resuelve un Certifying Officer real
-> existe, está cableada y está APAGADA.** `YTBC_TRACE.ACTIVE=''` para `WF_PAYMENT` (sus dos
-> hermanos FIORI están en 'X' y sus contadores SUBIERON entre el 27 y el 31 de agosto: el
-> mecanismo está vivo, el silencio es del flag). Cerrarlo es poner ese flag en P01 y esperar a
-> que fluyan facturas — **cambio de configuración en producción: lo hace un humano autorizado,
-> nunca el agente.** Si el proxy resultara muerto, el respaldo son DOS correos y uno de ellos
-> sin actividad. Claims 624 (contradicción abierta) y 626 (por qué hoy es inverificable).
-> Confirmado en paralelo por la sesión `unescrp-a8`, que lo midió por su cuenta el mismo día.
+> ### 🔴 H146 — MEDIR SI EL WORKFLOW DE PAGOS RESUELVE UN CERTIFYING OFFICER REAL O CAE SIEMPRE AL RESPALDO
+> **Estado: ESPERANDO DECISIÓN DE JP. Es un flag de configuración en PRODUCCIÓN — el agente NO
+> lo toca.** Abierto 2026-08-31 (s111). Claims 624 (contradicción) · 626 (por qué hoy es
+> inverificable, con el método del grupo de control).
+>
+> **La pregunta:** el workflow 90000003 de liberación de facturas resuelve el Certifying Officer
+> llamando a UNESCO Role Management (`Z_GET_CERTIF_OFFICER_UNESDIR` → proxy `ZROLE_MGTCO_FACADE`).
+> Si RM no contesta, cae a una lista de respaldo de DOS correos (`ZFI_PAYREL_EMAIL`: A_KHISTY,
+> E_MOYO — y E_MOYO tiene CERO actividad en CDHDR). Indicio externo que lo hace probable: la
+> sesión `unescrp-a8` midió que RM no reconoció a 27 de 30 empleados de UNA MUESTRA (denominador
+> declarado: muestra, no población).
+>
+> **La medición existe, está cableada y está APAGADA:** `YTBC_TRACE.ACTIVE=''` para `WF_PAYMENT`.
+> Verificado por los dos lados: sus hermanos FIORI están en 'X' y SUS CONTADORES SUBIERON entre
+> el 27 y el 31 de agosto (197→202, 594) — el mecanismo está vivo, el silencio es del flag; y
+> `WBCROSSGT` da UN SOLO escritor posible para ese objeto de traza
+> (`LZWF_GET_CERTIFYING_OFFICERU01`), así que el cero no puede venir de otro sitio.
+>
+> **QUÉ DA EXACTAMENTE ENCENDERLO — leído en nuestro fuente, no inferido:**
+> `LZWF_GET_CERTIFYING_OFFICERU01.abap:90` es `CHECK sy-tfill EQ 0` y la traza está DESPUÉS
+> (líneas 101-106, comentario *"in case of default certifying officers set"*). **La traza sólo
+> se escribe cuando RM no devolvió a nadie y se usó el respaldo.** Consecuencia práctica:
+> - cada fila = un fallo REAL de RM, con agente y `UNESDIR_SUBRC` → responde *«¿cae al respaldo,
+>   y para quién?»*, que es la pregunta que importa;
+> - **NO da la tasa**: no hay denominador (las llamadas con éxito no dejan rastro). Para un
+>   porcentaje hace falta el total de facturas liberadas por otra vía;
+> - y el silencio SÓLO informa si se sabe que fluyeron facturas en la ventana — con el flag
+>   encendido y facturas fluyendo, cero filas significa *RM resuelve bien*.
+>
+> **Acción:** JP decide si se pone `YTBC_TRACE.ACTIVE='X'` para `WF_PAYMENT` en P01 y se deja
+> correr una ventana con volumen de facturas. Coste: un flag. Sin eso, la pregunta queda
+> inverificable y así está declarado, no escondido.
 >
 > ### MENUDO (cabe de acompañamiento en cualquier sesión, no consume el turno)
 > - Sonda del lector de `CHTYP='CM'` (YFMXCHKP): buscar en D01/variantes/jobs; si no aparece,
