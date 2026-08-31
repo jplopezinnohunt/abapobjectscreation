@@ -65,6 +65,16 @@
 > 5. **Los 25 identificadores sin aterrizar** del detector (YHR_PAFTXT, YTFM_HIER,
 >    ZTHRFIORI_ACTOR, YTFI_JCU, YTHR_PEVST, YTFM_INT_PROJS…) — ninguno bloquea; aterrizar de a
 >    2-3 por sesión con el método de s111 (leer rutina → extraer tabla → claim).
+> ### PARA JP — DECISIÓN DE UN FLAG, NO ES DEL AGENTE (re-verificado 2026-08-31)
+> **La telemetría que mediría si el workflow de facturas resuelve un Certifying Officer real
+> existe, está cableada y está APAGADA.** `YTBC_TRACE.ACTIVE=''` para `WF_PAYMENT` (sus dos
+> hermanos FIORI están en 'X' y sus contadores SUBIERON entre el 27 y el 31 de agosto: el
+> mecanismo está vivo, el silencio es del flag). Cerrarlo es poner ese flag en P01 y esperar a
+> que fluyan facturas — **cambio de configuración en producción: lo hace un humano autorizado,
+> nunca el agente.** Si el proxy resultara muerto, el respaldo son DOS correos y uno de ellos
+> sin actividad. Claims 624 (contradicción abierta) y 626 (por qué hoy es inverificable).
+> Confirmado en paralelo por la sesión `unescrp-a8`, que lo midió por su cuenta el mismo día.
+>
 > ### MENUDO (cabe de acompañamiento en cualquier sesión, no consume el turno)
 > - Sonda del lector de `CHTYP='CM'` (YFMXCHKP): buscar en D01/variantes/jobs; si no aparece,
 >   es config muerta → supersede parcial del claim 650.
